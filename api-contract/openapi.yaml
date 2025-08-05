@@ -1,0 +1,214 @@
+openapi: 3.0.0
+info:
+  title: TwoDev API
+  description: API autentikasi untuk aplikasi USK
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api/auth
+tags:
+  - name: auth
+    description: Semua endpoint terkait autentikasi pengguna
+paths:
+  /register:
+    post:
+      tags:
+        - auth
+      summary: Register pengguna baru
+      description: Membuat akun pengguna baru dengan email, password, full name, dan role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - confirm_password
+                - full_name
+                - role_id
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                confirm_password:
+                  type: string
+                full_name:
+                  type: string
+                role_id:
+                  type: integer
+            example:
+              email: "user@example.com"
+              password: "password123"
+              confirm_password: "password123"
+              full_name: "John Doe"
+              role_id: 2
+      responses:
+        "201":
+          description: Registrasi berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      email:
+                        type: string
+                      full_name:
+                        type: string
+                      role_id:
+                        type: integer
+              example:
+                success: true
+                message: "User registered successfully"
+                data:
+                  id: 1
+                  email: "user@example.com"
+                  full_name: "John Doe"
+                  role_id: 2
+        "400":
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Password dan confirm password tidak sama"
+
+  /login:
+    post:
+      tags:
+        - auth
+      summary: Login pengguna
+      description: Autentikasi user dengan email dan password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+            example:
+              email: "user@example.com"
+              password: "password123"
+      responses:
+        "200":
+          description: Login berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+              example:
+                success: true
+                message: "Login successful"
+                data:
+                  token: "eyJhbGciOiJIUzI1NiIsInR..."
+        "400":
+          description: Input tidak lengkap
+        "401":
+          description: Email atau password salah
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Invalid email or password"
+
+  /me:
+    get:
+      tags:
+        - auth
+      summary: Mendapatkan data user saat ini
+      description: Mengembalikan informasi user berdasarkan token Bearer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Informasi user berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      full_name:
+                        type: string
+                      email:
+                        type: string
+                      role_id:
+                        type: integer
+              example:
+                success: true
+                data:
+                  id: 1
+                  full_name: "John Doe"
+                  email: "user@example.com"
+                  role_id: 2
+        "401":
+          description: Token tidak valid atau tidak ada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Token is required or invalid"
+        "404":
+          description: User tidak ditemukan
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
