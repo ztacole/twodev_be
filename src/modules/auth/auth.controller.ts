@@ -12,12 +12,12 @@ export class AuthController {
 
     async register(req: Request, res: Response) {
         try {
-            const { full_name, email, password, confirm_password, role_id }: RegisterRequest = req.body;
+            const { email, password, confirm_password, full_name, role_id }: RegisterRequest = req.body;
 
-            if (!full_name || !email || !password || !confirm_password || !role_id) {
+            if (!email || !password || !confirm_password || !full_name || !role_id) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Full name, email, password, confirm_password, dan role_id wajib diisi'
+                    message: 'Email, password, confirm_password, full_name, dan role_id wajib diisi'
                 });
             }
 
@@ -35,7 +35,7 @@ export class AuthController {
                 });
             }
 
-            const result = await this.authService.register({ full_name, email, password, confirm_password, role_id });
+            const result = await this.authService.register({ email, password, confirm_password, full_name, role_id });
 
             res.status(201).json({
                 success: true,
