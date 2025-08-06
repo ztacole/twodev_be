@@ -5,4 +5,4 @@
 
 */
 -- AlterTable
-ALTER TABLE `assessment` MODIFY `status` ENUM('PLANNED', 'ONGOING', 'COMPLETED') NOT NULL;
+ALTER TABLE `Assessment` MODIFY `status` ENUM('PLANNED', 'ONGOING', 'COMPLETED') NOT NULL;
