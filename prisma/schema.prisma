@@ -20,6 +20,10 @@ model User {
   password   String
   role_id    Int
   role       Role   @relation(fields: [role_id], references: [id])
+
+  assessee   Assessee[]
+  assessor   Assessor[]
+  admin      Admin[]
 }
 
 model Role {
@@ -28,3 +32,140 @@ model Role {
   users User[]
 }
 
+model Assessee {
+  id                         Int           @id @default(autoincrement())
+  user_id                   Int
+  identity_number           String
+  birth_date                DateTime
+  birth_location            String
+  gender                    Gender
+  nationality               String
+  phone_no                  String
+  address                   String
+  educational_qualifications String
+
+  user                      User          @relation(fields: [user_id], references: [id])
+  assessments               Assessment_Assesse[]
+  jobs                      Assessee_Job[]
+  results                   Assessment_Result[]
+}
+
+model Assessor {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  major_id    Int
+  address     String
+  phone_no    String
+  birth_date  DateTime
+
+  user        User     @relation(fields: [user_id], references: [id])
+  major       Major    @relation(fields: [major_id], references: [id])
+  assessments Assessment[]
+}
+
+model Admin {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  address    String
+  phone_no   String
+  birth_date DateTime
+
+  user       User     @relation(fields: [user_id], references: [id])
+}
+
+model Major {
+  id       Int      @id @default(autoincrement())
+  code     String
+  name     String
+
+  schemes  Schemes[]
+  assessors Assessor[]
+}
+
+model Schemes {
+  id         Int              @id @default(autoincrement())
+  title      String
+  major_id   Int
+  no_scheme  String
+
+  major      Major            @relation(fields: [major_id], references: [id])
+  units      Unit_Competency[]
+  assessments Assessment[]
+}
+
+model Unit_Competency {
+  id           Int       @id @default(autoincrement())
+  scheme_id    Int
+  unit_code    String
+  title        String
+  description  String
+
+  scheme       Schemes   @relation(fields: [scheme_id], references: [id])
+  elements     Element[]
+}
+
+model Element {
+  id                   Int    @id @default(autoincrement())
+  unit_competency_id   Int
+  name                 String
+  title                String
+
+  unit_competency      Unit_Competency @relation(fields: [unit_competency_id], references: [id])
+}
+
+model Assessment {
+  id            Int       @id @default(autoincrement())
+  name          String
+  scheme_id     Int
+  status        AssessmentStatus
+  location      String
+  start_date    DateTime
+  end_date      String
+  assessor_id   Int
+
+  scheme        Schemes   @relation(fields: [scheme_id], references: [id])
+  assessor      Assessor  @relation(fields: [assessor_id], references: [id])
+  assessees     Assessment_Assesse[]
+  results       Assessment_Result[]
+}
+
+model Assessment_Assesse {
+  id            Int       @id @default(autoincrement())
+  assessment_id Int
+  assessee_id   Int
+
+  assessment    Assessment @relation(fields: [assessment_id], references: [id])
+  assessee      Assessee   @relation(fields: [assessee_id], references: [id])
+}
+
+model Assessment_Result {
+  id            Int       @id @default(autoincrement())
+  assessment_id Int
+  assessee_id   Int
+  approve       Boolean
+
+  assessment    Assessment @relation(fields: [assessment_id], references: [id])
+  assessee      Assessee   @relation(fields: [assessee_id], references: [id])
+}
+
+model Assessee_Job {
+  id               Int      @id @default(autoincrement())
+  assessee_id      Int
+  institution_name String
+  address          String
+  position         String
+  phone_no         String
+
+  assessee         Assessee @relation(fields: [assessee_id], references: [id])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AssessmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
