@@ -4,13 +4,14 @@ info:
   description: API autentikasi untuk aplikasi USK
   version: 1.0.0
 servers:
-  - url: http://localhost:3000/api/auth
-  - url: http://localhost:3000/api/major
+  - url: http://localhost:3000/api
 tags:
   - name: auth
     description: Semua endpoint terkait autentikasi pengguna
   - name: major
     description: Semua endpoint terkait manajemen jurusan
+  - name: assessee
+    description: Semua endpoint terkait manajemen assessee
 paths:
   /register:
     post:
@@ -411,4 +412,5 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
+      
+      bearerFormat: JWT  
