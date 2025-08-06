@@ -12,7 +12,10 @@ app.use(express.json());
 import userRoutes from './modules/user/user.routes';
 import authRoutes from './modules/auth/auth.routes';
 
+import dashboardRoutes from './modules/admin/dashboard/dashboard.routes';
+
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 export default app;
