@@ -165,7 +165,7 @@ enum Gender {
 }
 
 enum AssessmentStatus {
-  PENDING
-  APPROVED
-  REJECTED
+  PLANNED
+  ONGOING
+  COMPLETED
 }
