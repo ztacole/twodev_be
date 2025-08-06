@@ -4,4 +4,6 @@ export interface DashboardData {
   totalAssessments: number;
   totalAssessors: number;
   totalAssesses: number;
+  id_assessee: number;
+  date_sent: Date | string;
 }

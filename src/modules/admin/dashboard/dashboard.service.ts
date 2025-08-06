@@ -9,11 +9,14 @@ export const getDashboardData = async () => {
   const totalAssesses = await prisma.assessee.count();
   const totalAll = totalSchemes + totalAssessments + totalAssessors + totalAssesses;
 
+  const assessmentResults = await prisma.assessment_Result.findMany();
+
   return {
     totalSchemes,
     totalAssessments,
     totalAssessors,
     totalAssesses,
     totalAll,
+    assessmentResults
   };
 };
