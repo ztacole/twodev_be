@@ -5,9 +5,12 @@ info:
   version: 1.0.0
 servers:
   - url: http://localhost:3000/api/auth
+  - url: http://localhost:3000/api/major
 tags:
   - name: auth
     description: Semua endpoint terkait autentikasi pengguna
+  - name: major
+    description: Semua endpoint terkait manajemen jurusan
 paths:
   /register:
     post:
@@ -206,6 +209,203 @@ paths:
                 message: "Token is required or invalid"
         "404":
           description: User tidak ditemukan
+
+  /majors:
+    get:
+      tags:
+        - major
+      summary: Mendapatkan semua jurusan
+      description: Mengembalikan daftar semua jurusan yang tersedia
+      responses:
+        "200":
+          description: Daftar jurusan berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        code:
+                          type: string
+                        name:
+                          type: string
+              example:
+                success: true
+                message: "Majors retrieved successfully"
+                data:
+                  - id: 1
+                    code: "IF"
+                    name: "Informatika"
+                  - id: 2
+                    code: "SI"
+                    name: "Sistem Informasi"
+
+    post:
+      tags:
+        - major
+      summary: Membuat jurusan baru
+      description: Membuat jurusan baru dengan kode dan nama
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - name
+              properties:
+                code:
+                  type: string
+                  description: Kode jurusan (contoh: IF, SI)
+                name:
+                  type: string
+                  description: Nama jurusan
+            example:
+              code: "IF"
+              name: "Informatika"
+      responses:
+        "201":
+          description: Jurusan berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      code:
+                        type: string
+                      name:
+                        type: string
+              example:
+                success: true
+                message: "Major created successfully"
+                data:
+                  id: 1
+                  code: "IF"
+                  name: "Informatika"
+        "400":
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "All field must be filled!"
+
+  /majors/{id}:
+    put:
+      tags:
+        - major
+      summary: Mengupdate jurusan
+      description: Mengupdate data jurusan berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID jurusan yang akan diupdate
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - name
+              properties:
+                code:
+                  type: string
+                  description: Kode jurusan baru
+                name:
+                  type: string
+                  description: Nama jurusan baru
+            example:
+              code: "IF"
+              name: "Informatika"
+      responses:
+        "200":
+          description: Jurusan berhasil diupdate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      code:
+                        type: string
+                      name:
+                        type: string
+              example:
+                success: true
+                message: "Major updated successfully"
+                data:
+                  id: 1
+                  code: "IF"
+                  name: "Informatika"
+
+    delete:
+      tags:
+        - major
+      summary: Menghapus jurusan
+      description: Menghapus jurusan berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID jurusan yang akan dihapus
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Jurusan berhasil dihapus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Major deleted successfully"
+
 components:
   securitySchemes:
     bearerAuth:
