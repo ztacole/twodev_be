@@ -126,7 +126,7 @@ async function main() {
           scheme_id: scheme.id,
           unit_code: `UC-${scheme.id}-${i + 1}`,
           title: `Unit Kompetensi ${i + 1} untuk ${scheme.title}`,
-          description: faker.lorem.sentence(),
+          description: faker.lorem.paragraph(),
         },
       });
 
