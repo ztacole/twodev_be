@@ -11,8 +11,10 @@ app.use(express.json());
 // Import route modules
 import userRoutes from './modules/user/user.routes';
 import authRoutes from './modules/auth/auth.routes';
+import majorRoutes from './modules/major/major.routes';
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/majors', majorRoutes);
 
 export default app;
