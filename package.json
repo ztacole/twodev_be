@@ -8,7 +8,7 @@
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed": "ts-node prisma/seed.ts",
+    "seed": "ts-node src/config/seed.ts",
     "seed:dev": "dotenv -e .env.development -- ts-node prisma/seed.ts",
     "seed:prod": "dotenv -e .env.production -- ts-node prisma/seed.ts"
   },
