@@ -142,6 +142,8 @@ model Assessment_Result {
   id            Int       @id @default(autoincrement())
   assessment_id Int
   assessee_id   Int
+  proof         String
+  date_sent     DateTime
   approve       Boolean
 
   assessment    Assessment @relation(fields: [assessment_id], references: [id])
