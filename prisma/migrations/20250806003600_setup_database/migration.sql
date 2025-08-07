@@ -18,7 +18,7 @@ CREATE TABLE `Assessee` (
 CREATE TABLE `Assessor` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
-    `major_id` INTEGER NOT NULL,
+    `scheme_id` INTEGER NOT NULL,
     `address` VARCHAR(191) NOT NULL,
     `phone_no` VARCHAR(191) NOT NULL,
     `birth_date` DATETIME(3) NOT NULL,
@@ -38,20 +38,10 @@ CREATE TABLE `Admin` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Major` (
+CREATE TABLE `Schemes` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `code` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Schemes` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `title` VARCHAR(191) NOT NULL,
-    `major_id` INTEGER NOT NULL,
-    `no_scheme` VARCHAR(191) NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -129,13 +119,10 @@ ALTER TABLE `Assessee` ADD CONSTRAINT `Assessee_user_id_fkey` FOREIGN KEY (`user
 ALTER TABLE `Assessor` ADD CONSTRAINT `Assessor_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Assessor` ADD CONSTRAINT `Assessor_major_id_fkey` FOREIGN KEY (`major_id`) REFERENCES `Major`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Assessor` ADD CONSTRAINT `Assessor_scheme_id_fkey` FOREIGN KEY (`scheme_id`) REFERENCES `Schemes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Admin` ADD CONSTRAINT `Admin_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Schemes` ADD CONSTRAINT `Schemes_major_id_fkey` FOREIGN KEY (`major_id`) REFERENCES `Major`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Unit_Competency` ADD CONSTRAINT `Unit_Competency_scheme_id_fkey` FOREIGN KEY (`scheme_id`) REFERENCES `Schemes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
