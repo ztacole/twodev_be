@@ -1,12 +1,13 @@
 import { Router } from 'express';
-import * as assesseController from './assessee.controller';
+import { AssesseeController } from './assessee.controller';
 
 const router = Router();
+const controller = new AssesseeController();
 
-router.post('/', assesseController.createAssesse);
-router.get('/', assesseController.getAssesses);
-router.get('/:id', assesseController.getAssesseById);
-router.put('/:id', assesseController.updateAssesse);
-router.delete('/:id', assesseController.deleteAssesse);
+router.post('/', controller.createAssesse.bind(controller));
+router.get('/', controller.getAssesses.bind(controller));
+router.get('/:id', controller.getAssesseById.bind(controller));
+router.put('/:id', controller.updateAssesse.bind(controller));
+router.delete('/:id', controller.deleteAssesse.bind(controller));
 
 export default router;

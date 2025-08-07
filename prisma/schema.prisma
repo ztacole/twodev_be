@@ -151,7 +151,7 @@ model Assessment_Result {
 }
 
 model Assessee_Job {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   assessee_id      Int
   institution_name String
   address          String
