@@ -17,11 +17,13 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 import userRoutes from './modules/user/user.routes';
 import authRoutes from './modules/auth/auth.routes';
 import majorRoutes from './modules/major/major.routes';
+import dashboardRoutes from './modules/admin/dashboard/dashboard.routes';
 import assesseeRoutes from './modules/assessee/assessee.routes';
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/majors', majorRoutes);
 app.use('/api/assessees', assesseeRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 export default app;

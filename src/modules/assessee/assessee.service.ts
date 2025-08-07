@@ -1,16 +1,24 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from '../../config/db';
 
 export class AssesseeService {
-    async getAllWithJobs() {
+    async getAssesses() {
         return prisma.assessee.findMany({
             include: {
                 jobs: true,
             },
         });
     }
+  
+    async getAssesseById(id: number) {
+        return prisma.assessee.findUnique({ 
+            where: { id },
+            include: {
+                jobs: true,
+            },
+        });
+    };
 
-    async create(data: any) {
+    async createAssesse(data: any) {
         const { jobs, ...assesseeData } = data;
         return prisma.assessee.create({
             data: {
@@ -23,7 +31,7 @@ export class AssesseeService {
         });
     }
 
-    async update(id: number, data: any) {
+    async updateAssesse(id: number, data: any) {
         const { jobs, ...assesseeData } = data;
         await prisma.assessee.update({
             where: { id },
@@ -74,8 +82,8 @@ export class AssesseeService {
         });
     }
 
-    async delete(id: number) {
+    async deleteAssesse(id: number) {
         await prisma.assessee_Job.deleteMany({ where: { assessee_id: id } });
         return prisma.assessee.delete({ where: { id } });
     }
-} 
+}
