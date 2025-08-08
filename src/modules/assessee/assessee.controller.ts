@@ -2,11 +2,15 @@ import { Request, Response } from 'express';
 import { AssesseeService } from './assessee.service';
 
 export class AssesseeController {
-    private assesseeService = new AssesseeService();
+    private assesseeService: AssesseeService;
+
+    constructor() {
+        this.assesseeService = new AssesseeService();
+    }
   
     async createAssesse(req: Request, res: Response) {
       try {
-        const assesse = await assesseeService.createAssesse(req.body);
+        const assesse = await this.assesseeService.createAssesse(req.body);
         res.status(201).json({
           success: true,
           message: 'Data asesi berhasil dibuat',
@@ -22,7 +26,7 @@ export class AssesseeController {
 
     async getAssesses(req: Request, res: Response) {
       try {
-        const assesses = await assesseeService.getAssesses();
+        const assesses = await this.assesseeService.getAssesses();
         res.json({
           success: true,
           message: 'Data asesi berhasil diambil',
@@ -38,7 +42,7 @@ export class AssesseeController {
 
     async getAssesseById(req: Request, res: Response) {
       try {
-        const assesse = await assesseeService.getAssesseById(Number(req.params.id));
+        const assesse = await this.assesseeService.getAssesseById(Number(req.params.id));
         if (!assesse) {
           return res.status(404).json({
             success: false,
@@ -60,7 +64,7 @@ export class AssesseeController {
 
     async updateAssesse(req: Request, res: Response) {
       try {
-        const assesse = await assesseeService.updateAssesse(
+        const assesse = await this.assesseeService.updateAssesse(
           Number(req.params.id),
           req.body
         );
@@ -85,7 +89,7 @@ export class AssesseeController {
 
     async deleteAssesse(req: Request, res: Response) {
       try {
-        const assesse = await assesseeService.deleteAssesse(Number(req.params.id));
+        const assesse = await this.assesseeService.deleteAssesse(Number(req.params.id));
         if (!assesse) {
           return res.status(404).json({
             success: false,

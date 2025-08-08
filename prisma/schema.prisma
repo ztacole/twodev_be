@@ -14,27 +14,28 @@ datasource db {
 }
 
 model User {
-  id         Int    @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   full_name  String
-  email      String @unique
+  email      String   @unique
   password   String
   role_id    Int
-  role       Role   @relation(fields: [role_id], references: [id])
 
-  assessee   Assessee[]
-  assessor   Assessor[]
-  admin      Admin[]
+  role       Role     @relation(fields: [role_id], references: [id])
+  assessee   Assessee?
+  assessor   Assessor?
+  admin      Admin?
 }
 
 model Role {
-  id    Int    @id @default(autoincrement())
+  id    Int     @id @default(autoincrement())
   name  String
+
   users User[]
 }
 
 model Assessee {
-  id                         Int           @id @default(autoincrement())
-  user_id                   Int
+  id                         Int      @id @default(autoincrement())
+  user_id                   Int       @unique
   identity_number           String
   birth_date                DateTime
   birth_location            String
@@ -44,28 +45,29 @@ model Assessee {
   address                   String
   educational_qualifications String
 
-  user                      User          @relation(fields: [user_id], references: [id])
-  assessments               Assessment_Assesse[]
+  user                      User     @relation(fields: [user_id], references: [id])
   jobs                      Assessee_Job[]
-  results                   Assessment_Result[]
+  answers                   Assessee_Answer[]
+  results                   Result[]
 }
 
 model Assessor {
-  id          Int      @id @default(autoincrement())
-  user_id     Int
-  major_id    Int
+  id          Int       @id @default(autoincrement())
+  user_id     Int     @unique       
+  scheme_id   Int
   address     String
   phone_no    String
   birth_date  DateTime
 
-  user        User     @relation(fields: [user_id], references: [id])
-  major       Major    @relation(fields: [major_id], references: [id])
+  user        User      @relation(fields: [user_id], references: [id])
+  scheme      Schemes   @relation(fields: [scheme_id], references: [id])
   assessments Assessment[]
+  details     Assessor_Details?
 }
 
 model Admin {
   id         Int      @id @default(autoincrement())
-  user_id    Int
+  user_id    Int      @unique
   address    String
   phone_no   String
   birth_date DateTime
@@ -73,85 +75,134 @@ model Admin {
   user       User     @relation(fields: [user_id], references: [id])
 }
 
-model Major {
-  id       Int      @id @default(autoincrement())
-  code     String
-  name     String
+model Schemes {
+  id          Int               @id @default(autoincrement())
+  code        String
+  name        String
 
-  schemes  Schemes[]
-  assessors Assessor[]
+  occupations Occupation[]
+  assessments Assessment[]
+  assessors   Assessor[]
 }
 
-model Schemes {
-  id         Int              @id @default(autoincrement())
-  title      String
-  major_id   Int
-  no_scheme  String
+model Occupation {
+  id        Int     @id @default(autoincrement())
+  scheme_id Int
+  name      String
 
-  major      Major            @relation(fields: [major_id], references: [id])
-  units      Unit_Competency[]
-  assessments Assessment[]
+  scheme    Schemes @relation(fields: [scheme_id], references: [id])
 }
 
 model Unit_Competency {
-  id           Int       @id @default(autoincrement())
-  scheme_id    Int
-  unit_code    String
-  title        String
-  description  String
+  id          Int       @id @default(autoincrement())
+  assessment_id Int
+  unit_code   String
+  title       String
 
-  scheme       Schemes   @relation(fields: [scheme_id], references: [id])
-  elements     Element[]
+  elements    Element[]
+  assessment  Assessment @relation(fields: [assessment_id], references: [id])
 }
 
 model Element {
-  id                   Int    @id @default(autoincrement())
-  unit_competency_id   Int
-  name                 String
-  title                String
+  id                Int              @id @default(autoincrement())
+  unit_competency_id Int
+  title             String
 
-  unit_competency      Unit_Competency @relation(fields: [unit_competency_id], references: [id])
+  unit_competency   Unit_Competency @relation(fields: [unit_competency_id], references: [id])
+  details           Element_Details[]
+  result_details    Result_Details[]
+}
+
+model Element_Details {
+  id         Int     @id @default(autoincrement())
+  element_id Int
+  description String
+
+  element    Element @relation(fields: [element_id], references: [id])
 }
 
 model Assessment {
-  id            Int       @id @default(autoincrement())
-  name          String
-  scheme_id     Int
-  status        AssessmentStatus
-  location      String
-  start_date    DateTime
-  end_date      String
+  id           Int         @id @default(autoincrement())
+  scheme_id    Int
+  code         String
+  status       AssessmentStatus
+  start_date   DateTime
+  end_date     DateTime
+
+  scheme       Schemes     @relation(fields: [scheme_id], references: [id])
+  assessor     Assessor?   @relation(fields: [assessor_id], references: [id])
+  assessor_id  Int?
+
+  assessment_details Assessment_Details[]
+  unit_competencies  Unit_Competency[]
+  questions          Assessment_Question[]
+  results            Result[]
+}
+
+model Assessment_Details {
+  id            Int        @id @default(autoincrement())
+  assessment_id Int
   assessor_id   Int
-
-  scheme        Schemes   @relation(fields: [scheme_id], references: [id])
-  assessor      Assessor  @relation(fields: [assessor_id], references: [id])
-  assessees     Assessment_Assesse[]
-  results       Assessment_Result[]
-}
-
-model Assessment_Assesse {
-  id            Int       @id @default(autoincrement())
-  assessment_id Int
-  assessee_id   Int
+  location      String
 
   assessment    Assessment @relation(fields: [assessment_id], references: [id])
-  assessee      Assessee   @relation(fields: [assessee_id], references: [id])
 }
 
-model Assessment_Result {
+model Assessment_Question {
+  id             Int          @id @default(autoincrement())
+  assessment_id  Int
+  type           QuestionType
+  question       String
+
+  assessment     Assessment   @relation(fields: [assessment_id], references: [id])
+  pg_details     QuestionPG_Details[]
+  answers        Assessee_Answer[]
+}
+
+model QuestionPG_Details {
+  id         Int  @id @default(autoincrement())
+  question_id Int
+  option      String
+  isanswer    Boolean
+
+  question   Assessment_Question @relation(fields: [question_id], references: [id])
+}
+
+model Assessee_Answer {
+  id           Int       @id @default(autoincrement())
+  question_id  Int
+  assessee_id  Int
+  answer       String
+
+  question     Assessment_Question @relation(fields: [question_id], references: [id])
+  assessee     Assessee            @relation(fields: [assessee_id], references: [id])
+}
+
+model Result {
   id            Int       @id @default(autoincrement())
   assessment_id Int
   assessee_id   Int
-  proof         String
-  date_sent     DateTime
   approve       Boolean
+  created_at    DateTime @default(now())
 
   assessment    Assessment @relation(fields: [assessment_id], references: [id])
   assessee      Assessee   @relation(fields: [assessee_id], references: [id])
+  details       Result_Details[]
+}
+
+model Result_Details {
+  id         Int     @id @default(autoincrement())
+  result_id  Int
+  element_id Int
+  answer     Boolean
+  proof      String
+
+  result     Result  @relation(fields: [result_id], references: [id])
+  element    Element @relation(fields: [element_id], references: [id])
 }
 
 model Assessee_Job {
-  id               Int       @id @default(autoincrement())
+  id               Int    @id @default(autoincrement())
   assessee_id      Int
   institution_name String
   address          String
@@ -161,13 +212,29 @@ model Assessee_Job {
   assessee         Assessee @relation(fields: [assessee_id], references: [id])
 }
 
+model Assessor_Details {
+  id             Int     @id @default(autoincrement())
+  assessor_id    Int        @unique
+  tax_id_number  String
+  bank_book_cover String
+  certificate     String
+  national_id     String
+
+  assessor       Assessor @relation(fields: [assessor_id], references: [id])
+}
+
 enum Gender {
-  MALE
-  FEMALE
+  Male
+  Female
 }
 
 enum AssessmentStatus {
-  PLANNED
-  ONGOING
-  COMPLETED
+  Planned
+  Ongoing
+  Completed
+}
+
+enum QuestionType {
+  PG
+  Essay
 }
