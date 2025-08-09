@@ -23,16 +23,18 @@ import occupationRoutes from './modules/occupation/occupation.routes';
 // DONE - DONE
 import apl1Routes from './modules/assessement/apl1/apl1.routes';
 import apl2Routes from './modules/assessement/apl2/apl2.routes';
+import scheduleRoutes from './modules/assessement/schedule/schedule.routes';
 
 app.use('/api/assessment/apl1', apl1Routes);
 app.use('/api/assessment/apl2', apl2Routes);
+app.use('/api/schedule', scheduleRoutes);
 // DONE - DONE
 
-app.use('/api/users', userRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/assessees', assesseeRoutes);
+app.use('/api/assessee', assesseeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/occupations', occupationRoutes);
+app.use('/api/occupation', occupationRoutes);
 
 app.use('/uploads', express.static('uploads'));
 
