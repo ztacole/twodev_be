@@ -1,4 +1,4 @@
-import { PrismaClient, Gender, AssessmentStatus, QuestionType } from '@prisma/client';
+import { PrismaClient, Gender } from '@prisma/client';
 import { faker } from '@faker-js/faker/locale/id_ID';
 import bcrypt from 'bcryptjs';
 
@@ -43,7 +43,6 @@ async function main() {
     const role_id = faker.helpers.arrayElement([1, 2, 3]);
     const user = await prisma.user.create({
       data: {
-        full_name: faker.person.fullName(),
         email: faker.internet.email(),
         password: await bcrypt.hash("password", 10),
         role_id,
@@ -54,6 +53,7 @@ async function main() {
       await prisma.admin.create({
         data: {
           user_id: user.id,
+          full_name: faker.person.fullName(),
           address: faker.location.streetAddress(),
           phone_no: faker.phone.number(),
           birth_date: faker.date.past({ years: 30 }),
@@ -65,6 +65,7 @@ async function main() {
         data: {
           user_id: user.id,
           scheme_id: faker.helpers.arrayElement(schemes).id,
+          full_name: faker.person.fullName(),
           address: faker.location.streetAddress(),
           phone_no: faker.phone.number(),
           birth_date: faker.date.past({ years: 30 }),
@@ -84,13 +85,17 @@ async function main() {
       const assessee = await prisma.assessee.create({
         data: {
           user_id: user.id,
+          full_name: faker.person.fullName(),
           identity_number: faker.string.numeric(16),
           birth_date: faker.date.past({ years: 25 }),
           birth_location: faker.location.city(),
-          gender: faker.helpers.arrayElement([Gender.Male, Gender.Female]),
+          gender: faker.helpers.arrayElement<Gender>([Gender.Male, Gender.Female]),
           nationality: 'Indonesia',
           phone_no: faker.phone.number(),
+          house_phone_no: null,
+          office_phone_no: null,
           address: faker.location.streetAddress(),
+          postal_code: null,
           educational_qualifications: faker.helpers.arrayElement([
             'SMA/SMK',
             'D3',
@@ -104,105 +109,15 @@ async function main() {
           assessee_id: assessee.id,
           institution_name: faker.company.name(),
           address: faker.location.streetAddress(),
+          postal_code: faker.address.zipCode(),
           position: faker.person.jobTitle(),
           phone_no: faker.phone.number(),
+          job_email: faker.internet.email(),
         },
       });
     }
   }
   console.log('Created users, admins, assessors, assessees, and jobs');
-
-  // Seed Assessments
-  const assessors = await prisma.assessor.findMany();
-  const allAssessments = [];
-  for (const assessor of assessors) {
-    const scheme = await prisma.schemes.findUnique({ where: { id: assessor.scheme_id } });
-    const code = `ASM-${scheme?.code}-${faker.string.alphanumeric(4).toUpperCase()}`;
-    const status = faker.helpers.arrayElement([
-      AssessmentStatus.Planned,
-      AssessmentStatus.Ongoing,
-      AssessmentStatus.Completed,
-    ]);
-    const start_date = faker.date.future();
-    const end_date = faker.date.future({ years: 1, refDate: start_date });
-
-    const assessment = await prisma.assessment.create({
-      data: {
-        scheme_id: assessor.scheme_id,
-        code,
-        status,
-        start_date,
-        end_date,
-        assessor_id: assessor.id,
-      },
-    });
-    allAssessments.push(assessment);
-
-    // Assessment Details
-    await prisma.assessment_Details.create({
-      data: {
-        assessment_id: assessment.id,
-        assessor_id: assessor.id,
-        location: faker.location.city(),
-      },
-    });
-
-    // Seed Unit Competency for this assessment
-    const unitCount = faker.number.int({ min: 3, max: 6 });
-    for (let i = 0; i < unitCount; i++) {
-      const unit = await prisma.unit_Competency.create({
-        data: {
-          assessment_id: assessment.id,
-          unit_code: `UC-${assessment.id}-${i + 1}`,
-          title: `Unit Kompetensi ${i + 1} untuk ${scheme?.name}`,
-        },
-      });
-
-      // Seed Elements for this unit
-      const elementCount = faker.number.int({ min: 2, max: 5 });
-      for (let j = 0; j < elementCount; j++) {
-        const element = await prisma.element.create({
-          data: {
-            unit_competency_id: unit.id,
-            title: `Elemen ${j + 1} dari ${unit.title}`,
-          },
-        });
-
-        // Element Details
-        await prisma.element_Details.create({
-          data: {
-            element_id: element.id,
-            description: faker.lorem.sentence(),
-          },
-        });
-      }
-    }
-
-    // Seed Assessment Questions
-    for (let q = 0; q < 3; q++) {
-      const question = await prisma.assessment_Question.create({
-        data: {
-          assessment_id: assessment.id,
-          type: faker.helpers.arrayElement([QuestionType.PG, QuestionType.Essay]),
-          question: faker.lorem.sentence(),
-        },
-      });
-
-      // PG Details
-      if (question.type === 'PG') {
-        for (let o = 0; o < 4; o++) {
-          await prisma.questionPG_Details.create({
-            data: {
-              question_id: question.id,
-              option: faker.lorem.word(),
-              isanswer: o === 0,
-            },
-          });
-        }
-      }
-    }
-  }
-  console.log('Created assessments, details, unit competencies, elements, questions');
 
   // Seed Assessee Answers
   const assessees = await prisma.assessee.findMany();
@@ -220,7 +135,9 @@ async function main() {
     }
   }
 
-  // Seed Result & Result Details
+  // Seed Result, Result Details, and Result Docs
+  const assessors = await prisma.assessor.findMany();
+  const allAssessments = await prisma.assessment.findMany();
   for (const assessment of allAssessments) {
     for (const assessee of assessees) {
       const result = await prisma.result.create({
@@ -242,10 +159,22 @@ async function main() {
           },
         });
       }
+      // Result Docs
+      await prisma.result_Docs.create({
+        data: {
+          result_id: result.id,
+          assessor_id: faker.helpers.arrayElement(assessors).id,
+          purpose: faker.lorem.sentence(),
+          school_report_card: faker.image.url(),
+          field_work_practice_certificate: faker.image.url(),
+          student_card: faker.image.url(),
+          family_card: faker.image.url(),
+          id_card: faker.image.url(),
+        },
+      });
     }
   }
-
-  console.log('Created answers, results, and result details');
+  console.log('Created answers, results, result details, and result docs');
 }
 
 main()
@@ -256,3 +185,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+

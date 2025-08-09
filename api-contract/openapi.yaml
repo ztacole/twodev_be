@@ -8,6 +8,10 @@ servers:
 tags:
   - name: auth
     description: Semua endpoint terkait autentikasi pengguna
+  - name: FR.APL.01
+    description: Semua endpoint terkait permohonan sertifikasi kompetensi
+  - name: FR.APL.02
+    description: Semua endpoint terkait asesmen mandiri
   - name: assessement
     description: Semua endpoint terkait manajemen asesmen
   - name: assessor
@@ -267,6 +271,591 @@ paths:
                 success: false
                 message: "Server error"
 
+  /apl1/create-self-data:
+    post:
+      tags:
+        - FR.APL.01
+      summary: Membuat asesmen
+      description: Membuat asesmen dengan user_id, full_name, identity_number, birth_date, birth_location, gender, nationality, phone_no, address, postal_code, educational_qualifications, jobs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - full_name
+                - identity_number
+                - birth_date
+                - birth_location
+                - gender
+                - nationality
+                - phone_no
+                - address
+                - postal_code
+                - educational_qualifications
+                - jobs
+              properties:
+                user_id:
+                  type: integer
+                full_name:
+                  type: string
+                identity_number:
+                  type: string
+                birth_date:
+                  type: string
+                  format: date-time
+                birth_location:
+                  type: string
+                gender:
+                  type: string
+                nationality:
+                  type: string
+                phone_no:
+                  type: string
+                house_phone_no:
+                  type: string
+                office_phone_no:
+                  type: string
+                address:
+                  type: string
+                postal_code:
+                  type: string
+                educational_qualifications:
+                  type: string
+                jobs:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      institution_name:
+                        type: string
+                      address:
+                        type: string
+                      position:
+                        type: string
+                      phone_no:
+                        type: string
+                      job_email:
+                        type: string
+            example:
+              user_id: 2
+              full_name: "John Doe"
+              identity_number: "1234567890123456"
+              birth_date: "1995-04-10T00:00:00Z"
+              birth_location: "Surabaya"
+              gender: "Male"
+              nationality: "Indonesia"
+              phone_no: "081234567890"
+              house_phone_no: "0211234567"
+              office_phone_no: "0311234567"
+              address: "Jl. Merdeka No. 20"
+              postal_code: "60271"
+              educational_qualifications: "Sarjana Komputer"
+              jobs:
+                - institution_name: "PT. ABC"
+                  address: "Jl. Raya Jakarta Cikampek No. 1"
+                  postal_code: "12345"
+                  position: "Software Engineer"
+                  phone_no: "0211234567"
+                  job_email: "john.doe@ptabc.com"
+      responses:
+        "201":
+          description: Asesmen berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      user_id:
+                        type: integer
+                      full_name:
+                        type: string
+                      identity_number:
+                        type: string
+                      birth_date:
+                        type: string
+                        format: date-time
+                      birth_location:
+                        type: string
+                      gender:
+                        type: string
+                      nationality:
+                        type: string
+                      phone_no:
+                        type: string
+                      house_phone_no:
+                        type: string
+                      office_phone_no:
+                        type: string
+                      address:
+                        type: string
+                      postal_code:
+                        type: string
+                      educational_qualifications:
+                        type: string
+                      jobs:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            institution_name:
+                              type: string
+                            address:
+                              type: string
+                            postal_code:
+                              type: string
+                            position:
+                              type: string
+                            phone_no:
+                              type: string
+                            job_email:
+                              type: string
+              example:
+                success: true
+                message: "Asesmen berhasil dibuat"
+                data:
+                  id: 1
+                  user_id: 1
+                  full_name: "John Doe"
+                  identity_number: "1234567890"
+                  birth_date: "1990-05-20T00:00:00Z"
+                  birth_location: "Jakarta"
+                  gender: "Male"
+                  nationality: "Indonesian"
+                  phone_no: "081234567890"
+                  house_phone_no: "081234567890"
+                  office_phone_no: "081234567890"
+                  address: "Jl. Mawar No. 10, Jakarta"
+                  postal_code: "12345"
+                  educational_qualifications: "Bachelor of Computer Science"
+                  jobs:
+                    - id: 1
+                      assessee_id: 1
+                      institution_name: "PT. ABC"
+                      address: "Jl. Mawar No. 10, Jakarta"
+                      postal_code: "12345"
+                      position: "Software Engineer"
+                      phone_no: "081234567890"
+                      job_email: "user@example.com"
+
+  /apl1/create-certificate-data:
+    post:
+      tags:
+        - FR.APL.01
+      summary: Buat Sertifikat Asesmen
+      description: Membuat sertifikat asesmen dengan data Result_Docs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                result_id:
+                  type: integer
+                assessor_id:
+                  type: integer
+                purpose:
+                  type: string
+                school_report_card:
+                  type: string
+                field_work_practice_certificate:
+                  type: string
+                student_card:
+                  type: string
+                family_card:
+                  type: string
+                id_card:
+                  type: string
+              required:
+                - result_id
+                - assessor_id
+                - purpose
+                - school_report_card
+                - field_work_practice_certificate
+                - student_card
+                - family_card
+                - id_card
+            example:
+              result_id: 1
+              assessor_id: 1
+              purpose: "Certification Purpose"
+              school_report_card: "URL to report card"
+              field_work_practice_certificate: "URL to practice certificate"
+              student_card: "URL to student card"
+              family_card: "URL to family card"
+              id_card: "URL to ID card"
+      responses:
+        "201":
+          description: Sertifikat asesmen berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      result_id:
+                        type: integer
+                      assessor_id:
+                        type: integer
+                      purpose:
+                        type: string
+                      school_report_card:
+                        type: string
+                      field_work_practice_certificate:
+                        type: string
+                      student_card:
+                        type: string
+                      family_card:
+                        type: string
+                      id_card:
+                        type: string
+              example:
+                success: true
+                message: "Sertifikat asesmen berhasil dibuat"
+                data:
+                  id: 1
+                  result_id: 1
+                  assessor_id: 1
+                  purpose: "Certification Purpose"
+                  school_report_card: "URL to report card"
+                  field_work_practice_certificate: "URL to practice certificate"
+                  student_card: "URL to student card"
+                  family_card: "URL to family card"
+                  id_card: "URL to ID card"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Server error"
+
+  /apl2/create-assessment:
+    post:
+      tags:
+        - FR.APL.02
+      summary: Buat asesmen
+      description: Membuat asesmen dengan occupation_id, code, unit_competencies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - occupation_id
+                - code
+                - unit_competencies
+              properties:
+                occupation_id:
+                  type: integer
+                code:
+                  type: string
+                unit_competencies:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - unit_code
+                      - title
+                      - elements
+                    properties:
+                      unit_code:
+                        type: string
+                      title:
+                        type: string
+                      elements:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - title
+                            - element_details
+                          properties:
+                            title:
+                              type: string
+                            element_details:
+                              type: array
+                              items:
+                                type: object
+                                required:
+                                  - description
+                                properties:
+                                  description:
+                                    type: string
+            example:
+              occupation_id: 1
+              code: "SKM.RPL.PJ/LSPSMK24/2025"
+              unit_competencies:
+                - unit_code: "UC-001"
+                  title: "Basic Programming Skills"
+                  elements:
+                    - title: "Write simple programs"
+                      element_details:
+                        - description: "Understand basic syntax"
+                        - description: "Use variables and data types"
+                    - title: "Debug programs"
+                      element_details:
+                        - description: "Identify common errors"
+                        - description: "Use debugging tools"
+                - unit_code: "UC-002"
+                  title: "Database Fundamentals"
+                  elements:
+                    - title: "Create database tables"
+                      element_details:
+                        - description: "Define proper data types"
+                        - description: "Set primary keys"
+      responses:
+        "201":
+          description: Asesmen berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      occupation_id:
+                        type: integer
+                      code:
+                        type: string
+                      unit_competencies:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            unit_code:
+                              type: string
+                            title:
+                              type: string
+                            elements:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: integer
+                                  title:
+                                    type: string
+                                  element_details:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        id:
+                                          type: integer
+                                        description:
+                                          type: string
+              example:
+                success: true
+                message: "Asesmen berhasil dibuat"
+                data:
+                  id: 1
+                  occupation_id: 1
+                  code: "SKM.RPL.PJ/LSPSMK24/2025"
+                  unit_competencies:
+                    - id: 1
+                      unit_code: "UC-001"
+                      title: "Basic Programming Skills"
+                      elements:
+                        - id: 1
+                          title: "Write simple programs"
+                          element_details:
+                            - id: 1
+                              description: "Understand basic syntax"
+                            - id: 2
+                              description: "Use variables and data types"
+                        - id: 2
+                          title: "Debug programs"
+                          element_details:
+                            - id: 3
+                              description: "Identify common errors"
+                            - id: 4
+                              description: "Use debugging tools"
+                    - id: 2
+                      unit_code: "UC-002"
+                      title: "Database Fundamentals"
+                      elements:
+                        - id: 5
+                          title: "Create database tables"
+                          element_details:
+                            - id: 5
+                              description: "Define proper data types"
+                            - id: 6
+                              description: "Set primary keys"
+
+  /apl2/assessments:
+    get:
+      tags:
+        - FR.APL.02
+      summary: Mendapatkan daftar asesmen
+      description: Mendapatkan daftar asesmen dengan occupation dan unit_competencies
+      responses:
+        200:
+          description: Daftar asesmen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    occupation:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        scheme:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            code:
+                              type: string
+                            name:
+                              type: string
+                    code:
+                      type: string
+                    unit_competencies:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          unit_code:
+                            type: string
+                          title:
+                            type: string
+                          elements:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                title:
+                                  type: string
+                                details:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      id:
+                                        type: integer
+                                      description:
+                                        type: string
+
+  /apl2/assessments/{id}:
+    get:
+      tags:
+        - FR.APL.02
+      summary: Mendapatkan asesmen
+      description: Mendapatkan asesmen dengan occupation dan unit_competencies
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        200:
+          description: Asesmen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  occupation:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      scheme:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          code:
+                            type: string
+                          name:
+                            type: string
+                  code:
+                    type: string
+                  unit_competencies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        unit_code:
+                          type: string
+                        title:
+                          type: string
+                        elements:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              title:
+                                type: string
+                              details:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: integer
+                                    description:
+                                      type: string
+
   /assessement:
     post:
       tags:
@@ -415,7 +1004,7 @@ paths:
               example:
                 success: false
                 message: "Server error"
-  
+
   /assessement/{id}:
     get:
       tags:
@@ -563,7 +1152,7 @@ paths:
                         type: string
                       start_date:
                         type: string
-                        format: date-time 
+                        format: date-time
                       end_date:
                         type: string
                         format: date-time
