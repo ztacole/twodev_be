@@ -127,18 +127,26 @@ model Assessment {
   id           Int         @id @default(autoincrement())
   scheme_id    Int
   code         String
-  status       AssessmentStatus
-  start_date   DateTime
-  end_date     DateTime
 
   scheme       Schemes     @relation(fields: [scheme_id], references: [id])
   assessor     Assessor?   @relation(fields: [assessor_id], references: [id])
   assessor_id  Int?
 
-  assessment_details Assessment_Details[]
-  unit_competencies  Unit_Competency[]
-  questions          Assessment_Question[]
-  results            Result[]
+  assessment_schedule Assessment_Schedule[]
+  assessment_details  Assessment_Details[]
+  unit_competencies   Unit_Competency[]
+  questions           Assessment_Question[]
+  results             Result[]
+}
+
+model Assessment_Schedule {
+  id            Int        @id @default(autoincrement())
+  assessment_id Int
+  status       AssessmentStatus
+  start_date   DateTime
+  end_date     DateTime
+
+  assessment   Assessment  @relation(fields: [assessment_id], references: [id])
 }
 
 model Assessment_Details {
