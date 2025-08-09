@@ -1,4 +1,4 @@
-import { prisma } from '../../config/db';
+import { prisma } from '../../../config/db';
 import { AssessmentRequest, AssessmentResponse } from './apl2.type';
 
 export class APL2Service {
