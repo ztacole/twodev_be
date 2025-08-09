@@ -28,19 +28,72 @@ async function main() {
   const schemes = await prisma.schemes.findMany();
 
   // Seed Occupations
+  const occupationsData = [];
   for (const scheme of schemes) {
-    await prisma.occupation.create({
+    const occupation = await prisma.occupation.create({
       data: {
         scheme_id: scheme.id,
         name: faker.person.jobTitle(),
       },
     });
+    occupationsData.push(occupation);
   }
 
+  // Seed Assessments
+  const assessmentsData = [];
+  for (const occupation of occupationsData) {
+    const assessment = await prisma.assessment.create({
+      data: {
+        occupation_id: occupation.id,
+        code: faker.string.alphanumeric(10),
+      },
+    });
+    assessmentsData.push(assessment);
+  }
+
+  // Seed Assessment Questions
+  const questionsData = [];
+  for (const assessment of assessmentsData) {
+    for (let i = 0; i < 3; i++) { // Create 3 questions per assessment
+      const question = await prisma.assessment_Question.create({
+        data: {
+          assessment_id: assessment.id,
+          type: 'PG', // Assuming PG for multiple choice
+          question: faker.lorem.sentence(),
+        },
+      });
+      questionsData.push(question);
+    }
+  }
+
+  // Seed Unit Competencies and Elements
+  const unitCompetenciesData = [];
+  for (const assessment of assessmentsData) {
+    const unitCompetency = await prisma.unit_Competency.create({
+      data: {
+        assessment_id: assessment.id,
+        unit_code: faker.string.alphanumeric(5),
+        title: faker.lorem.sentence(),
+      },
+    });
+    unitCompetenciesData.push(unitCompetency);
+    
+    // Create elements for each unit competency
+    for (let i = 0; i < 2; i++) {
+      await prisma.element.create({
+        data: {
+          unit_competency_id: unitCompetency.id,
+          title: faker.lorem.sentence(),
+        },
+      });
+    }
+  }
+  
   // Seed Users, Admins, Assessors, and Assessees
   const users: any[] = [];
   for (let i = 0; i < 10; i++) {
     const role_id = faker.helpers.arrayElement([1, 2, 3]);
+    const fullName = faker.person.fullName();
     const user = await prisma.user.create({
       data: {
         email: faker.internet.email(),
@@ -53,7 +106,7 @@ async function main() {
       await prisma.admin.create({
         data: {
           user_id: user.id,
-          full_name: faker.person.fullName(),
+          full_name: fullName,
           address: faker.location.streetAddress(),
           phone_no: faker.phone.number(),
           birth_date: faker.date.past({ years: 30 }),
@@ -65,7 +118,7 @@ async function main() {
         data: {
           user_id: user.id,
           scheme_id: faker.helpers.arrayElement(schemes).id,
-          full_name: faker.person.fullName(),
+          full_name: fullName,
           address: faker.location.streetAddress(),
           phone_no: faker.phone.number(),
           birth_date: faker.date.past({ years: 30 }),
@@ -85,7 +138,7 @@ async function main() {
       const assessee = await prisma.assessee.create({
         data: {
           user_id: user.id,
-          full_name: faker.person.fullName(),
+          full_name: fullName,
           identity_number: faker.string.numeric(16),
           birth_date: faker.date.past({ years: 25 }),
           birth_location: faker.location.city(),
@@ -109,7 +162,7 @@ async function main() {
           assessee_id: assessee.id,
           institution_name: faker.company.name(),
           address: faker.location.streetAddress(),
-          postal_code: faker.address.zipCode(),
+          postal_code: faker.location.zipCode(),
           position: faker.person.jobTitle(),
           phone_no: faker.phone.number(),
           job_email: faker.internet.email(),
@@ -148,30 +201,36 @@ async function main() {
         },
       });
       // Result Details
+      // Skip creating result details if no elements exist
       const elements = await prisma.element.findMany();
-      for (let i = 0; i < 2; i++) {
-        await prisma.result_Details.create({
+      if (elements.length > 0) {
+        for (let i = 0; i < 2; i++) {
+          await prisma.result_Details.create({
+            data: {
+              result_id: result.id,
+              element_id: faker.helpers.arrayElement(elements).id,
+              answer: faker.datatype.boolean(),
+              proof: faker.image.url(),
+            },
+          });
+        }
+      }
+      // Result Docs
+      // Only create result docs if we have assessors
+      if (assessors.length > 0) {
+        await prisma.result_Docs.create({
           data: {
             result_id: result.id,
-            element_id: faker.helpers.arrayElement(elements).id,
-            answer: faker.datatype.boolean(),
-            proof: faker.image.url(),
+            assessor_id: faker.helpers.arrayElement(assessors).id,
+            purpose: faker.lorem.sentence(),
+            school_report_card: faker.image.url(),
+            field_work_practice_certificate: faker.image.url(),
+            student_card: faker.image.url(),
+            family_card: faker.image.url(),
+            id_card: faker.image.url(),
           },
         });
       }
-      // Result Docs
-      await prisma.result_Docs.create({
-        data: {
-          result_id: result.id,
-          assessor_id: faker.helpers.arrayElement(assessors).id,
-          purpose: faker.lorem.sentence(),
-          school_report_card: faker.image.url(),
-          field_work_practice_certificate: faker.image.url(),
-          student_card: faker.image.url(),
-          family_card: faker.image.url(),
-          id_card: faker.image.url(),
-        },
-      });
     }
   }
   console.log('Created answers, results, result details, and result docs');
