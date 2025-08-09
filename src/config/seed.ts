@@ -111,7 +111,6 @@ async function main() {
     }
   }
   console.log('Created users, admins, assessors, assessees, and jobs');
-
   // Seed Assessments
   const assessors = await prisma.assessor.findMany();
   const allAssessments = [];

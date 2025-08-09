@@ -8,6 +8,10 @@ servers:
 tags:
   - name: auth
     description: Semua endpoint terkait autentikasi pengguna
+  - name: FR.APL.01
+    description: Semua endpoint terkait permohonan sertifikasi kompetensi
+  - name: FR.APL.02
+    description: Semua endpoint terkait asesmen mandiri
   - name: assessement
     description: Semua endpoint terkait manajemen asesmen
   - name: assessor
@@ -267,6 +271,173 @@ paths:
                 success: false
                 message: "Server error"
 
+  /apl1/create-self-data:
+    post:
+      tags:
+        - FR.APL.01
+      summary: Membuat asesmen
+      description: Membuat asesmen dengan user_id, full_name, identity_number, birth_date, birth_location, gender, nationality, phone_no, address, educational_qualifications, jobs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - full_name
+                - identity_number
+                - birth_date
+                - birth_location
+                - gender
+                - nationality
+                - phone_no
+                - address
+                - educational_qualifications
+                - jobs
+              properties:
+                user_id:
+                  type: integer
+                full_name:
+                  type: string
+                identity_number:
+                  type: string
+                birth_date:
+                  type: string
+                  format: date-time
+                birth_location:
+                  type: string
+                gender:
+                  type: string
+                nationality:
+                  type: string
+                phone_no:
+                  type: string
+                address:
+                  type: string
+                educational_qualifications:
+                  type: string
+                jobs:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      institution_name:
+                        type: string
+                      address:
+                        type: string
+                      position:
+                        type: string
+                      phone_no:
+                        type: string
+            example:
+              user_id: 1
+              full_name: "John Doe"
+              identity_number: "1234567890"
+              birth_date: "1990-05-20T00:00:00Z"
+              birth_location: "Jakarta"
+              gender: "Male"
+              nationality: "Indonesian"
+              phone_no: "081234567890"
+              address: "Jl. Mawar No. 10, Jakarta"
+              educational_qualifications: "Bachelor of Computer Science"
+              jobs:
+                - institution_name: "PT. ABC"
+                  address: "Jl. Mawar No. 10, Jakarta"
+                  position: "Software Engineer"
+                  phone_no: "081234567890"
+      responses:
+        "201":
+          description: Asesmen berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      user_id:
+                        type: integer
+                      full_name:
+                        type: string
+                      identity_number:
+                        type: string
+                      birth_date:
+                        type: string
+                        format: date-time
+                      birth_location:
+                        type: string
+                      gender:
+                        type: string
+                      nationality:
+                        type: string
+                      phone_no:
+                        type: string
+                      address:
+                        type: string
+                      educational_qualifications:
+                        type: string
+                      jobs:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            assessee_id:
+                              type: integer
+                            institution_name:
+                              type: string
+                            address:
+                              type: string
+                            position:
+                              type: string
+                            phone_no:
+                              type: string
+              example:
+                success: true
+                message: "Asesmen berhasil dibuat"
+                data:
+                  id: 1
+                  user_id: 1
+                  full_name: "John Doe"
+                  identity_number: "1234567890"
+                  birth_date: "1990-05-20T00:00:00Z"
+                  birth_location: "Jakarta"
+                  gender: "Male"
+                  nationality: "Indonesian"
+                  phone_no: "081234567890"
+                  address: "Jl. Mawar No. 10, Jakarta"
+                  educational_qualifications: "Bachelor of Computer Science"
+                  jobs:
+                    - id: 1
+                      assessee_id: 1
+                      institution_name: "PT. ABC"
+                      address: "Jl. Mawar No. 10, Jakarta"
+                      position: "Software Engineer"
+                      phone_no: "081234567890"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Server error"
+
   /assessement:
     post:
       tags:
@@ -415,7 +586,7 @@ paths:
               example:
                 success: false
                 message: "Server error"
-  
+
   /assessement/{id}:
     get:
       tags:
@@ -563,7 +734,7 @@ paths:
                         type: string
                       start_date:
                         type: string
-                        format: date-time 
+                        format: date-time
                       end_date:
                         type: string
                         format: date-time
