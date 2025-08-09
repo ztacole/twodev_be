@@ -12,7 +12,7 @@ tags:
     description: Semua endpoint terkait permohonan sertifikasi kompetensi
   - name: FR.APL.02
     description: Semua endpoint terkait asesmen mandiri
-  - name: assessement
+  - name: assessment
     description: Semua endpoint terkait manajemen asesmen
   - name: assessor
     description: Semua endpoint terkait manajemen assessor
@@ -271,7 +271,7 @@ paths:
                 success: false
                 message: "Server error"
 
-  /apl1/create-self-data:
+  /assessment/apl1/create-self-data:
     post:
       tags:
         - FR.APL.01
@@ -449,7 +449,7 @@ paths:
                       phone_no: "081234567890"
                       job_email: "user@example.com"
 
-  /apl1/create-certificate-data:
+  /assessment/apl1/create-certificate-data:
     post:
       tags:
         - FR.APL.01
@@ -557,7 +557,7 @@ paths:
                 success: false
                 message: "Server error"
 
-  /apl2/create-assessment:
+  /assessment/apl2/create-assessment:
     post:
       tags:
         - FR.APL.02
@@ -720,7 +720,7 @@ paths:
                             - id: 6
                               description: "Set primary keys"
 
-  /apl2/assessments:
+  /assessment/apl2/assessments:
     get:
       tags:
         - FR.APL.02
@@ -786,7 +786,7 @@ paths:
                                       description:
                                         type: string
 
-  /apl2/assessments/{id}:
+  /assessment/apl2/assessments/{id}:
     get:
       tags:
         - FR.APL.02
@@ -856,1085 +856,1085 @@ paths:
                                     description:
                                       type: string
 
-  /assessement:
-    post:
-      tags:
-        - assessement
-      summary: Membuat asesmen
-      description: Membuat asesmen dengan schema_id, code, status, start_date, end_date
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - schema_id
-                - code
-                - status
-                - start_date
-                - end_date
-              properties:
-                schema_id:
-                  type: integer
-                code:
-                  type: string
-                status:
-                  type: string
-                start_date:
-                  type: string
-                  format: date-time
-                end_date:
-                  type: string
-                  format: date-time
-            example:
-              schema_id: 1
-              code: "ASSESS-001"
-              status: "active"
-              start_date: "2023-10-01T00:00:00Z"
-              end_date: "2023-10-31T23:59:59Z"
-      responses:
-        "201":
-          description: Asesmen berhasil dibuat
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      schema_id:
-                        type: integer
-                      code:
-                        type: string
-                      status:
-                        type: string
-                      start_date:
-                        type: string
-                        format: date-time
-                      end_date:
-                        type: string
-                        format: date-time
-              example:
-                success: true
-                message: "Asesmen berhasil dibuat"
-                data:
-                  id: 1
-                  schema_id: 1
-                  code: "ASSESS-001"
-                  status: "active"
-                  start_date: "2023-10-01T00:00:00Z"
-                  end_date: "2023-10-31T23:59:59Z"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
-    get:
-      tags:
-        - assessement
-      summary: Mendapatkan daftar asesmen
-      description: Mengambil semua asesmen yang tersedia
-      responses:
-        "200":
-          description: Daftar asesmen berhasil diambil
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        schema_id:
-                          type: integer
-                        code:
-                          type: string
-                        status:
-                          type: string
-                        start_date:
-                          type: string
-                          format: date-time
-                        end_date:
-                          type: string
-                          format: date-time
-              example:
-                success: true
-                message: "Daftar asesmen berhasil diambil"
-                data:
-                  - id: 1
-                    schema_id: 1
-                    code: "ASSESS-001"
-                    status: "active"
-                    start_date: "2023-10-01T00:00:00Z"
-                    end_date: "2023-10-31T23:59:59Z"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
+  # /assessement:
+  #   post:
+  #     tags:
+  #       - assessement
+  #     summary: Membuat asesmen
+  #     description: Membuat asesmen dengan schema_id, code, status, start_date, end_date
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required:
+  #               - schema_id
+  #               - code
+  #               - status
+  #               - start_date
+  #               - end_date
+  #             properties:
+  #               schema_id:
+  #                 type: integer
+  #               code:
+  #                 type: string
+  #               status:
+  #                 type: string
+  #               start_date:
+  #                 type: string
+  #                 format: date-time
+  #               end_date:
+  #                 type: string
+  #                 format: date-time
+  #           example:
+  #             schema_id: 1
+  #             code: "ASSESS-001"
+  #             status: "active"
+  #             start_date: "2023-10-01T00:00:00Z"
+  #             end_date: "2023-10-31T23:59:59Z"
+  #     responses:
+  #       "201":
+  #         description: Asesmen berhasil dibuat
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     id:
+  #                       type: integer
+  #                     schema_id:
+  #                       type: integer
+  #                     code:
+  #                       type: string
+  #                     status:
+  #                       type: string
+  #                     start_date:
+  #                       type: string
+  #                       format: date-time
+  #                     end_date:
+  #                       type: string
+  #                       format: date-time
+  #             example:
+  #               success: true
+  #               message: "Asesmen berhasil dibuat"
+  #               data:
+  #                 id: 1
+  #                 schema_id: 1
+  #                 code: "ASSESS-001"
+  #                 status: "active"
+  #                 start_date: "2023-10-01T00:00:00Z"
+  #                 end_date: "2023-10-31T23:59:59Z"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
+  #   get:
+  #     tags:
+  #       - assessement
+  #     summary: Mendapatkan daftar asesmen
+  #     description: Mengambil semua asesmen yang tersedia
+  #     responses:
+  #       "200":
+  #         description: Daftar asesmen berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 data:
+  #                   type: array
+  #                   items:
+  #                     type: object
+  #                     properties:
+  #                       id:
+  #                         type: integer
+  #                       schema_id:
+  #                         type: integer
+  #                       code:
+  #                         type: string
+  #                       status:
+  #                         type: string
+  #                       start_date:
+  #                         type: string
+  #                         format: date-time
+  #                       end_date:
+  #                         type: string
+  #                         format: date-time
+  #             example:
+  #               success: true
+  #               message: "Daftar asesmen berhasil diambil"
+  #               data:
+  #                 - id: 1
+  #                   schema_id: 1
+  #                   code: "ASSESS-001"
+  #                   status: "active"
+  #                   start_date: "2023-10-01T00:00:00Z"
+  #                   end_date: "2023-10-31T23:59:59Z"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-  /assessement/{id}:
-    get:
-      tags:
-        - assessement
-      summary: Mendapatkan detail asesmen
-      description: Mengambil detail asesmen berdasarkan ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID asesmen yang ingin diambil
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Detail asesmen berhasil diambil
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      schema_id:
-                        type: integer
-                      code:
-                        type: string
-                      status:
-                        type: string
-                      start_date:
-                        type: string
-                        format: date-time
-                      end_date:
-                        type: string
-                        format: date-time
-              example:
-                success: true
-                message: "Detail asesmen berhasil diambil"
-                data:
-                  id: 1
-                  schema_id: 1
-                  code: "ASSESS-001"
-                  status: "active"
-                  start_date: "2023-10-01T00:00:00Z"
-                  end_date: "2023-10-31T23:59:59Z"
-        "404":
-          description: Asesmen tidak ditemukan
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Assessment not found"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
+  # /assessement/{id}:
+  #   get:
+  #     tags:
+  #       - assessement
+  #     summary: Mendapatkan detail asesmen
+  #     description: Mengambil detail asesmen berdasarkan ID
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         description: ID asesmen yang ingin diambil
+  #         schema:
+  #           type: integer
+  #     responses:
+  #       "200":
+  #         description: Detail asesmen berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     id:
+  #                       type: integer
+  #                     schema_id:
+  #                       type: integer
+  #                     code:
+  #                       type: string
+  #                     status:
+  #                       type: string
+  #                     start_date:
+  #                       type: string
+  #                       format: date-time
+  #                     end_date:
+  #                       type: string
+  #                       format: date-time
+  #             example:
+  #               success: true
+  #               message: "Detail asesmen berhasil diambil"
+  #               data:
+  #                 id: 1
+  #                 schema_id: 1
+  #                 code: "ASSESS-001"
+  #                 status: "active"
+  #                 start_date: "2023-10-01T00:00:00Z"
+  #                 end_date: "2023-10-31T23:59:59Z"
+  #       "404":
+  #         description: Asesmen tidak ditemukan
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Assessment not found"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-    put:
-      tags:
-        - assessement
-      summary: Memperbarui asesmen
-      description: Memperbarui asesmen dengan schema_id, code, status, start_date, dan end_date
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID asesmen yang ingin diperbarui
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - schema_id
-                - code
-                - status
-                - start_date
-                - end_date
-              properties:
-                schema_id:
-                  type: integer
-                code:
-                  type: string
-                status:
-                  type: string
-                start_date:
-                  type: string
-                  format: date-time
-                end_date:
-                  type: string
-                  format: date-time
-            example:
-              schema_id: 1
-              code: "ASSESS-001"
-              status: "active"
-              start_date: "2023-10-01T00:00:00Z"
-              end_date: "2023-10-31T23:59:59Z"
-      responses:
-        "200":
-          description: Asesmen berhasil diperbarui
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      schema_id:
-                        type: integer
-                      code:
-                        type: string
-                      status:
-                        type: string
-                      start_date:
-                        type: string
-                        format: date-time
-                      end_date:
-                        type: string
-                        format: date-time
-              example:
-                success: true
-                message: "Asesmen berhasil diperbarui"
-                data:
-                  id: 1
-                  schema_id: 1
-                  code: "ASSESS-001"
-                  status: "active"
-                  start_date: "2023-10-01T00:00:00Z"
-                  end_date: "2023-10-31T23:59:59Z"
-        "404":
-          description: Asesmen tidak ditemukan
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Assessment not found"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
+  #   put:
+  #     tags:
+  #       - assessement
+  #     summary: Memperbarui asesmen
+  #     description: Memperbarui asesmen dengan schema_id, code, status, start_date, dan end_date
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         description: ID asesmen yang ingin diperbarui
+  #         schema:
+  #           type: integer
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required:
+  #               - schema_id
+  #               - code
+  #               - status
+  #               - start_date
+  #               - end_date
+  #             properties:
+  #               schema_id:
+  #                 type: integer
+  #               code:
+  #                 type: string
+  #               status:
+  #                 type: string
+  #               start_date:
+  #                 type: string
+  #                 format: date-time
+  #               end_date:
+  #                 type: string
+  #                 format: date-time
+  #           example:
+  #             schema_id: 1
+  #             code: "ASSESS-001"
+  #             status: "active"
+  #             start_date: "2023-10-01T00:00:00Z"
+  #             end_date: "2023-10-31T23:59:59Z"
+  #     responses:
+  #       "200":
+  #         description: Asesmen berhasil diperbarui
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     id:
+  #                       type: integer
+  #                     schema_id:
+  #                       type: integer
+  #                     code:
+  #                       type: string
+  #                     status:
+  #                       type: string
+  #                     start_date:
+  #                       type: string
+  #                       format: date-time
+  #                     end_date:
+  #                       type: string
+  #                       format: date-time
+  #             example:
+  #               success: true
+  #               message: "Asesmen berhasil diperbarui"
+  #               data:
+  #                 id: 1
+  #                 schema_id: 1
+  #                 code: "ASSESS-001"
+  #                 status: "active"
+  #                 start_date: "2023-10-01T00:00:00Z"
+  #                 end_date: "2023-10-31T23:59:59Z"
+  #       "404":
+  #         description: Asesmen tidak ditemukan
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Assessment not found"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-    delete:
-      tags:
-        - assessement
-      summary: Menghapus asesmen
-      description: Menghapus asesmen berdasarkan id asesmen
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID asesmen yang ingin dihapus
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Asesmen berhasil dihapus
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: true
-                message: "Asesmen berhasil dihapus"
-        "404":
-          description: Asesmen tidak ditemukan
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Assessment not found"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
+  #   delete:
+  #     tags:
+  #       - assessement
+  #     summary: Menghapus asesmen
+  #     description: Menghapus asesmen berdasarkan id asesmen
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         description: ID asesmen yang ingin dihapus
+  #         schema:
+  #           type: integer
+  #     responses:
+  #       "200":
+  #         description: Asesmen berhasil dihapus
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: true
+  #               message: "Asesmen berhasil dihapus"
+  #       "404":
+  #         description: Asesmen tidak ditemukan
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Assessment not found"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-  /assessor:
-    post:
-      tags:
-        - assessor
-      summary: Membuat asesor
-      description: Membuat data asesor dengan user_id, scheme_id, address, phone_no, dan birth_date
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - user_id
-                - scheme_id
-                - address
-                - phone_no
-                - birth_date
-              properties:
-                user_id:
-                  type: integer
-                scheme_id:
-                  type: integer
-                address:
-                  type: string
-                phone_no:
-                  type: string
-                birth_date:
-                  type: string
-                  format: date
-            example:
-              user_id: 5
-              scheme_id: 2
-              address: "Jl. Mawar No. 10, Jakarta"
-              phone_no: "081234567890"
-              birth_date: "1990-05-20"
-      responses:
-        "201":
-          description: Asesor berhasil dibuat
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      user_id:
-                        type: integer
-                      scheme_id:
-                        type: integer
-                      address:
-                        type: string
-                      phone_no:
-                        type: string
-                      birth_date:
-                        type: string
-                        format: date
-              example:
-                success: true
-                message: "Asesor berhasil dibuat"
-                data:
-                  id: 1
-                  user_id: 5
-                  scheme_id: 2
-                  address: "Jl. Mawar No. 10, Jakarta"
-                  phone_no: "081234567890"
-                  birth_date: "1990-05-20"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
+  # /assessor:
+  #   post:
+  #     tags:
+  #       - assessor
+  #     summary: Membuat asesor
+  #     description: Membuat data asesor dengan user_id, scheme_id, address, phone_no, dan birth_date
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required:
+  #               - user_id
+  #               - scheme_id
+  #               - address
+  #               - phone_no
+  #               - birth_date
+  #             properties:
+  #               user_id:
+  #                 type: integer
+  #               scheme_id:
+  #                 type: integer
+  #               address:
+  #                 type: string
+  #               phone_no:
+  #                 type: string
+  #               birth_date:
+  #                 type: string
+  #                 format: date
+  #           example:
+  #             user_id: 5
+  #             scheme_id: 2
+  #             address: "Jl. Mawar No. 10, Jakarta"
+  #             phone_no: "081234567890"
+  #             birth_date: "1990-05-20"
+  #     responses:
+  #       "201":
+  #         description: Asesor berhasil dibuat
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     id:
+  #                       type: integer
+  #                     user_id:
+  #                       type: integer
+  #                     scheme_id:
+  #                       type: integer
+  #                     address:
+  #                       type: string
+  #                     phone_no:
+  #                       type: string
+  #                     birth_date:
+  #                       type: string
+  #                       format: date
+  #             example:
+  #               success: true
+  #               message: "Asesor berhasil dibuat"
+  #               data:
+  #                 id: 1
+  #                 user_id: 5
+  #                 scheme_id: 2
+  #                 address: "Jl. Mawar No. 10, Jakarta"
+  #                 phone_no: "081234567890"
+  #                 birth_date: "1990-05-20"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-    get:
-      tags:
-        - assessor
-      summary: Mendapatkan daftar asesor
-      description: Mengambil semua data asesor yang tersedia
-      responses:
-        "200":
-          description: Daftar asesor berhasil diambil
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        user_id:
-                          type: integer
-                        scheme_id:
-                          type: integer
-                        address:
-                          type: string
-                        phone_no:
-                          type: string
-                        birth_date:
-                          type: string
-                          format: date
-              example:
-                success: true
-                data:
-                  - id: 1
-                    user_id: 5
-                    scheme_id: 2
-                    address: "Jl. Mawar No. 10, Jakarta"
-                    phone_no: "081234567890"
-                    birth_date: "1990-05-20"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
+  #   get:
+  #     tags:
+  #       - assessor
+  #     summary: Mendapatkan daftar asesor
+  #     description: Mengambil semua data asesor yang tersedia
+  #     responses:
+  #       "200":
+  #         description: Daftar asesor berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 data:
+  #                   type: array
+  #                   items:
+  #                     type: object
+  #                     properties:
+  #                       id:
+  #                         type: integer
+  #                       user_id:
+  #                         type: integer
+  #                       scheme_id:
+  #                         type: integer
+  #                       address:
+  #                         type: string
+  #                       phone_no:
+  #                         type: string
+  #                       birth_date:
+  #                         type: string
+  #                         format: date
+  #             example:
+  #               success: true
+  #               data:
+  #                 - id: 1
+  #                   user_id: 5
+  #                   scheme_id: 2
+  #                   address: "Jl. Mawar No. 10, Jakarta"
+  #                   phone_no: "081234567890"
+  #                   birth_date: "1990-05-20"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-  /assessor/{id}:
-    get:
-      tags:
-        - assessor
-      summary: Mendapatkan detail asesor
-      description: Mengambil detail asesor berdasarkan ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID asesor yang ingin diambil
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Detail asesor berhasil diambil
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      user_id:
-                        type: integer
-                      scheme_id:
-                        type: integer
-                      address:
-                        type: string
-                      phone_no:
-                        type: string
-                      birth_date:
-                        type: string
-                        format: date
-              example:
-                success: true
-                data:
-                  id: 1
-                  user_id: 5
-                  scheme_id: 2
-                  address: "Jl. Mawar No. 10, Jakarta"
-                  phone_no: "081234567890"
-                  birth_date: "1990-05-20"
-        "404":
-          description: Asesor tidak ditemukan
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Assessor not found"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
+  # /assessor/{id}:
+  #   get:
+  #     tags:
+  #       - assessor
+  #     summary: Mendapatkan detail asesor
+  #     description: Mengambil detail asesor berdasarkan ID
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         description: ID asesor yang ingin diambil
+  #         schema:
+  #           type: integer
+  #     responses:
+  #       "200":
+  #         description: Detail asesor berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     id:
+  #                       type: integer
+  #                     user_id:
+  #                       type: integer
+  #                     scheme_id:
+  #                       type: integer
+  #                     address:
+  #                       type: string
+  #                     phone_no:
+  #                       type: string
+  #                     birth_date:
+  #                       type: string
+  #                       format: date
+  #             example:
+  #               success: true
+  #               data:
+  #                 id: 1
+  #                 user_id: 5
+  #                 scheme_id: 2
+  #                 address: "Jl. Mawar No. 10, Jakarta"
+  #                 phone_no: "081234567890"
+  #                 birth_date: "1990-05-20"
+  #       "404":
+  #         description: Asesor tidak ditemukan
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Assessor not found"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-    put:
-      tags:
-        - assessor
-      summary: Memperbarui data asesor
-      description: Memperbarui data asesor berdasarkan ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID asesor yang ingin diperbarui
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - user_id
-                - scheme_id
-                - address
-                - phone_no
-                - birth_date
-              properties:
-                user_id:
-                  type: integer
-                scheme_id:
-                  type: integer
-                address:
-                  type: string
-                phone_no:
-                  type: string
-                birth_date:
-                  type: string
-                  format: date
-            example:
-              user_id: 5
-              scheme_id: 2
-              address: "Jl. Melati No. 12, Bandung"
-              phone_no: "082345678901"
-              birth_date: "1990-05-20"
-      responses:
-        "200":
-          description: Asesor berhasil diperbarui
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      user_id:
-                        type: integer
-                      scheme_id:
-                        type: integer
-                      address:
-                        type: string
-                      phone_no:
-                        type: string
-                      birth_date:
-                        type: string
-                        format: date
-              example:
-                success: true
-                message: "Asesor berhasil diperbarui"
-                data:
-                  id: 1
-                  user_id: 5
-                  scheme_id: 2
-                  address: "Jl. Melati No. 12, Bandung"
-                  phone_no: "082345678901"
-                  birth_date: "1990-05-20"
-        "404":
-          description: Asesor tidak ditemukan
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Assessor not found"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
+  #   put:
+  #     tags:
+  #       - assessor
+  #     summary: Memperbarui data asesor
+  #     description: Memperbarui data asesor berdasarkan ID
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         description: ID asesor yang ingin diperbarui
+  #         schema:
+  #           type: integer
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required:
+  #               - user_id
+  #               - scheme_id
+  #               - address
+  #               - phone_no
+  #               - birth_date
+  #             properties:
+  #               user_id:
+  #                 type: integer
+  #               scheme_id:
+  #                 type: integer
+  #               address:
+  #                 type: string
+  #               phone_no:
+  #                 type: string
+  #               birth_date:
+  #                 type: string
+  #                 format: date
+  #           example:
+  #             user_id: 5
+  #             scheme_id: 2
+  #             address: "Jl. Melati No. 12, Bandung"
+  #             phone_no: "082345678901"
+  #             birth_date: "1990-05-20"
+  #     responses:
+  #       "200":
+  #         description: Asesor berhasil diperbarui
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     id:
+  #                       type: integer
+  #                     user_id:
+  #                       type: integer
+  #                     scheme_id:
+  #                       type: integer
+  #                     address:
+  #                       type: string
+  #                     phone_no:
+  #                       type: string
+  #                     birth_date:
+  #                       type: string
+  #                       format: date
+  #             example:
+  #               success: true
+  #               message: "Asesor berhasil diperbarui"
+  #               data:
+  #                 id: 1
+  #                 user_id: 5
+  #                 scheme_id: 2
+  #                 address: "Jl. Melati No. 12, Bandung"
+  #                 phone_no: "082345678901"
+  #                 birth_date: "1990-05-20"
+  #       "404":
+  #         description: Asesor tidak ditemukan
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Assessor not found"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-    delete:
-      tags:
-        - assessor
-      summary: Menghapus data asesor
-      description: Menghapus data asesor berdasarkan ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID asesor yang ingin dihapus
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Asesor berhasil dihapus
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: true
-                message: "Asesor berhasil dihapus"
-        "404":
-          description: Asesor tidak ditemukan
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Assessor not found"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-              example:
-                success: false
-                message: "Server error"
+  #   delete:
+  #     tags:
+  #       - assessor
+  #     summary: Menghapus data asesor
+  #     description: Menghapus data asesor berdasarkan ID
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         description: ID asesor yang ingin dihapus
+  #         schema:
+  #           type: integer
+  #     responses:
+  #       "200":
+  #         description: Asesor berhasil dihapus
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: true
+  #               message: "Asesor berhasil dihapus"
+  #       "404":
+  #         description: Asesor tidak ditemukan
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Assessor not found"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-  /assesse:
-    post:
-      tags:
-        - assessee
-      summary: Membuat assesse
-      description: Membuat data assesse baru dengan informasi lengkap
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - user_id
-                - identity_number
-                - birth_date
-                - birth_location
-                - gender
-                - nationality
-                - phone_no
-                - address
-                - educational_qualifications
-              properties:
-                user_id:
-                  type: string
-                identity_number:
-                  type: string
-                birth_date:
-                  type: string
-                  format: date
-                birth_location:
-                  type: string
-                gender:
-                  type: string
-                  enum: [Male, Female]
-                nationality:
-                  type: string
-                phone_no:
-                  type: string
-                address:
-                  type: string
-                educational_qualifications:
-                  type: string
-            example:
-              user_id: "USR001"
-              identity_number: "1234567890123456"
-              birth_date: "1995-04-10"
-              birth_location: "Surabaya"
-              gender: "Male"
-              nationality: "Indonesia"
-              phone_no: "081234567890"
-              address: "Jl. Merdeka No. 20"
-              educational_qualifications: "Sarjana Komputer"
-      responses:
-        "201":
-          description: Assesse berhasil dibuat
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  data:
-                    type: object
-              example:
-                success: true
-                message: "Assesse berhasil dibuat"
-                data:
-                  id: 1
-                  user_id: "USR001"
-                  identity_number: "1234567890123456"
-                  birth_date: "1995-04-10"
-                  birth_location: "Surabaya"
-                  gender: "Male"
-                  nationality: "Indonesia"
-                  phone_no: "081234567890"
-                  address: "Jl. Merdeka No. 20"
-                  educational_qualifications: "Sarjana Komputer"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              example:
-                success: false
-                message: "Server error"
+  # /assesse:
+  #   post:
+  #     tags:
+  #       - assessee
+  #     summary: Membuat assesse
+  #     description: Membuat data assesse baru dengan informasi lengkap
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required:
+  #               - user_id
+  #               - identity_number
+  #               - birth_date
+  #               - birth_location
+  #               - gender
+  #               - nationality
+  #               - phone_no
+  #               - address
+  #               - educational_qualifications
+  #             properties:
+  #               user_id:
+  #                 type: string
+  #               identity_number:
+  #                 type: string
+  #               birth_date:
+  #                 type: string
+  #                 format: date
+  #               birth_location:
+  #                 type: string
+  #               gender:
+  #                 type: string
+  #                 enum: [Male, Female]
+  #               nationality:
+  #                 type: string
+  #               phone_no:
+  #                 type: string
+  #               address:
+  #                 type: string
+  #               educational_qualifications:
+  #                 type: string
+  #           example:
+  #             user_id: "USR001"
+  #             identity_number: "1234567890123456"
+  #             birth_date: "1995-04-10"
+  #             birth_location: "Surabaya"
+  #             gender: "Male"
+  #             nationality: "Indonesia"
+  #             phone_no: "081234567890"
+  #             address: "Jl. Merdeka No. 20"
+  #             educational_qualifications: "Sarjana Komputer"
+  #     responses:
+  #       "201":
+  #         description: Assesse berhasil dibuat
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #             example:
+  #               success: true
+  #               message: "Assesse berhasil dibuat"
+  #               data:
+  #                 id: 1
+  #                 user_id: "USR001"
+  #                 identity_number: "1234567890123456"
+  #                 birth_date: "1995-04-10"
+  #                 birth_location: "Surabaya"
+  #                 gender: "Male"
+  #                 nationality: "Indonesia"
+  #                 phone_no: "081234567890"
+  #                 address: "Jl. Merdeka No. 20"
+  #                 educational_qualifications: "Sarjana Komputer"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-    get:
-      tags:
-        - assessee
-      summary: Mendapatkan daftar assesse
-      description: Mengambil semua data assesse yang tersedia
-      responses:
-        "200":
-          description: Daftar assesse berhasil diambil
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: array
-                    items:
-                      type: object
-              example:
-                success: true
-                data:
-                  - id: 1
-                    user_id: "USR001"
-                    identity_number: "1234567890123456"
-                    birth_date: "1995-04-10"
-                    birth_location: "Surabaya"
-                    gender: "Male"
-                    nationality: "Indonesia"
-                    phone_no: "081234567890"
-                    address: "Jl. Merdeka No. 20"
-                    educational_qualifications: "Sarjana Komputer"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              example:
-                success: false
-                message: "Server error"
+  #   get:
+  #     tags:
+  #       - assessee
+  #     summary: Mendapatkan daftar assesse
+  #     description: Mengambil semua data assesse yang tersedia
+  #     responses:
+  #       "200":
+  #         description: Daftar assesse berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 data:
+  #                   type: array
+  #                   items:
+  #                     type: object
+  #             example:
+  #               success: true
+  #               data:
+  #                 - id: 1
+  #                   user_id: "USR001"
+  #                   identity_number: "1234567890123456"
+  #                   birth_date: "1995-04-10"
+  #                   birth_location: "Surabaya"
+  #                   gender: "Male"
+  #                   nationality: "Indonesia"
+  #                   phone_no: "081234567890"
+  #                   address: "Jl. Merdeka No. 20"
+  #                   educational_qualifications: "Sarjana Komputer"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-  /assesse/{id}:
-    get:
-      tags:
-        - assessee
-      summary: Mendapatkan detail assesse
-      description: Mengambil detail assesse berdasarkan ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Detail assesse berhasil diambil
-          content:
-            application/json:
-              example:
-                success: true
-                data:
-                  id: 1
-                  user_id: "USR001"
-                  identity_number: "1234567890123456"
-                  birth_date: "1995-04-10"
-                  birth_location: "Surabaya"
-                  gender: "Male"
-                  nationality: "Indonesia"
-                  phone_no: "081234567890"
-                  address: "Jl. Merdeka No. 20"
-                  educational_qualifications: "Sarjana Komputer"
-        "404":
-          description: Assesse tidak ditemukan
-          content:
-            application/json:
-              example:
-                success: false
-                message: "Assesse not found"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              example:
-                success: false
-                message: "Server error"
+  # /assesse/{id}:
+  #   get:
+  #     tags:
+  #       - assessee
+  #     summary: Mendapatkan detail assesse
+  #     description: Mengambil detail assesse berdasarkan ID
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #     responses:
+  #       "200":
+  #         description: Detail assesse berhasil diambil
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: true
+  #               data:
+  #                 id: 1
+  #                 user_id: "USR001"
+  #                 identity_number: "1234567890123456"
+  #                 birth_date: "1995-04-10"
+  #                 birth_location: "Surabaya"
+  #                 gender: "Male"
+  #                 nationality: "Indonesia"
+  #                 phone_no: "081234567890"
+  #                 address: "Jl. Merdeka No. 20"
+  #                 educational_qualifications: "Sarjana Komputer"
+  #       "404":
+  #         description: Assesse tidak ditemukan
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: false
+  #               message: "Assesse not found"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-    put:
-      tags:
-        - assessee
-      summary: Memperbarui data assesse
-      description: Memperbarui data assesse berdasarkan ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - user_id
-                - identity_number
-                - birth_date
-                - birth_location
-                - gender
-                - nationality
-                - phone_no
-                - address
-                - educational_qualifications
-              properties:
-                user_id:
-                  type: string
-                identity_number:
-                  type: string
-                birth_date:
-                  type: string
-                  format: date
-                birth_location:
-                  type: string
-                gender:
-                  type: string
-                  enum: [Male, Female]
-                nationality:
-                  type: string
-                phone_no:
-                  type: string
-                address:
-                  type: string
-                educational_qualifications:
-                  type: string
-            example:
-              user_id: "USR001"
-              identity_number: "1234567890123456"
-              birth_date: "1995-04-10"
-              birth_location: "Surabaya"
-              gender: "Male"
-              nationality: "Indonesia"
-              phone_no: "081234567890"
-              address: "Jl. Merdeka No. 20"
-              educational_qualifications: "Sarjana Komputer"
-      responses:
-        "200":
-          description: Assesse berhasil diperbarui
-          content:
-            application/json:
-              example:
-                success: true
-                message: "Assesse berhasil diperbarui"
-                data:
-                  id: 1
-                  user_id: "USR001"
-                  identity_number: "1234567890123456"
-                  birth_date: "1995-04-10"
-                  birth_location: "Surabaya"
-                  gender: "Male"
-                  nationality: "Indonesia"
-                  phone_no: "081234567890"
-                  address: "Jl. Merdeka No. 20"
-                  educational_qualifications: "Sarjana Komputer"
-        "404":
-          description: Assesse tidak ditemukan
-          content:
-            application/json:
-              example:
-                success: false
-                message: "Assesse not found"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              example:
-                success: false
-                message: "Server error"
+  #   put:
+  #     tags:
+  #       - assessee
+  #     summary: Memperbarui data assesse
+  #     description: Memperbarui data assesse berdasarkan ID
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required:
+  #               - user_id
+  #               - identity_number
+  #               - birth_date
+  #               - birth_location
+  #               - gender
+  #               - nationality
+  #               - phone_no
+  #               - address
+  #               - educational_qualifications
+  #             properties:
+  #               user_id:
+  #                 type: string
+  #               identity_number:
+  #                 type: string
+  #               birth_date:
+  #                 type: string
+  #                 format: date
+  #               birth_location:
+  #                 type: string
+  #               gender:
+  #                 type: string
+  #                 enum: [Male, Female]
+  #               nationality:
+  #                 type: string
+  #               phone_no:
+  #                 type: string
+  #               address:
+  #                 type: string
+  #               educational_qualifications:
+  #                 type: string
+  #           example:
+  #             user_id: "USR001"
+  #             identity_number: "1234567890123456"
+  #             birth_date: "1995-04-10"
+  #             birth_location: "Surabaya"
+  #             gender: "Male"
+  #             nationality: "Indonesia"
+  #             phone_no: "081234567890"
+  #             address: "Jl. Merdeka No. 20"
+  #             educational_qualifications: "Sarjana Komputer"
+  #     responses:
+  #       "200":
+  #         description: Assesse berhasil diperbarui
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: true
+  #               message: "Assesse berhasil diperbarui"
+  #               data:
+  #                 id: 1
+  #                 user_id: "USR001"
+  #                 identity_number: "1234567890123456"
+  #                 birth_date: "1995-04-10"
+  #                 birth_location: "Surabaya"
+  #                 gender: "Male"
+  #                 nationality: "Indonesia"
+  #                 phone_no: "081234567890"
+  #                 address: "Jl. Merdeka No. 20"
+  #                 educational_qualifications: "Sarjana Komputer"
+  #       "404":
+  #         description: Assesse tidak ditemukan
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: false
+  #               message: "Assesse not found"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: false
+  #               message: "Server error"
 
-    delete:
-      tags:
-        - assessee
-      summary: Menghapus data assesse
-      description: Menghapus assesse berdasarkan ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Assesse berhasil dihapus
-          content:
-            application/json:
-              example:
-                success: true
-                message: "Assesse berhasil dihapus"
-        "404":
-          description: Assesse tidak ditemukan
-          content:
-            application/json:
-              example:
-                success: false
-                message: "Assesse not found"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              example:
-                success: false
-                message: "Server error"
+  #   delete:
+  #     tags:
+  #       - assessee
+  #     summary: Menghapus data assesse
+  #     description: Menghapus assesse berdasarkan ID
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #     responses:
+  #       "200":
+  #         description: Assesse berhasil dihapus
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: true
+  #               message: "Assesse berhasil dihapus"
+  #       "404":
+  #         description: Assesse tidak ditemukan
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: false
+  #               message: "Assesse not found"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             example:
+  #               success: false
+  #               message: "Server error"

@@ -1,4 +1,4 @@
-import { prisma } from '../../config/db';
+import { prisma } from '../../../config/db';
 
 export class APL1Service {
     async createOrUpdateAssesse(data: any) {
