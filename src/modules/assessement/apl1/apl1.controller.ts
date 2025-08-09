@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { APL1Service } from './apl1.service';
+import { upload } from './upload-config';
 
 export class Apl1Controller {
   private apl1Service: APL1Service;
@@ -66,6 +67,35 @@ export class Apl1Controller {
           family_card: certificate.family_card,
           id_card: certificate.id_card,
         },
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  async uploadCertificateDocs(req: Request, res: Response) {
+    try {
+      const assessorId = parseInt(req.params.assessorId);
+      const assesseeId = parseInt(req.params.assesseeId);
+      
+      if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
+        return res.status(400).json({
+          success: false,
+          message: 'No files were uploaded'
+        });
+      }
+      
+      const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+      
+      const result = await this.apl1Service.uploadCertificateDocs(assessorId, assesseeId, files);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Certificate documents uploaded successfully',
+        data: result
       });
     } catch (error: any) {
       res.status(500).json({
