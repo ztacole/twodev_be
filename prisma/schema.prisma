@@ -33,22 +33,25 @@ model Role {
 }
 
 model Assessee {
-  id                         Int      @id @default(autoincrement())
-  user_id                   Int       @unique
-  full_name  String
-  identity_number           String
-  birth_date                DateTime
-  birth_location            String
-  gender                    Gender
-  nationality               String
-  phone_no                  String
-  address                   String
+  id              Int      @id @default(autoincrement())
+  user_id         Int      @unique
+  full_name       String
+  identity_number String
+  birth_date      DateTime
+  birth_location  String
+  gender          Gender
+  nationality     String
+  phone_no        String
+  house_phone_no  String?
+  office_phone_no String?
+  address         String
+  postal_code     String?
   educational_qualifications String
 
-  user                      User     @relation(fields: [user_id], references: [id])
-  jobs                      Assessee_Job[]
-  answers                   Assessee_Answer[]
-  results                   Result[]
+  user            User     @relation(fields: [user_id], references: [id])
+  jobs            Assessee_Job[]
+  answers         Assessee_Answer[]
+  results         Result[]
 }
 
 model Assessor {
@@ -64,6 +67,7 @@ model Assessor {
   scheme      Schemes   @relation(fields: [scheme_id], references: [id])
   assessment_details Assessment_Details[]
   details     Assessor_Details?
+  result        Result_Docs[]
 }
 
 model Admin {
@@ -198,6 +202,22 @@ model Result {
   assessment    Assessment @relation(fields: [assessment_id], references: [id])
   assessee      Assessee   @relation(fields: [assessee_id], references: [id])
   details       Result_Details[]
+  result        Result_Docs[]
+}
+
+model Result_Docs {
+  id         Int       @id @default(autoincrement())
+  result_id  Int
+  assessor_id Int
+  purpose    String
+  school_report_card    String
+  field_work_practice_certificate    String
+  student_card    String
+  family_card    String
+  id_card    String
+
+  result     Result  @relation(fields: [result_id], references: [id])
+  assessor   Assessor @relation(fields: [assessor_id], references: [id])
 }
 
 model Result_Details {
@@ -213,11 +233,13 @@ model Result_Details {
 
 model Assessee_Job {
   id               Int    @id @default(autoincrement())
-  assessee_id      Int
+  assessee_id      Int    @unique
   institution_name String
   address          String
+  postal_code      String
   position         String
   phone_no         String
+  job_email        String
 
   assessee         Assessee @relation(fields: [assessee_id], references: [id])
 }

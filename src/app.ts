@@ -16,7 +16,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 import userRoutes from './modules/user/user.routes';
 import authRoutes from './modules/auth/auth.routes';
-// import majorRoutes from './modules/major/major.routes';
 import dashboardRoutes from './modules/admin/dashboard/dashboard.routes';
 import assesseeRoutes from './modules/assessee/assessee.routes';
 import unitCompetencyRoutes from './modules/unit-competency/unit-competency.routes';
@@ -26,7 +25,6 @@ import apl2Routes from './modules/apl2/apl2.routes';
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
-// app.use('/api/majors', majorRoutes);
 app.use('/api/assessees', assesseeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/unit-competencies', unitCompetencyRoutes);

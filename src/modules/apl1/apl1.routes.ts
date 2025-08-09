@@ -5,6 +5,6 @@ const router = Router();
 const controller = new Apl1Controller();
 
 router.post('/create-self-data', controller.createAssesseAPL1.bind(controller));
-// router.post('/create-certificate-data', controller.createAssesseCertificate.bind(controller));
+router.post('/create-certificate-data', controller.createAssesseCertificate.bind(controller));
 
 export default router;
