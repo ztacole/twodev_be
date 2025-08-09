@@ -1,5 +1,5 @@
 import { prisma } from '../../../config/db';
-import { AssessmentRequest, AssessmentResponse } from './apl2.type';
+import { AssessmentRequest, AssessmentResponse, ElementResponse } from './apl2.type';
 
 export class APL2Service {
   async createAssessment(data: AssessmentRequest): Promise<AssessmentResponse> {
@@ -90,6 +90,37 @@ export class APL2Service {
     });
 
     return assessments.map(formatAssessmentResponse);
+  }
+
+  async getUnitCompetenciesByAssessmentId(assessmentId: number): Promise<any[]> {
+    const unitCompetencies = await prisma.unit_Competency.findMany({
+      where: { assessment_id: assessmentId },
+    });
+
+    return unitCompetencies.map(unit => {
+      return {
+        id: unit.id,
+        unit_code: unit.unit_code,
+        title: unit.title,
+      };
+    })
+  }
+
+  async getElementsByUnitCompetencyId(unitCompetencyId: number): Promise<ElementResponse[]> {
+    const elements = await prisma.element.findMany({
+      where: { unit_competency_id: unitCompetencyId },
+      include: {
+        details: true
+      }
+    });
+
+    return elements.map(element => {
+      return {
+        id: element.id,
+        title: element.title,
+        element_details: element.details
+      };
+    })
   }
 }
 
