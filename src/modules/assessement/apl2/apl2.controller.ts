@@ -61,4 +61,48 @@ export class APL2Controller {
             });
         }
     }
+
+    async getUnitCompetenciesByAssessmentId(req: Request, res: Response) {
+        try {
+            const unitCompetencies = await this.apl2Service.getUnitCompetenciesByAssessmentId(Number(req.params.assessmentId));
+            if (!unitCompetencies) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Unit competencies not found',
+                });
+            }
+            res.status(200).json({
+                success: true,
+                message: 'Unit competencies retrieved successfully',
+                data: unitCompetencies,
+            });
+        } catch (error : any) {
+            res.status(500).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
+
+    async getElementsByUnitCompetencyId(req: Request, res: Response) {
+        try {
+            const elements = await this.apl2Service.getElementsByUnitCompetencyId(Number(req.params.unitCompetencyId));
+            if (!elements) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Elements not found',
+                });
+            }
+            res.status(200).json({
+                success: true,
+                message: 'Elements retrieved successfully',
+                data: elements,
+            });
+        } catch (error : any) {
+            res.status(500).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    }
 }
