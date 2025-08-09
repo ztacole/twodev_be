@@ -65,7 +65,8 @@ model Assessor {
 
   user        User      @relation(fields: [user_id], references: [id])
   scheme      Schemes   @relation(fields: [scheme_id], references: [id])
-  assessment_details Assessment_Details[]
+
+  assessment_details Schedule_Details[]
   details     Assessor_Details?
   result        Result_Docs[]
 }
@@ -136,7 +137,6 @@ model Assessment {
   occupation  Occupation  @relation(fields: [occupation_id], references: [id])
 
   assessment_schedule Assessment_Schedule[]
-  assessment_details  Assessment_Details[]
   unit_competencies   Unit_Competency[]
   questions           Assessment_Question[]
   results             Result[]
@@ -145,20 +145,21 @@ model Assessment {
 model Assessment_Schedule {
   id            Int        @id @default(autoincrement())
   assessment_id Int
-  status       AssessmentStatus
   start_date   DateTime
   end_date     DateTime
 
   assessment   Assessment  @relation(fields: [assessment_id], references: [id])
+
+  schedule_details    Schedule_Details[]
 }
 
-model Assessment_Details {
+model Schedule_Details {
   id            Int        @id @default(autoincrement())
-  assessment_id Int
+  schedule_id   Int
   assessor_id   Int
   location      String
 
-  assessment    Assessment @relation(fields: [assessment_id], references: [id])
+  assessment_schedule  Assessment_Schedule @relation(fields: [schedule_id], references: [id])
   assessor    Assessor   @relation(fields: [assessor_id], references: [id])
 }
 
@@ -201,8 +202,9 @@ model Result {
 
   assessment    Assessment @relation(fields: [assessment_id], references: [id])
   assessee      Assessee   @relation(fields: [assessee_id], references: [id])
+
   details       Result_Details[]
-  result        Result_Docs[]
+  docs        Result_Docs[]
 }
 
 model Result_Docs {
@@ -258,12 +260,6 @@ model Assessor_Details {
 enum Gender {
   Male
   Female
-}
-
-enum AssessmentStatus {
-  Planned
-  Ongoing
-  Completed
 }
 
 enum QuestionType {
