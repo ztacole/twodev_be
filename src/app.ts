@@ -19,6 +19,7 @@ import authRoutes from './modules/auth/auth.routes';
 import dashboardRoutes from './modules/admin/dashboard/dashboard.routes';
 import assesseeRoutes from './modules/assessee/assessee.routes';
 import occupationRoutes from './modules/occupation/occupation.routes';
+import schemeRoutes from './modules/scheme/scheme.routes';
 
 // DONE - DONE
 import apl1Routes from './modules/assessement/apl1/apl1.routes';
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/assessees', assesseeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/occupations', occupationRoutes);
+app.use('/api/schemes', schemeRoutes);
 
 app.use('/uploads', express.static('uploads'));
 
