@@ -1,13 +1,13 @@
 /*
   Warnings:
 
-  - You are about to drop the column `end_date` on the `assessment` table. All the data in the column will be lost.
-  - You are about to drop the column `start_date` on the `assessment` table. All the data in the column will be lost.
-  - You are about to drop the column `status` on the `assessment` table. All the data in the column will be lost.
+  - You are about to drop the column `end_date` on the `Assessment` table. All the data in the column will be lost.
+  - You are about to drop the column `start_date` on the `Assessment` table. All the data in the column will be lost.
+  - You are about to drop the column `status` on the `Assessment` table. All the data in the column will be lost.
 
 */
 -- AlterTable
-ALTER TABLE `assessment` DROP COLUMN `end_date`,
+ALTER TABLE `Assessment` DROP COLUMN `end_date`,
     DROP COLUMN `start_date`,
     DROP COLUMN `status`;
 

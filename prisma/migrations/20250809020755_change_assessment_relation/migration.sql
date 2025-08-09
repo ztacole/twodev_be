@@ -1,25 +1,25 @@
 /*
   Warnings:
 
-  - You are about to drop the column `assessor_id` on the `assessment` table. All the data in the column will be lost.
-  - You are about to drop the column `scheme_id` on the `assessment` table. All the data in the column will be lost.
+  - You are about to drop the column `assessor_id` on the `Assessment` table. All the data in the column will be lost.
+  - You are about to drop the column `scheme_id` on the `Assessment` table. All the data in the column will be lost.
   - Added the required column `occupation_id` to the `Assessment` table without a default value. This is not possible if the table is not empty.
 
 */
 -- DropForeignKey
-ALTER TABLE `assessment` DROP FOREIGN KEY `Assessment_assessor_id_fkey`;
+ALTER TABLE `Assessment` DROP FOREIGN KEY `Assessment_assessor_id_fkey`;
 
 -- DropForeignKey
-ALTER TABLE `assessment` DROP FOREIGN KEY `Assessment_scheme_id_fkey`;
+ALTER TABLE `Assessment` DROP FOREIGN KEY `Assessment_scheme_id_fkey`;
 
 -- DropIndex
-DROP INDEX `Assessment_assessor_id_fkey` ON `assessment`;
+DROP INDEX `Assessment_assessor_id_fkey` ON `Assessment`;
 
 -- DropIndex
-DROP INDEX `Assessment_scheme_id_fkey` ON `assessment`;
+DROP INDEX `Assessment_scheme_id_fkey` ON `Assessment`;
 
 -- AlterTable
-ALTER TABLE `assessment` DROP COLUMN `assessor_id`,
+ALTER TABLE `Assessment` DROP COLUMN `assessor_id`,
     DROP COLUMN `scheme_id`,
     ADD COLUMN `occupation_id` INTEGER NOT NULL;
 
