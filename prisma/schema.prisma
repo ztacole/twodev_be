@@ -62,7 +62,7 @@ model Assessor {
 
   user        User      @relation(fields: [user_id], references: [id])
   scheme      Schemes   @relation(fields: [scheme_id], references: [id])
-  assessments Assessment[]
+  assessment_details Assessment_Details[]
   details     Assessor_Details?
 }
 
@@ -83,7 +83,6 @@ model Schemes {
   name        String
 
   occupations Occupation[]
-  assessments Assessment[]
   assessors   Assessor[]
 }
 
@@ -93,6 +92,8 @@ model Occupation {
   name      String
 
   scheme    Schemes @relation(fields: [scheme_id], references: [id])
+
+  assessments Assessment[]
 }
 
 model Unit_Competency {
@@ -125,12 +126,10 @@ model Element_Details {
 
 model Assessment {
   id           Int         @id @default(autoincrement())
-  scheme_id    Int
+  occupation_id Int
   code         String
 
-  scheme       Schemes     @relation(fields: [scheme_id], references: [id])
-  assessor     Assessor?   @relation(fields: [assessor_id], references: [id])
-  assessor_id  Int?
+  occupation  Occupation  @relation(fields: [occupation_id], references: [id])
 
   assessment_schedule Assessment_Schedule[]
   assessment_details  Assessment_Details[]
@@ -156,6 +155,7 @@ model Assessment_Details {
   location      String
 
   assessment    Assessment @relation(fields: [assessment_id], references: [id])
+  assessor    Assessor   @relation(fields: [assessor_id], references: [id])
 }
 
 model Assessment_Question {
