@@ -1,4 +1,4 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const cors = require('cors');
 const dotenv = require('dotenv');
 
@@ -34,9 +34,6 @@ app.use('/api/assessees', assesseeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/occupations', occupationRoutes);
 
-/* -------- TODO --------
-  TODO: apl1 url untuk gambar docs
-*/
-
+app.use('/uploads', express.static('uploads'));
 
 export default app;
