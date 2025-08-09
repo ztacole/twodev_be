@@ -110,3 +110,25 @@ export const deleteOccupation = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const exportOccupationsToExcel = async (req: Request, res: Response) => {
+    try {
+        const { exportOccupationsToExcel } = require('./occupation.service');
+        
+        // Generate Excel buffer
+        const buffer = await exportOccupationsToExcel();
+        
+        // Set headers for Excel file download
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=occupations.xlsx');
+        
+        // Send the Excel file
+        res.send(buffer);
+    } catch (error: any) {
+        console.error('Error exporting occupations to Excel:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan saat mengekspor data ke Excel',
+        });
+    }
+};

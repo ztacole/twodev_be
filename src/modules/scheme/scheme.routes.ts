@@ -8,5 +8,6 @@ router.get('/', schemeController.getSchemes);
 router.get('/:id', schemeController.getSchemeById);
 router.put('/:id', schemeController.updateScheme);
 router.delete('/:id', schemeController.deleteScheme);
+router.get('/export/excel', schemeController.exportSchemesToExcel);
 
 export default router;
