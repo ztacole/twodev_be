@@ -48,7 +48,7 @@ export const exportOccupationsToExcel = async () => {
         cell.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FF4472C4' }
+            fgColor: { argb: 'FFE77D35' }
         };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
