@@ -10,6 +10,42 @@ export class APL2Controller {
 
     async createAssessment(req: Request, res: Response) {
         try {
+            // Validate data
+            if (!req.body.occupation_id || !req.body.code || !req.body.unit_competencies || !req.body.unit_competencies.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Data asesmen tidak lengkap',
+                });
+            }
+
+            req.body.unit_competencies.forEach((unitCompetency: any) => {
+                if (!unitCompetency.unit_code || !unitCompetency.title || !unitCompetency.elements || !unitCompetency.elements.length) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Data unit kompetensi tidak lengkap',
+                    });
+                }
+
+                unitCompetency.elements.forEach((element: any) => {
+                    if (!element.title || !element.element_details || !element.element_details.length) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Data elemen tidak lengkap',
+                        });
+                    }
+
+                    element.element_details.forEach((detail: any) => {
+                        if (!detail.description) {
+                            return res.status(400).json({
+                                success: false,
+                                message: 'Data indikator tidak lengkap',
+                            });
+                        }
+                    });
+                });
+            })
+
+            // Create assessment
             const assessment = await this.apl2Service.createAssessment(req.body);
             res.status(201).json({
                 success: true,
@@ -17,7 +53,7 @@ export class APL2Controller {
                 data: assessment,
             });
         } catch (error : any) {
-            res.status(500).json({
+            res.status(400).json({
                 success: false,
                 message: error.message,
             });
@@ -54,7 +90,7 @@ export class APL2Controller {
             if (!assessment) {
                 return res.status(404).json({
                     success: false,
-                    message: `Asesmen dengan ID ${req.params.id} tidak ditemukan`,
+                    message: `Asesmen tidak ditemukan`,
                 });
             }
             res.json({

@@ -3,6 +3,37 @@ import { AssessmentRequest, AssessmentResponse, ElementResponse } from './apl2.t
 
 export class APL2Service {
   async createAssessment(data: AssessmentRequest): Promise<AssessmentResponse> {
+    const existingAssessment = await prisma.assessment.findFirst({
+      where: {
+        code: data.code
+      }
+    })
+
+    if (existingAssessment) {
+      throw new Error('Assessment code already exists');
+    }
+
+    const occupation = await prisma.occupation.findUnique({
+      where: {
+        id: data.occupation_id
+      }
+    })
+
+    if (!occupation) {
+      throw new Error('Occupation not found');
+    }
+
+    data.unit_competencies.forEach(async (unit) => {
+      const existingUnit = await prisma.unit_Competency.findFirst({
+        where: {
+          unit_code: unit.unit_code
+        }
+      })
+      if (existingUnit) {
+        throw new Error(`Unit code ${unit.unit_code} already exists`);
+      }
+    });
+
     const assessment = await prisma.assessment.create({
       data: {
         occupation_id: data.occupation_id,
