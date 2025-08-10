@@ -27,13 +27,13 @@
     "blob-polyfill": "^9.0.20240710",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "formdata-node": "^6.0.3",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "prisma": "^6.13.0",
     "swagger-ui-express": "^5.0.1",
-    "xlsx": "^0.18.5",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {

@@ -137,7 +137,31 @@ export class ScheduleService {
         const schedules = results.flatMap(result => result.assessment?.assessment_schedule ?? []);
         return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
     }
-}    
+
+    async getScheduleDataForExcel() {
+        const schedules = await prisma.assessment_Schedule.findMany({
+            include: {
+                assessment: {
+                    include: {
+                        occupation: {
+                            include: {
+                                scheme: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        return schedules.map(schedule => ({
+            assessment_id: schedule.assessment_id,
+            scheme_code: schedule.assessment.occupation.scheme.code,
+            occupation_name: schedule.assessment.occupation.name,
+            start_date: schedule.start_date,
+            end_date: schedule.end_date,
+        }));
+    }
+}
 
 function formatScheduleResponse(schedule: any): ScheduleResponse {
     return {

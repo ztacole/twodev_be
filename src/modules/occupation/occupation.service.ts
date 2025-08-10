@@ -1,5 +1,5 @@
 import { prisma } from '../../config/db';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 export const getOccupations = async () => {
     return prisma.occupation.findMany({
@@ -32,22 +32,52 @@ export const deleteOccupation = async (id: number) => {
 
 export const exportOccupationsToExcel = async () => {
     const occupations = await prisma.occupation.findMany({
-        include: {
-            scheme: true
-        }
+        include: { scheme: true }
     });
-    
-    const formattedData = occupations.map(occupation => ({
-        'Nama Jurusan': occupation.scheme.code,
-        'Okupasi': occupation.name
-    }));
-    
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(formattedData);
-    
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Occupations');
-    
-    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    
-    return buffer;
+
+    if (!occupations.length) {
+        throw new Error('Tidak ada data okupasi untuk diekspor');
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Occupations');
+
+    const headerRow = worksheet.addRow(['Nama Jurusan', 'Okupasi']);
+    headerRow.eachCell(cell => {
+        cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF4472C4' }
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+    });
+
+    occupations.forEach(occ => {
+        const row = worksheet.addRow([
+            occ.scheme?.code || '',
+            occ.name
+        ]);
+        row.eachCell(cell => {
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+    });
+
+    worksheet.columns = [
+        { width: 25 }, // Nama Jurusan
+        { width: 40 }  // Okupasi
+    ];
+
+    return await workbook.xlsx.writeBuffer();
 };

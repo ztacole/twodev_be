@@ -11,5 +11,6 @@ router.get('/completed/:assesseeId', controller.getCompletedSchedulesByAssesseeI
 router.get('/:id', controller.getScheduleById.bind(controller));
 
 router.post('/', controller.createSchedule.bind(controller));
+router.get('/export/excel', controller.exportScheduleToExcel.bind(controller));
 
 export default router;

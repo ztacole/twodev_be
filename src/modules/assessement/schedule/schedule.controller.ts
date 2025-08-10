@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { ScheduleService } from "./schedule.service";
+import ExcelJS from 'exceljs';
+import { Readable } from "stream";
 
 export class ScheduleController {
     private scheduleService: ScheduleService;
@@ -141,6 +143,84 @@ export class ScheduleController {
             res.status(500).json({
                 success: false,
                 message: error.message,
+            });
+        }
+    }
+
+    async exportScheduleToExcel(req: Request, res: Response) {
+        try {
+            const scheduleData = await this.scheduleService.getScheduleDataForExcel();
+
+            if (!scheduleData?.length) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Tidak ada jadwal ditemukan untuk diekspor',
+                });
+            }
+
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Jadwal Assessment');
+
+            const headerRow = worksheet.addRow([
+                'ID', 'Skema', 'Okupasi', 'Tanggal Mulai', 'Tanggal Selesai'
+            ]);
+            headerRow.eachCell(cell => {
+                cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FF4472C4' }
+                };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+
+            scheduleData.forEach(item => {
+                const row = worksheet.addRow([
+                    item.assessment_id,
+                    item.scheme_code,
+                    item.occupation_name,
+                    item.start_date,
+                    item.end_date
+                ]);
+                row.eachCell(cell => {
+                    cell.border = {
+                        top: { style: 'thin' },
+                        left: { style: 'thin' },
+                        bottom: { style: 'thin' },
+                        right: { style: 'thin' }
+                    };
+                });
+            });
+
+            worksheet.columns = [
+                { width: 12 }, // ID
+                { width: 18 }, // Skema
+                { width: 35 }, // Okupasi
+                { width: 22 }, // Tanggal Mulai
+                { width: 22 }, // Tanggal Selesai
+            ];
+
+            res.setHeader(
+                'Content-Type',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            );
+            res.setHeader(
+                'Content-Disposition',
+                'attachment; filename=jadwal_assessment.xlsx'
+            );
+
+            await workbook.xlsx.write(res);
+            res.end();
+        } catch (err: any) {
+            res.status(500).json({
+                success: false,
+                message: err.message,
             });
         }
     }

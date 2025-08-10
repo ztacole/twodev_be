@@ -112,17 +112,13 @@ export const deleteScheme = async (req: Request, res: Response) => {
 
 export const exportSchemesToExcel = async (req: Request, res: Response) => {
   try {
-    // Import the export function from service
     const { exportSchemesToExcel } = await import('./scheme.service');
     
-    // Generate Excel buffer
     const buffer = await exportSchemesToExcel();
     
-    // Set headers for Excel file download
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=schemes.xlsx');
     
-    // Send the Excel file
     res.send(buffer);
   } catch (error) {
     console.error('Error exporting schemes to Excel:', error);
