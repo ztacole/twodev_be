@@ -197,7 +197,7 @@ async function main() {
         data: {
           assessment_id: assessment.id,
           assessee_id: assessee.id,
-          approve: faker.datatype.boolean(),
+          approved: faker.datatype.boolean(),
         },
       });
       // Result Details
@@ -228,6 +228,7 @@ async function main() {
             student_card: faker.image.url(),
             family_card: faker.image.url(),
             id_card: faker.image.url(),
+            approved: faker.datatype.boolean(),
           },
         });
       }

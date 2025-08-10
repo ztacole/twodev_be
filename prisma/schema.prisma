@@ -197,7 +197,7 @@ model Result {
   id            Int       @id @default(autoincrement())
   assessment_id Int
   assessee_id   Int
-  approve       Boolean
+  approved      Boolean
   created_at    DateTime @default(now())
 
   assessment    Assessment @relation(fields: [assessment_id], references: [id])
@@ -217,6 +217,7 @@ model Result_Docs {
   student_card    String
   family_card    String
   id_card    String
+  approved   Boolean
 
   result     Result  @relation(fields: [result_id], references: [id])
   assessor   Assessor @relation(fields: [assessor_id], references: [id])
