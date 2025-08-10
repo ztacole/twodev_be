@@ -33,7 +33,7 @@ export class ScheduleService {
         return formatScheduleResponse(schedule);
     }
 
-    async getSchedules(): Promise<ScheduleResponse[]> {
+    async getSchedules(): Promise<ScheduleResponse[] | null> {
         const schedules = await prisma.assessment_Schedule.findMany({
             include: {
                 assessment: {
@@ -48,10 +48,14 @@ export class ScheduleService {
             },
         });
 
+        if (schedules.length === 0) {
+            return null;
+        }
+
         return schedules.map(formatScheduleResponse);
     }
 
-    async getScheduleById(id: number): Promise<ScheduleResponse> {
+    async getScheduleById(id: number): Promise<ScheduleResponse | null> {
         const schedule = await prisma.assessment_Schedule.findUnique({
             where: { id },
             include: {
@@ -67,10 +71,10 @@ export class ScheduleService {
             },
         });
 
-        return formatScheduleResponse(schedule);
+        return schedule ? formatScheduleResponse(schedule) : null;
     }
 
-    async getActiveSchedules(): Promise<ScheduleResponse[]> {
+    async getActiveSchedules(): Promise<ScheduleResponse[] | null> {
         const schedules = await prisma.assessment_Schedule.findMany({
             where: { start_date: { lte: new Date() }, end_date: { gte: new Date() } },
             include: {
@@ -86,10 +90,10 @@ export class ScheduleService {
             },
         });
 
-        return schedules.map(formatScheduleResponse);
+        return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
     }
 
-    async getCompletedSchedules(): Promise<ScheduleResponse[]> {
+    async getCompletedSchedules(): Promise<ScheduleResponse[] | null> {
         const schedules = await prisma.assessment_Schedule.findMany({
             where: { end_date: { lte: new Date() } },
             include: {
@@ -105,10 +109,10 @@ export class ScheduleService {
             },
         });
 
-        return schedules.map(formatScheduleResponse);
+        return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
     }
 
-    async getCompletedSchedulesByAssesseeId(assesseeId: number): Promise<ScheduleResponse[]> {
+    async getCompletedSchedulesByAssesseeId(assesseeId: number): Promise<ScheduleResponse[] | null> {
         const results = await prisma.result.findMany({
             where: { assessee_id: assesseeId },
             include: {
@@ -131,7 +135,7 @@ export class ScheduleService {
         });
     
         const schedules = results.flatMap(result => result.assessment?.assessment_schedule ?? []);
-        return schedules.map(formatScheduleResponse);
+        return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
     }
 }    
 

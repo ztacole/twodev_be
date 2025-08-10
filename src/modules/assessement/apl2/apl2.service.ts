@@ -45,7 +45,7 @@ export class APL2Service {
     return formatAssessmentResponse(assessment);
   }
 
-  async getAssessmentById(id: number): Promise<AssessmentResponse> {
+  async getAssessmentById(id: number): Promise<AssessmentResponse | null> {
     const assessment = await prisma.assessment.findUnique({
       where: { id },
       include: {
@@ -66,10 +66,14 @@ export class APL2Service {
       }
     });
 
+    if (!assessment) {
+      return null;
+    }
+
     return formatAssessmentResponse(assessment);
   }
 
-  async getAssessments(): Promise<AssessmentResponse[]> {
+  async getAssessments(): Promise<AssessmentResponse[] | null> {
     const assessments = await prisma.assessment.findMany({
       include: {
         occupation: {
@@ -89,13 +93,21 @@ export class APL2Service {
       }
     });
 
+    if (!assessments) {
+      return null;
+    }
+
     return assessments.map(formatAssessmentResponse);
   }
 
-  async getUnitCompetenciesByAssessmentId(assessmentId: number): Promise<any[]> {
+  async getUnitCompetenciesByAssessmentId(assessmentId: number): Promise<any[] | null> {
     const unitCompetencies = await prisma.unit_Competency.findMany({
       where: { assessment_id: assessmentId },
     });
+
+    if (!unitCompetencies) {
+      return null;
+    }
 
     return unitCompetencies.map(unit => {
       return {
@@ -106,13 +118,17 @@ export class APL2Service {
     })
   }
 
-  async getElementsByUnitCompetencyId(unitCompetencyId: number): Promise<ElementResponse[]> {
+  async getElementsByUnitCompetencyId(unitCompetencyId: number): Promise<ElementResponse[] | null> {
     const elements = await prisma.element.findMany({
       where: { unit_competency_id: unitCompetencyId },
       include: {
         details: true
       }
     });
+
+    if (!elements) {
+      return null;
+    }
 
     return elements.map(element => {
       return {

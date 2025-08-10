@@ -452,6 +452,20 @@ paths:
                       position: "Software Engineer"
                       phone_no: "081234567890"
                       job_email: "user@example.com"
+        "500":
+          description: Terjadi kesalahan server
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Server error"
 
   /assessment/apl1/create-certificate-data:
     post:
@@ -823,6 +837,20 @@ paths:
                               description: "Define proper data types"
                             - id: 6
                               description: "Set primary keys"
+        "500":
+          description: Terjadi kesalahan server
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Internal server error"
 
   /assessment/apl2/:
     get:
@@ -889,6 +917,56 @@ paths:
                                         type: integer
                                       description:
                                         type: string
+              example:
+                - id: 1
+                  occupation:
+                    id: 1
+                    name: "Software Developer"
+                    scheme:
+                      id: 1
+                      code: "SD-001"
+                      name: "Software Development"
+                  code: "APL2-001"
+                  unit_competencies:
+                    - id: 1
+                      unit_code: "UC-101"
+                      title: "Programming Basics"
+                      elements:
+                        - id: 1
+                          title: "Write simple programs"
+                          details:
+                            - id: 1
+                              description: "Understand basic syntax"
+                            - id: 2
+                              description: "Use variables and data types"
+        404:
+          description: Asesmen tidak ditemukan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "No assessments found"
+        500:
+          description: Terjadi kesalahan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Internal server error"
 
   /assessment/apl2/{id}:
     get:
@@ -959,6 +1037,56 @@ paths:
                                       type: integer
                                     description:
                                       type: string
+              example:
+                id: 1
+                occupation:
+                  id: 1
+                  name: "Software Developer"
+                  scheme:
+                    id: 1
+                    code: "SD-001"
+                    name: "Software Development"
+                code: "APL2-001"
+                unit_competencies:
+                  - id: 1
+                    unit_code: "UC-101"
+                    title: "Programming Basics"
+                    elements:
+                      - id: 1
+                        title: "Write simple programs"
+                        details:
+                          - id: 1
+                            description: "Understand basic syntax"
+                          - id: 2
+                            description: "Use variables and data types"
+        404:
+          description: Assessment tidak ditemukan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Assessment not found"
+        500:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Internal server error"
 
   /assessment/apl2/unit-competencies/{assessmentId}:
     get:
@@ -1000,6 +1128,16 @@ paths:
                         title:
                           type: string
                           example: Instalasi Jaringan Dasar
+              example:
+                success: true
+                message: Unit competencies retrieved successfully
+                data:
+                  - id: 1
+                    unit_code: UC-001
+                    title: Instalasi Jaringan Dasar
+                  - id: 2
+                    unit_code: UC-002
+                    title: Membuat Program
         "404":
           description: Unit competencies not found
           content:
@@ -1013,6 +1151,9 @@ paths:
                   message:
                     type: string
                     example: Unit competencies not found
+              example:
+                success: false
+                message: Unit competencies not found
         "500":
           description: Server error
           content:
@@ -1024,6 +1165,9 @@ paths:
                     type: boolean
                   message:
                     type: string
+              example:
+                success: false
+                message: "Internal server error"
 
   /assessment/apl2/unit-competencies/elements/{unitCompetencyId}:
     get:
@@ -1061,8 +1205,8 @@ paths:
                           example: 10
                         title:
                           type: string
-                          example: Mengidentifikasi kebutuhan jaringan
-                        element_details:
+                          example: Instalasi Jaringan Dasar
+                        details:
                           type: array
                           items:
                             type: object
@@ -1073,6 +1217,17 @@ paths:
                               description:
                                 type: string
                                 example: Menentukan jenis kabel yang sesuai untuk instalasi
+              example:
+                success: true
+                message: Elements retrieved successfully
+                data:
+                  - id: 10
+                    title: Instalasi Jaringan Dasar
+                    details:
+                      - id: 100
+                        description: Menentukan jenis kabel yang sesuai untuk instalasi
+                      - id: 101
+                        description: Membuat kabel sesuai dengan kebutuhan
         "404":
           description: Elements not found
           content:
@@ -1133,18 +1288,18 @@ paths:
     get:
       tags:
         - Schedule
-      summary: Get all schedules
+      summary: Mengambil semua jadwal
       description: Mengambil semua jadwal asesmen.
       responses:
         "200":
-          description: Schedules retrieved successfully
+          description: Jadwal berhasil diambil
           content:
             application/json:
               schema:
                 type: object
                 example:
                   success: true
-                  message: "Schedules retrieved successfully"
+                  message: "Jadwal berhasil diambil"
                   data:
                     - id: 1
                       assessment:
@@ -1159,12 +1314,32 @@ paths:
                             name: "Skema Jaringan Dasar"
                       start_date: "2025-08-10T08:00:00Z"
                       end_date: "2025-08-12T16:00:00Z"
+        "404":
+          description: Tidak ada jadwal ditemukan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
         "500":
           description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
     post:
       tags:
         - Schedule
-      summary: Create a new schedule
+      summary: Membuat jadwal baru
       description: Membuat jadwal asesmen baru.
       requestBody:
         required: true
@@ -1182,13 +1357,13 @@ paths:
                     location: "Ruang Uji Kompetensi B"
       responses:
         "201":
-          description: Schedule created successfully
+          description: Jadwal berhasil dibuat
           content:
             application/json:
               schema:
                 example:
                   success: true
-                  message: "Schedule created successfully"
+                  message: "Jadwal berhasil dibuat"
                   data:
                     id: 1
                     assessment:
@@ -1205,28 +1380,34 @@ paths:
                     end_date: "2025-08-12T16:00:00Z"
         "500":
           description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
 
   /schedule/{id}:
     get:
       tags:
         - Schedule
-      summary: Get schedule by ID
+      summary: Mengambil jadwal berdasarkan ID
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
-          description: ID dari schedule
+          description: ID dari jadwal
       responses:
         "200":
-          description: Schedule retrieved successfully
+          description: Jadwal berhasil diambil
           content:
             application/json:
               schema:
                 example:
                   success: true
-                  message: "Schedule retrieved successfully"
+                  message: "Jadwal berhasil diambil"
                   data:
                     id: 1
                     assessment:
@@ -1242,25 +1423,37 @@ paths:
                     start_date: "2025-08-10T08:00:00Z"
                     end_date: "2025-08-12T16:00:00Z"
         "404":
-          description: Schedule not found
+          description: Jadwal tidak ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Jadwal tidak ditemukan"
         "500":
           description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
 
   /schedule/active:
     get:
       tags:
         - Schedule
-      summary: Get active schedules
+      summary: Mengambil jadwal aktif
       description: Mengambil jadwal asesmen yang sedang berlangsung.
       responses:
         "200":
-          description: Active schedules retrieved successfully
+          description: Jadwal aktif berhasil diambil
           content:
             application/json:
               schema:
                 example:
                   success: true
-                  message: "Active schedules retrieved successfully"
+                  message: "Jadwal aktif berhasil diambil"
                   data:
                     - id: 1
                       assessment:
@@ -1275,24 +1468,38 @@ paths:
                             name: "Skema Jaringan Dasar"
                       start_date: "2025-08-10T08:00:00Z"
                       end_date: "2025-08-12T16:00:00Z"
+        "404":
+          description: Tidak ada jadwal aktif ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Tidak ada jadwal aktif ditemukan"
         "500":
           description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
 
   /schedule/completed:
     get:
       tags:
         - Schedule
-      summary: Get completed schedules
+      summary: Mengambil jadwal yang sudah selesai
       description: Mengambil jadwal asesmen yang sudah selesai.
       responses:
         "200":
-          description: Completed schedules retrieved successfully
+          description: Jadwal selesai berhasil diambil
           content:
             application/json:
               schema:
                 example:
                   success: true
-                  message: "Completed schedules retrieved successfully"
+                  message: "Jadwal selesai berhasil diambil"
                   data:
                     - id: 1
                       assessment:
@@ -1307,30 +1514,44 @@ paths:
                             name: "Skema Jaringan Dasar"
                       start_date: "2025-08-10T08:00:00Z"
                       end_date: "2025-08-12T16:00:00Z"
+        "404":
+          description: Tidak ada jadwal selesai ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Tidak ada jadwal selesai ditemukan"
         "500":
           description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
 
   /schedule/completed/{assesseeId}:
     get:
       tags:
         - Schedule
-      summary: Get completed schedules by assessee ID
+      summary: Mengambil jadwal selesai berdasarkan ID asessee
       parameters:
         - name: assesseeId
           in: path
           required: true
           schema:
             type: integer
-          description: ID dari assessee
+          description: ID dari asessee
       responses:
         "200":
-          description: Completed schedules retrieved successfully
+          description: Jadwal selesai berhasil diambil
           content:
             application/json:
               schema:
                 example:
                   success: true
-                  message: "Completed schedules retrieved successfully"
+                  message: "Jadwal selesai berhasil diambil"
                   data:
                     - id: 1
                       assessment:
@@ -1345,8 +1566,22 @@ paths:
                             name: "Skema Jaringan Dasar"
                       start_date: "2025-08-10T08:00:00Z"
                       end_date: "2025-08-12T16:00:00Z"
+        "404":
+          description: Tidak ada jadwal selesai ditemukan untuk asessee dengan ID tersebut
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: Tidak ada jadwal selesai ditemukan untuk asessee dengan id ${req.params.assesseeId}
         "500":
           description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
   
   # /assessement:
   #   post:
