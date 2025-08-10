@@ -57,6 +57,9 @@ class ScheduleService {
                     },
                 },
             });
+            if (schedules.length === 0) {
+                return null;
+            }
             return schedules.map(formatScheduleResponse);
         });
     }
@@ -76,7 +79,7 @@ class ScheduleService {
                     },
                 },
             });
-            return formatScheduleResponse(schedule);
+            return schedule ? formatScheduleResponse(schedule) : null;
         });
     }
     getActiveSchedules() {
@@ -95,7 +98,7 @@ class ScheduleService {
                     },
                 },
             });
-            return schedules.map(formatScheduleResponse);
+            return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
         });
     }
     getCompletedSchedules() {
@@ -114,7 +117,7 @@ class ScheduleService {
                     },
                 },
             });
-            return schedules.map(formatScheduleResponse);
+            return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
         });
     }
     getCompletedSchedulesByAssesseeId(assesseeId) {
@@ -129,19 +132,18 @@ class ScheduleService {
                                     assessment: {
                                         include: {
                                             occupation: {
-                                                include: {
-                                                    scheme: true,
-                                                },
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+                                                include: { scheme: true }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             });
-            return results.map(result => formatScheduleResponse(result.assessment.assessment_schedule));
+            const schedules = results.flatMap(result => { var _a, _b; return (_b = (_a = result.assessment) === null || _a === void 0 ? void 0 : _a.assessment_schedule) !== null && _b !== void 0 ? _b : []; });
+            return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
         });
     }
 }

@@ -76,6 +76,9 @@ class APL2Service {
                     }
                 }
             });
+            if (!assessment) {
+                return null;
+            }
             return formatAssessmentResponse(assessment);
         });
     }
@@ -99,6 +102,9 @@ class APL2Service {
                     }
                 }
             });
+            if (!assessments) {
+                return null;
+            }
             return assessments.map(formatAssessmentResponse);
         });
     }
@@ -107,6 +113,9 @@ class APL2Service {
             const unitCompetencies = yield db_1.prisma.unit_Competency.findMany({
                 where: { assessment_id: assessmentId },
             });
+            if (!unitCompetencies) {
+                return null;
+            }
             return unitCompetencies.map(unit => {
                 return {
                     id: unit.id,
@@ -124,6 +133,9 @@ class APL2Service {
                     details: true
                 }
             });
+            if (!elements) {
+                return null;
+            }
             return elements.map(element => {
                 return {
                     id: element.id,

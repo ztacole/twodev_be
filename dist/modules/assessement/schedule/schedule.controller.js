@@ -21,7 +21,7 @@ class ScheduleController {
                 const schedule = yield this.scheduleService.createSchedule(req.body);
                 res.status(201).json({
                     success: true,
-                    message: 'Schedule created successfully',
+                    message: 'Jadwal berhasil dibuat',
                     data: schedule
                 });
             }
@@ -37,9 +37,15 @@ class ScheduleController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const schedules = yield this.scheduleService.getSchedules();
+                if (!schedules) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Tidak ada jadwal ditemukan',
+                    });
+                }
                 res.status(200).json({
                     success: true,
-                    message: 'Schedules retrieved successfully',
+                    message: 'Jadwal berhasil diambil',
                     data: schedules
                 });
             }
@@ -58,12 +64,12 @@ class ScheduleController {
                 if (!schedule) {
                     return res.status(404).json({
                         success: false,
-                        message: 'Schedule not found',
+                        message: `Jadwal dengan id ${req.params.id} tidak ditemukan`,
                     });
                 }
                 res.status(200).json({
                     success: true,
-                    message: 'Schedule retrieved successfully',
+                    message: 'Jadwal berhasil diambil',
                     data: schedule
                 });
             }
@@ -79,9 +85,15 @@ class ScheduleController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const schedules = yield this.scheduleService.getActiveSchedules();
+                if (!schedules || schedules.length === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Tidak ada jadwal aktif ditemukan',
+                    });
+                }
                 res.status(200).json({
                     success: true,
-                    message: 'Active schedules retrieved successfully',
+                    message: 'Jadwal aktif berhasil diambil',
                     data: schedules
                 });
             }
@@ -97,9 +109,15 @@ class ScheduleController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const schedules = yield this.scheduleService.getCompletedSchedules();
+                if (!schedules || schedules.length === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Tidak ada jadwal yang selesai ditemukan',
+                    });
+                }
                 res.status(200).json({
                     success: true,
-                    message: 'Completed schedules retrieved successfully',
+                    message: 'Jadwal yang selesai berhasil diambil',
                     data: schedules
                 });
             }
@@ -115,9 +133,15 @@ class ScheduleController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const schedules = yield this.scheduleService.getCompletedSchedulesByAssesseeId(Number(req.params.assesseeId));
+                if (!schedules || schedules.length === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: `Tidak ada jadwal yang selesai ditemukan untuk assessee dengan id ${req.params.assesseeId}`,
+                    });
+                }
                 res.status(200).json({
                     success: true,
-                    message: 'Completed schedules retrieved successfully',
+                    message: 'Jadwal yang selesai berhasil diambil',
                     data: schedules
                 });
             }

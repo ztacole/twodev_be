@@ -21,14 +21,14 @@ class APL2Controller {
                 const assessment = yield this.apl2Service.createAssessment(req.body);
                 res.status(201).json({
                     success: true,
-                    message: 'Assessment created successfully',
+                    message: 'Asesmen berhasil dibuat',
                     data: assessment,
                 });
             }
             catch (error) {
                 res.status(500).json({
                     success: false,
-                    message: error.message,
+                    message: 'Terjadi kesalahan server',
                 });
             }
         });
@@ -37,16 +37,22 @@ class APL2Controller {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const assessments = yield this.apl2Service.getAssessments();
+                if (!assessments || assessments.length === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Tidak ada asesmen yang ditemukan',
+                    });
+                }
                 res.json({
                     success: true,
-                    message: 'Assessments retrieved successfully',
+                    message: 'Asesmen berhasil diambil',
                     data: assessments,
                 });
             }
             catch (error) {
                 res.status(500).json({
                     success: false,
-                    message: error.message,
+                    message: 'Terjadi kesalahan server',
                 });
             }
         });
@@ -58,19 +64,19 @@ class APL2Controller {
                 if (!assessment) {
                     return res.status(404).json({
                         success: false,
-                        message: 'Assessment not found',
+                        message: `Asesmen dengan ID ${req.params.id} tidak ditemukan`,
                     });
                 }
                 res.json({
                     success: true,
-                    message: 'Assessment retrieved successfully',
+                    message: 'Asesmen berhasil diambil',
                     data: assessment,
                 });
             }
             catch (error) {
                 res.status(500).json({
                     success: false,
-                    message: error.message,
+                    message: 'Terjadi kesalahan server',
                 });
             }
         });
@@ -82,19 +88,19 @@ class APL2Controller {
                 if (!unitCompetencies) {
                     return res.status(404).json({
                         success: false,
-                        message: 'Unit competencies not found',
+                        message: 'Tidak ada unit kompetensi yang ditemukan',
                     });
                 }
                 res.status(200).json({
                     success: true,
-                    message: 'Unit competencies retrieved successfully',
+                    message: 'Unit kompetensi berhasil diambil',
                     data: unitCompetencies,
                 });
             }
             catch (error) {
                 res.status(500).json({
                     success: false,
-                    message: error.message,
+                    message: 'Terjadi kesalahan server',
                 });
             }
         });
@@ -106,19 +112,19 @@ class APL2Controller {
                 if (!elements) {
                     return res.status(404).json({
                         success: false,
-                        message: 'Elements not found',
+                        message: 'Tidak ada elemen yang ditemukan',
                     });
                 }
                 res.status(200).json({
                     success: true,
-                    message: 'Elements retrieved successfully',
+                    message: 'Elemen berhasil diambil',
                     data: elements,
                 });
             }
             catch (error) {
                 res.status(500).json({
                     success: false,
-                    message: error.message,
+                    message: 'Terjadi kesalahan server',
                 });
             }
         });

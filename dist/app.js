@@ -27,6 +27,7 @@ const schedule_routes_1 = __importDefault(require("./modules/assessement/schedul
 app.use('/api/assessment/apl1', apl1_routes_1.default);
 app.use('/api/assessment/apl2', apl2_routes_1.default);
 app.use('/api/schedule', schedule_routes_1.default);
+app.use('/api/uploads', express_1.default.static('uploads'));
 // DONE - DONE
 app.use('/api/user', user_routes_1.default);
 app.use('/api/auth', auth_routes_1.default);
@@ -34,5 +35,4 @@ app.use('/api/assessee', assessee_routes_1.default);
 app.use('/api/dashboard', dashboard_routes_1.default);
 app.use('/api/occupation', occupation_routes_1.default);
 app.use('/api/scheme', scheme_routes_1.default);
-app.use('/uploads', express_1.default.static('uploads'));
 exports.default = app;
