@@ -19,7 +19,7 @@ export class APL2Controller {
         } catch (error : any) {
             res.status(500).json({
                 success: false,
-                message: 'Terjadi kesalahan server',
+                message: error.message,
             });
         }
     }
@@ -43,7 +43,7 @@ export class APL2Controller {
         } catch (error : any) {
             res.status(500).json({
                 success: false,
-                message: 'Terjadi kesalahan server',
+                message: error.message,
             });
         }
     }
@@ -65,7 +65,7 @@ export class APL2Controller {
         } catch (error : any) {
             res.status(500).json({
                 success: false,
-                message: 'Terjadi kesalahan server',
+                message: error.message,
             });
         }
     }
@@ -87,7 +87,7 @@ export class APL2Controller {
         } catch (error : any) {
             res.status(500).json({
                 success: false,
-                message: 'Terjadi kesalahan server',
+                message: error.message,
             });
         }
     }
@@ -109,7 +109,7 @@ export class APL2Controller {
         } catch (error : any) {
             res.status(500).json({
                 success: false,
-                message: 'Terjadi kesalahan server',
+                message: error.message,
             });
         }
     }
