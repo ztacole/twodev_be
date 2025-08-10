@@ -29,6 +29,7 @@ import scheduleRoutes from './modules/assessement/schedule/schedule.routes';
 app.use('/api/assessment/apl1', apl1Routes);
 app.use('/api/assessment/apl2', apl2Routes);
 app.use('/api/schedule', scheduleRoutes);
+app.use('/api/uploads', express.static('uploads'));
 // DONE - DONE
 
 app.use('/api/user', userRoutes);
@@ -37,7 +38,5 @@ app.use('/api/assessee', assesseeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/occupation', occupationRoutes);
 app.use('/api/scheme', schemeRoutes);
-
-app.use('/uploads', express.static('uploads'));
 
 export default app;

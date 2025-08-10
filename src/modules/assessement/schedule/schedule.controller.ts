@@ -103,7 +103,6 @@ export class ScheduleController {
     async getCompletedSchedulesByAssesseeId(req: Request, res: Response) {
         try {
             const schedules = await this.scheduleService.getCompletedSchedulesByAssesseeId(Number(req.params.assesseeId));
-
             res.status(200).json({
                 success: true,
                 message: 'Completed schedules retrieved successfully',

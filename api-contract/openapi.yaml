@@ -12,12 +12,16 @@ tags:
     description: Semua endpoint terkait permohonan sertifikasi kompetensi
   - name: FR.APL.02
     description: Semua endpoint terkait asesmen mandiri
-  - name: assessment
-    description: Semua endpoint terkait manajemen asesmen
-  - name: assessor
-    description: Semua endpoint terkait manajemen assessor
-  - name: assessee
-    description: Semua endpoint terkait manajemen assessee
+  - name: Export - Import
+    description: Semua endpoint terkait ekspor dan impor data
+  - name: Schedule
+    description: Semua endpoint terkait manajemen jadwal asesmen
+  # - name: assessment
+  #   description: Semua endpoint terkait manajemen asesmen
+  # - name: assessor
+  #   description: Semua endpoint terkait manajemen assessor
+  # - name: assessee
+  #   description: Semua endpoint terkait manajemen assessee
 paths:
   /auth/register:
     post:
@@ -557,6 +561,106 @@ paths:
                 success: false
                 message: "Server error"
 
+  /assessment/apl1/upload-certificate-docs/{assessorId}/{assesseeId}:
+    post:
+      tags:
+        - FR.APL.01
+      summary: Upload dokumen sertifikat APL1
+      description: >
+        Mengupload dokumen sertifikat untuk asesmen APL1.  
+        Field yang diterima:
+          - **school_report_card**: Rapor sekolah
+          - **field_work_practice_certificate**: Sertifikat PKL
+          - **student_card**: Kartu pelajar
+          - **family_card**: Kartu keluarga
+          - **id_card**: KTP
+        Semua file harus dalam format gambar (`image/*`), ukuran maksimal 5MB per file.
+      parameters:
+        - name: assessorId
+          in: path
+          required: true
+          description: ID asesor
+          schema:
+            type: integer
+        - name: assesseeId
+          in: path
+          required: true
+          description: ID asesi
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                school_report_card:
+                  type: string
+                  format: binary
+                field_work_practice_certificate:
+                  type: string
+                  format: binary
+                student_card:
+                  type: string
+                  format: binary
+                family_card:
+                  type: string
+                  format: binary
+                id_card:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Dokumen berhasil diupload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: string
+              example:
+                success: true
+                message: "Certificate documents uploaded successfully"
+                data:
+                  school_report_card: "http://localhost:3000/uploads/apl1/1/school_report_card-123.jpg"
+                  field_work_practice_certificate: "http://localhost:3000/uploads/apl1/1/field_work_practice_certificate-456.jpg"
+        "400":
+          description: Tidak ada file yang diupload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "No files were uploaded"
+        "500":
+          description: Terjadi kesalahan server
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: false
+                message: "Internal server error"
+
   /assessment/apl2/create-assessment:
     post:
       tags:
@@ -720,7 +824,7 @@ paths:
                             - id: 6
                               description: "Set primary keys"
 
-  /assessment/apl2/assessments:
+  /assessment/apl2/:
     get:
       tags:
         - FR.APL.02
@@ -786,7 +890,7 @@ paths:
                                       description:
                                         type: string
 
-  /assessment/apl2/assessments/{id}:
+  /assessment/apl2/{id}:
     get:
       tags:
         - FR.APL.02
@@ -856,6 +960,394 @@ paths:
                                     description:
                                       type: string
 
+  /assessment/apl2/unit-competencies/{assessmentId}:
+    get:
+      tags:
+        - FR.APL.02
+      summary: Mendapatkan daftar unit kompetensi berdasarkan Assessment ID
+      parameters:
+        - name: assessmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID asesmen
+      responses:
+        "200":
+          description: Unit competencies retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Unit competencies retrieved successfully
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        unit_code:
+                          type: string
+                          example: UC-001
+                        title:
+                          type: string
+                          example: Instalasi Jaringan Dasar
+        "404":
+          description: Unit competencies not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Unit competencies not found
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /assessment/apl2/unit-competencies/elements/{unitCompetencyId}:
+    get:
+      tags:
+        - FR.APL.02
+      summary: Mendapatkan daftar elemen berdasarkan Unit Competency ID
+      parameters:
+        - name: unitCompetencyId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID unit kompetensi
+      responses:
+        "200":
+          description: Elements retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Elements retrieved successfully
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 10
+                        title:
+                          type: string
+                          example: Mengidentifikasi kebutuhan jaringan
+                        element_details:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                                example: 100
+                              description:
+                                type: string
+                                example: Menentukan jenis kabel yang sesuai untuk instalasi
+        "404":
+          description: Elements not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Elements not found
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /uploads/:
+    get:
+      tags:
+        - Export - Import
+      summary: Get uploaded files
+      description: Mengambil file yang diunggah.
+      responses:
+        "200":
+          description: Files retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  success: true
+                  message: "Files retrieved successfully"
+                  data:
+                    - filename: "example.docx"
+                      url: "/api/uploads/example.docx"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /schedule:
+    get:
+      tags:
+        - Schedule
+      summary: Get all schedules
+      description: Mengambil semua jadwal asesmen.
+      responses:
+        "200":
+          description: Schedules retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  success: true
+                  message: "Schedules retrieved successfully"
+                  data:
+                    - id: 1
+                      assessment:
+                        id: 2
+                        code: "ASM-001"
+                        occupation:
+                          id: 4
+                          name: "Teknisi Jaringan"
+                          scheme:
+                            id: 5
+                            code: "SKM-001"
+                            name: "Skema Jaringan Dasar"
+                      start_date: "2025-08-10T08:00:00Z"
+                      end_date: "2025-08-12T16:00:00Z"
+        "500":
+          description: Server error
+    post:
+      tags:
+        - Schedule
+      summary: Create a new schedule
+      description: Membuat jadwal asesmen baru.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              example:
+                assessment_id: 1
+                start_date: "2025-08-10T08:00:00Z"
+                end_date: "2025-08-12T16:00:00Z"
+                schedule_details:
+                  - assessor_id: 3
+                    location: "Ruang Uji Kompetensi A"
+                  - assessor_id: 4
+                    location: "Ruang Uji Kompetensi B"
+      responses:
+        "201":
+          description: Schedule created successfully
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Schedule created successfully"
+                  data:
+                    id: 1
+                    assessment:
+                      id: 2
+                      code: "ASM-001"
+                      occupation:
+                        id: 4
+                        name: "Teknisi Jaringan"
+                        scheme:
+                          id: 5
+                          code: "SKM-001"
+                          name: "Skema Jaringan Dasar"
+                    start_date: "2025-08-10T08:00:00Z"
+                    end_date: "2025-08-12T16:00:00Z"
+        "500":
+          description: Server error
+
+  /schedule/{id}:
+    get:
+      tags:
+        - Schedule
+      summary: Get schedule by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID dari schedule
+      responses:
+        "200":
+          description: Schedule retrieved successfully
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Schedule retrieved successfully"
+                  data:
+                    id: 1
+                    assessment:
+                      id: 2
+                      code: "ASM-001"
+                      occupation:
+                        id: 4
+                        name: "Teknisi Jaringan"
+                        scheme:
+                          id: 5
+                          code: "SKM-001"
+                          name: "Skema Jaringan Dasar"
+                    start_date: "2025-08-10T08:00:00Z"
+                    end_date: "2025-08-12T16:00:00Z"
+        "404":
+          description: Schedule not found
+        "500":
+          description: Server error
+
+  /schedule/active:
+    get:
+      tags:
+        - Schedule
+      summary: Get active schedules
+      description: Mengambil jadwal asesmen yang sedang berlangsung.
+      responses:
+        "200":
+          description: Active schedules retrieved successfully
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Active schedules retrieved successfully"
+                  data:
+                    - id: 1
+                      assessment:
+                        id: 2
+                        code: "ASM-001"
+                        occupation:
+                          id: 4
+                          name: "Teknisi Jaringan"
+                          scheme:
+                            id: 5
+                            code: "SKM-001"
+                            name: "Skema Jaringan Dasar"
+                      start_date: "2025-08-10T08:00:00Z"
+                      end_date: "2025-08-12T16:00:00Z"
+        "500":
+          description: Server error
+
+  /schedule/completed:
+    get:
+      tags:
+        - Schedule
+      summary: Get completed schedules
+      description: Mengambil jadwal asesmen yang sudah selesai.
+      responses:
+        "200":
+          description: Completed schedules retrieved successfully
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Completed schedules retrieved successfully"
+                  data:
+                    - id: 1
+                      assessment:
+                        id: 2
+                        code: "ASM-001"
+                        occupation:
+                          id: 4
+                          name: "Teknisi Jaringan"
+                          scheme:
+                            id: 5
+                            code: "SKM-001"
+                            name: "Skema Jaringan Dasar"
+                      start_date: "2025-08-10T08:00:00Z"
+                      end_date: "2025-08-12T16:00:00Z"
+        "500":
+          description: Server error
+
+  /schedule/completed/{assesseeId}:
+    get:
+      tags:
+        - Schedule
+      summary: Get completed schedules by assessee ID
+      parameters:
+        - name: assesseeId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID dari assessee
+      responses:
+        "200":
+          description: Completed schedules retrieved successfully
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Completed schedules retrieved successfully"
+                  data:
+                    - id: 1
+                      assessment:
+                        id: 2
+                        code: "ASM-001"
+                        occupation:
+                          id: 4
+                          name: "Teknisi Jaringan"
+                          scheme:
+                            id: 5
+                            code: "SKM-001"
+                            name: "Skema Jaringan Dasar"
+                      start_date: "2025-08-10T08:00:00Z"
+                      end_date: "2025-08-12T16:00:00Z"
+        "500":
+          description: Server error
+  
   # /assessement:
   #   post:
   #     tags:

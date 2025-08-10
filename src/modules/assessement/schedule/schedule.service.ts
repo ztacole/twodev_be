@@ -119,22 +119,21 @@ export class ScheduleService {
                                 assessment: {
                                     include: {
                                         occupation: {
-                                            include: {
-                                                scheme: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
+                                            include: { scheme: true }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         });
-
-        return results.map(result => formatScheduleResponse(result.assessment.assessment_schedule));
+    
+        const schedules = results.flatMap(result => result.assessment?.assessment_schedule ?? []);
+        return schedules.map(formatScheduleResponse);
     }
-}
+}    
 
 function formatScheduleResponse(schedule: any): ScheduleResponse {
     return {
