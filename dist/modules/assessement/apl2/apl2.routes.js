@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const apl2_controller_1 = require("./apl2.controller");
+const router = (0, express_1.Router)();
+const controller = new apl2_controller_1.APL2Controller();
+router.post('/create-assessment', controller.createAssessment.bind(controller));
+router.get('', controller.getAssessments.bind(controller));
+router.get('/:id', controller.getAssessmentById.bind(controller));
+router.get('/unit-competencies/:assessmentId', controller.getUnitCompetenciesByAssessmentId.bind(controller));
+router.get('/unit-competencies/elements/:unitCompetencyId', controller.getElementsByUnitCompetencyId.bind(controller));
+exports.default = router;

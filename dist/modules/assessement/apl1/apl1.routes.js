@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const apl1_controller_1 = require("./apl1.controller");
+const upload_config_1 = require("./upload-config");
+const router = (0, express_1.Router)();
+const controller = new apl1_controller_1.Apl1Controller();
+router.post('/create-self-data', controller.createAssesseAPL1.bind(controller));
+router.post('/create-certificate-data', controller.createAssesseCertificate.bind(controller));
+router.post('/upload-certificate-docs/:assessorId/:assesseeId', upload_config_1.upload.any(), controller.uploadCertificateDocs.bind(controller));
+exports.default = router;

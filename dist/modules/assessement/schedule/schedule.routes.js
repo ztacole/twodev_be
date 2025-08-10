@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const schedule_controller_1 = require("./schedule.controller");
+const router = (0, express_1.Router)();
+const controller = new schedule_controller_1.ScheduleController();
+router.get('/', controller.getSchedules.bind(controller));
+router.get('/:id', controller.getScheduleById.bind(controller));
+router.get('/active', controller.getActiveSchedules.bind(controller));
+router.get('/completed', controller.getCompletedSchedules.bind(controller));
+router.get('/completed/:assesseeId', controller.getCompletedSchedulesByAssesseeId.bind(controller));
+router.post('/', controller.createSchedule.bind(controller));
+exports.default = router;
