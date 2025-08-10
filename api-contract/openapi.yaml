@@ -12,10 +12,10 @@ tags:
     description: Semua endpoint terkait permohonan sertifikasi kompetensi
   - name: FR.APL.02
     description: Semua endpoint terkait asesmen mandiri
-  - name: Export - Import
-    description: Semua endpoint terkait ekspor dan impor data
   - name: Schedule
     description: Semua endpoint terkait manajemen jadwal asesmen
+  # - name: Export - Import
+  #   description: Semua endpoint terkait ekspor dan impor data
   # - name: assessment
   #   description: Semua endpoint terkait manajemen asesmen
   # - name: assessor
@@ -1253,36 +1253,36 @@ paths:
                   message:
                     type: string
 
-  /uploads/:
-    get:
-      tags:
-        - Export - Import
-      summary: Get uploaded files
-      description: Mengambil file yang diunggah.
-      responses:
-        "200":
-          description: Files retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  success: true
-                  message: "Files retrieved successfully"
-                  data:
-                    - filename: "example.docx"
-                      url: "/api/uploads/example.docx"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
+  # /uploads/:
+  #   get:
+  #     tags:
+  #       - Export - Import
+  #     summary: Get uploaded files
+  #     description: Mengambil file yang diunggah.
+  #     responses:
+  #       "200":
+  #         description: Files retrieved successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               example:
+  #                 success: true
+  #                 message: "Files retrieved successfully"
+  #                 data:
+  #                   - filename: "example.docx"
+  #                     url: "/api/uploads/example.docx"
+  #       "500":
+  #         description: Server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
 
   /schedule:
     get:
