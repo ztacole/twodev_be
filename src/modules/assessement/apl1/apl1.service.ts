@@ -70,7 +70,7 @@ export class APL1Service {
                     result: {
                         create: {
                             assessee_id: assessee_id,
-                            approve: false,
+                            approved: false,
                             assessment_id: (await prisma.assessment.findFirst())?.id || 1
                         }
                     },
@@ -134,7 +134,7 @@ export class APL1Service {
                         data: {
                             assessment_id: assessment.id,
                             assessee_id: assesseeId,
-                            approve: false
+                            approved: false
                         }
                     });
                 } else {
@@ -143,7 +143,7 @@ export class APL1Service {
                             result: {
                                 create: {
                                     assessee_id: assesseeId,
-                                    approve: false,
+                                    approved: false,
                                     assessment_id: 1 // Default to ID 1 if no assessments exist
                                 }
                             },
