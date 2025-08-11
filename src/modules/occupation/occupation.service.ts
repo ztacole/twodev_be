@@ -43,7 +43,7 @@ export const exportOccupationsToExcel = async () => {
     const worksheet = workbook.addWorksheet('Occupations');
 
     const headerRow = worksheet.addRow(['Nama Jurusan', 'Okupasi']);
-    headerRow.eachCell(cell => {
+    headerRow.eachCell((cell: any) => {
         cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
         cell.fill = {
             type: 'pattern',
@@ -64,7 +64,7 @@ export const exportOccupationsToExcel = async () => {
             occ.scheme?.code || '',
             occ.name
         ]);
-        row.eachCell(cell => {
+        row.eachCell((cell: any) => {
             cell.border = {
                 top: { style: 'thin' },
                 left: { style: 'thin' },

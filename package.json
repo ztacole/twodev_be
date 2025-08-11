@@ -20,6 +20,7 @@
     "@faker-js/faker": "^9.9.0",
     "@prisma/client": "^6.13.0",
     "@types/bcryptjs": "^2.4.6",
+    "@types/exceljs": "^0.5.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "axios": "^1.11.0",

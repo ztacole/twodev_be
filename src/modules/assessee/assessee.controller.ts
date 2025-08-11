@@ -62,6 +62,28 @@ export class AssesseeController {
       }
     };
 
+    async getAssesseByUserId(req: Request, res: Response) {
+      try {
+        const assesse = await this.assesseeService.getAssesseByUserId(Number(req.params.userId));
+        if (!assesse) {
+          return res.status(404).json({
+            success: false,
+            message: 'Data asesi tidak ditemukan',
+          });
+        }
+        res.json({
+          success: true,
+          message: 'Data asesi berhasil diambil',
+          data: assesse,
+        });
+      } catch (error : any) {
+        res.status(500).json({
+          success: false,
+          message: error.message,
+        });
+      }
+    };
+
     async updateAssesse(req: Request, res: Response) {
       try {
         const assesse = await this.assesseeService.updateAssesse(

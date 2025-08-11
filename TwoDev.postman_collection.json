@@ -1,0 +1,154 @@
+{
+  "info": {
+    "_postman_id": "b9e4b9b1-3c2c-4d7e-9b6b-2f6b4a0a9d11",
+    "name": "TwoDev API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Koleksi Postman untuk endpoint TwoDev (auth, APL1, APL2). Gunakan environment variable base_url dan token."
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+            "request": {
+              "method": "POST",
+              "header": [
+                {"key": "Content-Type", "value": "application/json"}
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"confirm_password\": \"password123\",\n  \"full_name\": \"John Doe\",\n  \"role_id\": 2\n}"
+              },
+              "url": {"raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"]}
+            },
+            "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"]}
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let json;",
+                  "try { json = pm.response.json(); } catch(e) { json = {}; }",
+                  "if(json && json.data && json.data.token){ pm.environment.set('token', json.data.token); }",
+                  "pm.test('Status code 200', function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me (Current User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {"raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth", "me"]}
+          },
+          "event": [
+            {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"]}}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "APL1",
+      "item": [
+        {
+          "name": "Create Self Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 2,\n  \"full_name\": \"John Doe\",\n  \"identity_number\": \"1234567890123456\",\n  \"birth_date\": \"1995-04-10T00:00:00Z\",\n  \"birth_location\": \"Surabaya\",\n  \"gender\": \"Male\",\n  \"nationality\": \"Indonesia\",\n  \"phone_no\": \"081234567890\",\n  \"house_phone_no\": \"0211234567\",\n  \"office_phone_no\": \"0311234567\",\n  \"address\": \"Jl. Merdeka No. 20\",\n  \"postal_code\": \"60271\",\n  \"educational_qualifications\": \"Sarjana Komputer\",\n  \"jobs\": [\n    {\n      \"institution_name\": \"PT. ABC\",\n      \"address\": \"Jl. Raya Jakarta Cikampek No. 1\",\n      \"postal_code\": \"12345\",\n      \"position\": \"Software Engineer\",\n      \"phone_no\": \"0211234567\",\n      \"job_email\": \"john.doe@ptabc.com\"\n    }\n  ]\n}"
+            },
+            "url": {"raw": "{{base_url}}/assessment/apl1/create-self-data", "host": ["{{base_url}}"], "path": ["assessment","apl1","create-self-data"]}
+          }
+        },
+        {
+          "name": "Create Certificate Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"result_id\": 1,\n  \"assessor_id\": 1,\n  \"purpose\": \"Certification Purpose\",\n  \"school_report_card\": \"URL to report card\",\n  \"field_work_practice_certificate\": \"URL to practice certificate\",\n  \"student_card\": \"URL to student card\",\n  \"family_card\": \"URL to family card\",\n  \"id_card\": \"URL to ID card\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/assessment/apl1/create-certificate-data", "host": ["{{base_url}}"], "path": ["assessment","apl1","create-certificate-data"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "APL2",
+      "item": [
+        {
+          "name": "Create Assessment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"occupation_id\": 1,\n  \"code\": \"SKM.RPL.PJ/LSPSMK24/2025\",\n  \"unit_competencies\": [\n    {\n      \"unit_code\": \"UC-001\",\n      \"title\": \"Basic Programming Skills\",\n      \"elements\": [\n        {\n          \"title\": \"Write simple programs\",\n          \"element_details\": [\n            {\n              \"description\": \"Understand basic syntax\"\n            },\n            {\n              \"description\": \"Use variables and data types\"\n            }\n          ]\n        },\n        {\n          \"title\": \"Debug programs\",\n          \"element_details\": [\n            {\n              \"description\": \"Identify common errors\"\n            },\n            {\n              \"description\": \"Use debugging tools\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"unit_code\": \"UC-002\",\n      \"title\": \"Database Fundamentals\",\n      \"elements\": [\n        {\n          \"title\": \"Create database tables\",\n          \"element_details\": [\n            {\n              \"description\": \"Define proper data types\"\n            },\n            {\n              \"description\": \"Set primary keys\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {"raw": "{{base_url}}/assessment/apl2/create-assessment", "host": ["{{base_url}}"], "path": ["assessment","apl2","create-assessment"]}
+          }
+        },
+        {
+          "name": "List Assessments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {"raw": "{{base_url}}/assessment/apl2/assessments", "host": ["{{base_url}}"], "path": ["assessment","apl2","assessments"]}
+          }
+        },
+        {
+          "name": "Get Assessment By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {"raw": "{{base_url}}/assessment/apl2/assessments/{{assessment_id}}", "host": ["{{base_url}}"], "path": ["assessment","apl2","assessments","{{assessment_id}}"]}
+          },
+          "variable": [
+            {"key": "assessment_id", "value": "1"}
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": [
+    {"key": "base_url", "value": "http://localhost:3000/api"},
+    {"key": "token", "value": ""}
+  ]
+}
