@@ -19,7 +19,7 @@ model User {
   password   String
   role_id    Int
 
-  role       Role     @relation(fields: [role_id], references: [id])
+  role       Role     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assessee   Assessee?
   assessor   Assessor?
   admin      Admin?
@@ -48,7 +48,7 @@ model Assessee {
   postal_code     String?
   educational_qualifications String
 
-  user            User     @relation(fields: [user_id], references: [id])
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   jobs            Assessee_Job[]
   answers         Assessee_Answer[]
   results         Result[]
@@ -63,8 +63,8 @@ model Assessor {
   phone_no    String
   birth_date  DateTime
 
-  user        User      @relation(fields: [user_id], references: [id])
-  scheme      Schemes   @relation(fields: [scheme_id], references: [id])
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  scheme      Schemes   @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   assessment_details Schedule_Details[]
   details     Assessor_Details?
@@ -79,7 +79,7 @@ model Admin {
   phone_no   String
   birth_date DateTime
 
-  user       User     @relation(fields: [user_id], references: [id])
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Schemes {
@@ -96,7 +96,7 @@ model Occupation {
   scheme_id Int
   name      String
 
-  scheme    Schemes @relation(fields: [scheme_id], references: [id])
+  scheme    Schemes @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   assessments Assessment[]
 }
@@ -108,7 +108,7 @@ model Unit_Competency {
   title       String
 
   elements    Element[]
-  assessment  Assessment @relation(fields: [assessment_id], references: [id])
+  assessment  Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Element {
@@ -116,7 +116,7 @@ model Element {
   unit_competency_id Int
   title             String
 
-  unit_competency   Unit_Competency @relation(fields: [unit_competency_id], references: [id])
+  unit_competency   Unit_Competency @relation(fields: [unit_competency_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   details           Element_Details[]
   result_details    Result_Details[]
 }
@@ -126,7 +126,7 @@ model Element_Details {
   element_id Int
   description String
 
-  element    Element @relation(fields: [element_id], references: [id])
+  element    Element @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Assessment {
@@ -134,7 +134,7 @@ model Assessment {
   occupation_id Int
   code         String
 
-  occupation  Occupation  @relation(fields: [occupation_id], references: [id])
+  occupation  Occupation  @relation(fields: [occupation_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   assessment_schedule Assessment_Schedule[]
   unit_competencies   Unit_Competency[]
@@ -148,7 +148,7 @@ model Assessment_Schedule {
   start_date   DateTime
   end_date     DateTime
 
-  assessment   Assessment  @relation(fields: [assessment_id], references: [id])
+  assessment   Assessment  @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   schedule_details    Schedule_Details[]
 }
@@ -159,8 +159,8 @@ model Schedule_Details {
   assessor_id   Int
   location      String
 
-  assessment_schedule  Assessment_Schedule @relation(fields: [schedule_id], references: [id])
-  assessor    Assessor   @relation(fields: [assessor_id], references: [id])
+  assessment_schedule  Assessment_Schedule @relation(fields: [schedule_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessor    Assessor   @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Assessment_Question {
@@ -169,7 +169,7 @@ model Assessment_Question {
   type           QuestionType
   question       String
 
-  assessment     Assessment   @relation(fields: [assessment_id], references: [id])
+  assessment     Assessment   @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   pg_details     QuestionPG_Details[]
   answers        Assessee_Answer[]
 }
@@ -180,7 +180,7 @@ model QuestionPG_Details {
   option      String
   isanswer    Boolean
 
-  question   Assessment_Question @relation(fields: [question_id], references: [id])
+  question   Assessment_Question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Assessee_Answer {
@@ -189,8 +189,8 @@ model Assessee_Answer {
   assessee_id  Int
   answer       String
 
-  question     Assessment_Question @relation(fields: [question_id], references: [id])
-  assessee     Assessee            @relation(fields: [assessee_id], references: [id])
+  question     Assessment_Question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessee     Assessee            @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Result {
@@ -200,8 +200,8 @@ model Result {
   approved      Boolean
   created_at    DateTime @default(now())
 
-  assessment    Assessment @relation(fields: [assessment_id], references: [id])
-  assessee      Assessee   @relation(fields: [assessee_id], references: [id])
+  assessment    Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessee      Assessee   @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   details       Result_Details[]
   docs        Result_Docs[]
@@ -219,8 +219,8 @@ model Result_Docs {
   id_card    String
   approved   Boolean
 
-  result     Result  @relation(fields: [result_id], references: [id])
-  assessor   Assessor @relation(fields: [assessor_id], references: [id])
+  result     Result  @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessor   Assessor @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Result_Details {
@@ -230,8 +230,8 @@ model Result_Details {
   answer     Boolean
   proof      String
 
-  result     Result  @relation(fields: [result_id], references: [id])
-  element    Element @relation(fields: [element_id], references: [id])
+  result     Result  @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  element    Element @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Assessee_Job {
@@ -244,7 +244,7 @@ model Assessee_Job {
   phone_no         String
   job_email        String
 
-  assessee         Assessee @relation(fields: [assessee_id], references: [id])
+  assessee         Assessee @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Assessor_Details {
@@ -255,7 +255,7 @@ model Assessor_Details {
   certificate     String
   national_id     String
 
-  assessor       Assessor @relation(fields: [assessor_id], references: [id])
+  assessor       Assessor @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 enum Gender {

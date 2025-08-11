@@ -17,9 +17,9 @@ async function main() {
 
   // Seed Schemes
   const schemesData = [
-    { code: 'SKM-001', name: 'Skema Sertifikasi Junior Web Developer' },
-    { code: 'SKM-002', name: 'Skema Sertifikasi Network Technician' },
-    { code: 'SKM-003', name: 'Skema Sertifikasi Graphic Designer' },
+    { id: 1, code: 'RPL', name: 'Rekayasa Perangkat Lunak' },
+    { id: 2, code: 'Kuliner', name: 'Kuliner' },
+    { id: 3, code: 'Busana', name: 'Tata Busana' },
   ];
   await prisma.schemes.createMany({
     data: schemesData,
@@ -28,24 +28,58 @@ async function main() {
   const schemes = await prisma.schemes.findMany();
 
   // Seed Occupations
-  const occupationsData = [];
-  for (const scheme of schemes) {
-    const occupation = await prisma.occupation.create({
-      data: {
-        scheme_id: scheme.id,
-        name: faker.person.jobTitle(),
-      },
-    });
-    occupationsData.push(occupation);
-  }
+  const occupationData = [
+    {
+      id: 1,
+      scheme_id: 1,
+      name: 'Junior Programmer',
+    },
+    {
+      id: 2,
+      scheme_id: 1,
+      name: 'Senior Programmer',
+    },
+    {
+      id: 3,
+      scheme_id: 2,
+      name: 'Chef',
+    },
+    {
+      id: 4,
+      scheme_id: 2,
+      name: 'Chef Asisten',
+    },
+    {
+      id: 5,
+      scheme_id: 3,
+      name: 'Pembuat Busana',
+    },
+    {
+      id: 6,
+      scheme_id: 3,
+      name: 'Pembuat Busana Asisten',
+    },
+  ];
+  await prisma.occupation.createMany({
+    data: occupationData,
+    skipDuplicates: true,
+  })
+  console.log('Created role, schemes, and occupations');
 
   // Seed Assessments
   const assessmentsData = [];
-  for (const occupation of occupationsData) {
+  for (const occupation of occupationData) {
+    const schemeData = schemes.find(scheme => scheme.id === occupation.scheme_id);
+    if (!schemeData) {
+      continue;
+    }
+
+    const code = `SKM.${schemeData.code}.${occupation.name.split(' ').map(word => word[0]).join('')}/LSPSMK24/2020`;
+
     const assessment = await prisma.assessment.create({
       data: {
         occupation_id: occupation.id,
-        code: faker.string.alphanumeric(10),
+        code: code,
       },
     });
     assessmentsData.push(assessment);
@@ -72,7 +106,7 @@ async function main() {
     const unitCompetency = await prisma.unit_Competency.create({
       data: {
         assessment_id: assessment.id,
-        unit_code: faker.string.alphanumeric(5),
+        unit_code: `UC-${faker.string.alphanumeric(3)}`,
         title: faker.lorem.sentence(),
       },
     });
@@ -86,8 +120,19 @@ async function main() {
           title: faker.lorem.sentence(),
         },
       });
+
+      // Create details for each element
+      for (let j = 0; j < 2; j++) {
+        await prisma.element_Details.create({
+          data: {
+            element_id: unitCompetency.id,
+            description: faker.lorem.sentence(),
+          },
+        });
+      }
     }
   }
+  console.log("Created questions, unit competencies, and elements");
   
   // Seed Users, Admins, Assessors, and Assessees
   const users: any[] = [];

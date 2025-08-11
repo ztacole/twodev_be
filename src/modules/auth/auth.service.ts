@@ -2,18 +2,27 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../config/db';
 import { RegisterRequest, LoginRequest, AuthResponse, JwtPayload } from './auth.type';
+import { DuplicateEntryError, NotFoundError, ValidationError } from '../../common/error';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES_IN = '7d';
 
 export class AuthService {
-    async register(data: RegisterRequest): Promise<AuthResponse> {
+    static async register(data: RegisterRequest): Promise<AuthResponse> {
         const existingUser = await prisma.user.findUnique({
             where: { email: data.email }
         });
 
         if (existingUser) {
-            throw new Error('User already exists with this email');
+            throw new DuplicateEntryError('User', data.email);
+        }
+
+        const existingRole = await prisma.role.findUnique({
+            where: { id: data.role_id }
+        });
+
+        if (!existingRole) {
+            throw new NotFoundError('Role');
         }
 
         const saltRounds = 10;
@@ -39,18 +48,18 @@ export class AuthService {
         };
     }
 
-    async login(data: LoginRequest): Promise<AuthResponse> {
+    static async login(data: LoginRequest): Promise<AuthResponse> {
         const user = await prisma.user.findUnique({
             where: { email: data.email }
         });
 
         if (!user) {
-            throw new Error('Invalid email or password');
+            throw new ValidationError('Invalid email or password');
         }
 
         const isPasswordValid = await bcrypt.compare(data.password, user.password);
         if (!isPasswordValid) {
-            throw new Error('Invalid email or password');
+            throw new ValidationError('Invalid email or password');
         }
 
         const token = this.generateToken(user.id, user.email);
@@ -65,7 +74,25 @@ export class AuthService {
         };
     }
 
-    async verifyToken(token: string): Promise<JwtPayload> {
+    static async getMe(userId: number): Promise<any> {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                role: true,
+                assessor: true,
+                assessee: true,
+                admin: true
+            }
+        });
+
+        if (!user) {
+            throw new NotFoundError('User');
+        }
+
+        return user;
+    }
+
+    static async verifyToken(token: string): Promise<JwtPayload> {
         try {
             const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
             return decoded;
@@ -74,7 +101,7 @@ export class AuthService {
         }
     }
 
-    private generateToken(userId: number, email: string): string {
+    private static generateToken(userId: number, email: string): string {
         const payload: JwtPayload = {
             userId,
             email

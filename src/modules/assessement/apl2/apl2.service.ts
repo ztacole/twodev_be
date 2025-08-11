@@ -1,8 +1,9 @@
+import { DuplicateEntryError, NotFoundError } from '../../../common/error';
 import { prisma } from '../../../config/db';
 import { AssessmentRequest, AssessmentResponse, ElementResponse } from './apl2.type';
 
 export class APL2Service {
-  async createAssessment(data: AssessmentRequest): Promise<AssessmentResponse> {
+  static async createAssessment(data: AssessmentRequest): Promise<AssessmentResponse> {
     const existingAssessment = await prisma.assessment.findFirst({
       where: {
         code: data.code
@@ -10,7 +11,7 @@ export class APL2Service {
     })
 
     if (existingAssessment) {
-      throw new Error('Assessment code already exists');
+      throw new DuplicateEntryError('Assessment code', data.code);
     }
 
     const occupation = await prisma.occupation.findUnique({
@@ -20,19 +21,19 @@ export class APL2Service {
     })
 
     if (!occupation) {
-      throw new Error('Occupation not found');
+      throw new NotFoundError('Occupation');
     }
 
-    data.unit_competencies.forEach(async (unit) => {
-      const existingUnit = await prisma.unit_Competency.findFirst({
-        where: {
-          unit_code: unit.unit_code
-        }
-      })
-      if (existingUnit) {
-        throw new Error(`Unit code ${unit.unit_code} already exists`);
+    const unitCodes = data.unit_competencies.map(unit => unit.unit_code);
+    const existingUnits = await prisma.unit_Competency.findMany({
+      where: {
+        unit_code: { in: unitCodes }
       }
     });
+
+    if (existingUnits.length > 0) {
+      throw new DuplicateEntryError('Unit competency code', existingUnits[0].unit_code);
+    }
 
     const assessment = await prisma.assessment.create({
       data: {
@@ -76,7 +77,7 @@ export class APL2Service {
     return formatAssessmentResponse(assessment);
   }
 
-  async getAssessmentById(id: number): Promise<AssessmentResponse | null> {
+  static async getAssessmentById(id: number): Promise<AssessmentResponse> {
     const assessment = await prisma.assessment.findUnique({
       where: { id },
       include: {
@@ -98,13 +99,13 @@ export class APL2Service {
     });
 
     if (!assessment) {
-      return null;
+      throw new NotFoundError('Assessment');
     }
 
     return formatAssessmentResponse(assessment);
   }
 
-  async getAssessments(): Promise<AssessmentResponse[] | null> {
+  static async getAssessments(): Promise<AssessmentResponse[]> {
     const assessments = await prisma.assessment.findMany({
       include: {
         occupation: {
@@ -124,20 +125,16 @@ export class APL2Service {
       }
     });
 
-    if (!assessments) {
-      return null;
-    }
-
     return assessments.map(formatAssessmentResponse);
   }
 
-  async getUnitCompetenciesByAssessmentId(assessmentId: number): Promise<any[] | null> {
+  static async getUnitCompetenciesByAssessmentId(assessmentId: number): Promise<any[]> {
     const unitCompetencies = await prisma.unit_Competency.findMany({
       where: { assessment_id: assessmentId },
     });
 
     if (!unitCompetencies) {
-      return null;
+      throw new NotFoundError('Unit competencies');
     }
 
     return unitCompetencies.map(unit => {
@@ -149,7 +146,7 @@ export class APL2Service {
     })
   }
 
-  async getElementsByUnitCompetencyId(unitCompetencyId: number): Promise<ElementResponse[] | null> {
+  static async getElementsByUnitCompetencyId(unitCompetencyId: number): Promise<ElementResponse[]> {
     const elements = await prisma.element.findMany({
       where: { unit_competency_id: unitCompetencyId },
       include: {
@@ -158,7 +155,7 @@ export class APL2Service {
     });
 
     if (!elements) {
-      return null;
+      throw new NotFoundError('Elements');
     }
 
     return elements.map(element => {

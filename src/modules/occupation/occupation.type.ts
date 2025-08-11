@@ -5,7 +5,12 @@ export interface OccupationRequest {
 
 export interface OccupationResponse {
     id: number;
-    scheme_id: number;
+    scheme: SchemeResponse;
     name: string;
-    scheme?: any;
+}
+
+export interface SchemeResponse {
+    id: number;
+    code: string;
+    name: string;
 }

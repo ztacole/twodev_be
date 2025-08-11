@@ -1,9 +1,30 @@
+import { NotFoundError } from '../../../common/error';
 import { prisma } from '../../../config/db';
 import { ScheduleRequest, ScheduleResponse } from './schedule.type';
 
 export class ScheduleService {
+    static async createSchedule(data: ScheduleRequest): Promise<ScheduleResponse> {
+        const assessment = await prisma.assessment.findUnique({
+            where: {
+                id: data.assessment_id
+            }
+        });
 
-    async createSchedule(data: ScheduleRequest): Promise<ScheduleResponse> {
+        if (!assessment) {
+            throw new NotFoundError('Assessment');
+        }
+
+        const assessorIds = data.schedule_details.map(detail => detail.assessor_id);
+        const existingAssessors = await prisma.user.findMany({
+            where: {
+                id: { in: assessorIds }
+            }
+        });
+
+        if (existingAssessors.length !== assessorIds.length) {
+            throw new NotFoundError('Assessor');
+        }
+
         const schedule = await prisma.assessment_Schedule.create({
             data: {
                 assessment_id: data.assessment_id,
@@ -33,7 +54,7 @@ export class ScheduleService {
         return formatScheduleResponse(schedule);
     }
 
-    async getSchedules(): Promise<ScheduleResponse[] | null> {
+    static async getSchedules(): Promise<ScheduleResponse[]> {
         const schedules = await prisma.assessment_Schedule.findMany({
             include: {
                 assessment: {
@@ -48,14 +69,10 @@ export class ScheduleService {
             },
         });
 
-        if (schedules.length === 0) {
-            return null;
-        }
-
         return schedules.map(formatScheduleResponse);
     }
 
-    async getScheduleById(id: number): Promise<ScheduleResponse | null> {
+    static async getScheduleById(id: number): Promise<ScheduleResponse> {
         const schedule = await prisma.assessment_Schedule.findUnique({
             where: { id },
             include: {
@@ -71,10 +88,14 @@ export class ScheduleService {
             },
         });
 
-        return schedule ? formatScheduleResponse(schedule) : null;
+        if (!schedule) {
+            throw new NotFoundError('Schedule');
+        }
+
+        return formatScheduleResponse(schedule);
     }
 
-    async getActiveSchedules(): Promise<ScheduleResponse[] | null> {
+    static async getActiveSchedules(): Promise<ScheduleResponse[]> {
         const schedules = await prisma.assessment_Schedule.findMany({
             where: { start_date: { lte: new Date() }, end_date: { gte: new Date() } },
             include: {
@@ -90,10 +111,10 @@ export class ScheduleService {
             },
         });
 
-        return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
+        return schedules.map(formatScheduleResponse);
     }
 
-    async getCompletedSchedules(): Promise<ScheduleResponse[] | null> {
+    static async getCompletedSchedules(): Promise<ScheduleResponse[]> {
         const schedules = await prisma.assessment_Schedule.findMany({
             where: { end_date: { lte: new Date() } },
             include: {
@@ -109,10 +130,15 @@ export class ScheduleService {
             },
         });
 
-        return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
+        return schedules.map(formatScheduleResponse);
     }
 
-    async getCompletedSchedulesByAssesseeId(assesseeId: number): Promise<ScheduleResponse[] | null> {
+    static async getCompletedSchedulesByAssesseeId(assesseeId: number): Promise<ScheduleResponse[]> {
+        const assessee = await prisma.assessee.findUnique({ where: { id: assesseeId } });
+        if (!assessee) {
+            throw new NotFoundError('Assessee');
+        }
+
         const results = await prisma.result.findMany({
             where: { assessee_id: assesseeId },
             include: {
@@ -135,10 +161,10 @@ export class ScheduleService {
         });
     
         const schedules = results.flatMap(result => result.assessment?.assessment_schedule ?? []);
-        return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
+        return schedules.map(formatScheduleResponse);
     }
 
-    async getScheduleDataForExcel() {
+    static async getScheduleDataForExcel() {
         const schedules = await prisma.assessment_Schedule.findMany({
             include: {
                 assessment: {
