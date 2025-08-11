@@ -2,12 +2,11 @@ import { Router } from "express";
 import { APL2Controller } from "./apl2.controller";
 
 const router = Router();
-const controller = new APL2Controller();
 
-router.post('/create-assessment', controller.createAssessment.bind(controller));
-router.get('/', controller.getAssessments.bind(controller));
-router.get('/:id', controller.getAssessmentById.bind(controller));
-router.get('/unit-competencies/:assessmentId', controller.getUnitCompetenciesByAssessmentId.bind(controller));
-router.get('/unit-competencies/elements/:unitCompetencyId', controller.getElementsByUnitCompetencyId.bind(controller));
+router.post('/create-assessment', APL2Controller.createAssessment);
+router.get('/', APL2Controller.getAssessments);
+router.get('/:id', APL2Controller.getAssessmentById);
+router.get('/unit-competencies/:assessmentId', APL2Controller.getUnitCompetenciesByAssessmentId);
+router.get('/unit-competencies/elements/:unitCompetencyId', APL2Controller.getElementsByUnitCompetencyId);
 
 export default router;

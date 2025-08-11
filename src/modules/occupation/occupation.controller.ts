@@ -1,131 +1,68 @@
 import { Request, Response } from 'express';
-import * as occupationService from './occupation.service';
+import { OccupationService } from './occupation.service';
 import { OccupationRequest } from './occupation.type';
+import { asyncHandler } from '../../common/async.handler';
 
-export const createOccupation = async (req: Request, res: Response) => {
-    try {
+export class OccupationController {
+    static createOccupation = asyncHandler(async (req: Request, res: Response) => {
         const occupationData: OccupationRequest = req.body;
-        const occupation = await occupationService.createOccupation(occupationData);
+        const occupation = await OccupationService.createOccupation(occupationData);
 
         res.status(201).json({
             success: true,
             message: 'Occupation berhasil dibuat',
             data: occupation,
         });
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Terjadi kesalahan pada server',
-        });
-    }
-};
+    });
 
-export const getOccupations = async (req: Request, res: Response) => {
-    try {
-        const occupations = await occupationService.getOccupations();
+    static getOccupations = asyncHandler(async (req: Request, res: Response) => {
+        const occupations = await OccupationService.getOccupations();
 
         res.json({
             success: true,
             message: 'Data occupation berhasil diambil',
             data: occupations,
         });
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Terjadi kesalahan pada server',
-        });
-    }
-};
+    });
 
-export const getOccupationById = async (req: Request, res: Response) => {
-    try {
-        const occupation = await occupationService.getOccupationById(Number(req.params.id));
-
-        if (!occupation) {
-            return res.status(404).json({
-                success: false,
-                message: 'Occupation tidak ditemukan',
-            });
-        }
+    static getOccupationById = asyncHandler(async (req: Request, res: Response) => {
+        const occupation = await OccupationService.getOccupationById(Number(req.params.id));
 
         res.json({
             success: true,
             message: 'Data occupation berhasil diambil',
             data: occupation,
         });
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Terjadi kesalahan pada server',
-        });
-    }
-};
+    });
 
-export const updateOccupation = async (req: Request, res: Response) => {
-    try {
-        const occupation = await occupationService.updateOccupation(
+    static updateOccupation = asyncHandler(async (req: Request, res: Response) => {
+        const occupation = await OccupationService.updateOccupation(
             Number(req.params.id),
             req.body
         );
-
-        if (!occupation) {
-            return res.status(404).json({
-                success: false,
-                message: 'Occupation tidak ditemukan',
-            });
-        }
 
         res.json({
             success: true,
             message: 'Occupation berhasil diperbarui',
             data: occupation,
         });
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Terjadi kesalahan pada server',
-        });
-    }
-};
+    });
 
-export const deleteOccupation = async (req: Request, res: Response) => {
-    try {
-        const occupation = await occupationService.deleteOccupation(Number(req.params.id));
-
-        if (!occupation) {
-            return res.status(404).json({
-                success: false,
-                message: 'Occupation tidak ditemukan',
-            });
-        }
+    static deleteOccupation = asyncHandler(async (req: Request, res: Response) => {
+        const occupation = await OccupationService.deleteOccupation(Number(req.params.id));
 
         res.json({
             success: true,
             message: 'Occupation berhasil dihapus',
         });
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Terjadi kesalahan pada server',
-        });
-    }
-};
+    });
 
-export const exportOccupationsToExcel = async (req: Request, res: Response) => {
-    try {
-        const { exportOccupationsToExcel } = require('./occupation.service');
-        
-        const buffer = await exportOccupationsToExcel();
-        
+    static exportOccupationsToExcel = asyncHandler(async (req: Request, res: Response) => {
+        const buffer = await OccupationService.exportOccupationsToExcel();
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename=occupations.xlsx');
-        
+
         res.send(buffer);
-    } catch (error: any) {
-        console.error('Error exporting occupations to Excel:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Terjadi kesalahan saat mengekspor data ke Excel',
-        });
-    }
-};
+    });
+}

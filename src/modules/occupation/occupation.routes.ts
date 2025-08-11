@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import * as occupationController from './occupation.controller';
+import { OccupationController } from './occupation.controller';
 
 const router = Router();
 
-router.post('/', occupationController.createOccupation);
-router.get('/', occupationController.getOccupations);
-router.get('/:id', occupationController.getOccupationById);
-router.put('/:id', occupationController.updateOccupation);
-router.delete('/:id', occupationController.deleteOccupation);
-router.get('/export/excel', occupationController.exportOccupationsToExcel);
+router.post('/', OccupationController.createOccupation);
+router.get('/', OccupationController.getOccupations);
+router.get('/:id', OccupationController.getOccupationById);
+router.put('/:id', OccupationController.updateOccupation);
+router.delete('/:id', OccupationController.deleteOccupation);
+router.get('/export/excel', OccupationController.exportOccupationsToExcel);
 
 export default router;

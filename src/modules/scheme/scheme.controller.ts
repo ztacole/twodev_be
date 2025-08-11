@@ -1,131 +1,62 @@
 
 import { Request, Response } from 'express';
-import * as schemeService from './scheme.service';
+import { SchemeService } from './scheme.service';
+import { asyncHandler } from '../../common/async.handler';
 
-export const createScheme = async (req: Request, res: Response) => {
-  try {
-    const scheme = await schemeService.createScheme(req.body);
+export class SchemeController {
+  static createScheme = asyncHandler(async function (req: Request, res: Response) {
+      const scheme = await SchemeService.createScheme(req.body);
 
-    res.status(201).json({
-      success: true,
-      message: 'Skema berhasil dibuat',
-      data: scheme,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan pada server',
-    });
-  }
-};
+      res.status(201).json({
+        success: true,
+        message: 'Skema berhasil dibuat',
+        data: scheme,
+      });
+  });
 
-export const getSchemes = async (req: Request, res: Response) => {
-  try {
-    const schemes = await schemeService.getSchemes();
-
+  static getSchemes = asyncHandler(async function (req: Request, res: Response) {
+    const schemes = await SchemeService.getSchemes();
+    
     res.json({
       success: true,
       message: 'Skema berhasil diambil',
       data: schemes,
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan pada server',
-    });
-  }
-};
+  });
 
-export const getSchemeById = async (req: Request, res: Response) => {
-  try {
-    const scheme = await schemeService.getSchemeById(Number(req.params.id));
-
-    if (!scheme) {
-      return res.status(404).json({
-        success: false,
-        message: 'Skema tidak ditemukan',
-      });
-    }
-
+  static getSchemeById = asyncHandler(async function (req: Request, res: Response) {
+    const scheme = await SchemeService.getSchemeById(Number(req.params.id));
+    
     res.json({
       success: true,
       message: 'Skema berhasil diambil',
       data: scheme,
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan pada server',
-    });
-  }
-};
+  });
 
-export const updateScheme = async (req: Request, res: Response) => {
-  try {
-    const scheme = await schemeService.updateScheme(
-      Number(req.params.id),
-      req.body
-    );
-
-    if (!scheme) {
-      return res.status(404).json({
-        success: false,
-        message: 'Skema tidak ditemukan',
-      });
-    }
-
+  static updateScheme = asyncHandler(async function (req: Request, res: Response) {
+    const scheme = await SchemeService.updateScheme(Number(req.params.id), req.body);
+    
     res.json({
       success: true,
       message: 'Skema berhasil diperbarui',
       data: scheme,
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan pada server',
-    });
-  }
-};
+  });
 
-export const deleteScheme = async (req: Request, res: Response) => {
-  try {
-    const scheme = await schemeService.deleteScheme(Number(req.params.id));
-
-    if (!scheme) {
-      return res.status(404).json({
-        success: false,
-        message: 'Skema tidak ditemukan',
-      });
-    }
+  static deleteScheme = asyncHandler(async function (req: Request, res: Response) {
+    const scheme = await SchemeService.deleteScheme(Number(req.params.id));
 
     res.json({
       success: true,
       message: 'Skema berhasil dihapus',
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan pada server',
-    });
-  }
-};
+  });
 
-export const exportSchemesToExcel = async (req: Request, res: Response) => {
-  try {
-    const { exportSchemesToExcel } = await import('./scheme.service');
-    
-    const buffer = await exportSchemesToExcel();
-    
+  static exportSchemesToExcel = asyncHandler(async function (req: Request, res: Response) {
+    const buffer = await SchemeService.exportSchemesToExcel();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=schemes.xlsx');
-    
     res.send(buffer);
-  } catch (error) {
-    console.error('Error exporting schemes to Excel:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan saat mengekspor data ke Excel',
-    });
-  }
-};
-
+  });
+}

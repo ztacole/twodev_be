@@ -1,57 +1,90 @@
 import { prisma } from '../../config/db';
 import ExcelJS from 'exceljs';
-import { Writable } from 'stream';
+import { SchemeRequest } from './scheme.type';
+import { DuplicateEntryError, NotFoundError } from '../../common/error';
 
-export const getSchemes = async () => {
-  return prisma.schemes.findMany();
-};
+export class SchemeService {
+  public static getSchemes = async (): Promise<any> => {
+    return prisma.schemes.findMany();
+  };
 
-export const getSchemeById = async (id: number) => {
-  return prisma.schemes.findUnique({ where: { id } });
-};
+  public static getSchemeById = async (id: number): Promise<any> => {
+    const scheme = await prisma.schemes.findUnique({ where: { id } });
 
-export const createScheme = async (data: any) => {
-  return prisma.schemes.create({ data });
-};
+    if (!scheme) {
+      throw new NotFoundError('Scheme');
+    }
 
-export const updateScheme = async (id: number, data: any) => {
-  return prisma.schemes.update({ where: { id }, data });
-};
+    return scheme;
+  };
 
-export const deleteScheme = async (id: number) => {
-  return prisma.schemes.delete({ where: { id } });
-};
+  public static createScheme = async (data: SchemeRequest) => {
+    const existingSchemeCode = await prisma.schemes.findFirst({ where: { code: data.code } });
+    if (existingSchemeCode) {
+      throw new DuplicateEntryError('Scheme code', data.code);
+    }
 
-export const exportSchemesToExcel = async () => {
-  const schemes = await prisma.schemes.findMany();
+    const existingSchemeName = await prisma.schemes.findFirst({ where: { name: data.name } });
+    if (existingSchemeName) {
+      throw new DuplicateEntryError('Scheme name', data.name);
+    }
 
-  if (!schemes.length) {
-    throw new Error('Tidak ada data scheme untuk diekspor');
-  }
+    return prisma.schemes.create({ data });
+  };
 
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Schemes');
+  public static updateScheme = async (id: number, data: SchemeRequest) => {
+    const existingScheme = await prisma.schemes.findUnique({ where: { id } });
+    if (!existingScheme) {
+      throw new NotFoundError('Scheme');
+    }
 
-  const headerRow = worksheet.addRow(['Nama Jurusan', 'Deskripsi']);
-  headerRow.eachCell(cell => {
-    cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE77D35' }
-    };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-    cell.border = {
-      top: { style: 'thin' },
-      left: { style: 'thin' },
-      bottom: { style: 'thin' },
-      right: { style: 'thin' }
-    };
-  });
+    const existingSchemeCode = await prisma.schemes.findFirst({ where: { code: data.code } });
+    if (existingSchemeCode) {
+      throw new DuplicateEntryError('Scheme code', data.code);
+    }
 
-  schemes.forEach(scheme => {
-    const row = worksheet.addRow([scheme.code, scheme.name]);
-    row.eachCell(cell => {
+    const existingSchemeName = await prisma.schemes.findFirst({ where: { name: data.name } });
+    if (existingSchemeName) {
+      throw new DuplicateEntryError('Scheme name', data.name);
+    }
+
+    const scheme = prisma.schemes.update({ where: { id }, data });
+
+    if (!scheme) {
+      throw new NotFoundError('Scheme');
+    }
+
+    return scheme;
+  };
+
+  public static deleteScheme = async (id: number) => {
+    const existingScheme = await prisma.schemes.findUnique({ where: { id } });
+    if (!existingScheme) {
+      throw new NotFoundError('Scheme');
+    }
+
+    return await prisma.schemes.delete({ where: { id: id } });
+  };
+
+  public static exportSchemesToExcel = async () => {
+    const schemes = await prisma.schemes.findMany();
+
+    if (!schemes.length) {
+      throw new NotFoundError('Schemes');
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Schemes');
+
+    const headerRow = worksheet.addRow(['Nama Jurusan', 'Deskripsi']);
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE77D35' }
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
       cell.border = {
         top: { style: 'thin' },
         left: { style: 'thin' },
@@ -59,13 +92,24 @@ export const exportSchemesToExcel = async () => {
         right: { style: 'thin' }
       };
     });
-  });
 
-  worksheet.columns = [
-    { width: 25 }, // Nama Jurusan
-    { width: 50 }  // Deskripsi
-  ];
+    schemes.forEach(scheme => {
+      const row = worksheet.addRow([scheme.code, scheme.name]);
+      row.eachCell(cell => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    });
 
-  return await workbook.xlsx.writeBuffer();
-};
+    worksheet.columns = [
+      { width: 25 }, // Nama Jurusan
+      { width: 50 }  // Deskripsi
+    ];
 
+    return await workbook.xlsx.writeBuffer();
+  };
+}
