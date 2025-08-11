@@ -18,6 +18,15 @@ export class AssesseeService {
         });
     };
 
+    async getAssesseByUserId(userId: number) {
+        return prisma.assessee.findUnique({ 
+            where: { user_id: userId },
+            include: {
+                jobs: true,
+            },
+        });
+    };
+
     async createAssesse(data: any) {
         const { jobs, ...assesseeData } = data;
         return prisma.assessee.create({

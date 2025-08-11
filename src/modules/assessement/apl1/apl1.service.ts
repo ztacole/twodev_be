@@ -4,6 +4,15 @@ import path from 'path';
 export class APL1Service {
     async createOrUpdateAssesse(data: any) {
         const { jobs, id, user_id, ...assesseeData } = data;
+        
+        // Convert Indonesian gender values to English enum values
+        if (assesseeData.gender) {
+            if (assesseeData.gender === 'Laki-laki') {
+                assesseeData.gender = 'Male';
+            } else if (assesseeData.gender === 'Perempuan') {
+                assesseeData.gender = 'Female';
+            }
+        }
     
         if (!id && !user_id) {
             return prisma.assessee.create({
