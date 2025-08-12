@@ -1,3 +1,4 @@
+import app from '../../../app';
 import { prisma } from '../../../config/db';
 import path from 'path';
 
@@ -107,7 +108,8 @@ export class APL1Service {
             
             for (const file of files) {
                 if (fieldMapping[file.fieldname]) {
-                    fileData[fieldMapping[file.fieldname]] = `${uploadPath}/${file.filename}`;
+                    const time = new Date().getTime();
+                    fileData[fieldMapping[file.fieldname]] = `${uploadPath}/${time}-${file.filename}`;
                 }
             }
         }
@@ -169,6 +171,7 @@ export class APL1Service {
                     result_id: result.id,
                     assessor_id: assessorId,
                     purpose: 'APL1 Certificate Documents',
+                    approved: false,
                     ...fileData
                 }
             });
