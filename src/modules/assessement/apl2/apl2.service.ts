@@ -128,14 +128,19 @@ export class APL2Service {
     return assessments.map(formatAssessmentResponse);
   }
 
-  static async getUnitCompetenciesByAssessmentId(assessmentId: number): Promise<any[]> {
-    const unitCompetencies = await prisma.unit_Competency.findMany({
-      where: { assessment_id: assessmentId },
+  static async getUnitCompetenciesByAssessmentCode(assessmentCode: string): Promise<any[]> {
+    const assessment = await prisma.assessment.findFirst({
+      where: { code: assessmentCode },
+      select: { id: true }
     });
 
-    if (!unitCompetencies) {
-      throw new NotFoundError('Unit competencies');
+    if (!assessment) {
+      throw new NotFoundError('Assessment');
     }
+
+    const unitCompetencies = await prisma.unit_Competency.findMany({
+      where: { assessment_id: assessment.id }
+    });
 
     return unitCompetencies.map(unit => {
       return {
@@ -146,17 +151,22 @@ export class APL2Service {
     })
   }
 
-  static async getElementsByUnitCompetencyId(unitCompetencyId: number): Promise<ElementResponse[]> {
+  static async getElementsByUnitCompetencyCode(unitCompetencyCode: string): Promise<ElementResponse[]> {
+    const unitCompetency = await prisma.unit_Competency.findFirst({
+      where: { unit_code: unitCompetencyCode },
+      select: { id: true }
+    });
+
+    if (!unitCompetency) {
+      throw new NotFoundError('Unit competency');
+    }
+    
     const elements = await prisma.element.findMany({
-      where: { unit_competency_id: unitCompetencyId },
+      where: { unit_competency_id: unitCompetency.id },
       include: {
         details: true
       }
     });
-
-    if (!elements) {
-      throw new NotFoundError('Elements');
-    }
 
     return elements.map(element => {
       return {

@@ -1101,18 +1101,18 @@ paths:
                 success: false
                 message: "Internal server error"
 
-  /assessment/apl2/unit-competencies/{assessmentId}:
+  /assessment/apl2/unit-competencies/{assessmentCode}:
     get:
       tags:
         - FR.APL.02
-      summary: Mendapatkan daftar unit kompetensi berdasarkan Assessment ID
+      summary: Mendapatkan daftar unit kompetensi berdasarkan Assessment Code
       parameters:
-        - name: assessmentId
+        - name: assessmentCode
           in: path
           required: true
           schema:
-            type: integer
-          description: ID asesmen
+            type: string
+          description: Code asesmen
       responses:
         "200":
           description: Unit competencies retrieved successfully
@@ -1182,18 +1182,18 @@ paths:
                 success: false
                 message: "Internal server error"
 
-  /assessment/apl2/unit-competencies/elements/{unitCompetencyId}:
+  /assessment/apl2/unit-competencies/elements/{unitCompetencyCode}:
     get:
       tags:
         - FR.APL.02
-      summary: Mendapatkan daftar elemen berdasarkan Unit Competency ID
+      summary: Mendapatkan daftar elemen berdasarkan Unit Competency Code
       parameters:
-        - name: unitCompetencyId
+        - name: unitCompetencyCode
           in: path
           required: true
           schema:
-            type: integer
-          description: ID unit kompetensi
+            type: string
+          description: Code unit kompetensi
       responses:
         "200":
           description: Elements retrieved successfully

@@ -69,7 +69,7 @@ export class APL2Controller {
     })
 
     static getUnitCompetenciesByAssessmentId = asyncHandler(async (req: Request, res: Response) => {
-        const unitCompetencies = await APL2Service.getUnitCompetenciesByAssessmentId(Number(req.params.assessmentId));
+        const unitCompetencies = await APL2Service.getUnitCompetenciesByAssessmentCode(req.params.assessmentCode);
         
         res.status(200).json({
             success: true,
@@ -79,10 +79,12 @@ export class APL2Controller {
     })
 
     static getElementsByUnitCompetencyId = asyncHandler(async (req: Request, res: Response) => {
-        const elements = await APL2Service.getElementsByUnitCompetencyId(Number(req.params.unitCompetencyId));
+        const elements = await APL2Service.getElementsByUnitCompetencyCode(req.params.unitCompetencyCode);
         
         res.status(200).json({
             success: true,
+            message: 'Elemen berhasil diambil',
+            data: elements,
         });
     })
 }

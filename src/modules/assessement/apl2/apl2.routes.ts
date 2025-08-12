@@ -6,7 +6,7 @@ const router = Router();
 router.post('/create-assessment', APL2Controller.createAssessment);
 router.get('/', APL2Controller.getAssessments);
 router.get('/:id', APL2Controller.getAssessmentById);
-router.get('/unit-competencies/:assessmentId', APL2Controller.getUnitCompetenciesByAssessmentId);
-router.get('/unit-competencies/elements/:unitCompetencyId', APL2Controller.getElementsByUnitCompetencyId);
+router.get('/unit-competencies/:assessmentCode', APL2Controller.getUnitCompetenciesByAssessmentId);
+router.get('/unit-competencies/elements/:unitCompetencyCode', APL2Controller.getElementsByUnitCompetencyId);
 
 export default router;
