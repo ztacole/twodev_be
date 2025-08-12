@@ -6,14 +6,20 @@ info:
 servers:
   - url: http://localhost:3000/api
 tags:
-  - name: auth
+  - name: Auth
     description: Semua endpoint terkait autentikasi pengguna
   - name: FR.APL.01
     description: Semua endpoint terkait permohonan sertifikasi kompetensi
   - name: FR.APL.02
     description: Semua endpoint terkait asesmen mandiri
+  - name: Uploads
+    description: Semua endpoint terkait upload dokumen 
   - name: Schedule
     description: Semua endpoint terkait manajemen jadwal asesmen
+  - name: Occupation
+    description: Semua endpoint terkait manajemen okupasi
+  - name: Scheme
+    description: Semua endpoint terkait manajemen skema
   # - name: Export - Import
   #   description: Semua endpoint terkait ekspor dan impor data
   # - name: assessment
@@ -26,7 +32,7 @@ paths:
   /auth/register:
     post:
       tags:
-        - auth
+        - Auth
       summary: Register pengguna baru
       description: Membuat akun pengguna baru dengan email, password, full name, dan role
       requestBody:
@@ -122,7 +128,7 @@ paths:
   /auth/login:
     post:
       tags:
-        - auth
+        - Auth
       summary: Login pengguna
       description: Autentikasi user dengan email dan password
       requestBody:
@@ -199,7 +205,7 @@ paths:
   /auth/me:
     get:
       tags:
-        - auth
+        - Auth
       summary: Mendapatkan data user saat ini
       description: Mengembalikan informasi user berdasarkan token Bearer
       security:
@@ -496,6 +502,8 @@ paths:
                   type: string
                 id_card:
                   type: string
+                approved:
+                  type: boolean
               required:
                 - result_id
                 - assessor_id
@@ -505,6 +513,7 @@ paths:
                 - student_card
                 - family_card
                 - id_card
+                - approved
             example:
               result_id: 1
               assessor_id: 1
@@ -514,6 +523,7 @@ paths:
               student_card: "URL to student card"
               family_card: "URL to family card"
               id_card: "URL to ID card"
+              approved: true
       responses:
         "201":
           description: Sertifikat asesmen berhasil dibuat
@@ -547,6 +557,8 @@ paths:
                         type: string
                       id_card:
                         type: string
+                      approved:
+                        type: boolean
               example:
                 success: true
                 message: "Sertifikat asesmen berhasil dibuat"
@@ -560,6 +572,7 @@ paths:
                   student_card: "URL to student card"
                   family_card: "URL to family card"
                   id_card: "URL to ID card"
+                  approved: true
         "500":
           description: Server error
           content:
@@ -1253,36 +1266,36 @@ paths:
                   message:
                     type: string
 
-  # /uploads/:
-  #   get:
-  #     tags:
-  #       - Export - Import
-  #     summary: Get uploaded files
-  #     description: Mengambil file yang diunggah.
-  #     responses:
-  #       "200":
-  #         description: Files retrieved successfully
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: object
-  #               example:
-  #                 success: true
-  #                 message: "Files retrieved successfully"
-  #                 data:
-  #                   - filename: "example.docx"
-  #                     url: "/api/uploads/example.docx"
-  #       "500":
-  #         description: Server error
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: object
-  #               properties:
-  #                 success:
-  #                   type: boolean
-  #                 message:
-  #                   type: string
+  /uploads/:
+    get:
+      tags:
+        - Uploads
+      summary: Get uploaded files
+      description: Mengambil file yang diunggah.
+      responses:
+        "200":
+          description: Files retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  success: true
+                  message: "Files retrieved successfully"
+                  data:
+                    - filename: "example.docx"
+                      url: "/api/uploads/example.docx"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
 
   /schedule:
     get:
@@ -1583,6 +1596,518 @@ paths:
                   success: false
                   message: "Server error"
   
+  /occupation:
+    get:
+      tags:
+        - Occupation
+      summary: Mengambil semua okupasi
+      description: Mengambil daftar semua okupasi beserta skema terkait.
+      responses:
+        "200":
+          description: Daftar okupasi berhasil diambil
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Daftar okupasi berhasil diambil"
+                  data:
+                    - id: 1
+                      scheme:
+                        id: 5
+                        code: "SKM-001"
+                        name: "Skema Jaringan Dasar"
+                      name: "Teknisi Jaringan"
+        "404":
+          description: Tidak ada okupasi ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Tidak ada okupasi ditemukan"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+    post:
+      tags:
+        - Occupation
+      summary: Membuat okupasi baru
+      description: Membuat data okupasi baru beserta relasi ke skema.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              example:
+                scheme_id: 5
+                name: "Teknisi Jaringan"
+      responses:
+        "201":
+          description: Okupasi berhasil dibuat
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Okupasi berhasil dibuat"
+                  data:
+                    id: 1
+                    scheme:
+                      id: 5
+                      code: "SKM-001"
+                      name: "Skema Jaringan Dasar"
+                    name: "Teknisi Jaringan"
+        "400":
+          description: Data tidak valid atau sudah ada
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Occupation name 'Teknisi Jaringan' already exists"
+        "404":
+          description: Skema tidak ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Scheme not found"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+  /occupation/{id}:
+    get:
+      tags:
+        - Occupation
+      summary: Mengambil okupasi berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID dari okupasi
+      responses:
+        "200":
+          description: Okupasi berhasil diambil
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Okupasi berhasil diambil"
+                  data:
+                    id: 1
+                    scheme:
+                      id: 5
+                      code: "SKM-001"
+                      name: "Skema Jaringan Dasar"
+                    name: "Teknisi Jaringan"
+        "404":
+          description: Okupasi tidak ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Occupation not found"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+    put:
+      tags:
+        - Occupation
+      summary: Memperbarui okupasi berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID dari okupasi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              example:
+                scheme_id: 5
+                name: "Teknisi Komputer"
+      responses:
+        "200":
+          description: Okupasi berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Okupasi berhasil diperbarui"
+                  data:
+                    id: 1
+                    scheme:
+                      id: 5
+                      code: "SKM-001"
+                      name: "Skema Jaringan Dasar"
+                    name: "Teknisi Komputer"
+        "404":
+          description: Okupasi atau skema tidak ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Occupation not found"
+        "400":
+          description: Nama okupasi sudah ada
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Occupation name 'Teknisi Komputer' already exists"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+    delete:
+      tags:
+        - Occupation
+      summary: Menghapus okupasi berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID dari okupasi
+      responses:
+        "200":
+          description: Okupasi berhasil dihapus
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Okupasi berhasil dihapus"
+        "404":
+          description: Okupasi tidak ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Occupation not found"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+  /occupation/export/excel:
+    get:
+      tags:
+        - Occupation
+      summary: Mengekspor daftar okupasi ke file Excel
+      description: Menghasilkan file Excel berisi daftar okupasi dan skema terkait.
+      responses:
+        "200":
+          description: File Excel berhasil dihasilkan
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Tidak ada data okupasi ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Occupations not found"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+  /scheme:
+    get:
+      tags:
+        - Scheme
+      summary: Mengambil semua skema
+      description: Mengambil daftar semua skema.
+      responses:
+        "200":
+          description: Daftar skema berhasil diambil
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Skema berhasil diambil"
+                  data:
+                    - id: 1
+                      code: "SKM-001"
+                      name: "Skema Jaringan Dasar"
+        "404":
+          description: Tidak ada skema ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Tidak ada skema ditemukan"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+    post:
+      tags:
+        - Scheme
+      summary: Membuat skema baru
+      description: Membuat data skema baru.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              example:
+                code: "SKM-002"
+                name: "Skema Administrasi Jaringan"
+      responses:
+        "201":
+          description: Skema berhasil dibuat
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Skema berhasil dibuat"
+                  data:
+                    id: 2
+                    code: "SKM-002"
+                    name: "Skema Administrasi Jaringan"
+        "400":
+          description: Data tidak valid atau sudah ada
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Scheme code 'SKM-002' already exists"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+  /scheme/{id}:
+    get:
+      tags:
+        - Scheme
+      summary: Mengambil skema berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID dari skema
+      responses:
+        "200":
+          description: Skema berhasil diambil
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Skema berhasil diambil"
+                  data:
+                    id: 1
+                    code: "SKM-001"
+                    name: "Skema Jaringan Dasar"
+        "404":
+          description: Skema tidak ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Scheme not found"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+    put:
+      tags:
+        - Scheme
+      summary: Memperbarui skema berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID dari skema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              example:
+                code: "SKM-003"
+                name: "Skema Keamanan Jaringan"
+      responses:
+        "200":
+          description: Skema berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Skema berhasil diperbarui"
+                  data:
+                    id: 1
+                    code: "SKM-003"
+                    name: "Skema Keamanan Jaringan"
+        "404":
+          description: Skema tidak ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Scheme not found"
+        "400":
+          description: Kode atau nama skema sudah ada
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Scheme name 'Skema Keamanan Jaringan' already exists"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+    delete:
+      tags:
+        - Scheme
+      summary: Menghapus skema berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID dari skema
+      responses:
+        "200":
+          description: Skema berhasil dihapus
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+                  message: "Skema berhasil dihapus"
+        "404":
+          description: Skema tidak ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Scheme not found"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
+  /scheme/export/excel:
+    get:
+      tags:
+        - Scheme
+      summary: Mengekspor daftar skema ke file Excel
+      description: Menghasilkan file Excel berisi daftar skema.
+      responses:
+        "200":
+          description: File Excel berhasil dihasilkan
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Tidak ada data skema ditemukan
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Schemes not found"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                example:
+                  success: false
+                  message: "Server error"
+
   # /assessement:
   #   post:
   #     tags:
