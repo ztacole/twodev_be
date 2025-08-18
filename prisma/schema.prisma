@@ -11,17 +11,17 @@ datasource db {
 
 //// ========= Enums =========
 
-enum Gender {
-  Male
-  Female
+enum gender {
+  male
+  female
 }
 
-enum QuestionType {
-  PG
-  Essay
+enum question_type {
+  pg
+  essay
 }
 
-enum TUK {
+enum tuk {
   sewaktu
   tempat_kerja
   mandiri
@@ -29,26 +29,26 @@ enum TUK {
 
 //// ========= Core RBAC & Users =========
 
-model Role {
+model role {
   id    Int    @id @default(autoincrement())
   name  String @db.VarChar(255)
 
-  users User[]
+  users user[]
 }
 
-model User {
+model user {
   id       Int     @id @default(autoincrement())
   email    String  @unique @db.VarChar(255)
   password String  @db.VarChar(255)
   role_id  Int
 
-  role     Role     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assessee Assessee?
-  assessor Assessor?
-  admin    Admin?
+  role     role     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessee assessee?
+  assessor assessor?
+  admin    admin?
 }
 
-model Admin {
+model admin {
   id         Int      @id @default(autoincrement())
   user_id    Int      @unique
   full_name  String   @db.VarChar(255)
@@ -56,33 +56,33 @@ model Admin {
   phone_no   String   @db.VarChar(255)
   birth_date DateTime
 
-  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= Master Data (Schemes, Occupations) =========
 
-model Schemes {
+model scheme {
   id    Int    @id @default(autoincrement())
   code  String @db.VarChar(255)
   name  String @db.VarChar(255)
 
-  occupations Occupation[]
-  assessors   Assessor[]
+  occupations occupation[]
+  assessors   assessor[]
 }
 
-model Occupation {
+model occupation {
   id        Int      @id @default(autoincrement())
   scheme_id Int
   name      String   @db.VarChar(255)
 
-  scheme    Schemes  @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  scheme    scheme  @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  assessments Assessment[]
+  assessments assessment[]
 }
 
 //// ========= Personae =========
 
-model Assessor {
+model assessor {
   id         Int       @id @default(autoincrement())
   user_id    Int       @unique
   scheme_id  Int
@@ -91,17 +91,16 @@ model Assessor {
   birth_date DateTime
   full_name  String    @db.VarChar(255)
 
-  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  scheme     Schemes   @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user       user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  scheme     scheme   @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  assessment_details Schedule_Details[]
-  details            Assessor_Details?
-  // assessor mengesahkan dokumen hasil
-  docs               Result_Docs[]
-  results            Result[]        @relation("AssessorResults")
+  assessment_details schedule_detail[]
+  details            assessor_detail?
+  docs               result_doc[]
+  results            result[]        @relation("assessor_results")
 }
 
-model Assessor_Details {
+model assessor_detail {
   id              Int    @id @default(autoincrement())
   assessor_id     Int    @unique
   tax_id_number   String @db.VarChar(255)
@@ -109,17 +108,17 @@ model Assessor_Details {
   certificate     String @db.VarChar(255)
   national_id     String @db.VarChar(255)
 
-  assessor        Assessor @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessor        assessor @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model Assessee {
+model assessee {
   id                         Int      @id @default(autoincrement())
   user_id                    Int      @unique
   full_name                  String   @db.VarChar(255)
   identity_number            String   @db.VarChar(255)
   birth_date                 DateTime
   birth_location             String   @db.VarChar(255)
-  gender                     Gender
+  gender                     gender
   nationality                String   @db.VarChar(255)
   phone_no                   String   @db.VarChar(255)
   house_phone_no             String?  @db.VarChar(255)
@@ -128,13 +127,13 @@ model Assessee {
   postal_code                String?  @db.VarChar(255)
   educational_qualifications String   @db.VarChar(255)
 
-  user     User              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  jobs     Assessee_Job[]
-  answers  Assessee_Answer[]
-  results  Result[]          @relation("AssesseeResults")
+  user     user              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  jobs     assessee_job[]
+  answers  assessee_answer[]
+  results  result[]          @relation("assessee_results")
 }
 
-model Assessee_Job {
+model assessee_job {
   id               Int    @id @default(autoincrement())
   assessee_id      Int    @unique
   institution_name String @db.VarChar(255)
@@ -144,145 +143,138 @@ model Assessee_Job {
   phone_no         String @db.VarChar(255)
   job_email        String @db.VarChar(255)
 
-  assessee Assessee @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessee assessee @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= Assessment (generic) =========
 
-model Assessment {
+model assessment {
   id            Int      @id @default(autoincrement())
   occupation_id Int
   code          String   @db.VarChar(255)
 
-  occupation         Occupation          @relation(fields: [occupation_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assessment_schedule Assessment_Schedule[]
-  unit_competencies   Unit_Competency[]
-  questions           Assessment_Question[]
-  // hasil/rekap sesi
-  results             Result[]
-  // grup IA (IA02/IA03) terhubung lewat Group_IA
-  groups_ia           Group_IA[]
-  // UC APL02
-  uc_apl02            Uc_APL02[]
-  // pertanyaan IA05 & IA07
-  ia05_questions      IA05_Question[]
-  ia07_questions      IA07_Question[]
+  occupation         occupation          @relation(fields: [occupation_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessment_schedules assessment_schedule[]
+  unit_competencies   unit_competency[]
+  questions           assessment_question[]
+  results             result[]
+  groups_ia           group_ia[]
+  uc_apl02s           uc_apl02[]
+  ia05_questions      ia05_question[]
+  ia07_questions      ia07_question[]
 }
 
-model Assessment_Schedule {
+model assessment_schedule {
   id            Int               @id @default(autoincrement())
   assessment_id Int
   start_date    DateTime
   end_date      DateTime
 
-  assessment       Assessment        @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  schedule_details Schedule_Details[]
+  assessment       assessment        @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  schedule_details schedule_detail[]
 }
 
-model Schedule_Details {
+model schedule_detail {
   id           Int   @id @default(autoincrement())
   schedule_id  Int
   assessor_id  Int
   location     String @db.VarChar(255)
 
-  schedule   Assessment_Schedule @relation(fields: [schedule_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assessor   Assessor            @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  schedule   assessment_schedule @relation(fields: [schedule_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessor   assessor            @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= Unit & Element (generic) =========
 
-model Unit_Competency {
+model unit_competency {
   id             Int      @id @default(autoincrement())
   assessment_id  Int
   unit_code      String   @db.VarChar(255)
   title          String   @db.VarChar(255)
 
-  assessment     Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  elements       Element[]
+  assessment     assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  elements       element[]
 }
 
-model Element {
+model element {
   id                 Int              @id @default(autoincrement())
   unit_competency_id Int
   title              String           @db.VarChar(255)
 
-  unit_competency Unit_Competency @relation(fields: [unit_competency_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  details         Element_Details[]
-  result_details  Result_Details[]
+  unit_competency unit_competency @relation(fields: [unit_competency_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  details         element_detail[]
+  result_details  result_detail[]
 }
 
-model Element_Details {
+model element_detail {
   id         Int    @id @default(autoincrement())
   element_id Int
   description String @db.VarChar(255)
 
-  element    Element @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  element    element @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= Assessment Questions (umum) =========
 
-model Assessment_Question {
+model assessment_question {
   id            Int          @id @default(autoincrement())
   assessment_id Int
-  type          QuestionType
+  type          question_type
   question      String       @db.VarChar(255)
 
-  assessment Assessment        @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  pg_details QuestionPG_Details[]
-  answers    Assessee_Answer[]
+  assessment assessment        @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  pg_details question_pg_detail[]
+  answers    assessee_answer[]
 }
 
-model QuestionPG_Details {
+model question_pg_detail {
   id          Int    @id @default(autoincrement())
   question_id Int
   option      String @db.VarChar(255)
   isanswer    Boolean
 
-  question Assessment_Question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question assessment_question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model Assessee_Answer {
+model assessee_answer {
   id          Int    @id @default(autoincrement())
   question_id Int
   assessee_id Int
   answer      String @db.VarChar(255)
 
-  question Assessment_Question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assessee Assessee            @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question assessment_question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessee assessee            @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= Result (Umum + Dokumen) =========
 
-model Result {
+model result {
   id            Int      @id @default(autoincrement())
   assessment_id Int
   assessor_id   Int
   assessee_id   Int
   approved      Boolean
   created_at    DateTime @default(now())
-  tuk           TUK
+  tuk           tuk
 
-  assessment Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assessor   Assessor   @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade, name: "AssessorResults")
-  assessee   Assessee   @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade, name: "AssesseeResults")
+  assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessor   assessor   @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade, name: "assessor_results")
+  assessee   assessee   @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade, name: "assessee_results")
 
-  // generic element-based result
-  details Result_Details[]
-  // dokumen checklist
-  docs    Result_Docs[]
+  details result_detail[]
+  docs    result_doc[]
 
-  // headers untuk setiap instrumen
-  apl02_headers Result_APL02_Header[]
-  ak01_headers  Result_AK01_Header[]
-  ak02_headers  Result_AK02_Header[]
-  ia01_headers  Result_IA01_Header[]
-  ia02_headers  Result_IA02_Header[]
-  ia03_headers  Result_IA03_Header[]
-  ia05_headers  Result_IA05_Header[]
-  ia07_headers  Result_IA07_Header[]
+  apl02_headers result_apl02_header[]
+  ak01_headers  result_ak01_header[]
+  ak02_headers  result_ak02_header[]
+  ia01_headers  result_ia01_header[]
+  ia02_headers  result_ia02_header[]
+  ia03_headers  result_ia03_header[]
+  ia05_headers  result_ia05_header[]
+  ia07_headers  result_ia07_header[]
 }
 
-model Result_Docs {
+model result_doc {
   id                           Int    @id @default(autoincrement())
   result_id                    Int
   assessor_id                  Int
@@ -294,101 +286,101 @@ model Result_Docs {
   id_card                      String @db.VarChar(255)
   approved                     Boolean
 
-  result   Result   @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assessor Assessor @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  result   result   @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assessor assessor @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model Result_Details {
+model result_detail {
   id         Int    @id @default(autoincrement())
   result_id  Int
   element_id Int
   answer     Boolean
   proof      String @db.VarChar(255)
 
-  result  Result  @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  element Element @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  result  result  @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  element element @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= APL02 =========
 
-model Uc_APL02 {
+model uc_apl02 {
   id            Int    @id @default(autoincrement())
   assessment_id Int
   unit_code     String @db.VarChar(255)
   title         String @db.VarChar(255)
 
-  assessment Assessment    @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  elements   Element_APL02[]
-  ak02_rows  Result_AK02[]
+  assessment assessment    @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  elements   element_apl02[]
+  ak02_rows  result_ak02[]
 }
 
-model Element_APL02 {
+model element_apl02 {
   id     Int    @id @default(autoincrement())
   uc_id  Int
   title  String @db.VarChar(255)
 
-  uc       Uc_APL02               @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  details  Element_Details_APL02[]
-  results  Result_APL02[]         // baris hasil APL02 mengacu ke element
+  uc       uc_apl02               @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  details  element_details_apl02[]
+  results  result_apl02[]         
 }
 
-model Element_Details_APL02 {
+model element_details_apl02 {
   id          Int    @id @default(autoincrement())
   element_id  Int
   description String @db.Text
 
-  element Element_APL02 @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  element element_apl02 @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model Result_APL02_Header {
+model result_apl02_header {
   id        Int     @id @default(autoincrement())
   result_id Int
   approved  Boolean
 
-  result Result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows   Result_APL02[]
+  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows   result_apl02[]
 }
 
-model Result_APL02 {
+model result_apl02 {
   id               Int  @id @default(autoincrement())
   result_apl02_id  Int
   element_id       Int
   is_competent     Boolean
 
-  header  Result_APL02_Header @relation(fields: [result_apl02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  element Element_APL02       @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  evidences APL02_evidence[]
+  header  result_apl02_header @relation(fields: [result_apl02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  element element_apl02       @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  evidences apl02_evidence[]
 }
 
-model APL02_evidence {
+model apl02_evidence {
   id              Int    @id @default(autoincrement())
   result_apl02_id Int
   evidence        String @db.VarChar(255)
 
-  row Result_APL02 @relation(fields: [result_apl02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  row result_apl02 @relation(fields: [result_apl02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= AK01 / AK02 =========
 
-model Result_AK01_Header {
+model result_ak01_header {
   id                 Int  @id @default(autoincrement())
   result_id          Int
   approved_assessee  Boolean
   approved_assessor  Boolean
 
-  result Result          @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows   Result_AK01[]
+  result result          @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows   result_ak01[]
 }
 
-model Result_AK01 {
+model result_ak01 {
   id        Int    @id @default(autoincrement())
   header_id Int
   evidence  String @db.VarChar(255)
 
-  header Result_AK01_Header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  header result_ak01_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model Result_AK02_Header {
+model result_ak02_header {
   id                 Int     @id @default(autoincrement())
   result_id          Int
   approved_assessee  Boolean
@@ -397,208 +389,208 @@ model Result_AK02_Header {
   follow_up          String? @db.Text
   comment            String? @db.Text
 
-  result Result        @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows   Result_AK02[]
+  result result        @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows   result_ak02[]
 }
 
-model Result_AK02 {
+model result_ak02 {
   id        Int    @id @default(autoincrement())
   header_id Int
   uc_id     Int
   evidence  String @db.VarChar(255)
 
-  header Result_AK02_Header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  uc     Uc_APL02           @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  header result_ak02_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  uc     uc_apl02           @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= IA02 / IA03 Struktur (Group & Tools & UC & Elements) =========
 
-model Group_IA {
+model group_ia {
   id             Int    @id @default(autoincrement())
   assessment_id  Int
   name           String @db.VarChar(255)
   scenario       String @db.Text
   duration       Int
 
-  assessment Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  tools      IA02_tools[]
-  units      Uc_IA[]
-  qa_ia03    IA03_Question[]
+  assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tools      ia02_tool[]
+  units      uc_ia[]
+  qa_ia03    ia03_question[]
 }
 
-model IA02_tools {
+model ia02_tool {
   id       Int    @id @default(autoincrement())
   group_id Int
   name     String @db.VarChar(255)
 
-  group Group_IA @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  group group_ia @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-model Uc_IA {
+model uc_ia {
   id       Int    @id @default(autoincrement())
   group_id Int
   unit_code String @db.VarChar(255)
   title     String @db.VarChar(255)
 
-  group    Group_IA  @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  elements Element_IA[]
+  group    group_ia  @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  elements element_ia[]
 }
 
-model Element_IA {
+model element_ia {
   id    Int    @id @default(autoincrement())
   uc_id Int
   title String @db.VarChar(255)
 
-  uc      Uc_IA              @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  details Element_Details_IA[]
+  uc      uc_ia              @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  details element_details_ia[]
 }
 
-model Element_Details_IA {
+model element_details_ia {
   id          Int    @id @default(autoincrement())
   element_id  Int
   description String @db.Text
   benchmark   String @db.VarChar(255)
 
-  element Element_IA @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  results Result_IA01[]
+  element element_ia @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  results result_ia01[]
 }
 
 //// ========= IA01 =========
 
-model Result_IA01_Header {
+model result_ia01_header {
   id                 Int  @id @default(autoincrement())
   result_id          Int
   approved_assessee  Boolean
   approved_assessor  Boolean
 
-  result Result        @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows   Result_IA01[]
+  result result        @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows   result_ia01[]
 }
 
-model Result_IA01 {
+model result_ia01 {
   id                Int    @id @default(autoincrement())
   header_id         Int
   element_detail_id Int
   is_competent      Boolean
   evaluation        String @db.Text
 
-  header        Result_IA01_Header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  elementDetail Element_Details_IA @relation(fields: [element_detail_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  header        result_ia01_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  elementDetail element_details_ia @relation(fields: [element_detail_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-//// ========= IA02 (header saja – itemnya adalah tools/units/elements di Group_IA/Uc_IA/Element_IA) =========
+//// ========= IA02 (header saja) =========
 
-model Result_IA02_Header {
+model result_ia02_header {
   id                 Int  @id @default(autoincrement())
   result_id          Int
   approved_assessee  Boolean
   approved_assessor  Boolean
 
-  result Result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= IA03 (Q&A per Group) =========
 
-model IA03_Question {
+model ia03_question {
   id       Int    @id @default(autoincrement())
   group_id Int
   question String @db.VarChar(255)
 
-  group Group_IA @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows  Result_IA03[]
+  group group_ia @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows  result_ia03[]
 }
 
-model Result_IA03_Header {
+model result_ia03_header {
   id                 Int  @id @default(autoincrement())
   result_id          Int
   approved_assessee  Boolean
   approved_assessor  Boolean
 
-  result Result        @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows   Result_IA03[]
+  result result        @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows   result_ia03[]
 }
 
-model Result_IA03 {
+model result_ia03 {
   id         Int    @id @default(autoincrement())
   header_id  Int
   question_id Int
   answer     String @db.VarChar(255)
   approved   Boolean
 
-  header   Result_IA03_Header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  question IA03_Question      @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  header   result_ia03_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question ia03_question      @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= IA05 (PG) =========
 
-model IA05_Question {
+model ia05_question {
   id            Int    @id @default(autoincrement())
   assessment_id Int
   order         Int
   question      String @db.VarChar(255)
 
-  assessment Assessment     @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  options    Question_Option[]
+  assessment assessment     @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  options    question_option[]
 }
 
-model Question_Option {
+model question_option {
   id         Int    @id @default(autoincrement())
   question_id Int
   option     String @db.Text
   is_answer  Boolean
 
-  question IA05_Question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows     Result_IA05[]
+  question ia05_question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows     result_ia05[]
 }
 
-model Result_IA05_Header {
+model result_ia05_header {
   id                 Int  @id @default(autoincrement())
   result_id          Int
   approved_assessee  Boolean
   approved_assessor  Boolean
 
-  result Result       @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows   Result_IA05[]
+  result result       @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows   result_ia05[]
 }
 
-model Result_IA05 {
+model result_ia05 {
   id        Int    @id @default(autoincrement())
   header_id Int
   option_id Int
   approved  Boolean
 
-  header Result_IA05_Header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  option Question_Option    @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  header result_ia05_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  option question_option    @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= IA07 (Essay/Kunci Jawaban) =========
 
-model IA07_Question {
+model ia07_question {
   id            Int    @id @default(autoincrement())
   assessment_id Int
   question      String @db.Text
   answer_key    String @db.Text
 
-  assessment Assessment   @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows       Result_IA07[]
+  assessment assessment   @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows       result_ia07[]
 }
 
-model Result_IA07_Header {
+model result_ia07_header {
   id                 Int  @id @default(autoincrement())
   result_id          Int
   approved_assessee  Boolean
   approved_assessor  Boolean
 
-  result Result       @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows   Result_IA07[]
+  result result       @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows   result_ia07[]
 }
 
-model Result_IA07 {
+model result_ia07 {
   id         Int  @id @default(autoincrement())
   header_id  Int
   question_id Int
   approved   Boolean
 
-  header   Result_IA07_Header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  question IA07_Question      @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  header   result_ia07_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question ia07_question      @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
