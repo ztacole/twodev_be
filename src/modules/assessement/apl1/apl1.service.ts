@@ -50,7 +50,7 @@ export class APL1Service {
     
 
     async getAssesseJobsByAssesseeId(assesseeId: number) {
-        return prisma.assessee_Job.findMany({
+        return prisma.assessee_job.findMany({
             where: { assessee_id: assesseeId }
         });
     }
@@ -58,7 +58,7 @@ export class APL1Service {
     async createAssesseCertificate(data: any) {
         const { assessee_id, assessor_id, ...docsData } = data;
         
-        const existingDocs = await prisma.result_Docs.findFirst({
+        const existingDocs = await prisma.result_doc.findFirst({
             where: {
                 assessor_id: assessor_id,
                 result: {
@@ -68,14 +68,14 @@ export class APL1Service {
         });
         
         if (existingDocs) {
-            return prisma.result_Docs.update({
+            return prisma.result_doc.update({
                 where: { id: existingDocs.id },
                 data: {
                     ...docsData
                 }
             });
         } else {
-            return prisma.result_Docs.create({
+            return prisma.result_doc.create({
                 data: {
                     result: {
                         create: {
@@ -114,7 +114,7 @@ export class APL1Service {
             }
         }
         
-        const existingDocs = await prisma.result_Docs.findFirst({
+        const existingDocs = await prisma.result_doc.findFirst({
             where: {
                 assessor_id: assessorId,
                 result: {
@@ -124,7 +124,7 @@ export class APL1Service {
         });
         
         if (existingDocs) {
-            return prisma.result_Docs.update({
+            return prisma.result_doc.update({
                 where: { id: existingDocs.id },
                 data: {
                     ...fileData
@@ -145,11 +145,14 @@ export class APL1Service {
                         data: {
                             assessment_id: assessment.id,
                             assessee_id: assesseeId,
-                            approved: false
+                            assessor_id: assessorId,
+                            approved: false,
+                            created_at: new Date(),
+                            tuk: "sewaktu"
                         }
                     });
                 } else {
-                    return prisma.result_Docs.create({
+                    return prisma.result_doc.create({
                         data: {
                             result: {
                                 create: {
@@ -166,7 +169,7 @@ export class APL1Service {
                 }
             }
             
-            return prisma.result_Docs.create({
+            return prisma.result_doc.create({
                 data: {
                     result_id: result.id,
                     assessor_id: assessorId,

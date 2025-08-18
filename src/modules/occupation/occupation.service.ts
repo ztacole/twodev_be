@@ -29,7 +29,7 @@ export class OccupationService {
     }
 
     static async createOccupation(data: OccupationRequest) {
-        const scheme = await prisma.schemes.findFirst({
+        const scheme = await prisma.scheme.findFirst({
             where: {
                 id: data.scheme_id
             }
@@ -56,7 +56,7 @@ export class OccupationService {
             throw new NotFoundError('Occupation');
         }
         
-        const scheme = await prisma.schemes.findFirst({
+        const scheme = await prisma.scheme.findFirst({
             where: {
                 id: data.scheme_id
             }

@@ -5,11 +5,11 @@ import { DuplicateEntryError, NotFoundError } from '../../common/error';
 
 export class SchemeService {
   public static getSchemes = async (): Promise<any> => {
-    return prisma.schemes.findMany();
+    return prisma.scheme.findMany();
   };
 
   public static getSchemeById = async (id: number): Promise<any> => {
-    const scheme = await prisma.schemes.findUnique({ where: { id } });
+    const scheme = await prisma.scheme.findUnique({ where: { id } });
 
     if (!scheme) {
       throw new NotFoundError('Scheme');
@@ -19,36 +19,36 @@ export class SchemeService {
   };
 
   public static createScheme = async (data: SchemeRequest) => {
-    const existingSchemeCode = await prisma.schemes.findFirst({ where: { code: data.code } });
+    const existingSchemeCode = await prisma.scheme.findFirst({ where: { code: data.code } });
     if (existingSchemeCode) {
       throw new DuplicateEntryError('Scheme code', data.code);
     }
 
-    const existingSchemeName = await prisma.schemes.findFirst({ where: { name: data.name } });
+    const existingSchemeName = await prisma.scheme.findFirst({ where: { name: data.name } });
     if (existingSchemeName) {
       throw new DuplicateEntryError('Scheme name', data.name);
     }
 
-    return prisma.schemes.create({ data });
+    return prisma.scheme.create({ data });
   };
 
   public static updateScheme = async (id: number, data: SchemeRequest) => {
-    const existingScheme = await prisma.schemes.findUnique({ where: { id } });
+    const existingScheme = await prisma.scheme.findUnique({ where: { id } });
     if (!existingScheme) {
       throw new NotFoundError('Scheme');
     }
 
-    const existingSchemeCode = await prisma.schemes.findFirst({ where: { code: data.code } });
+    const existingSchemeCode = await prisma.scheme.findFirst({ where: { code: data.code } });
     if (existingSchemeCode) {
       throw new DuplicateEntryError('Scheme code', data.code);
     }
 
-    const existingSchemeName = await prisma.schemes.findFirst({ where: { name: data.name } });
+    const existingSchemeName = await prisma.scheme.findFirst({ where: { name: data.name } });
     if (existingSchemeName) {
       throw new DuplicateEntryError('Scheme name', data.name);
     }
 
-    const scheme = prisma.schemes.update({ where: { id }, data });
+    const scheme = prisma.scheme.update({ where: { id }, data });
 
     if (!scheme) {
       throw new NotFoundError('Scheme');
@@ -58,16 +58,16 @@ export class SchemeService {
   };
 
   public static deleteScheme = async (id: number) => {
-    const existingScheme = await prisma.schemes.findUnique({ where: { id } });
+    const existingScheme = await prisma.scheme.findUnique({ where: { id } });
     if (!existingScheme) {
       throw new NotFoundError('Scheme');
     }
 
-    return await prisma.schemes.delete({ where: { id: id } });
+    return await prisma.scheme.delete({ where: { id: id } });
   };
 
   public static exportSchemesToExcel = async () => {
-    const schemes = await prisma.schemes.findMany();
+    const schemes = await prisma.scheme.findMany();
 
     if (!schemes.length) {
       throw new NotFoundError('Schemes');

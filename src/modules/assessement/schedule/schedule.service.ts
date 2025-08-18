@@ -25,7 +25,7 @@ export class ScheduleService {
             throw new NotFoundError('Assessor');
         }
 
-        const schedule = await prisma.assessment_Schedule.create({
+        const schedule = await prisma.assessment_schedule.create({
             data: {
                 assessment_id: data.assessment_id,
                 start_date: data.start_date,
@@ -55,7 +55,7 @@ export class ScheduleService {
     }
 
     static async getSchedules(): Promise<ScheduleResponse[]> {
-        const schedules = await prisma.assessment_Schedule.findMany({
+        const schedules = await prisma.assessment_schedule.findMany({
             include: {
                 assessment: {
                     include: {
@@ -73,7 +73,7 @@ export class ScheduleService {
     }
 
     static async getScheduleById(id: number): Promise<ScheduleResponse> {
-        const schedule = await prisma.assessment_Schedule.findUnique({
+        const schedule = await prisma.assessment_schedule.findUnique({
             where: { id },
             include: {
                 assessment: {
@@ -96,7 +96,7 @@ export class ScheduleService {
     }
 
     static async getActiveSchedules(): Promise<ScheduleResponse[]> {
-        const schedules = await prisma.assessment_Schedule.findMany({
+        const schedules = await prisma.assessment_schedule.findMany({
             where: { start_date: { lte: new Date() }, end_date: { gte: new Date() } },
             include: {
                 assessment: {
@@ -115,7 +115,7 @@ export class ScheduleService {
     }
 
     static async getCompletedSchedules(): Promise<ScheduleResponse[]> {
-        const schedules = await prisma.assessment_Schedule.findMany({
+        const schedules = await prisma.assessment_schedule.findMany({
             where: { end_date: { lte: new Date() } },
             include: {
                 assessment: {
@@ -144,7 +144,7 @@ export class ScheduleService {
             include: {
                 assessment: {
                     include: {
-                        assessment_schedule: {
+                        assessment_schedules: {
                             include: {
                                 assessment: {
                                     include: {
@@ -160,12 +160,12 @@ export class ScheduleService {
             }
         });
     
-        const schedules = results.flatMap(result => result.assessment?.assessment_schedule ?? []);
+        const schedules = results.flatMap(result => result.assessment?.assessment_schedules ?? []);
         return schedules.map(formatScheduleResponse);
     }
 
     static async getScheduleDataForExcel() {
-        const schedules = await prisma.assessment_Schedule.findMany({
+        const schedules = await prisma.assessment_schedule.findMany({
             include: {
                 assessment: {
                     include: {
