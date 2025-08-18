@@ -19,13 +19,11 @@ import authRoutes from './modules/auth/auth.routes';
 import dashboardRoutes from './modules/admin/dashboard/dashboard.routes';
 import occupationRoutes from './modules/occupation/occupation.routes';
 import schemeRoutes from './modules/scheme/scheme.routes';
-import apl1Routes from './modules/assessement/apl1/apl1.routes';
-import apl2Routes from './modules/assessement/apl2/apl2.routes';
+import assessmentRoutes from './modules/assessement/assessment.routes';
 import scheduleRoutes from './modules/assessement/schedule/schedule.routes';
 
 // Core
-app.use('/api/assessment/apl1', apl1Routes);
-app.use('/api/assessment/apl2', apl2Routes);
+app.use('/api/assessment', assessmentRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/uploads', express.static('uploads'));
 
