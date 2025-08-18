@@ -1,37 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -41,40 +8,103 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportSchemesToExcel = exports.deleteScheme = exports.updateScheme = exports.createScheme = exports.getSchemeById = exports.getSchemes = void 0;
+exports.SchemeService = void 0;
 const db_1 = require("../../config/db");
-const XLSX = __importStar(require("xlsx"));
-const getSchemes = () => __awaiter(void 0, void 0, void 0, function* () {
-    return db_1.prisma.schemes.findMany();
+const exceljs_1 = __importDefault(require("exceljs"));
+const error_1 = require("../../common/error");
+class SchemeService {
+}
+exports.SchemeService = SchemeService;
+_a = SchemeService;
+SchemeService.getSchemes = () => __awaiter(void 0, void 0, void 0, function* () {
+    return db_1.prisma.scheme.findMany();
 });
-exports.getSchemes = getSchemes;
-const getSchemeById = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    return db_1.prisma.schemes.findUnique({ where: { id } });
+SchemeService.getSchemeById = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const scheme = yield db_1.prisma.scheme.findUnique({ where: { id } });
+    if (!scheme) {
+        throw new error_1.NotFoundError('Scheme');
+    }
+    return scheme;
 });
-exports.getSchemeById = getSchemeById;
-const createScheme = (data) => __awaiter(void 0, void 0, void 0, function* () {
-    return db_1.prisma.schemes.create({ data });
+SchemeService.createScheme = (data) => __awaiter(void 0, void 0, void 0, function* () {
+    const existingSchemeCode = yield db_1.prisma.scheme.findFirst({ where: { code: data.code } });
+    if (existingSchemeCode) {
+        throw new error_1.DuplicateEntryError('Scheme code', data.code);
+    }
+    const existingSchemeName = yield db_1.prisma.scheme.findFirst({ where: { name: data.name } });
+    if (existingSchemeName) {
+        throw new error_1.DuplicateEntryError('Scheme name', data.name);
+    }
+    return db_1.prisma.scheme.create({ data });
 });
-exports.createScheme = createScheme;
-const updateScheme = (id, data) => __awaiter(void 0, void 0, void 0, function* () {
-    return db_1.prisma.schemes.update({ where: { id }, data });
+SchemeService.updateScheme = (id, data) => __awaiter(void 0, void 0, void 0, function* () {
+    const existingScheme = yield db_1.prisma.scheme.findUnique({ where: { id } });
+    if (!existingScheme) {
+        throw new error_1.NotFoundError('Scheme');
+    }
+    const existingSchemeCode = yield db_1.prisma.scheme.findFirst({ where: { code: data.code } });
+    if (existingSchemeCode) {
+        throw new error_1.DuplicateEntryError('Scheme code', data.code);
+    }
+    const existingSchemeName = yield db_1.prisma.scheme.findFirst({ where: { name: data.name } });
+    if (existingSchemeName) {
+        throw new error_1.DuplicateEntryError('Scheme name', data.name);
+    }
+    const scheme = db_1.prisma.scheme.update({ where: { id }, data });
+    if (!scheme) {
+        throw new error_1.NotFoundError('Scheme');
+    }
+    return scheme;
 });
-exports.updateScheme = updateScheme;
-const deleteScheme = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    return db_1.prisma.schemes.delete({ where: { id } });
+SchemeService.deleteScheme = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const existingScheme = yield db_1.prisma.scheme.findUnique({ where: { id } });
+    if (!existingScheme) {
+        throw new error_1.NotFoundError('Scheme');
+    }
+    return yield db_1.prisma.scheme.delete({ where: { id: id } });
 });
-exports.deleteScheme = deleteScheme;
-const exportSchemesToExcel = () => __awaiter(void 0, void 0, void 0, function* () {
-    const schemes = yield db_1.prisma.schemes.findMany();
-    const formattedData = schemes.map(scheme => ({
-        'Nama Jurusan': scheme.code,
-        'Deskripsi': scheme.name
-    }));
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(formattedData);
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Schemes');
-    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    return buffer;
+SchemeService.exportSchemesToExcel = () => __awaiter(void 0, void 0, void 0, function* () {
+    const schemes = yield db_1.prisma.scheme.findMany();
+    if (!schemes.length) {
+        throw new error_1.NotFoundError('Schemes');
+    }
+    const workbook = new exceljs_1.default.Workbook();
+    const worksheet = workbook.addWorksheet('Schemes');
+    const headerRow = worksheet.addRow(['Nama Jurusan', 'Deskripsi']);
+    headerRow.eachCell(cell => {
+        cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE77D35' }
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+    });
+    schemes.forEach(scheme => {
+        const row = worksheet.addRow([scheme.code, scheme.name]);
+        row.eachCell(cell => {
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+    });
+    worksheet.columns = [
+        { width: 25 }, // Nama Jurusan
+        { width: 50 } // Deskripsi
+    ];
+    return yield workbook.xlsx.writeBuffer();
 });
-exports.exportSchemesToExcel = exportSchemesToExcel;

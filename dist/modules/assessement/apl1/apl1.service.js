@@ -23,9 +23,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.APL1Service = void 0;
 const db_1 = require("../../../config/db");
 class APL1Service {
-    createOrUpdateAssesse(data) {
+    static createOrUpdateAssesse(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const { jobs, id, user_id } = data, assesseeData = __rest(data, ["jobs", "id", "user_id"]);
+            // Convert Indonesian gender values to English enum values
+            if (assesseeData.gender) {
+                if (assesseeData.gender === 'Laki-laki') {
+                    assesseeData.gender = 'Male';
+                }
+                else if (assesseeData.gender === 'Perempuan') {
+                    assesseeData.gender = 'Female';
+                }
+            }
             if (!id && !user_id) {
                 return db_1.prisma.assessee.create({
                     data: Object.assign(Object.assign({ user_id }, assesseeData), { jobs: jobs && jobs.length > 0 ? {
@@ -47,18 +56,18 @@ class APL1Service {
             });
         });
     }
-    getAssesseJobsByAssesseeId(assesseeId) {
+    static getAssesseJobsByAssesseeId(assesseeId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return db_1.prisma.assessee_Job.findMany({
+            return db_1.prisma.assessee_job.findMany({
                 where: { assessee_id: assesseeId }
             });
         });
     }
-    createAssesseCertificate(data) {
+    static createAssesseCertificate(data) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             const { assessee_id, assessor_id } = data, docsData = __rest(data, ["assessee_id", "assessor_id"]);
-            const existingDocs = yield db_1.prisma.result_Docs.findFirst({
+            const existingDocs = yield db_1.prisma.result_doc.findFirst({
                 where: {
                     assessor_id: assessor_id,
                     result: {
@@ -67,17 +76,17 @@ class APL1Service {
                 }
             });
             if (existingDocs) {
-                return db_1.prisma.result_Docs.update({
+                return db_1.prisma.result_doc.update({
                     where: { id: existingDocs.id },
                     data: Object.assign({}, docsData)
                 });
             }
             else {
-                return db_1.prisma.result_Docs.create({
+                return db_1.prisma.result_doc.create({
                     data: Object.assign({ result: {
                             create: {
                                 assessee_id: assessee_id,
-                                approve: false,
+                                approved: false,
                                 assessment_id: ((_a = (yield db_1.prisma.assessment.findFirst())) === null || _a === void 0 ? void 0 : _a.id) || 1
                             }
                         }, assessor_id: assessor_id, purpose: 'APL1 Certificate Documents' }, docsData)
@@ -85,7 +94,7 @@ class APL1Service {
             }
         });
     }
-    uploadCertificateDocs(assessorId, assesseeId, files) {
+    static uploadCertificateDocs(assessorId, assesseeId, files) {
         return __awaiter(this, void 0, void 0, function* () {
             const uploadPath = `apl1/${assessorId}`;
             const fileData = {};
@@ -99,11 +108,12 @@ class APL1Service {
                 };
                 for (const file of files) {
                     if (fieldMapping[file.fieldname]) {
-                        fileData[fieldMapping[file.fieldname]] = `${uploadPath}/${file.filename}`;
+                        const time = new Date().getTime();
+                        fileData[fieldMapping[file.fieldname]] = `${uploadPath}/${time}-${file.filename}`;
                     }
                 }
             }
-            const existingDocs = yield db_1.prisma.result_Docs.findFirst({
+            const existingDocs = yield db_1.prisma.result_doc.findFirst({
                 where: {
                     assessor_id: assessorId,
                     result: {
@@ -112,7 +122,7 @@ class APL1Service {
                 }
             });
             if (existingDocs) {
-                return db_1.prisma.result_Docs.update({
+                return db_1.prisma.result_doc.update({
                     where: { id: existingDocs.id },
                     data: Object.assign({}, fileData)
                 });
@@ -130,24 +140,27 @@ class APL1Service {
                             data: {
                                 assessment_id: assessment.id,
                                 assessee_id: assesseeId,
-                                approve: false
+                                assessor_id: assessorId,
+                                approved: false,
+                                created_at: new Date(),
+                                tuk: "sewaktu"
                             }
                         });
                     }
                     else {
-                        return db_1.prisma.result_Docs.create({
+                        return db_1.prisma.result_doc.create({
                             data: Object.assign({ result: {
                                     create: {
                                         assessee_id: assesseeId,
-                                        approve: false,
+                                        approved: false,
                                         assessment_id: 1 // Default to ID 1 if no assessments exist
                                     }
                                 }, assessor_id: assessorId, purpose: 'APL1 Certificate Documents' }, fileData)
                         });
                     }
                 }
-                return db_1.prisma.result_Docs.create({
-                    data: Object.assign({ result_id: result.id, assessor_id: assessorId, purpose: 'APL1 Certificate Documents' }, fileData)
+                return db_1.prisma.result_doc.create({
+                    data: Object.assign({ result_id: result.id, assessor_id: assessorId, purpose: 'APL1 Certificate Documents', approved: false }, fileData)
                 });
             }
         });

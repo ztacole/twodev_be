@@ -8,126 +8,84 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.APL2Controller = void 0;
 const apl2_service_1 = require("./apl2.service");
+const async_handler_1 = require("../../../common/async.handler");
 class APL2Controller {
-    constructor() {
-        this.apl2Service = new apl2_service_1.APL2Service();
-    }
-    createAssessment(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const assessment = yield this.apl2Service.createAssessment(req.body);
-                res.status(201).json({
-                    success: true,
-                    message: 'Asesmen berhasil dibuat',
-                    data: assessment,
-                });
-            }
-            catch (error) {
-                res.status(500).json({
-                    success: false,
-                    message: 'Terjadi kesalahan server',
-                });
-            }
-        });
-    }
-    getAssessments(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const assessments = yield this.apl2Service.getAssessments();
-                if (!assessments || assessments.length === 0) {
-                    return res.status(404).json({
-                        success: false,
-                        message: 'Tidak ada asesmen yang ditemukan',
-                    });
-                }
-                res.json({
-                    success: true,
-                    message: 'Asesmen berhasil diambil',
-                    data: assessments,
-                });
-            }
-            catch (error) {
-                res.status(500).json({
-                    success: false,
-                    message: 'Terjadi kesalahan server',
-                });
-            }
-        });
-    }
-    getAssessmentById(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const assessment = yield this.apl2Service.getAssessmentById(Number(req.params.id));
-                if (!assessment) {
-                    return res.status(404).json({
-                        success: false,
-                        message: `Asesmen dengan ID ${req.params.id} tidak ditemukan`,
-                    });
-                }
-                res.json({
-                    success: true,
-                    message: 'Asesmen berhasil diambil',
-                    data: assessment,
-                });
-            }
-            catch (error) {
-                res.status(500).json({
-                    success: false,
-                    message: 'Terjadi kesalahan server',
-                });
-            }
-        });
-    }
-    getUnitCompetenciesByAssessmentId(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const unitCompetencies = yield this.apl2Service.getUnitCompetenciesByAssessmentId(Number(req.params.assessmentId));
-                if (!unitCompetencies) {
-                    return res.status(404).json({
-                        success: false,
-                        message: 'Tidak ada unit kompetensi yang ditemukan',
-                    });
-                }
-                res.status(200).json({
-                    success: true,
-                    message: 'Unit kompetensi berhasil diambil',
-                    data: unitCompetencies,
-                });
-            }
-            catch (error) {
-                res.status(500).json({
-                    success: false,
-                    message: 'Terjadi kesalahan server',
-                });
-            }
-        });
-    }
-    getElementsByUnitCompetencyId(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const elements = yield this.apl2Service.getElementsByUnitCompetencyId(Number(req.params.unitCompetencyId));
-                if (!elements) {
-                    return res.status(404).json({
-                        success: false,
-                        message: 'Tidak ada elemen yang ditemukan',
-                    });
-                }
-                res.status(200).json({
-                    success: true,
-                    message: 'Elemen berhasil diambil',
-                    data: elements,
-                });
-            }
-            catch (error) {
-                res.status(500).json({
-                    success: false,
-                    message: 'Terjadi kesalahan server',
-                });
-            }
-        });
-    }
 }
 exports.APL2Controller = APL2Controller;
+_a = APL2Controller;
+APL2Controller.createAssessment = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // Validate data
+    if (!req.body.occupation_id || !req.body.code || !req.body.unit_competencies || !req.body.unit_competencies.length) {
+        return res.status(400).json({
+            success: false,
+            message: 'Data asesmen tidak lengkap',
+        });
+    }
+    req.body.unit_competencies.forEach((unitCompetency) => {
+        if (!unitCompetency.unit_code || !unitCompetency.title || !unitCompetency.elements || !unitCompetency.elements.length) {
+            return res.status(400).json({
+                success: false,
+                message: 'Data unit kompetensi tidak lengkap',
+            });
+        }
+        unitCompetency.elements.forEach((element) => {
+            if (!element.title || !element.element_details || !element.element_details.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Data elemen tidak lengkap',
+                });
+            }
+            element.element_details.forEach((detail) => {
+                if (!detail.description) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Data indikator tidak lengkap',
+                    });
+                }
+            });
+        });
+    });
+    // Create assessment
+    const assessment = yield apl2_service_1.APL2Service.createAssessment(req.body);
+    res.status(201).json({
+        success: true,
+        message: 'Asesmen berhasil dibuat',
+        data: assessment,
+    });
+}));
+APL2Controller.getAssessments = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const assessments = yield apl2_service_1.APL2Service.getAssessments();
+    res.json({
+        success: true,
+        message: 'Asesmen berhasil diambil',
+        data: assessments,
+    });
+}));
+APL2Controller.getAssessmentById = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const assessment = yield apl2_service_1.APL2Service.getAssessmentById(Number(req.params.id));
+    res.json({
+        success: true,
+        message: 'Asesmen berhasil diambil',
+        data: assessment,
+    });
+}));
+APL2Controller.getUnitCompetenciesByAssessmentId = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const unitCompetencies = yield apl2_service_1.APL2Service.getUnitCompetenciesByAssessmentCode(req.params.assessmentCode);
+    res.status(200).json({
+        success: true,
+        message: 'Unit kompetensi berhasil diambil',
+        data: unitCompetencies,
+    });
+}));
+APL2Controller.getElementsByUnitCompetencyId = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const elements = yield apl2_service_1.APL2Service.getElementsByUnitCompetencyCode(req.params.unitCompetencyCode);
+    res.status(200).json({
+        success: true,
+        message: 'Elemen berhasil diambil',
+        data: elements,
+    });
+}));

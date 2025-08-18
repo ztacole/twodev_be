@@ -10,11 +10,29 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScheduleService = void 0;
+const error_1 = require("../../../common/error");
 const db_1 = require("../../../config/db");
 class ScheduleService {
-    createSchedule(data) {
+    static createSchedule(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            const schedule = yield db_1.prisma.assessment_Schedule.create({
+            const assessment = yield db_1.prisma.assessment.findUnique({
+                where: {
+                    id: data.assessment_id
+                }
+            });
+            if (!assessment) {
+                throw new error_1.NotFoundError('Assessment');
+            }
+            const assessorIds = data.schedule_details.map(detail => detail.assessor_id);
+            const existingAssessors = yield db_1.prisma.user.findMany({
+                where: {
+                    id: { in: assessorIds }
+                }
+            });
+            if (existingAssessors.length !== assessorIds.length) {
+                throw new error_1.NotFoundError('Assessor');
+            }
+            const schedule = yield db_1.prisma.assessment_schedule.create({
                 data: {
                     assessment_id: data.assessment_id,
                     start_date: data.start_date,
@@ -42,9 +60,9 @@ class ScheduleService {
             return formatScheduleResponse(schedule);
         });
     }
-    getSchedules() {
+    static getSchedules() {
         return __awaiter(this, void 0, void 0, function* () {
-            const schedules = yield db_1.prisma.assessment_Schedule.findMany({
+            const schedules = yield db_1.prisma.assessment_schedule.findMany({
                 include: {
                     assessment: {
                         include: {
@@ -57,15 +75,12 @@ class ScheduleService {
                     },
                 },
             });
-            if (schedules.length === 0) {
-                return null;
-            }
             return schedules.map(formatScheduleResponse);
         });
     }
-    getScheduleById(id) {
+    static getScheduleById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const schedule = yield db_1.prisma.assessment_Schedule.findUnique({
+            const schedule = yield db_1.prisma.assessment_schedule.findUnique({
                 where: { id },
                 include: {
                     assessment: {
@@ -79,12 +94,15 @@ class ScheduleService {
                     },
                 },
             });
-            return schedule ? formatScheduleResponse(schedule) : null;
+            if (!schedule) {
+                throw new error_1.NotFoundError('Schedule');
+            }
+            return formatScheduleResponse(schedule);
         });
     }
-    getActiveSchedules() {
+    static getActiveSchedules() {
         return __awaiter(this, void 0, void 0, function* () {
-            const schedules = yield db_1.prisma.assessment_Schedule.findMany({
+            const schedules = yield db_1.prisma.assessment_schedule.findMany({
                 where: { start_date: { lte: new Date() }, end_date: { gte: new Date() } },
                 include: {
                     assessment: {
@@ -98,12 +116,12 @@ class ScheduleService {
                     },
                 },
             });
-            return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
+            return schedules.map(formatScheduleResponse);
         });
     }
-    getCompletedSchedules() {
+    static getCompletedSchedules() {
         return __awaiter(this, void 0, void 0, function* () {
-            const schedules = yield db_1.prisma.assessment_Schedule.findMany({
+            const schedules = yield db_1.prisma.assessment_schedule.findMany({
                 where: { end_date: { lte: new Date() } },
                 include: {
                     assessment: {
@@ -117,17 +135,21 @@ class ScheduleService {
                     },
                 },
             });
-            return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
+            return schedules.map(formatScheduleResponse);
         });
     }
-    getCompletedSchedulesByAssesseeId(assesseeId) {
+    static getCompletedSchedulesByAssesseeId(assesseeId) {
         return __awaiter(this, void 0, void 0, function* () {
+            const assessee = yield db_1.prisma.assessee.findUnique({ where: { id: assesseeId } });
+            if (!assessee) {
+                throw new error_1.NotFoundError('Assessee');
+            }
             const results = yield db_1.prisma.result.findMany({
                 where: { assessee_id: assesseeId },
                 include: {
                     assessment: {
                         include: {
-                            assessment_schedule: {
+                            assessment_schedules: {
                                 include: {
                                     assessment: {
                                         include: {
@@ -142,8 +164,32 @@ class ScheduleService {
                     }
                 }
             });
-            const schedules = results.flatMap(result => { var _a, _b; return (_b = (_a = result.assessment) === null || _a === void 0 ? void 0 : _a.assessment_schedule) !== null && _b !== void 0 ? _b : []; });
-            return schedules.length === 0 ? null : schedules.map(formatScheduleResponse);
+            const schedules = results.flatMap(result => { var _a, _b; return (_b = (_a = result.assessment) === null || _a === void 0 ? void 0 : _a.assessment_schedules) !== null && _b !== void 0 ? _b : []; });
+            return schedules.map(formatScheduleResponse);
+        });
+    }
+    static getScheduleDataForExcel() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const schedules = yield db_1.prisma.assessment_schedule.findMany({
+                include: {
+                    assessment: {
+                        include: {
+                            occupation: {
+                                include: {
+                                    scheme: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            return schedules.map(schedule => ({
+                assessment_id: schedule.assessment_id,
+                scheme_code: schedule.assessment.occupation.scheme.code,
+                occupation_name: schedule.assessment.occupation.name,
+                start_date: schedule.start_date,
+                end_date: schedule.end_date,
+            }));
         });
     }
 }

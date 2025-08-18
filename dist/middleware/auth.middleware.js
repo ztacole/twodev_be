@@ -11,7 +11,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authenticateToken = void 0;
 const auth_service_1 = require("../modules/auth/auth.service");
-const authService = new auth_service_1.AuthService();
 const authenticateToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const authHeader = req.headers.authorization;
@@ -22,7 +21,7 @@ const authenticateToken = (req, res, next) => __awaiter(void 0, void 0, void 0, 
                 message: 'Access token is required'
             });
         }
-        const decoded = yield authService.verifyToken(token);
+        const decoded = yield auth_service_1.AuthService.verifyToken(token);
         req.user = decoded;
         next();
     }

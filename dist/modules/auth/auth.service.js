@@ -16,16 +16,23 @@ exports.AuthService = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("../../config/db");
+const error_1 = require("../../common/error");
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES_IN = '7d';
 class AuthService {
-    register(data) {
+    static register(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const existingUser = yield db_1.prisma.user.findUnique({
                 where: { email: data.email }
             });
             if (existingUser) {
-                throw new Error('User already exists with this email');
+                throw new error_1.DuplicateEntryError('User', data.email);
+            }
+            const existingRole = yield db_1.prisma.role.findUnique({
+                where: { id: data.role_id }
+            });
+            if (!existingRole) {
+                throw new error_1.NotFoundError('Role');
             }
             const saltRounds = 10;
             const hashedPassword = yield bcryptjs_1.default.hash(data.password, saltRounds);
@@ -47,17 +54,17 @@ class AuthService {
             };
         });
     }
-    login(data) {
+    static login(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const user = yield db_1.prisma.user.findUnique({
                 where: { email: data.email }
             });
             if (!user) {
-                throw new Error('Invalid email or password');
+                throw new error_1.ValidationError('Invalid email or password');
             }
             const isPasswordValid = yield bcryptjs_1.default.compare(data.password, user.password);
             if (!isPasswordValid) {
-                throw new Error('Invalid email or password');
+                throw new error_1.ValidationError('Invalid email or password');
             }
             const token = this.generateToken(user.id, user.email);
             return {
@@ -70,7 +77,24 @@ class AuthService {
             };
         });
     }
-    verifyToken(token) {
+    static getMe(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield db_1.prisma.user.findUnique({
+                where: { id: userId },
+                include: {
+                    role: true,
+                    assessor: true,
+                    assessee: true,
+                    admin: true
+                }
+            });
+            if (!user) {
+                throw new error_1.NotFoundError('User');
+            }
+            return user;
+        });
+    }
+    static verifyToken(token) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
@@ -81,7 +105,7 @@ class AuthService {
             }
         });
     }
-    generateToken(userId, email) {
+    static generateToken(userId, email) {
         const payload = {
             userId,
             email

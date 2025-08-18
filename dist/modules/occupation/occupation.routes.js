@@ -1,45 +1,12 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const occupationController = __importStar(require("./occupation.controller"));
+const occupation_controller_1 = require("./occupation.controller");
 const router = (0, express_1.Router)();
-router.post('/', occupationController.createOccupation);
-router.get('/', occupationController.getOccupations);
-router.get('/:id', occupationController.getOccupationById);
-router.put('/:id', occupationController.updateOccupation);
-router.delete('/:id', occupationController.deleteOccupation);
-router.get('/export/excel', occupationController.exportOccupationsToExcel);
+router.post('/', occupation_controller_1.OccupationController.createOccupation);
+router.get('/', occupation_controller_1.OccupationController.getOccupations);
+router.get('/:id', occupation_controller_1.OccupationController.getOccupationById);
+router.put('/:id', occupation_controller_1.OccupationController.updateOccupation);
+router.delete('/:id', occupation_controller_1.OccupationController.deleteOccupation);
+router.get('/export/excel', occupation_controller_1.OccupationController.exportOccupationsToExcel);
 exports.default = router;

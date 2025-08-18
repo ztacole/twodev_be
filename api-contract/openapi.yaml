@@ -20,6 +20,8 @@ tags:
     description: Semua endpoint terkait manajemen okupasi
   - name: Scheme
     description: Semua endpoint terkait manajemen skema
+  # - name: AK
+  #   description: Semua endpoint terkait Asesmen Keputusan (AK01 & AK02)
   # - name: Export - Import
   #   description: Semua endpoint terkait ekspor dan impor data
   # - name: assessment
@@ -2107,6 +2109,767 @@ paths:
                 example:
                   success: false
                   message: "Server error"
+
+  # /assessment/ak/ak01:
+  #  post:
+  #    tags:
+  #      - AK
+  #    summary: Membuat AK01 baru
+  #    description: Membuat Asesmen Keputusan AK01 (Evidence-based assessment)
+  #    security:
+  #      - bearerAuth: []
+  #    requestBody:
+  #      required: true
+  #      content:
+  #        application/json:
+  #          schema:
+  #            type: object
+  #            required:
+  #              - result_id
+  #              - approved_assessee
+  #              - approved_assessor
+  #              - evidences
+  #            properties:
+  #              result_id:
+  #                type: integer
+  #                description: ID dari result assessment
+  #              approved_assessee:
+  #                type: boolean
+  #                description: Status persetujuan dari assessee
+  #              approved_assessor:
+  #                type: boolean
+  #                description: Status persetujuan dari assessor
+  #              evidences:
+  #                type: array
+  #                items:
+  #                  type: string
+  #                description: Daftar bukti/evidence
+  #          example:
+  #            result_id: 1
+  #            approved_assessee: true
+  #            approved_assessor: false
+  #            evidences:
+  #              - "Sertifikat keahlian programming"
+  #              - "Portfolio project web development"
+  #              - "Pengalaman kerja 2 tahun"
+  #    responses:
+  #      "201":
+  #        description: AK01 berhasil dibuat
+  #        content:
+  #          application/json:
+  #            schema:
+  #              type: object
+  #              properties:
+  #                success:
+  #                  type: boolean
+  #                message:
+  #                  type: string
+  #                data:
+  #                  type: object
+  #                  properties:
+  #                    id:
+  #                      type: integer
+  #                    result_id:
+  #                      type: integer
+  #                    approved_assessee:
+  #                      type: boolean
+  #                    approved_assessor:
+  #                      type: boolean
+  #                    rows:
+  #                      type: array
+  #                      items:
+  #                        type: object
+  #                        properties:
+  #                          id:
+  #                            type: integer
+  #                          header_id:
+  #                            type: integer
+  #                          evidence:
+  #                            type: string
+  #            example:
+  #              success: true
+  #              message: "AK01 berhasil dibuat"
+  #              data:
+  #                id: 1
+  #                result_id: 1
+  #                approved_assessee: true
+  #                approved_assessor: false
+  #                rows:
+  #                  - id: 1
+  #                    header_id: 1
+  #                    evidence: "Sertifikat keahlian programming"
+  #                  - id: 2
+  #                    header_id: 1
+  #                    evidence: "Portfolio project web development"
+  #      "400":
+  #        description: Data tidak valid
+  #        content:
+  #          application/json:
+  #            schema:
+  #              type: object
+  #              properties:
+  #                success:
+  #                  type: boolean
+  #                message:
+  #                  type: string
+  #            example:
+  #              success: false
+  #              message: "Validasi gagal: Result tidak ditemukan"
+  #      "409":
+  #        description: AK01 sudah ada untuk result ini
+  #        content:
+  #          application/json:
+  #            schema:
+  #              type: object
+  #              properties:
+  #                success:
+  #                  type: boolean
+  #                message:
+  #                  type: string
+  #            example:
+  #              success: false
+  #              message: "Header AK01 'result_id: 1' sudah ada"
+  #      "401":
+  #        description: Token tidak valid
+  #      "500":
+  #        description: Server error
+
+  # /assessment/ak/ak01/{id}:
+  #   get:
+  #     tags:
+  #       - AK
+  #     summary: Mengambil AK01 berdasarkan ID
+  #     description: Mengambil data AK01 berdasarkan ID header
+  #     security:
+  #       - bearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #         description: ID dari AK01 header
+  #     responses:
+  #       "200":
+  #         description: AK01 berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     id:
+  #                       type: integer
+  #                     result_id:
+  #                       type: integer
+  #                     approved_assessee:
+  #                       type: boolean
+  #                     approved_assessor:
+  #                       type: boolean
+  #                     rows:
+  #                       type: array
+  #                       items:
+  #                         type: object
+  #                         properties:
+  #                           id:
+  #                             type: integer
+  #                           header_id:
+  #                             type: integer
+  #                           evidence:
+  #                             type: string
+  #             example:
+  #               success: true
+  #               message: "AK01 berhasil diambil"
+  #               data:
+  #                 id: 1
+  #                 result_id: 1
+  #                 approved_assessee: true
+  #                 approved_assessor: false
+  #                 rows:
+  #                   - id: 1
+  #                     header_id: 1
+  #                     evidence: "Sertifikat keahlian programming"
+  #       "404":
+  #         description: AK01 tidak ditemukan
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  #   put:
+  #     tags:
+  #       - AK
+  #     summary: Memperbarui AK01
+  #     description: Memperbarui data AK01 berdasarkan ID
+  #     security:
+  #       - bearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #         description: ID dari AK01 header
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               approved_assessee:
+  #                 type: boolean
+  #               approved_assessor:
+  #                 type: boolean
+  #               evidences:
+  #                 type: array
+  #                 items:
+  #                   type: string
+  #           example:
+  #             approved_assessee: true
+  #             approved_assessor: true
+  #             evidences:
+  #               - "Sertifikat keahlian programming (updated)"
+  #               - "Portfolio project web development"
+  #     responses:
+  #       "200":
+  #         description: AK01 berhasil diperbarui
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #             example:
+  #               success: true
+  #               message: "AK01 berhasil diperbarui"
+  #       "404":
+  #         description: AK01 tidak ditemukan
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  #   delete:
+  #     tags:
+  #       - AK
+  #     summary: Menghapus AK01
+  #     description: Menghapus data AK01 berdasarkan ID
+  #     security:
+  #       - bearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #         description: ID dari AK01 header
+  #     responses:
+  #       "200":
+  #         description: AK01 berhasil dihapus
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: true
+  #               message: "AK01 berhasil dihapus"
+  #       "404":
+  #         description: AK01 tidak ditemukan
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  # /assessment/ak/ak01/result/{resultId}:
+  #   get:
+  #     tags:
+  #       - AK
+  #     summary: Mengambil AK01 berdasarkan Result ID
+  #     description: Mengambil data AK01 berdasarkan ID result assessment
+  #     security:
+  #       - bearerAuth: []
+  #     parameters:
+  #       - name: resultId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #         description: ID dari result assessment
+  #     responses:
+  #       "200":
+  #         description: AK01 berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #             example:
+  #               success: true
+  #               message: "AK01 berhasil diambil"
+  #       "404":
+  #         description: AK01 tidak ditemukan
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  # /assessment/ak/ak02:
+  #   post:
+  #     tags:
+  #       - AK
+  #     summary: Membuat AK02 baru
+  #     description: Membuat Asesmen Keputusan AK02 (Competency-based assessment)
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required:
+  #               - result_id
+  #               - approved_assessee
+  #               - approved_assessor
+  #               - is_competent
+  #               - rows
+  #             properties:
+  #               result_id:
+  #                 type: integer
+  #                 description: ID dari result assessment
+  #               approved_assessee:
+  #                 type: boolean
+  #                 description: Status persetujuan dari assessee
+  #               approved_assessor:
+  #                 type: boolean
+  #                 description: Status persetujuan dari assessor
+  #               is_competent:
+  #                 type: boolean
+  #                 description: Status kompetensi
+  #               follow_up:
+  #                 type: string
+  #                 description: Tindak lanjut (opsional)
+  #               comment:
+  #                 type: string
+  #                 description: Komentar (opsional)
+  #               rows:
+  #                 type: array
+  #                 items:
+  #                   type: object
+  #                   properties:
+  #                     uc_id:
+  #                       type: integer
+  #                       description: ID Unit Competency
+  #                     evidence:
+  #                       type: string
+  #                       description: Bukti/evidence
+  #           example:
+  #             result_id: 1
+  #             approved_assessee: true
+  #             approved_assessor: false
+  #             is_competent: true
+  #             follow_up: "Perlu pelatihan lanjutan"
+  #             comment: "Kandidat menunjukkan kemampuan yang baik"
+  #             rows:
+  #               - uc_id: 1
+  #                 evidence: "Mampu membuat aplikasi web dengan framework React"
+  #               - uc_id: 2
+  #                 evidence: "Menguasai database MySQL dan PostgreSQL"
+  #     responses:
+  #       "201":
+  #         description: AK02 berhasil dibuat
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     id:
+  #                       type: integer
+  #                     result_id:
+  #                       type: integer
+  #                     approved_assessee:
+  #                       type: boolean
+  #                     approved_assessor:
+  #                       type: boolean
+  #                     is_competent:
+  #                       type: boolean
+  #                     follow_up:
+  #                       type: string
+  #                     comment:
+  #                       type: string
+  #                     rows:
+  #                       type: array
+  #                       items:
+  #                         type: object
+  #                         properties:
+  #                           id:
+  #                             type: integer
+  #                           header_id:
+  #                             type: integer
+  #                           uc_id:
+  #                             type: integer
+  #                           evidence:
+  #                             type: string
+  #                           uc:
+  #                             type: object
+  #                             properties:
+  #                               id:
+  #                                 type: integer
+  #                               unit_code:
+  #                                 type: string
+  #                               title:
+  #                                 type: string
+  #             example:
+  #               success: true
+  #               message: "AK02 berhasil dibuat"
+  #               data:
+  #                 id: 1
+  #                 result_id: 1
+  #                 approved_assessee: true
+  #                 approved_assessor: false
+  #                 is_competent: true
+  #                 follow_up: "Perlu pelatihan lanjutan"
+  #                 comment: "Kandidat menunjukkan kemampuan yang baik"
+  #                 rows:
+  #                   - id: 1
+  #                     header_id: 1
+  #                     uc_id: 1
+  #                     evidence: "Mampu membuat aplikasi web dengan framework React"
+  #                     uc:
+  #                       id: 1
+  #                       unit_code: "UC-001"
+  #                       title: "Web Development"
+  #       "400":
+  #         description: Data tidak valid
+  #       "409":
+  #         description: AK02 sudah ada untuk result ini
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  # /assessment/ak/ak02/{id}:
+  #   get:
+  #     tags:
+  #       - AK
+  #     summary: Mengambil AK02 berdasarkan ID
+  #     description: Mengambil data AK02 berdasarkan ID header
+  #     security:
+  #       - bearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #         description: ID dari AK02 header
+  #     responses:
+  #       "200":
+  #         description: AK02 berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #             example:
+  #               success: true
+  #               message: "AK02 berhasil diambil"
+  #       "404":
+  #         description: AK02 tidak ditemukan
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  #   put:
+  #     tags:
+  #       - AK
+  #     summary: Memperbarui AK02
+  #     description: Memperbarui data AK02 berdasarkan ID
+  #     security:
+  #       - bearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #         description: ID dari AK02 header
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               approved_assessee:
+  #                 type: boolean
+  #               approved_assessor:
+  #                 type: boolean
+  #               is_competent:
+  #                 type: boolean
+  #               follow_up:
+  #                 type: string
+  #               comment:
+  #                 type: string
+  #               rows:
+  #                 type: array
+  #                 items:
+  #                   type: object
+  #                   properties:
+  #                     uc_id:
+  #                       type: integer
+  #                     evidence:
+  #                       type: string
+  #           example:
+  #             approved_assessee: true
+  #             approved_assessor: true
+  #             is_competent: true
+  #             follow_up: "Siap untuk sertifikasi"
+  #             comment: "Semua kompetensi telah terpenuhi"
+  #     responses:
+  #       "200":
+  #         description: AK02 berhasil diperbarui
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: true
+  #               message: "AK02 berhasil diperbarui"
+  #       "404":
+  #         description: AK02 tidak ditemukan
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  #   delete:
+  #     tags:
+  #       - AK
+  #     summary: Menghapus AK02
+  #     description: Menghapus data AK02 berdasarkan ID
+  #     security:
+  #       - bearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #         description: ID dari AK02 header
+  #     responses:
+  #       "200":
+  #         description: AK02 berhasil dihapus
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #             example:
+  #               success: true
+  #               message: "AK02 berhasil dihapus"
+  #       "404":
+  #         description: AK02 tidak ditemukan
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  # /assessment/ak/ak02/result/{resultId}:
+  #   get:
+  #     tags:
+  #       - AK
+  #     summary: Mengambil AK02 berdasarkan Result ID
+  #     description: Mengambil data AK02 berdasarkan ID result assessment
+  #     security:
+  #       - bearerAuth: []
+  #     parameters:
+  #       - name: resultId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #         description: ID dari result assessment
+  #     responses:
+  #       "200":
+  #         description: AK02 berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #             example:
+  #               success: true
+  #               message: "AK02 berhasil diambil"
+  #       "404":
+  #         description: AK02 tidak ditemukan
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  # /assessment/ak/result/{resultId}:
+  #   get:
+  #     tags:
+  #       - AK
+  #     summary: Mengambil semua data AK berdasarkan Result ID
+  #     description: Mengambil data AK01 dan AK02 berdasarkan ID result assessment
+  #     security:
+  #       - bearerAuth: []
+  #     parameters:
+  #       - name: resultId
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: integer
+  #         description: ID dari result assessment
+  #     responses:
+  #       "200":
+  #         description: Data AK berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     ak01:
+  #                       type: array
+  #                       items:
+  #                         type: object
+  #                     ak02:
+  #                       type: array
+  #                       items:
+  #                         type: object
+  #             example:
+  #               success: true
+  #               message: "Data AK berhasil diambil"
+  #               data:
+  #                 ak01:
+  #                   - id: 1
+  #                     result_id: 1
+  #                     approved_assessee: true
+  #                     approved_assessor: false
+  #                     rows: []
+  #                 ak02:
+  #                   - id: 1
+  #                     result_id: 1
+  #                     approved_assessee: true
+  #                     approved_assessor: false
+  #                     is_competent: true
+  #                     rows: []
+  #       "404":
+  #         description: Data AK tidak ditemukan
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  # /assessment/ak:
+  #   get:
+  #     tags:
+  #       - AK
+  #     summary: Mengambil semua data AK
+  #     description: Mengambil semua data AK01 dan AK02 yang tersedia
+  #     security:
+  #       - bearerAuth: []
+  #     responses:
+  #       "200":
+  #         description: Semua data AK berhasil diambil
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                 message:
+  #                   type: string
+  #                 data:
+  #                   type: object
+  #                   properties:
+  #                     ak01:
+  #                       type: array
+  #                       items:
+  #                         type: object
+  #                     ak02:
+  #                       type: array
+  #                       items:
+  #                         type: object
+  #             example:
+  #               success: true
+  #               message: "Semua data AK berhasil diambil"
+  #               data:
+  #                 ak01: []
+  #                 ak02: []
+  #       "401":
+  #         description: Token tidak valid
+  #       "500":
+  #         description: Server error
+
+  # components:
+  # securitySchemes:
+  #   bearerAuth:
+  #     type: http
+  #     scheme: bearer
+  #     bearerFormat: JWT
 
   # /assessement:
   #   post:

@@ -10,15 +10,41 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.APL2Service = void 0;
+const error_1 = require("../../../common/error");
 const db_1 = require("../../../config/db");
 class APL2Service {
-    createAssessment(data) {
+    static createAssessment(data) {
         return __awaiter(this, void 0, void 0, function* () {
+            const existingAssessment = yield db_1.prisma.assessment.findFirst({
+                where: {
+                    code: data.code
+                }
+            });
+            if (existingAssessment) {
+                throw new error_1.DuplicateEntryError('Assessment code', data.code);
+            }
+            const occupation = yield db_1.prisma.occupation.findUnique({
+                where: {
+                    id: data.occupation_id
+                }
+            });
+            if (!occupation) {
+                throw new error_1.NotFoundError('Occupation');
+            }
+            const unitCodes = data.unit_competencies.map(unit => unit.unit_code);
+            const existingUnits = yield db_1.prisma.uc_apl02.findMany({
+                where: {
+                    unit_code: { in: unitCodes }
+                }
+            });
+            if (existingUnits.length > 0) {
+                throw new error_1.DuplicateEntryError('Unit competency code', existingUnits[0].unit_code);
+            }
             const assessment = yield db_1.prisma.assessment.create({
                 data: {
                     occupation_id: data.occupation_id,
                     code: data.code,
-                    unit_competencies: {
+                    uc_apl02s: {
                         create: data.unit_competencies.map(unit => ({
                             unit_code: unit.unit_code,
                             title: unit.title,
@@ -41,7 +67,7 @@ class APL2Service {
                             scheme: true
                         }
                     },
-                    unit_competencies: {
+                    uc_apl02s: {
                         include: {
                             elements: {
                                 include: {
@@ -55,7 +81,7 @@ class APL2Service {
             return formatAssessmentResponse(assessment);
         });
     }
-    getAssessmentById(id) {
+    static getAssessmentById(id) {
         return __awaiter(this, void 0, void 0, function* () {
             const assessment = yield db_1.prisma.assessment.findUnique({
                 where: { id },
@@ -77,12 +103,12 @@ class APL2Service {
                 }
             });
             if (!assessment) {
-                return null;
+                throw new error_1.NotFoundError('Assessment');
             }
             return formatAssessmentResponse(assessment);
         });
     }
-    getAssessments() {
+    static getAssessments() {
         return __awaiter(this, void 0, void 0, function* () {
             const assessments = yield db_1.prisma.assessment.findMany({
                 include: {
@@ -102,20 +128,21 @@ class APL2Service {
                     }
                 }
             });
-            if (!assessments) {
-                return null;
-            }
             return assessments.map(formatAssessmentResponse);
         });
     }
-    getUnitCompetenciesByAssessmentId(assessmentId) {
+    static getUnitCompetenciesByAssessmentCode(assessmentCode) {
         return __awaiter(this, void 0, void 0, function* () {
-            const unitCompetencies = yield db_1.prisma.unit_Competency.findMany({
-                where: { assessment_id: assessmentId },
+            const assessment = yield db_1.prisma.assessment.findFirst({
+                where: { code: assessmentCode },
+                select: { id: true }
             });
-            if (!unitCompetencies) {
-                return null;
+            if (!assessment) {
+                throw new error_1.NotFoundError('Assessment');
             }
+            const unitCompetencies = yield db_1.prisma.uc_apl02.findMany({
+                where: { assessment_id: assessment.id }
+            });
             return unitCompetencies.map(unit => {
                 return {
                     id: unit.id,
@@ -125,17 +152,21 @@ class APL2Service {
             });
         });
     }
-    getElementsByUnitCompetencyId(unitCompetencyId) {
+    static getElementsByUnitCompetencyCode(unitCompetencyCode) {
         return __awaiter(this, void 0, void 0, function* () {
+            const unitCompetency = yield db_1.prisma.uc_apl02.findFirst({
+                where: { unit_code: unitCompetencyCode },
+                select: { id: true }
+            });
+            if (!unitCompetency) {
+                throw new error_1.NotFoundError('Unit competency');
+            }
             const elements = yield db_1.prisma.element.findMany({
-                where: { unit_competency_id: unitCompetencyId },
+                where: { unit_competency_id: unitCompetency.id },
                 include: {
                     details: true
                 }
             });
-            if (!elements) {
-                return null;
-            }
             return elements.map(element => {
                 return {
                     id: element.id,

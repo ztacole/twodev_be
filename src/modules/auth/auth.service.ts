@@ -14,7 +14,7 @@ export class AuthService {
         });
 
         if (existingUser) {
-            throw new DuplicateEntryError('User', data.email);
+            throw new DuplicateEntryError('Pengguna', data.email);
         }
 
         const existingRole = await prisma.role.findUnique({
@@ -22,7 +22,7 @@ export class AuthService {
         });
 
         if (!existingRole) {
-            throw new NotFoundError('Role');
+            throw new ValidationError(`Role dengan ID ${data.role_id} tidak ditemukan. Pastikan role_id yang digunakan valid.`);
         }
 
         const saltRounds = 10;
@@ -54,12 +54,12 @@ export class AuthService {
         });
 
         if (!user) {
-            throw new ValidationError('Invalid email or password');
+            throw new ValidationError('Email atau password tidak valid');
         }
 
         const isPasswordValid = await bcrypt.compare(data.password, user.password);
         if (!isPasswordValid) {
-            throw new ValidationError('Invalid email or password');
+            throw new ValidationError('Email atau password tidak valid');
         }
 
         const token = this.generateToken(user.id, user.email);
@@ -86,7 +86,7 @@ export class AuthService {
         });
 
         if (!user) {
-            throw new NotFoundError('User');
+            throw new NotFoundError('Pengguna');
         }
 
         return user;
@@ -97,7 +97,7 @@ export class AuthService {
             const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
             return decoded;
         } catch (error) {
-            throw new Error('Invalid token');
+            throw new Error('Token tidak valid');
         }
     }
 

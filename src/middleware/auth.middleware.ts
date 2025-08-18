@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../modules/auth/auth.service';
 
-const authService = new AuthService();
 
 export interface AuthenticatedRequest extends Request {
     user?: {
@@ -22,17 +21,17 @@ export const authenticateToken = async (
         if (!token) {
             return res.status(401).json({
                 success: false,
-                message: 'Access token is required'
+                message: 'Token akses diperlukan'
             });
         }
 
-        const decoded = await authService.verifyToken(token);
+        const decoded = await AuthService.verifyToken(token);
         req.user = decoded;
         next();
     } catch (error: any) {
         return res.status(403).json({
             success: false,
-            message: 'Invalid or expired token'
+            message: 'Token tidak valid atau sudah kedaluwarsa'
         });
     }
 }; 

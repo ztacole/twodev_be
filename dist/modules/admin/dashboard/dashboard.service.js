@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDashboardData = void 0;
 const db_1 = require("../../../config/db");
 const getDashboardData = () => __awaiter(void 0, void 0, void 0, function* () {
-    const totalSchemes = yield db_1.prisma.schemes.count();
+    const totalSchemes = yield db_1.prisma.scheme.count();
     const totalAssessments = yield db_1.prisma.assessment.count();
     const totalAssessors = yield db_1.prisma.assessor.count();
     const totalAssesses = yield db_1.prisma.assessee.count();

@@ -9,16 +9,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Apl1Controller = void 0;
+exports.APL1Controller = void 0;
 const apl1_service_1 = require("./apl1.service");
-class Apl1Controller {
-    constructor() {
-        this.apl1Service = new apl1_service_1.APL1Service();
-    }
-    createAssesseAPL1(req, res) {
+class APL1Controller {
+    constructor() { }
+    static createAssesseAPL1(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const assesse = yield this.apl1Service.createOrUpdateAssesse(req.body);
+                const assesse = yield apl1_service_1.APL1Service.createOrUpdateAssesse(req.body);
                 res.status(201).json({
                     success: true,
                     message: 'Asesmen berhasil dibuat',
@@ -56,10 +54,10 @@ class Apl1Controller {
             }
         });
     }
-    createAssesseCertificate(req, res) {
+    static createAssesseCertificate(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const certificate = yield this.apl1Service.createAssesseCertificate(req.body);
+                const certificate = yield apl1_service_1.APL1Service.createAssesseCertificate(req.body);
                 res.status(201).json({
                     success: true,
                     message: 'Data sertifikat berhasil dibuat',
@@ -84,7 +82,7 @@ class Apl1Controller {
             }
         });
     }
-    uploadCertificateDocs(req, res) {
+    static uploadCertificateDocs(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const assessorId = parseInt(req.params.assessorId);
@@ -96,7 +94,7 @@ class Apl1Controller {
                     });
                 }
                 const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-                const result = yield this.apl1Service.uploadCertificateDocs(assessorId, assesseeId, files);
+                const result = yield apl1_service_1.APL1Service.uploadCertificateDocs(assessorId, assesseeId, files);
                 res.status(200).json({
                     success: true,
                     message: 'Certificate documents uploaded successfully',
@@ -112,4 +110,4 @@ class Apl1Controller {
         });
     }
 }
-exports.Apl1Controller = Apl1Controller;
+exports.APL1Controller = APL1Controller;

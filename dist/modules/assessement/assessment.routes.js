@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const upload_config_1 = require("./apl1/upload-config");
+const apl2_controller_1 = require("./apl2/apl2.controller");
+const apl1_controller_1 = require("./apl1/apl1.controller");
+const iaGroup_controller_1 = require("./iaGroup/iaGroup.controller");
+const router = (0, express_1.Router)();
+router.post('/apl1/create-self-data', apl1_controller_1.APL1Controller.createAssesseAPL1);
+router.post('/apl1/create-certificate-data', apl1_controller_1.APL1Controller.createAssesseCertificate);
+router.post('/apl1/upload-certificate-docs/:assessorId/:assesseeId', upload_config_1.upload.any(), apl1_controller_1.APL1Controller.uploadCertificateDocs);
+router.post('/apl2/create-assessment', apl2_controller_1.APL2Controller.createAssessment);
+router.get('/apl2/', apl2_controller_1.APL2Controller.getAssessments);
+router.get('/apl2/:id', apl2_controller_1.APL2Controller.getAssessmentById);
+router.get('/apl2/unit-competencies/:assessmentCode', apl2_controller_1.APL2Controller.getUnitCompetenciesByAssessmentId);
+router.get('/apl2/unit-competencies/elements/:unitCompetencyCode', apl2_controller_1.APL2Controller.getElementsByUnitCompetencyId);
+router.post('/ia-group/create', iaGroup_controller_1.IAGroupController.createIAGroup);
+exports.default = router;
