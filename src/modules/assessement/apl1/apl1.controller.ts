@@ -2,16 +2,12 @@ import { Request, Response } from 'express';
 import { APL1Service } from './apl1.service';
 import { upload } from './upload-config';
 
-export class Apl1Controller {
-  private apl1Service: APL1Service;
+export class APL1Controller {
+  constructor() {}
 
-  constructor() {
-    this.apl1Service = new APL1Service();
-  }
-
-  async createAssesseAPL1(req: Request, res: Response) {
+  static async createAssesseAPL1(req: Request, res: Response) {
     try {
-      const assesse = await this.apl1Service.createOrUpdateAssesse(req.body);
+      const assesse = await APL1Service.createOrUpdateAssesse(req.body);
 
       res.status(201).json({
         success: true,
@@ -49,9 +45,9 @@ export class Apl1Controller {
     }
   }
 
-  async createAssesseCertificate(req: Request, res: Response) {
+  static async createAssesseCertificate(req: Request, res: Response) {
     try {
-      const certificate = await this.apl1Service.createAssesseCertificate(req.body);
+      const certificate = await APL1Service.createAssesseCertificate(req.body);
   
       res.status(201).json({
         success: true,
@@ -76,7 +72,7 @@ export class Apl1Controller {
     }
   }
 
-  async uploadCertificateDocs(req: Request, res: Response) {
+  static async uploadCertificateDocs(req: Request, res: Response) {
     try {
       const assessorId = parseInt(req.params.assessorId);
       const assesseeId = parseInt(req.params.assesseeId);
@@ -90,7 +86,7 @@ export class Apl1Controller {
       
       const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
       
-      const result = await this.apl1Service.uploadCertificateDocs(assessorId, assesseeId, files);
+      const result = await APL1Service.uploadCertificateDocs(assessorId, assesseeId, files);
       
       res.status(200).json({
         success: true,

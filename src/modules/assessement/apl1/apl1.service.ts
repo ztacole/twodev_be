@@ -3,7 +3,7 @@ import { prisma } from '../../../config/db';
 import path from 'path';
 
 export class APL1Service {
-    async createOrUpdateAssesse(data: any) {
+    static async createOrUpdateAssesse(data: any) {
         const { jobs, id, user_id, ...assesseeData } = data;
         
         // Convert Indonesian gender values to English enum values
@@ -49,13 +49,13 @@ export class APL1Service {
     }
     
 
-    async getAssesseJobsByAssesseeId(assesseeId: number) {
+    static async getAssesseJobsByAssesseeId(assesseeId: number) {
         return prisma.assessee_job.findMany({
             where: { assessee_id: assesseeId }
         });
     }
 
-    async createAssesseCertificate(data: any) {
+    static async createAssesseCertificate(data: any) {
         const { assessee_id, assessor_id, ...docsData } = data;
         
         const existingDocs = await prisma.result_doc.findFirst({
@@ -92,7 +92,7 @@ export class APL1Service {
         }
     }
 
-    async uploadCertificateDocs(assessorId: number, assesseeId: number, files: any) {
+    static async uploadCertificateDocs(assessorId: number, assesseeId: number, files: any) {
         const uploadPath = `apl1/${assessorId}`;
         
         const fileData: any = {};
