@@ -25,7 +25,7 @@ export class APL2Service {
     }
 
     const unitCodes = data.unit_competencies.map(unit => unit.unit_code);
-    const existingUnits = await prisma.unit_Competency.findMany({
+    const existingUnits = await prisma.uc_apl02.findMany({
       where: {
         unit_code: { in: unitCodes }
       }
@@ -138,7 +138,7 @@ export class APL2Service {
       throw new NotFoundError('Assessment');
     }
 
-    const unitCompetencies = await prisma.unit_Competency.findMany({
+    const unitCompetencies = await prisma.uc_apl02.findMany({
       where: { assessment_id: assessment.id }
     });
 
@@ -152,7 +152,7 @@ export class APL2Service {
   }
 
   static async getElementsByUnitCompetencyCode(unitCompetencyCode: string): Promise<ElementResponse[]> {
-    const unitCompetency = await prisma.unit_Competency.findFirst({
+    const unitCompetency = await prisma.uc_apl02.findFirst({
       where: { unit_code: unitCompetencyCode },
       select: { id: true }
     });
