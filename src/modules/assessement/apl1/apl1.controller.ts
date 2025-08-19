@@ -55,7 +55,6 @@ export class APL1Controller {
         data: {
           id: certificate.id,
           result_id: certificate.result_id,
-          assessor_id: certificate.assessor_id,
           purpose: certificate.purpose,
           school_report_card: certificate.school_report_card,
           field_work_practice_certificate: certificate.field_work_practice_certificate,

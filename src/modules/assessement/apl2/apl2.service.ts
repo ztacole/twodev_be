@@ -24,7 +24,7 @@ export class APL2Service {
       throw new NotFoundError('Occupation');
     }
 
-    const unitCodes = data.unit_competencies.map(unit => unit.unit_code);
+    const unitCodes = data.uc_apl02.map(unit => unit.unit_code);
     const existingUnits = await prisma.uc_apl02.findMany({
       where: {
         unit_code: { in: unitCodes }
@@ -40,7 +40,7 @@ export class APL2Service {
         occupation_id: data.occupation_id,
         code: data.code,
         uc_apl02s: {
-          create: data.unit_competencies.map(unit => ({
+          create: data.uc_apl02.map(unit => ({
             unit_code: unit.unit_code,
             title: unit.title,
             elements: {
@@ -86,7 +86,7 @@ export class APL2Service {
             scheme: true
           }
         },
-        unit_competencies: {
+        uc_apl02s: {
           include: {
             elements: {
               include: {
@@ -113,7 +113,7 @@ export class APL2Service {
             scheme: true
           }
         },
-        unit_competencies: {
+        uc_apl02s: {
           include: {
             elements: {
               include: {
@@ -161,8 +161,8 @@ export class APL2Service {
       throw new NotFoundError('Unit competency');
     }
     
-    const elements = await prisma.element.findMany({
-      where: { unit_competency_id: unitCompetency.id },
+    const elements = await prisma.element_apl02.findMany({
+      where: { uc_id: unitCompetency.id },
       include: {
         details: true
       }

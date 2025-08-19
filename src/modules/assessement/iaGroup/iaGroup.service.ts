@@ -1,6 +1,6 @@
 import { DuplicateEntryError, NotFoundError } from "../../../common/error";
 import { prisma } from "../../../config/db";
-import { GroupIARequest } from "./iaGroup.type";
+import { GroupIA01Response, GroupIARequest } from "./iaGroup.type";
 
 export class IAGroupService {
     static async createIAGroup(data: GroupIARequest) {
@@ -11,6 +11,16 @@ export class IAGroupService {
         });
         if (!existingAssessment) {
             throw new NotFoundError('Assessment');
+        }
+
+        const existingGroup = await prisma.group_ia.findFirst({
+            where: {
+                name: data.name,
+                assessment_id: data.assessment_id
+            }
+        });
+        if (existingGroup) {
+            throw new DuplicateEntryError('Group name', data.name);
         }
 
         const unitCodes = data.units.map(unit => unit.unit_code);
@@ -68,5 +78,18 @@ export class IAGroupService {
         });
 
         return rawResponse;
+    }
+
+    static async getIA01Groups(assessmentId: number): Promise<GroupIA01Response[]> {
+        const groups: GroupIA01Response[] = await prisma.group_ia.findMany({
+            where: {
+                assessment_id: assessmentId
+            },
+            include: {
+                units: true
+            }
+        });
+
+        return groups;
     }
 }

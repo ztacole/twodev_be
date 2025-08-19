@@ -42,21 +42,21 @@ interface ElementDetailsResponse {
 interface AssessmentRequest {
     occupation_id: number;
     code: string;
-    unit_competencies: UnitCompetencyRequest[];
+    uc_apl02: UCAPL02Request[];
 }
 
-interface UnitCompetencyRequest {
+interface UCAPL02Request {
     unit_code: string;
     title: string;
-    elements: ElementRequest[];
+    elements: ElementAPL02Request[];
 }
 
-interface ElementRequest {
+interface ElementAPL02Request {
     title: string;
-    element_details: ElementDetailsRequest[];
+    element_details: ElementDetailsAPL02Request[];
 }
 
-interface ElementDetailsRequest {
+interface ElementDetailsAPL02Request {
     description: string;
 }
 
@@ -68,7 +68,7 @@ export {
     ElementResponse,
     ElementDetailsResponse,
     AssessmentRequest,
-    UnitCompetencyRequest,
-    ElementRequest,
-    ElementDetailsRequest,
+    UCAPL02Request as UnitCompetencyRequest,
+    ElementAPL02Request as ElementRequest,
+    ElementDetailsAPL02Request as ElementDetailsRequest,
 };

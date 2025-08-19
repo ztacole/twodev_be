@@ -60,9 +60,9 @@ export class APL1Service {
         
         const existingDocs = await prisma.result_doc.findFirst({
             where: {
-                assessor_id: assessor_id,
                 result: {
-                    assessee_id: assessee_id
+                    assessee_id: assessee_id,
+                    assessor_id: assessor_id
                 }
             }
         });
@@ -116,9 +116,9 @@ export class APL1Service {
         
         const existingDocs = await prisma.result_doc.findFirst({
             where: {
-                assessor_id: assessorId,
                 result: {
-                    assessee_id: assesseeId
+                    assessee_id: assesseeId,
+                    assessor_id: assessorId
                 }
             }
         });
