@@ -3,8 +3,11 @@ import { upload } from "./apl1/upload-config";
 import { APL2Controller } from "./apl2/apl2.controller";
 import { APL1Controller } from "./apl1/apl1.controller";
 import { IAGroupController } from "./iaGroup/iaGroup.controller";
+import { AssessmentController } from "./assessment.controller";
 
 const router = Router();
+
+router.post('/create', AssessmentController.createAssessment);
 
 router.post('/apl1/create-self-data', APL1Controller.createAssesseAPL1);
 router.post('/apl1/create-certificate-data', APL1Controller.createAssesseCertificate);
@@ -17,5 +20,6 @@ router.get('/apl2/unit-competencies/:assessmentCode', APL2Controller.getUnitComp
 router.get('/apl2/unit-competencies/elements/:unitCompetencyCode', APL2Controller.getElementsByUnitCompetencyId);
 
 router.post('/ia-group/create', IAGroupController.createIAGroup);
+router.get('/ia-01/unit-competencies/:assessmentId', IAGroupController.getIA01Groups);
 
 export default router;
