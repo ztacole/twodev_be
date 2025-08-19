@@ -16,11 +16,6 @@ enum gender {
   female
 }
 
-enum question_type {
-  pg
-  essay
-}
-
 enum tuk {
   sewaktu
   tempat_kerja
@@ -96,7 +91,6 @@ model assessor {
 
   assessment_details schedule_detail[]
   details            assessor_detail?
-  docs               result_doc[]
   results            result[]        @relation("assessor_results")
 }
 
@@ -129,7 +123,6 @@ model assessee {
 
   user     user              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   jobs     assessee_job[]
-  answers  assessee_answer[]
   results  result[]          @relation("assessee_results")
 }
 
@@ -155,8 +148,6 @@ model assessment {
 
   occupation         occupation          @relation(fields: [occupation_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assessment_schedules assessment_schedule[]
-  unit_competencies   unit_competency[]
-  questions           assessment_question[]
   results             result[]
   groups_ia           group_ia[]
   uc_apl02s           uc_apl02[]
@@ -184,68 +175,6 @@ model schedule_detail {
   assessor   assessor            @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-//// ========= Unit & Element (generic) =========
-
-model unit_competency {
-  id             Int      @id @default(autoincrement())
-  assessment_id  Int
-  unit_code      String   @db.VarChar(255)
-  title          String   @db.VarChar(255)
-
-  assessment     assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  elements       element[]
-}
-
-model element {
-  id                 Int              @id @default(autoincrement())
-  unit_competency_id Int
-  title              String           @db.VarChar(255)
-
-  unit_competency unit_competency @relation(fields: [unit_competency_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  details         element_detail[]
-  result_details  result_detail[]
-}
-
-model element_detail {
-  id         Int    @id @default(autoincrement())
-  element_id Int
-  description String @db.VarChar(255)
-
-  element    element @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-}
-
-//// ========= Assessment Questions (umum) =========
-
-model assessment_question {
-  id            Int          @id @default(autoincrement())
-  assessment_id Int
-  type          question_type
-  question      String       @db.VarChar(255)
-
-  assessment assessment        @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  pg_details question_pg_detail[]
-  answers    assessee_answer[]
-}
-
-model question_pg_detail {
-  id          Int    @id @default(autoincrement())
-  question_id Int
-  option      String @db.VarChar(255)
-  isanswer    Boolean
-
-  question assessment_question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-}
-
-model assessee_answer {
-  id          Int    @id @default(autoincrement())
-  question_id Int
-  assessee_id Int
-  answer      String @db.VarChar(255)
-
-  question assessment_question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assessee assessee            @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-}
-
 //// ========= Result (Umum + Dokumen) =========
 
 model result {
@@ -261,7 +190,6 @@ model result {
   assessor   assessor   @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade, name: "assessor_results")
   assessee   assessee   @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade, name: "assessee_results")
 
-  details result_detail[]
   docs    result_doc[]
 
   apl02_headers result_apl02_header[]
@@ -277,7 +205,6 @@ model result {
 model result_doc {
   id                           Int    @id @default(autoincrement())
   result_id                    Int
-  assessor_id                  Int
   purpose                      String @db.VarChar(255)
   school_report_card           String @db.VarChar(255)
   field_work_practice_certificate String @db.VarChar(255)
@@ -287,18 +214,6 @@ model result_doc {
   approved                     Boolean
 
   result   result   @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assessor assessor @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-}
-
-model result_detail {
-  id         Int    @id @default(autoincrement())
-  result_id  Int
-  element_id Int
-  answer     Boolean
-  proof      String @db.VarChar(255)
-
-  result  result  @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  element element @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= APL02 =========
