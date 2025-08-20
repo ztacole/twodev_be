@@ -1,5 +1,5 @@
 import { prisma } from "../../config/db";
-import { AssessmentRequest } from "./assessment.type";
+import { AssessmentRequest, AssessmentResponse } from "./assessment.type";
 
 export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
@@ -106,5 +106,19 @@ export class AssessmentService {
         });
 
         return assessment;
+    }
+
+    static async getAssessments(): Promise<AssessmentResponse[]> {
+        const assessments: AssessmentResponse[] = await prisma.assessment.findMany({
+            include: {
+                occupation: {
+                    include: {
+                        scheme: true
+                    }
+                }
+            }
+        });
+
+        return assessments;
     }
 }

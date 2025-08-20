@@ -1,5 +1,5 @@
-import { NotFoundError } from '../../../common/error';
-import { prisma } from '../../../config/db';
+import { NotFoundError } from '../../common/error';
+import { prisma } from '../../config/db';
 import { ScheduleRequest, ScheduleResponse } from './schedule.type';
 
 export class ScheduleService {

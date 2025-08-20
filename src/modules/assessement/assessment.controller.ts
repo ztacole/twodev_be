@@ -13,4 +13,13 @@ export class AssessmentController {
             data: result,
         });
     });
+
+    static getAssessments = asyncHandler(async (req: Request, res: Response) => {
+        const result = await AssessmentService.getAssessments();
+        res.status(200).json({
+            success: true,
+            message: "Assessment berhasil diambil",
+            data: result,
+        });
+    });
 }

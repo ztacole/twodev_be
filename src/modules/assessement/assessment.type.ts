@@ -65,3 +65,23 @@ interface IA07QuestionRequest {
     question: string;
     answer_key: string;
 }
+
+// Response
+
+export interface AssessmentResponse {
+    id: number;
+    code: string;
+    occupation: OccupationResponse
+}
+
+interface OccupationResponse {
+    id: number;
+    name: string;
+    scheme: SchemeResponse
+}
+
+interface SchemeResponse {
+    id: number;
+    code: string;
+    name: string;
+}

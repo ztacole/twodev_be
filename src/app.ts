@@ -20,7 +20,7 @@ import dashboardRoutes from './modules/admin/dashboard/dashboard.routes';
 import occupationRoutes from './modules/occupation/occupation.routes';
 import schemeRoutes from './modules/scheme/scheme.routes';
 import assessmentRoutes from './modules/assessement/assessment.routes';
-import scheduleRoutes from './modules/assessement/schedule/schedule.routes';
+import scheduleRoutes from './modules/schedule/schedule.routes';
 import akRoutes from './modules/assessement/ak/ak.routes';
 
 app.use('/api/assessment/ak', akRoutes);
