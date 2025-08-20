@@ -19,7 +19,7 @@ export class APL1Service {
     async createOrUpdateAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
         const { jobs, id, user_id, ...assesseeData } = data;
         
-        let gender: any = assesseeData.gender;
+        let gender: any = assesseeData.gender.trim().toLowerCase();
         if (gender === 'Laki-laki') {
             gender = 'Male';
         } else if (gender === 'Perempuan') {

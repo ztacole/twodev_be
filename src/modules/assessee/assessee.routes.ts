@@ -2,13 +2,12 @@ import { Router } from 'express';
 import { AssesseeController } from './assessee.controller';
 
 const router = Router();
-const controller = new AssesseeController();
 
-router.post('/', controller.createAssesse.bind(controller));
-router.get('/', controller.getAssesses.bind(controller));
-router.get('/user/:userId', controller.getAssesseByUserId.bind(controller));
-router.get('/:id', controller.getAssesseById.bind(controller));
-router.put('/:id', controller.updateAssesse.bind(controller));
-router.delete('/:id', controller.deleteAssesse.bind(controller));
+router.post('/', AssesseeController.createAssesse);
+router.get('/', AssesseeController.getAssesses);
+router.get('/user/:userId', AssesseeController.getAssesseByUserId);
+router.get('/:id', AssesseeController.getAssesseById);
+router.put('/:id', AssesseeController.updateAssesse);
+router.delete('/:id', AssesseeController.deleteAssesse);
 
 export default router;
