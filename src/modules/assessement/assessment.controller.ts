@@ -22,4 +22,23 @@ export class AssessmentController {
             data: result,
         });
     });
+
+    static deleteAssessment = asyncHandler(async (req: Request, res: Response) => {
+        const id = Number(req.params.id);
+        const result = await AssessmentService.deleteAssessment(id);
+        res.status(200).json({
+            success: true,
+            message: "Assessment berhasil dihapus",
+        });
+    });
+
+    static getAssessmentById = asyncHandler(async (req: Request, res: Response) => {
+        const id = Number(req.params.id);
+        const result = await AssessmentService.getAssessmentById(id);
+        res.status(200).json({
+            success: true,
+            message: "Assessment berhasil diambil",
+            data: result,
+        });
+    });
 }

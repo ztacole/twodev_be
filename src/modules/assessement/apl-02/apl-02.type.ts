@@ -29,7 +29,7 @@ interface UnitCompetencyResponse {
 interface ElementResponse {
     id: number;
     title: string;
-    element_details: ElementDetailsResponse[];
+    details: ElementDetailsResponse[];
 }
 
 interface ElementDetailsResponse {

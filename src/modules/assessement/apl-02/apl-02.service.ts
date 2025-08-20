@@ -2,70 +2,18 @@ import { DuplicateEntryError, NotFoundError } from '../../../common/error';
 import { prisma } from '../../../config/db';
 import { AssessmentRequest, AssessmentResponse, ElementResponse } from './apl-02.type';
 
-export class APL2Service {
-  static async getAssessmentById(id: number): Promise<AssessmentResponse> {
-    const assessment = await prisma.assessment.findUnique({
-      where: { id },
-      include: {
-        occupation: {
-          include: {
-            scheme: true
-          }
-        },
-        uc_apl02s: {
-          include: {
-            elements: {
-              include: {
-                details: true
-              }
-            }
-          }
-        }
-      }
+export class APL02Service {
+  static async getUnitsAPL02(assessmentId: number): Promise<any[]> {
+    const existingAssessment = await prisma.assessment.findUnique({
+      where: { id: assessmentId }
     });
 
-    if (!assessment) {
-      throw new NotFoundError('Assessment');
-    }
-
-    return formatAssessmentResponse(assessment);
-  }
-
-  static async getAssessments(): Promise<AssessmentResponse[]> {
-    const assessments = await prisma.assessment.findMany({
-      include: {
-        occupation: {
-          include: {
-            scheme: true
-          }
-        },
-        uc_apl02s: {
-          include: {
-            elements: {
-              include: {
-                details: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    return assessments.map(formatAssessmentResponse);
-  }
-
-  static async getUnitCompetenciesByAssessmentCode(assessmentCode: string): Promise<any[]> {
-    const assessment = await prisma.assessment.findFirst({
-      where: { code: assessmentCode },
-      select: { id: true }
-    });
-
-    if (!assessment) {
+    if (!existingAssessment) {
       throw new NotFoundError('Assessment');
     }
 
     const unitCompetencies = await prisma.uc_apl02.findMany({
-      where: { assessment_id: assessment.id }
+      where: { assessment_id: assessmentId }
     });
 
     return unitCompetencies.map(unit => {
@@ -77,57 +25,22 @@ export class APL2Service {
     })
   }
 
-  static async getElementsByUnitCompetencyCode(unitCompetencyCode: string): Promise<ElementResponse[]> {
-    const unitCompetency = await prisma.uc_apl02.findFirst({
-      where: { unit_code: unitCompetencyCode },
-      select: { id: true }
+  static async getElementsByUnitId(unitId: number): Promise<ElementResponse[]> {
+    const existingUc = await prisma.uc_apl02.findUnique({
+      where: { id: unitId }
     });
 
-    if (!unitCompetency) {
+    if (!existingUc) {
       throw new NotFoundError('Unit competency');
     }
     
-    const elements = await prisma.element_apl02.findMany({
-      where: { uc_id: unitCompetency.id },
+    const elements: ElementResponse[] = await prisma.element_apl02.findMany({
+      where: { uc_id: unitId },
       include: {
         details: true
       }
     });
 
-    return elements.map(element => {
-      return {
-        id: element.id,
-        title: element.title,
-        element_details: element.details
-      };
-    })
+    return elements;
   }
-}
-
-function formatAssessmentResponse(assessment: any): AssessmentResponse {
-  return {
-    id: assessment.id,
-    code: assessment.code,
-    occupation: {
-      id: assessment.occupation.id,
-      name: assessment.occupation.name,
-      scheme: {
-        id: assessment.occupation.scheme.id,
-        code: assessment.occupation.scheme.code,
-        name: assessment.occupation.scheme.name
-      }
-    },
-    unit_competencies: assessment.unit_competencies.map((unit: any) => ({
-      id: unit.id,
-      assessment_id: unit.assessment_id,
-      unit_code: unit.unit_code,
-      title: unit.title,
-      elements: unit.elements.map((element: any) => ({
-        id: element.id,
-        unit_competency_id: element.unit_competency_id,
-        title: element.title,
-        element_details: element.details
-      }))
-    }))
-  };
 }

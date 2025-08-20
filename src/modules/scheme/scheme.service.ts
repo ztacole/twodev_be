@@ -24,11 +24,6 @@ export class SchemeService {
       throw new DuplicateEntryError('Scheme code', data.code);
     }
 
-    const existingSchemeName = await prisma.scheme.findFirst({ where: { name: data.name } });
-    if (existingSchemeName) {
-      throw new DuplicateEntryError('Scheme name', data.name);
-    }
-
     return prisma.scheme.create({ data });
   };
 
@@ -43,16 +38,7 @@ export class SchemeService {
       throw new DuplicateEntryError('Scheme code', data.code);
     }
 
-    const existingSchemeName = await prisma.scheme.findFirst({ where: { name: data.name } });
-    if (existingSchemeName) {
-      throw new DuplicateEntryError('Scheme name', data.name);
-    }
-
     const scheme = prisma.scheme.update({ where: { id }, data });
-
-    if (!scheme) {
-      throw new NotFoundError('Scheme');
-    }
 
     return scheme;
   };
