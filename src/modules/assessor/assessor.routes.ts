@@ -1,12 +1,13 @@
 import { Router } from 'express';
-import * as assessorController from './assessor.controller';
+import { AssessorController } from './assessor.controller';
 
 const router = Router();
 
-router.post('/', assessorController.createAssessor);
-router.get('/', assessorController.getAssessors);
-router.get('/:id', assessorController.getAssessorById);
-router.put('/:id', assessorController.updateAssessor);
-router.delete('/:id', assessorController.deleteAssessor);
+router.post('/', AssessorController.createAssessor);
+router.get('/', AssessorController.getAssessors);
+router.get('/user/:userId', AssessorController.getAssessorByUserId);
+router.get('/:id', AssessorController.getAssessorById);
+router.put('/:id', AssessorController.updateAssessor);
+router.delete('/:id', AssessorController.deleteAssessor);
 
 export default router;

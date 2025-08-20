@@ -1,100 +1,74 @@
-
 import { Request, Response } from 'express';
-import * as assessorService from './assessor.service';
+import { AssessorService } from './assessor.service';
+import { asyncHandler } from '../../common/async.handler';
 
-export const createAssessor = async (req: Request, res: Response) => {
-  try {
-    const assessor = await assessorService.createAssessor(req.body);
-    res.status(201).json({
-      success: true,
-      message: 'Data Assessor Berhasil Ditambahkan',
-      data: assessor,
-    });
-  } catch (error : any) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+export class AssessorController {
+    static createAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const requiredFields = ['user_id', 'full_name', 'scheme_id', 'address', 'phone_no', 'birth_date'];
+        for (const field of requiredFields) {
+            if (!req.body[field]) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Field ${field} diperlukan`,
+                });
+            }
+        }
 
-export const getAssessors = async (req: Request, res: Response) => {
-  try {
-    const assessors = await assessorService.getAssessors();
-    res.json({
-      success: true,
-      message: 'Data Assessor Berhasil Diambil',
-      data: assessors,
-    });
-  } catch (error : any) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+        const assessor = await AssessorService.createAssessor(req.body);
 
-export const getAssessorById = async (req: Request, res: Response) => {
-  try {
-    const assessor = await assessorService.getAssessorById(Number(req.params.id));
-    if (!assessor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Data Assessor Tidak Ditemukan',
-      });
-    }
-    res.json({
-      success: true,
-      message: 'Data Assessor Berhasil Diambil',
-      data: assessor,
+        res.status(201).json({
+            success: true,
+            message: 'Data assessor berhasil dibuat',
+            data: assessor,
+        });
     });
-  } catch (error : any) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 
-export const updateAssessor = async (req: Request, res: Response) => {
-  try {
-    const assessor = await assessorService.updateAssessor(Number(req.params.id), req.body);
-    if (!assessor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Data Assessor Tidak Ditemukan',
-      });
-    }
-    res.json({
-      success: true,
-      message: 'Data Assessor Berhasil Diubah',
-      data: assessor,
-    });
-  } catch (error : any) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+    static getAssessors = asyncHandler(async (req: Request, res: Response) => {
+        const assessors = await AssessorService.getAssessors();
 
-export const deleteAssessor = async (req: Request, res: Response) => {
-  try {
-    const assessor = await assessorService.deleteAssessor(Number(req.params.id));
-    if (!assessor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Data Assessor Tidak Ditemukan',
-      });
-    }
-    res.json({
-      success: true,
-      message: 'Data Assessor Berhasil Dihapus',
+        res.json({
+            success: true,
+            message: 'Data assessor berhasil diambil',
+            data: assessors,
+        });
     });
-  } catch (error : any) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
+
+    static getAssessorById = asyncHandler(async (req: Request, res: Response) => {
+        const assessor = await AssessorService.getAssessorById(Number(req.params.id));
+
+        res.json({
+            success: true,
+            message: 'Data assessor berhasil diambil',
+            data: assessor,
+        });
     });
-  }
-};
+
+    static getAssessorByUserId = asyncHandler(async (req: Request, res: Response) => {
+        const assessor = await AssessorService.getAssessorByUserId(Number(req.params.userId));
+
+        res.json({
+            success: true,
+            message: 'Data assessor berhasil diambil',
+            data: assessor,
+        });
+    });
+
+    static updateAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const assessor = await AssessorService.updateAssessor(Number(req.params.id), req.body);
+
+        res.json({
+            success: true,
+            message: 'Data assessor berhasil diubah',
+            data: assessor,
+        });
+    });
+
+    static deleteAssessor = asyncHandler(async (req: Request, res: Response) => {
+        await AssessorService.deleteAssessor(Number(req.params.id));
+
+        res.json({
+            success: true,
+            message: 'Data assessor berhasil dihapus',
+        });
+    });
+}
