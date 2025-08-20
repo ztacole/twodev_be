@@ -1,5 +1,7 @@
 // Response
 interface AssesseeJobResponse {
+    id: number;
+    assessee_id: number;
     institution_name: string;
     address: string;
     postal_code: string;
@@ -49,6 +51,7 @@ interface AssesseeJobRequest {
 }
 
 interface AssesseeRequest {
+    id?: number;
     user_id: number;
     full_name: string;
     identity_number: string;
@@ -68,6 +71,7 @@ interface AssesseeRequest {
 interface CertificateDocsRequest {
     assessee_id: number;
     assessor_id: number;
+    purpose?: string;
     school_report_card?: string;
     field_work_practice_certificate?: string;
     student_card?: string;

@@ -4,6 +4,12 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+const TUK_VALUES = {
+  SEWAKTU: 'sewaktu',
+  TEMPAT_KERJA: 'tempat_kerja',
+  MANDIRI: 'mandiri'
+} as const;
+
 async function main() {
   // Seed Roles
   await prisma.role.createMany({
@@ -242,6 +248,8 @@ async function main() {
         data: {
           assessment_id: assessment.id,
           assessee_id: assessee.id,
+          assessor_id: faker.helpers.arrayElement(assessors).id,
+          tuk: TUK_VALUES.SEWAKTU,
           approved: faker.datatype.boolean(),
         },
       });
