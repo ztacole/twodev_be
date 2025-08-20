@@ -9,6 +9,7 @@ CREATE TABLE `role` (
 -- CreateTable
 CREATE TABLE `user` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `full_name` VARCHAR(255) NOT NULL,
     `email` VARCHAR(255) NOT NULL,
     `password` VARCHAR(255) NOT NULL,
     `role_id` INTEGER NOT NULL,
@@ -21,7 +22,6 @@ CREATE TABLE `user` (
 CREATE TABLE `admin` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
-    `full_name` VARCHAR(255) NOT NULL,
     `address` VARCHAR(255) NOT NULL,
     `phone_no` VARCHAR(255) NOT NULL,
     `birth_date` DATETIME(3) NOT NULL,
@@ -56,7 +56,6 @@ CREATE TABLE `assessor` (
     `address` VARCHAR(255) NOT NULL,
     `phone_no` VARCHAR(255) NOT NULL,
     `birth_date` DATETIME(3) NOT NULL,
-    `full_name` VARCHAR(255) NOT NULL,
 
     UNIQUE INDEX `assessor_user_id_key`(`user_id`),
     PRIMARY KEY (`id`)
@@ -79,7 +78,6 @@ CREATE TABLE `assessor_detail` (
 CREATE TABLE `assessee` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
-    `full_name` VARCHAR(255) NOT NULL,
     `identity_number` VARCHAR(255) NOT NULL,
     `birth_date` DATETIME(3) NOT NULL,
     `birth_location` VARCHAR(255) NOT NULL,
@@ -141,64 +139,6 @@ CREATE TABLE `schedule_detail` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `unit_competency` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `assessment_id` INTEGER NOT NULL,
-    `unit_code` VARCHAR(255) NOT NULL,
-    `title` VARCHAR(255) NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `element` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `unit_competency_id` INTEGER NOT NULL,
-    `title` VARCHAR(255) NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `element_detail` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `element_id` INTEGER NOT NULL,
-    `description` VARCHAR(255) NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `assessment_question` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `assessment_id` INTEGER NOT NULL,
-    `type` ENUM('pg', 'essay') NOT NULL,
-    `question` VARCHAR(255) NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `question_pg_detail` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `question_id` INTEGER NOT NULL,
-    `option` VARCHAR(255) NOT NULL,
-    `isanswer` BOOLEAN NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `assessee_answer` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `question_id` INTEGER NOT NULL,
-    `assessee_id` INTEGER NOT NULL,
-    `answer` VARCHAR(255) NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `result` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `assessment_id` INTEGER NOT NULL,
@@ -215,7 +155,6 @@ CREATE TABLE `result` (
 CREATE TABLE `result_doc` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `result_id` INTEGER NOT NULL,
-    `assessor_id` INTEGER NOT NULL,
     `purpose` VARCHAR(255) NOT NULL,
     `school_report_card` VARCHAR(255) NOT NULL,
     `field_work_practice_certificate` VARCHAR(255) NOT NULL,
@@ -223,17 +162,6 @@ CREATE TABLE `result_doc` (
     `family_card` VARCHAR(255) NOT NULL,
     `id_card` VARCHAR(255) NOT NULL,
     `approved` BOOLEAN NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `result_detail` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `result_id` INTEGER NOT NULL,
-    `element_id` INTEGER NOT NULL,
-    `answer` BOOLEAN NOT NULL,
-    `proof` VARCHAR(255) NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -553,27 +481,6 @@ ALTER TABLE `schedule_detail` ADD CONSTRAINT `schedule_detail_schedule_id_fkey` 
 ALTER TABLE `schedule_detail` ADD CONSTRAINT `schedule_detail_assessor_id_fkey` FOREIGN KEY (`assessor_id`) REFERENCES `assessor`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `unit_competency` ADD CONSTRAINT `unit_competency_assessment_id_fkey` FOREIGN KEY (`assessment_id`) REFERENCES `assessment`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `element` ADD CONSTRAINT `element_unit_competency_id_fkey` FOREIGN KEY (`unit_competency_id`) REFERENCES `unit_competency`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `element_detail` ADD CONSTRAINT `element_detail_element_id_fkey` FOREIGN KEY (`element_id`) REFERENCES `element`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `assessment_question` ADD CONSTRAINT `assessment_question_assessment_id_fkey` FOREIGN KEY (`assessment_id`) REFERENCES `assessment`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `question_pg_detail` ADD CONSTRAINT `question_pg_detail_question_id_fkey` FOREIGN KEY (`question_id`) REFERENCES `assessment_question`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `assessee_answer` ADD CONSTRAINT `assessee_answer_question_id_fkey` FOREIGN KEY (`question_id`) REFERENCES `assessment_question`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `assessee_answer` ADD CONSTRAINT `assessee_answer_assessee_id_fkey` FOREIGN KEY (`assessee_id`) REFERENCES `assessee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `result` ADD CONSTRAINT `result_assessment_id_fkey` FOREIGN KEY (`assessment_id`) REFERENCES `assessment`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -584,15 +491,6 @@ ALTER TABLE `result` ADD CONSTRAINT `result_assessee_id_fkey` FOREIGN KEY (`asse
 
 -- AddForeignKey
 ALTER TABLE `result_doc` ADD CONSTRAINT `result_doc_result_id_fkey` FOREIGN KEY (`result_id`) REFERENCES `result`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `result_doc` ADD CONSTRAINT `result_doc_assessor_id_fkey` FOREIGN KEY (`assessor_id`) REFERENCES `assessor`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `result_detail` ADD CONSTRAINT `result_detail_result_id_fkey` FOREIGN KEY (`result_id`) REFERENCES `result`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `result_detail` ADD CONSTRAINT `result_detail_element_id_fkey` FOREIGN KEY (`element_id`) REFERENCES `element`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `uc_apl02` ADD CONSTRAINT `uc_apl02_assessment_id_fkey` FOREIGN KEY (`assessment_id`) REFERENCES `assessment`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

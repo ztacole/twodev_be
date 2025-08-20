@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -46,12 +46,12 @@ async function main() {
   // Admin
   const adminUser = await prisma.user.create({
     data: {
+      full_name: 'Admin Utama',
       email: 'admin@example.com',
       password: hashedPassword,
       role_id: adminRole.id,
       admin: {
         create: {
-          full_name: 'Admin Utama',
           address: 'Jalan Admin No. 123',
           phone_no: '081234567890',
           birth_date: new Date('1980-01-01'),
@@ -63,12 +63,12 @@ async function main() {
   // Assessor 1
   const assessorUser1 = await prisma.user.create({
     data: {
+      full_name: 'Assessor Pertama',
       email: 'assessor1@example.com',
       password: hashedPassword,
       role_id: assessorRole.id,
       assessor: {
         create: {
-          full_name: 'Assessor Pertama',
           address: 'Jalan Assessor No. 456',
           phone_no: '082345678901',
           birth_date: new Date('1985-05-15'),
@@ -93,12 +93,12 @@ async function main() {
   // Assessor 2
   const assessorUser2 = await prisma.user.create({
     data: {
+      full_name: 'Assessor Kedua',
       email: 'assessor2@example.com',
       password: hashedPassword,
       role_id: assessorRole.id,
       assessor: {
         create: {
-          full_name: 'Assessor Kedua',
           address: 'Jalan Penilai No. 789',
           phone_no: '083456789012',
           birth_date: new Date('1975-08-20'),
@@ -111,12 +111,12 @@ async function main() {
   // Assessee 1
   const assesseeUser1 = await prisma.user.create({
     data: {
+      full_name: 'Asesi Pertama',
       email: 'asesi1@example.com',
       password: hashedPassword,
       role_id: assesseeRole.id,
       assessee: {
         create: {
-          full_name: 'Asesi Pertama',
           identity_number: '1234567890',
           birth_date: new Date('1990-03-10'),
           birth_location: 'Jakarta',
@@ -136,12 +136,12 @@ async function main() {
   // Assessee 2
   const assesseeUser2 = await prisma.user.create({
     data: {
+      full_name: 'Asesi Kedua',
       email: 'asesi2@example.com',
       password: hashedPassword,
       role_id: assesseeRole.id,
       assessee: {
         create: {
-          full_name: 'Asesi Kedua',
           identity_number: '0987654321',
           birth_date: new Date('1995-07-22'),
           birth_location: 'Bandung',
