@@ -1,82 +1,8 @@
 import { DuplicateEntryError, NotFoundError } from '../../../common/error';
 import { prisma } from '../../../config/db';
-import { AssessmentRequest, AssessmentResponse, ElementResponse } from './apl2.type';
+import { AssessmentRequest, AssessmentResponse, ElementResponse } from './apl-02.type';
 
 export class APL2Service {
-  static async createAssessment(data: AssessmentRequest): Promise<AssessmentResponse> {
-    const existingAssessment = await prisma.assessment.findFirst({
-      where: {
-        code: data.code
-      }
-    })
-
-    if (existingAssessment) {
-      throw new DuplicateEntryError('Assessment code', data.code);
-    }
-
-    const occupation = await prisma.occupation.findUnique({
-      where: {
-        id: data.occupation_id
-      }
-    })
-
-    if (!occupation) {
-      throw new NotFoundError('Occupation');
-    }
-
-    const unitCodes = data.uc_apl02.map(unit => unit.unit_code);
-    const existingUnits = await prisma.uc_apl02.findMany({
-      where: {
-        unit_code: { in: unitCodes }
-      }
-    });
-
-    if (existingUnits.length > 0) {
-      throw new DuplicateEntryError('Unit competency code', existingUnits[0].unit_code);
-    }
-
-    const assessment = await prisma.assessment.create({
-      data: {
-        occupation_id: data.occupation_id,
-        code: data.code,
-        uc_apl02s: {
-          create: data.uc_apl02.map(unit => ({
-            unit_code: unit.unit_code,
-            title: unit.title,
-            elements: {
-              create: unit.elements.map(element => ({
-                title: element.title,
-                details: {
-                  create: element.element_details.map(detail => ({
-                    description: detail.description
-                  }))
-                }
-              }))
-            }
-          }))
-        }
-      },
-      include: {
-        occupation: {
-          include: {
-            scheme: true
-          }
-        },
-        uc_apl02s: {
-          include: {
-            elements: {
-              include: {
-                details: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    return formatAssessmentResponse(assessment);
-  }
-
   static async getAssessmentById(id: number): Promise<AssessmentResponse> {
     const assessment = await prisma.assessment.findUnique({
       where: { id },

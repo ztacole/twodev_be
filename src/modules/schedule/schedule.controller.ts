@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ScheduleService } from "./schedule.service";
 import ExcelJS from 'exceljs';
-import { asyncHandler } from "../../../common/async.handler";
+import { asyncHandler } from "../../common/async.handler";
 export class ScheduleController {
     static createSchedule = asyncHandler(async (req: Request, res: Response) => {
         const schedule = await ScheduleService.createSchedule(req.body);

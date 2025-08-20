@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { APL1Service } from './apl1.service';
+import { APL1Service } from './apl-01.service';
 import { upload } from './upload-config';
 
 export class APL1Controller {
