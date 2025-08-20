@@ -1,4 +1,5 @@
 export interface RegisterRequest {
+  full_name: string;
   email: string;
   password: string;
   confirm_password: string;
@@ -13,6 +14,7 @@ export interface LoginRequest {
 export interface AuthResponse {
   user: {
     id: number;
+    full_name: string;
     email: string;
     role_id: number;
   };
