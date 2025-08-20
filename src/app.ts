@@ -21,9 +21,7 @@ import occupationRoutes from './modules/occupation/occupation.routes';
 import schemeRoutes from './modules/scheme/scheme.routes';
 import assessmentRoutes from './modules/assessement/assessment.routes';
 import scheduleRoutes from './modules/schedule/schedule.routes';
-import akRoutes from './modules/assessement/ak/ak.routes';
 
-app.use('/api/assessment/ak', akRoutes);
 app.use('/api/assessment', assessmentRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/uploads', express.static('uploads'));
