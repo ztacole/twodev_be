@@ -74,8 +74,8 @@ async function main() {
           birth_date: new Date('1985-05-15'),
           scheme: {
             create: {
-              code: 'SKEMA-001',
-              name: 'Teknologi Informasi',
+              code: 'RPL',
+              name: 'Rekayasa Perangkat Lunak',
             },
           },
         },
@@ -188,8 +188,8 @@ async function main() {
   console.log('Membuat skema dan okupasi...');
   const scheme2 = await prisma.scheme.create({
     data: {
-      code: 'SKEMA-002',
-      name: 'Hospitality',
+      code: 'PH',
+      name: 'Perhotelan',
     },
   });
 
@@ -212,7 +212,7 @@ async function main() {
   const assessment1 = await prisma.assessment.create({
     data: {
       occupation_id: occupation1.id,
-      code: 'ASSESS-001',
+      code: 'SKM.RPL.PS/LSPSMK24/2025',
     },
   });
 
