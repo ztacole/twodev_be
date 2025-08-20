@@ -1,30 +1,11 @@
 import { Request, Response } from "express";
-import { APL2Service } from "./apl-02.service";
+import { APL02Service } from "./apl-02.service";
 import { asyncHandler } from "../../../common/async.handler";
 
-export class APL2Controller {
-    static getAssessments = asyncHandler(async (req: Request, res: Response) => {
-        const assessments = await APL2Service.getAssessments();
-
-        res.json({
-            success: true,
-            message: 'Asesmen berhasil diambil',
-            data: assessments,
-        });
-    })
-
-    static getAssessmentById = asyncHandler(async (req: Request, res: Response) => {
-        const assessment = await APL2Service.getAssessmentById(Number(req.params.id));
-
-        res.json({
-            success: true,
-            message: 'Asesmen berhasil diambil',
-            data: assessment,
-        });
-    })
-
-    static getUnitCompetenciesByAssessmentId = asyncHandler(async (req: Request, res: Response) => {
-        const unitCompetencies = await APL2Service.getUnitCompetenciesByAssessmentCode(req.params.assessmentCode);
+export class APL02Controller {
+    static getUnitsAPL02 = asyncHandler(async (req: Request, res: Response) => {
+        const assessmentId = Number(req.params.assessmentId);
+        const unitCompetencies = await APL02Service.getUnitsAPL02(assessmentId);
         
         res.status(200).json({
             success: true,
@@ -33,8 +14,9 @@ export class APL2Controller {
         });
     })
 
-    static getElementsByUnitCompetencyId = asyncHandler(async (req: Request, res: Response) => {
-        const elements = await APL2Service.getElementsByUnitCompetencyCode(req.params.unitCompetencyCode);
+    static getElementsByUnitId = asyncHandler(async (req: Request, res: Response) => {
+        const unitId = Number(req.params.unitId);
+        const elements = await APL02Service.getElementsByUnitId(unitId);
         
         res.status(200).json({
             success: true,

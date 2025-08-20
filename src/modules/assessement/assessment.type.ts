@@ -85,3 +85,72 @@ interface SchemeResponse {
     code: string;
     name: string;
 }
+
+export interface AssessmentDetailsResponse {
+    id: number;
+    code: string;
+    occupation: OccupationResponse;
+    uc_apl02s: UCAPL02Response[];
+    groups_ia: GroupIAResponse[];
+    ia05_questions: IA05QuestionResponse[];
+    ia07_questions: IA07QuestionResponse[];
+}
+
+interface UCAPL02Response {
+    unit_code: string;
+    title: string;
+    elements: ElementAPL02Response[];
+}
+
+interface ElementAPL02Response {
+    title: string;
+    details: ElementDetailsAPL02Response[];
+}
+
+interface ElementDetailsAPL02Response {
+    description: string;
+}   
+
+interface GroupIAResponse {
+    name: string;
+    scenario: string;
+    duration: number;
+    units: ucIAResponse[];
+    tools: IA02ToolsResponse[]
+}
+
+interface ucIAResponse {
+    unit_code: string;
+    title: string;
+    elements: elementIAResponse[]
+}
+
+interface elementIAResponse {
+    title: string;
+    details: elementDetailsIAResponse[]
+}
+
+interface elementDetailsIAResponse {
+    description: string;
+    benchmark: string;
+}
+
+interface IA02ToolsResponse {
+    name: string;
+}
+
+interface IA05QuestionResponse {
+    order: number;
+    question: string;
+    options: IA05OptionResponse[]
+}
+
+interface IA05OptionResponse {
+    option: string;
+    is_answer: boolean;
+}
+
+interface IA07QuestionResponse {
+    question: string;
+    answer_key: string;
+}

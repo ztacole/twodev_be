@@ -1,8 +1,29 @@
+import { DuplicateEntryError, NotFoundError } from "../../common/error";
 import { prisma } from "../../config/db";
-import { AssessmentRequest, AssessmentResponse } from "./assessment.type";
+import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
 
 export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
+        const occupation = await prisma.occupation.findUnique({
+            where: {
+                id: data.occupation_id
+            }
+        });
+
+        if (!occupation) {
+            throw new NotFoundError("Occupation");
+        }
+
+        const existingAssessment = await prisma.assessment.findFirst({
+            where: {
+                code: data.code
+            }
+        });
+        if (existingAssessment) {
+            throw new DuplicateEntryError("Assessment code", data.code);
+        }
+
+        // Create assessment
         const assessment = await prisma.assessment.create({
             data: {
                 occupation_id: data.occupation_id,
@@ -120,5 +141,67 @@ export class AssessmentService {
         });
 
         return assessments;
+    }
+
+    static async getAssessmentById(id: number): Promise<AssessmentDetailsResponse> {
+        const assessment: AssessmentDetailsResponse | null = await prisma.assessment.findUnique({
+            where: { id },
+            include: {
+                occupation: {
+                    include: {
+                        scheme: true
+                    }
+                },
+                uc_apl02s: {
+                    include: {
+                        elements: {
+                            include: {
+                                details: true
+                            }
+                        }
+                    }
+                },
+                groups_ia: {
+                    include: {
+                        units: {
+                            include: {
+                                elements: {
+                                    include: {
+                                        details: true
+                                    }
+                                }
+                            }
+                        },
+                        tools: true
+                    }
+                },
+                ia05_questions: {
+                    include: {
+                        options: true
+                    }
+                },
+                ia07_questions: true
+            }
+        });
+
+        if (!assessment) {
+            throw new NotFoundError('Assessment');
+        }
+
+        return assessment;
+    }
+
+    static async deleteAssessment(id: number): Promise<any> {
+        const existingAssessment = await prisma.assessment.findUnique({
+            where: { id }
+        });
+
+        if (!existingAssessment) {
+            throw new NotFoundError('Assessment not found');
+        }
+
+        return prisma.assessment.delete({
+            where: { id }
+        });
     }
 }
