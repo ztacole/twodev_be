@@ -70,6 +70,11 @@ export class AssessmentService {
                             create: group.tools.map(tool => ({
                                 name: tool.name
                             }))
+                        },
+                        qa_ia03: {
+                            create: group.qa_ia03.map(question => ({
+                                question: question.question,
+                            }))
                         }
                     }))
                 },
@@ -114,7 +119,8 @@ export class AssessmentService {
                                 }
                             }
                         },
-                        tools: true
+                        tools: true,
+                        qa_ia03: true
                     }
                 },
                 ia05_questions: {
@@ -172,7 +178,8 @@ export class AssessmentService {
                                 }
                             }
                         },
-                        tools: true
+                        tools: true,
+                        qa_ia03: true
                     }
                 },
                 ia05_questions: {

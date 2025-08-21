@@ -3,6 +3,8 @@ import { upload } from "./apl-01/upload-config";
 import { APL02Controller } from "./apl-02/apl-02.controller";
 import { APL1Controller } from "./apl-01/apl-01.controller";
 import { IA01Controller } from "./ia-01/ia-01.controller";
+import { IA02Controller } from "./ia-02/ia-02.controller";
+import { IA03Controller } from "./ia-03/ia-03.controller";
 import { AssessmentController } from "./assessment.controller";
 import { AKController } from "./ak/ak.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
@@ -29,6 +31,10 @@ router.get('/apl-02/units/elements/:unitId', APL02Controller.getElementsByUnitId
 
 router.get('/ia-01/units/:assessmentId', IA01Controller.getIA01Groups);
 router.get('/ia-01/units/elements/:unitId', IA01Controller.getElementsByUnitId);
+
+router.get('/ia-02/units/:assessmentId', IA02Controller.getIA02Groups);
+
+router.get('/ia-03/units/:assessmentId', IA03Controller.getIA03Groups);
 
 router.post('/ak-01', AKController.createAK01);
 router.get('/ak-01/:id', AKController.getAK01ById);

@@ -12,7 +12,7 @@ export class IA01Service {
             throw new NotFoundError('Assessment');
         }
 
-        const groups: GroupIA01Response[] = await prisma.group_ia.findMany({
+        const groups = await prisma.group_ia.findMany({
             where: {
                 assessment_id: assessmentId
             },
@@ -21,7 +21,12 @@ export class IA01Service {
             }
         });
 
-        return groups;
+        return groups.map((group) => ({
+            id: group.id,
+            assessment_id: group.assessment_id,
+            name: group.name,
+            units: group.units
+        }));
     }
 
     static async getElementsByUnitId(unitId: number) {
