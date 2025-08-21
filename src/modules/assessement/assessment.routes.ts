@@ -22,7 +22,7 @@ router.delete('/:id', AssessmentController.deleteAssessment);
 
 router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-data', APL1Controller.createAssesseeCertificate);
-router.post('/apl-01/upload-certificate-docs/:assessorId/:assesseeId', 
+router.put('/apl-01/upload-certificate-docs/:assessorId/:assesseeId', 
     upload.any(), 
     APL1Controller.uploadCertificateDocs
 );
