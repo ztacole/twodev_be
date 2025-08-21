@@ -92,13 +92,4 @@ export class APL1Controller {
         });
     });
 
-    static approveResult = asyncHandler(async (req: Request, res: Response) => {
-        const resultId = parseInt(req.params.resultId);
-        const result = await APL1Service.approveResultDoc(resultId);
-        res.status(200).json({
-            success: true,
-            message: 'Hasil berhasil disetujui',
-            data: result
-        });
-    });
 }
