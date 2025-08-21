@@ -174,7 +174,7 @@ async function main() {
   console.log('Membuat pekerjaan asesi...');
   await prisma.assessee_job.create({
     data: {
-      assessee_id: assesseeUser1.assessee?.id || 1,
+      assessee_id: assesseeUser1.assessee[0]?.id || 1,
       institution_name: 'Perusahaan Teknologi Inc.',
       address: 'Gedung Perkantoran Tower 200',
       postal_code: '12345',
