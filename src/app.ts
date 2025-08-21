@@ -16,8 +16,8 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 import authRoutes from './modules/auth/auth.routes';
-import dashboardRoutes from './modules/admin/dashboard/dashboard.routes';
 import approvalRoutes from './modules/admin/approval/approval.routes';
+import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import occupationRoutes from './modules/occupation/occupation.routes';
 import schemeRoutes from './modules/scheme/scheme.routes';
 import assessmentRoutes from './modules/assessement/assessment.routes';
@@ -37,6 +37,7 @@ app.use('/api/occupations', occupationRoutes);
 app.use('/api/schemes', schemeRoutes);
 app.use('/api/assessor', assessorRoutes);
 app.use('/api/assessee', assesseeRoutes);
+
 
 // error handler middleware (DON'T MOVE IT)
 app.use(errorHandler);
