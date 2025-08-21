@@ -112,23 +112,25 @@ export class APL1Service {
     }
 
     static async createAssesseeCertificate(data: CertificateDocsRequest): Promise<CertificateDocsResponse> {
-        const { assessee_id, assessor_id, ...docsData } = data;
+        const { assessee_id, assessor_id, assessment_id, ...docsData } = data;
 
         let result = await prisma.result.findFirst({
-            where: { assessee_id }
+            where: { assessee_id, assessment_id }
         });
 
         if (!result) {
-            const assessment = await prisma.assessment.findFirst();
+            const assessment = await prisma.assessment.findUnique({
+                where: { id: assessment_id }
+            });
             if (!assessment) {
                 throw new NotFoundError('Assessment');
             }
 
             result = await prisma.result.create({
                 data: {
-                    assessment_id: assessment.id,
+                    assessment_id,
                     assessee_id,
-                    assessor_id: assessor_id,
+                    assessor_id,
                     tuk: TUK_VALUES.SEWAKTU,
                     is_competent: false
                 }
@@ -161,10 +163,19 @@ export class APL1Service {
                     student_card: docsData.student_card || '',
                     family_card: docsData.family_card || '',
                     id_card: docsData.id_card || ''
+                },
+                include: {
+                    result: {
+                        include: {
+                            assessment: true,
+                            assessee: true,
+                            assessor: true
+                        }
+                    }
                 }
             });
 
-            return newDocs as CertificateDocsResponse;
+            return newDocs;
         }
     }
 
