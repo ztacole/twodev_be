@@ -68,6 +68,7 @@ interface AssesseeRequest {
 }
 
 interface CertificateDocsRequest {
+    assessment_id: number;
     assessee_id: number;
     assessor_id: number;
     purpose?: string;
