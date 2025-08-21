@@ -32,7 +32,7 @@ export class ScheduleService {
                 end_date: data.end_date,
                 schedule_details: {
                     create: data.schedule_details.map(detail => ({
-                        assessor_id: detail.assessor_id,
+                        assessor_id: Number(detail.assessor_id),
                         location: detail.location
                     }))
                 }
