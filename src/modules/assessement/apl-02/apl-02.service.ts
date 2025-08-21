@@ -1,6 +1,6 @@
 import { DuplicateEntryError, NotFoundError } from '../../../common/error';
 import { prisma } from '../../../config/db';
-import { AssessmentRequest, AssessmentResponse, ElementResponse } from './apl-02.type';
+import { ElementResponse } from './apl-02.type';
 
 export class APL02Service {
   static async getUnitsAPL02(assessmentId: number): Promise<any[]> {
