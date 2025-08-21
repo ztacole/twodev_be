@@ -249,7 +249,6 @@ export class APL1Service {
                 }
             }
         });
-
         return result_doc;
     }
 
@@ -267,13 +266,11 @@ export class APL1Service {
         });
         return result_doc;
     }
-
     static async approveResultDoc(resultId: number): Promise<ResultDocResponse> {
         const result_doc = await prisma.result_doc.update({
             where: { id: resultId },
             data: { approved: true }
         });
-
         return result_doc;
     }
 }
