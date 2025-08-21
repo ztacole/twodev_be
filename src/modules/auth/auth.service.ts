@@ -37,7 +37,7 @@ export class AuthService {
             }
         });
 
-        const token = this.generateToken(user.id, user.email);
+        const token = this.generateToken(user.id, user.email, user.role_id);
 
         return {
             user: {
@@ -71,7 +71,7 @@ export class AuthService {
             throw new ValidationError('Email atau password tidak valid');
         }
 
-        const token = this.generateToken(user.id, user.email);
+        const token = this.generateToken(user.id, user.email, user.role_id);
 
         return {
             user: {
@@ -111,10 +111,11 @@ export class AuthService {
         }
     }
 
-    private static generateToken(userId: number, email: string): string {
+    private static generateToken(userId: number, email: string, role_id: number): string {
         const payload: JwtPayload = {
             userId,
-            email
+            email,
+            role_id
         };
 
         return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });

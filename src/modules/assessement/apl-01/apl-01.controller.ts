@@ -73,4 +73,32 @@ export class APL1Controller {
             data: result
         });
     });
+
+    static getAllResult = asyncHandler(async (req: Request, res: Response) => {
+        const results = await APL1Service.getAllResultDoc();
+        res.status(200).json({
+            success: true,
+            message: 'Semua hasil berhasil diambil',
+            data: results
+        });
+    });
+
+    static getUnapprovedResult = asyncHandler(async (req: Request, res: Response) => {
+        const results = await APL1Service.getUnapprovedResultDoc();
+        res.status(200).json({
+            success: true,
+            message: 'Semua hasil yang belum disetujui berhasil diambil',
+            data: results
+        });
+    });
+
+    static approveResult = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = parseInt(req.params.resultId);
+        const result = await APL1Service.approveResultDoc(resultId);
+        res.status(200).json({
+            success: true,
+            message: 'Hasil berhasil disetujui',
+            data: result
+        });
+    });
 }

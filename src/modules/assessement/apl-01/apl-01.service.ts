@@ -6,7 +6,8 @@ import {
     CertificateDocsResponse,
     AssesseeRequest,
     AssesseeJobRequest,
-    CertificateDocsRequest
+    CertificateDocsRequest,
+    ResultDocResponse
 } from './apl-01.type';
 
 const TUK_VALUES = {
@@ -19,11 +20,12 @@ export class APL1Service {
     static async createOrUpdateAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
         const { jobs, id, user_id, ...assesseeData } = data;
         
-    // normalize gender to prisma enum values: 'male' | 'female'
-    let genderRaw = String(assesseeData.gender || '').trim().toLowerCase();
-    let gender: 'male' | 'female' = 'male';
-    if (genderRaw === 'laki-laki' || genderRaw === 'male') gender = 'male';
-    else if (genderRaw === 'perempuan' || genderRaw === 'female') gender = 'female';
+        let gender: any = assesseeData.gender.trim().toLowerCase();
+        if (gender === 'Laki-laki') {
+            gender = 'Male';
+        } else if (gender === 'Perempuan') {
+            gender = 'Female';
+        }
 
         const existingAssessee = await prisma.assessee.findFirst({
             where: {
@@ -35,7 +37,10 @@ export class APL1Service {
         });
 
         if (existingAssessee && !id) {
-            throw new DuplicateEntryError('Assessee', `User ID: ${user_id} or Identity Number: ${assesseeData.identity_number}`);
+            throw new DuplicateEntryError(
+                'Assessee',
+                `User ID: ${user_id} or Identity Number: ${assesseeData.identity_number}`
+            );
         }
 
         if (id) {
@@ -56,11 +61,24 @@ export class APL1Service {
 
             const updatedAssessee = await prisma.assessee.update({
                 where: { id },
-                data: updateData as any,
-                include: { jobs: true }
+                data: {
+                    ...assesseeData,
+                    gender,
+                    birth_date: new Date(assesseeData.birth_date).toISOString(),
+                    jobs: jobs && jobs.length > 0 ? {
+                        deleteMany: {},
+                        create: jobs
+                    } : undefined
+                },
+                include: { 
+                    jobs: true 
+                }
             });
 
-            return updatedAssessee as any as AssesseeResponse;
+            return {
+                ...updatedAssessee,
+                jobs: updatedAssessee.jobs
+            } as AssesseeResponse;
         } else {
             const createData: any = {
                 user_id,
@@ -79,11 +97,24 @@ export class APL1Service {
             if (jobs && jobs.length > 0) createData.jobs = { create: jobs };
 
             const newAssessee = await prisma.assessee.create({
-                data: createData as any,
-                include: { jobs: true }
+                data: {
+                    user_id,
+                    ...assesseeData,
+                    gender,
+                    birth_date: new Date(assesseeData.birth_date).toISOString(),
+                    jobs: jobs && jobs.length > 0 ? {
+                        create: jobs
+                    } : undefined
+                },
+                include: { 
+                    jobs: true 
+                }
             });
 
-            return newAssessee as any as AssesseeResponse;
+            return {
+                ...newAssessee,
+                jobs: newAssessee.jobs
+            } as AssesseeResponse;
         }
     }
 
@@ -92,7 +123,7 @@ export class APL1Service {
             where: { id: assesseeId },
             include: { jobs: true }
         });
-        
+
         if (!assessee) {
             throw new NotFoundError('Assessee');
         }
@@ -102,40 +133,39 @@ export class APL1Service {
 
     static async createAssesseeCertificate(data: CertificateDocsRequest): Promise<CertificateDocsResponse> {
         const { assessee_id, assessor_id, ...docsData } = data;
-        
+
         let result = await prisma.result.findFirst({
             where: { assessee_id }
         });
-        
+
         if (!result) {
             const assessment = await prisma.assessment.findFirst();
             if (!assessment) {
                 throw new NotFoundError('Assessment');
             }
-            
+
             result = await prisma.result.create({
                 data: {
                     assessment_id: assessment.id,
                     assessee_id,
                     assessor_id: assessor_id,
                     tuk: TUK_VALUES.SEWAKTU,
-                    approved: false
+                    is_competent: false
                 }
             });
         }
-        
+
         const existingDocs = await prisma.result_doc.findFirst({
             where: {
                 result_id: result.id,
             }
         });
-        
+
         if (existingDocs) {
             const updatedDocs = await prisma.result_doc.update({
                 where: { id: existingDocs.id },
                 data: {
                     ...docsData,
-                    approved: false
                 }
             });
 
@@ -159,9 +189,11 @@ export class APL1Service {
     }
 
     static async uploadCertificateDocs(assessorId: number, assesseeId: number, files: any[]): Promise<CertificateDocsResponse> {
-        const uploadPath = `apl1/${assessorId}`;
+        const uploadPath = `api/uploads/apl-01/${assessorId}`;
         const fileData: any = {};
-        
+
+        const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+
         const fieldMapping: { [key: string]: string } = {
             school_report_card: 'school_report_card',
             field_work_practice_certificate: 'field_work_practice_certificate',
@@ -169,46 +201,45 @@ export class APL1Service {
             family_card: 'family_card',
             id_card: 'id_card'
         };
-        
+
         for (const file of files) {
             if (fieldMapping[file.fieldname]) {
-                fileData[fieldMapping[file.fieldname]] = `${uploadPath}/${file.filename}`;
+                fileData[fieldMapping[file.fieldname]] = `${BASE_URL}/${uploadPath}/${file.filename}`;
             }
         }
-        
+
         let result = await prisma.result.findFirst({
             where: { assessee_id: assesseeId }
         });
-        
+
         if (!result) {
             const assessment = await prisma.assessment.findFirst();
             if (!assessment) {
                 throw new NotFoundError('Assessment');
             }
-            
+
             result = await prisma.result.create({
                 data: {
                     assessment_id: assessment.id,
                     assessee_id: assesseeId,
                     assessor_id: assessorId,
                     tuk: TUK_VALUES.SEWAKTU,
-                    approved: false
+                    is_competent: false
                 }
             });
         }
-        
+
         const existingDocs = await prisma.result_doc.findFirst({
             where: {
                 result_id: result.id,
             }
         });
-        
+
         if (existingDocs) {
             const updatedDocs = await prisma.result_doc.update({
                 where: { id: existingDocs.id },
                 data: {
                     ...fileData,
-                    approved: false
                 }
             });
 
@@ -218,12 +249,51 @@ export class APL1Service {
                 data: {
                     result_id: result.id,
                     purpose: 'APL1 Certificate Documents',
-                    approved: false,
-                    ...fileData
+                    ...fileData,
+                    approved: false
                 }
             });
 
             return newDocs as CertificateDocsResponse;
         }
+    }
+
+    static async getAllResultDoc(): Promise<ResultDocResponse[]> {
+        const result_doc = await prisma.result_doc.findMany({
+            include: {
+                result: {
+                    include: {
+                        assessment: true,
+                        assessee: true
+                    }
+                }
+            }
+        });
+
+        return result_doc;
+    }
+
+    static async getUnapprovedResultDoc(): Promise<ResultDocResponse[]> {
+        const result_doc = await prisma.result_doc.findMany({
+            where: { approved: false },
+            include: {
+                result: {
+                    include: {
+                        assessment: true,
+                        assessee: true
+                    }
+                }
+            }
+        });
+        return result_doc;
+    }
+
+    static async approveResultDoc(resultId: number): Promise<ResultDocResponse> {
+        const result_doc = await prisma.result_doc.update({
+            where: { id: resultId },
+            data: { approved: true }
+        });
+
+        return result_doc;
     }
 }

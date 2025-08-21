@@ -1,12 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../modules/auth/auth.service';
-
+import { JwtPayload } from '../modules/auth/auth.type';
 
 export interface AuthenticatedRequest extends Request {
-    user?: {
-        userId: number;
-        email: string;
-    };
+    user?: JwtPayload;
 }
 
 export const authenticateToken = async (
@@ -35,3 +32,14 @@ export const authenticateToken = async (
         });
     }
 }; 
+
+export const adminMiddleware = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if (req.user?.role_id !== 1) {
+    return res.status(403).json({ message: 'Akses hanya untuk admin' });
+  }
+  next();
+};
