@@ -6,8 +6,8 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const assessorId = req.params?.assessorId || req.body?.assessorId || 'unknown';
     
-    // Create directory path: uploads/apl1/{assessor_id}/
-    const uploadPath = path.join(__dirname, '../../../../uploads/apl1', assessorId.toString());
+    // Create directory path: uploads/apl-01/{assessor_id}/
+    const uploadPath = path.join(__dirname, '../../../../uploads/apl-01', assessorId.toString());
     
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });

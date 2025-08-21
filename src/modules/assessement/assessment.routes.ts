@@ -20,12 +20,15 @@ router.get('/', AssessmentController.getAssessments);
 router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', AssessmentController.deleteAssessment);
 
-router.post('/create-self-data', APL1Controller.createAssesseeAPL1);
-router.post('/create-certificate-data', APL1Controller.createAssesseeCertificate);
-router.post('/upload-certificate-docs/:assessorId/:assesseeId', 
+router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
+router.post('/apl-01/create-certificate-data', APL1Controller.createAssesseeCertificate);
+router.post('/apl-01/upload-certificate-docs/:assessorId/:assesseeId', 
     upload.any(), 
     APL1Controller.uploadCertificateDocs
 );
+router.get('/apl-01/results', APL1Controller.getAllResult);
+router.get('/apl-01/results/unapproved', APL1Controller.getUnapprovedResult);
+router.put('/apl-01/results/:resultId/approve', APL1Controller.approveResult);
 
 router.get('/apl-02/units/:assessmentId', APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/elements/:unitId', APL02Controller.getElementsByUnitId);
