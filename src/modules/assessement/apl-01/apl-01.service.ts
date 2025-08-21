@@ -19,12 +19,11 @@ export class APL1Service {
     static async createOrUpdateAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
         const { jobs, id, user_id, ...assesseeData } = data;
         
-        let gender: any = assesseeData.gender.trim().toLowerCase();
-        if (gender === 'Laki-laki') {
-            gender = 'Male';
-        } else if (gender === 'Perempuan') {
-            gender = 'Female';
-        }
+    // normalize gender to prisma enum values: 'male' | 'female'
+    let genderRaw = String(assesseeData.gender || '').trim().toLowerCase();
+    let gender: 'male' | 'female' = 'male';
+    if (genderRaw === 'laki-laki' || genderRaw === 'male') gender = 'male';
+    else if (genderRaw === 'perempuan' || genderRaw === 'female') gender = 'female';
 
         const existingAssessee = await prisma.assessee.findFirst({
             where: {
@@ -40,46 +39,51 @@ export class APL1Service {
         }
 
         if (id) {
+            const updateData: any = {
+                identity_number: assesseeData.identity_number,
+                birth_location: assesseeData.birth_location,
+                gender,
+                nationality: assesseeData.nationality,
+                phone_no: assesseeData.phone_no,
+                address: assesseeData.address,
+                educational_qualifications: assesseeData.educational_qualifications,
+            };
+            if (assesseeData.birth_date) updateData.birth_date = new Date(assesseeData.birth_date);
+            if (assesseeData.house_phone_no) updateData.house_phone_no = assesseeData.house_phone_no;
+            if (assesseeData.office_phone_no) updateData.office_phone_no = assesseeData.office_phone_no;
+            if (assesseeData.postal_code) updateData.postal_code = assesseeData.postal_code;
+            if (jobs && jobs.length > 0) updateData.jobs = { deleteMany: {}, create: jobs };
+
             const updatedAssessee = await prisma.assessee.update({
                 where: { id },
-                data: {
-                    ...assesseeData,
-                    gender,
-                    birth_date: new Date(assesseeData.birth_date).toISOString(),
-                    jobs: jobs && jobs.length > 0 ? {
-                        deleteMany: {},
-                        create: jobs
-                    } : undefined
-                },
-                include: { 
-                    jobs: true 
-                }
+                data: updateData as any,
+                include: { jobs: true }
             });
 
-            return {
-                ...updatedAssessee,
-                jobs: updatedAssessee.jobs
-            } as AssesseeResponse;
+            return updatedAssessee as any as AssesseeResponse;
         } else {
+            const createData: any = {
+                user_id,
+                identity_number: assesseeData.identity_number,
+                birth_location: assesseeData.birth_location,
+                gender,
+                nationality: assesseeData.nationality,
+                phone_no: assesseeData.phone_no,
+                address: assesseeData.address,
+                educational_qualifications: assesseeData.educational_qualifications,
+            };
+            if (assesseeData.birth_date) createData.birth_date = new Date(assesseeData.birth_date);
+            if (assesseeData.house_phone_no) createData.house_phone_no = assesseeData.house_phone_no;
+            if (assesseeData.office_phone_no) createData.office_phone_no = assesseeData.office_phone_no;
+            if (assesseeData.postal_code) createData.postal_code = assesseeData.postal_code;
+            if (jobs && jobs.length > 0) createData.jobs = { create: jobs };
+
             const newAssessee = await prisma.assessee.create({
-                data: {
-                    user_id,
-                    ...assesseeData,
-                    gender,
-                    birth_date: new Date(assesseeData.birth_date).toISOString(),
-                    jobs: jobs && jobs.length > 0 ? {
-                        create: jobs
-                    } : undefined
-                },
-                include: { 
-                    jobs: true 
-                }
+                data: createData as any,
+                include: { jobs: true }
             });
 
-            return {
-                ...newAssessee,
-                jobs: newAssessee.jobs
-            } as AssesseeResponse;
+            return newAssessee as any as AssesseeResponse;
         }
     }
 

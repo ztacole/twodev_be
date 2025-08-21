@@ -9,6 +9,7 @@ router.get('/completed', ScheduleController.getCompletedSchedules);
 router.get('/completed/:assesseeId', ScheduleController.getCompletedSchedulesByAssesseeId);
 router.get('/:id', ScheduleController.getScheduleById);
 router.post('/', ScheduleController.createSchedule);
+router.delete('/:id', ScheduleController.deleteSchedule);
 router.get('/export/excel', ScheduleController.exportScheduleToExcel);
 
 export default router;
