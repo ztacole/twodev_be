@@ -106,7 +106,7 @@ model assessor_detail {
 
 model assessee {
   id                         Int      @id @default(autoincrement())
-  user_id                    Int      @unique
+  user_id                    Int      
   identity_number            String   @db.VarChar(255)
   birth_date                 DateTime
   birth_location             String   @db.VarChar(255)
