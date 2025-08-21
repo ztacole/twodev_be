@@ -1,7 +1,6 @@
 import { prisma } from '../../config/db';
 import ExcelJS from 'exceljs';
-import { OccupationResponse } from '../assessement/apl-02/apl-02.type';
-import { OccupationRequest } from './occupation.type';
+import { OccupationRequest, OccupationResponse } from './occupation.type';
 import { DuplicateEntryError, NotFoundError } from '../../common/error';
 
 export class OccupationService {

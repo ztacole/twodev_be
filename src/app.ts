@@ -25,6 +25,10 @@ import scheduleRoutes from './modules/schedule/schedule.routes';
 import assessorRoutes from './modules/assessor/assessor.routes';
 import assesseeRoutes from './modules/assessee/assessor.routes';
 
+// Public
+import publicRoutes from './modules/public/public.routes';
+app.use('/api/public', publicRoutes);
+
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/uploads', express.static('uploads'));
@@ -37,7 +41,6 @@ app.use('/api/occupations', occupationRoutes);
 app.use('/api/schemes', schemeRoutes);
 app.use('/api/assessor', assessorRoutes);
 app.use('/api/assessee', assesseeRoutes);
-
 
 // error handler middleware (DON'T MOVE IT)
 app.use(errorHandler);
