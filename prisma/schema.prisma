@@ -39,7 +39,7 @@ model user {
   role_id  Int
 
   role     role     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assessee assessee?
+  assessee assessee[]
   assessor assessor?
   admin    admin?
 }
