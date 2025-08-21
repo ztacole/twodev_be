@@ -21,6 +21,8 @@ import occupationRoutes from './modules/occupation/occupation.routes';
 import schemeRoutes from './modules/scheme/scheme.routes';
 import assessmentRoutes from './modules/assessement/assessment.routes';
 import scheduleRoutes from './modules/schedule/schedule.routes';
+import assessorRoutes from './modules/assessor/assessor.routes';
+import assesseeRoutes from './modules/assessee/assessor.routes';
 
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/schedules', scheduleRoutes);
@@ -31,6 +33,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/occupations', occupationRoutes);
 app.use('/api/schemes', schemeRoutes);
+app.use('/api/assessor', assessorRoutes);
+app.use('/api/assessee', assesseeRoutes);
 
 // error handler middleware (DON'T MOVE IT)
 app.use(errorHandler);
