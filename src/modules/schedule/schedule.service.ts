@@ -6,7 +6,7 @@ export class ScheduleService {
     static async createSchedule(data: ScheduleRequest): Promise<ScheduleResponse> {
         const assessment = await prisma.assessment.findUnique({
             where: {
-                id: data.assessment_id
+                id: Number(data.assessment_id)
             }
         });
 
@@ -14,7 +14,7 @@ export class ScheduleService {
             throw new NotFoundError('Assessment');
         }
 
-        const assessorIds = data.schedule_details.map(detail => detail.assessor_id);
+        const assessorIds = data.schedule_details.map(detail => Number(detail.assessor_id));
         const existingAssessors = await prisma.user.findMany({
             where: {
                 id: { in: assessorIds }
@@ -32,7 +32,7 @@ export class ScheduleService {
                 end_date: data.end_date,
                 schedule_details: {
                     create: data.schedule_details.map(detail => ({
-                        assessor_id: detail.assessor_id,
+                        assessor_id: Number(detail.assessor_id),
                         location: detail.location
                     }))
                 }
