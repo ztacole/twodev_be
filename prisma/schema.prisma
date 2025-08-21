@@ -180,7 +180,7 @@ model result {
   assessment_id Int
   assessor_id   Int
   assessee_id   Int
-  approved      Boolean
+  is_competent  Boolean
   created_at    DateTime @default(now())
   tuk           tuk
 

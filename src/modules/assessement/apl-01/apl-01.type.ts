@@ -78,11 +78,24 @@ interface CertificateDocsRequest {
     id_card?: string;
 }
 
+interface ResultDocResponse {
+    id: number;
+    result_id: number;
+    purpose: string;
+    school_report_card?: string;
+    field_work_practice_certificate?: string;
+    student_card?: string;
+    family_card?: string;
+    id_card?: string;
+    approved: boolean;
+}
+
 export {
     AssesseeResponse,
     AssesseeJobResponse,
     CertificateDocsResponse,
     AssesseeRequest,
     AssesseeJobRequest,
-    CertificateDocsRequest
+    CertificateDocsRequest,
+    ResultDocResponse
 };

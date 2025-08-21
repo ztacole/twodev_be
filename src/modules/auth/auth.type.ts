@@ -24,4 +24,5 @@ export interface AuthResponse {
 export interface JwtPayload {
   userId: number;
   email: string;
+  role_id: number;
 } 
