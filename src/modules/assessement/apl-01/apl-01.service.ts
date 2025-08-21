@@ -22,9 +22,9 @@ export class APL1Service {
 
         let gender: any = assesseeData.gender.trim().toLowerCase();
         if (gender === 'laki-laki') {
-            gender = 'Male';
+            gender = 'male';
         } else if (gender === 'perempuan') {
-            gender = 'Female';
+            gender = 'female';
         }
 
         if (full_name) {
@@ -32,22 +32,6 @@ export class APL1Service {
                 where: { id: user_id },
                 data: { full_name }
             });
-        }
-
-        const existingAssessee = await prisma.assessee.findFirst({
-            where: {
-                OR: [
-                    { user_id: user_id },
-                    { identity_number: assesseeData.identity_number }
-                ]
-            }
-        });
-
-        if (existingAssessee && !id) {
-            throw new DuplicateEntryError(
-                'Assessee',
-                `User ID: ${user_id} or Identity Number: ${assesseeData.identity_number}`
-            );
         }
 
         if (id) {
@@ -263,6 +247,36 @@ export class APL1Service {
         return result_doc;
     }
 
+    static async getResultDocsByAssessmentId(assessmentId: number): Promise<ResultDocResponse[]> {
+        const result_doc = await prisma.result_doc.findMany({
+            where: { result: { assessment_id: assessmentId } },
+            include: {
+                result: {
+                    include: {
+                        assessment: true,
+                        assessee: true
+                    }
+                }
+            }
+        });
+        return result_doc;
+    }
+
+    static async getResultDocsByAssessorId(assessorId: number): Promise<ResultDocResponse[]> {
+        const result_doc = await prisma.result_doc.findMany({
+            where: { result: { assessee_id: assessorId } },
+            include: {
+                result: {
+                    include: {
+                        assessment: true,
+                        assessee: true
+                    }
+                }
+            }
+        });
+        return result_doc;
+    }
+    
     static async getUnapprovedResultDoc(): Promise<ResultDocResponse[]> {
         const result_doc = await prisma.result_doc.findMany({
             where: { approved: false },
