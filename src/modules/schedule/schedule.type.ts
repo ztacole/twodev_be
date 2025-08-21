@@ -5,6 +5,19 @@ export interface ScheduleResponse {
     assessment: AssessmentResponse;
     start_date: Date;
     end_date: Date;
+    schedule_details: ScheduleDetailResponse[];
+}
+
+interface ScheduleDetailResponse {
+    id: number;
+    assessor: AssessorResponse;
+    location: string;
+}
+
+interface AssessorResponse {
+    id: number;
+    full_name: string;
+    phone_no: string;
 }
 
 export interface AssessmentResponse {

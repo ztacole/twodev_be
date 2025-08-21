@@ -38,12 +38,20 @@ export class ScheduleService {
                 }
             },
             include: {
-                schedule_details: true,
                 assessment: {
                     include: {
                         occupation: {
                             include: {
                                 scheme: true
+                            }
+                        }
+                    }
+                },
+                schedule_details: {
+                    include: {
+                        assessor: {
+                            include: {
+                                user: true
                             }
                         }
                     }
@@ -66,6 +74,15 @@ export class ScheduleService {
                         },
                     },
                 },
+                schedule_details: {
+                    include: {
+                        assessor: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
             },
         });
 
@@ -85,6 +102,15 @@ export class ScheduleService {
                         },
                     },
                 },
+                schedule_details: {
+                    include: {
+                        assessor: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
             },
         });
 
@@ -108,6 +134,15 @@ export class ScheduleService {
                         },
                     },
                 },
+                schedule_details: {
+                    include: {
+                        assessor: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
             },
         });
 
@@ -127,6 +162,15 @@ export class ScheduleService {
                         },
                     },
                 },
+                schedule_details: {
+                    include: {
+                        assessor: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
             },
         });
 
@@ -155,6 +199,11 @@ export class ScheduleService {
                                 }
                             }
                         }
+                    }
+                },
+                assessor: {
+                    include: {
+                        user: true
                     }
                 }
             }
@@ -207,5 +256,14 @@ function formatScheduleResponse(schedule: any): ScheduleResponse {
         },
         start_date: schedule.start_date,
         end_date: schedule.end_date,
+        schedule_details: schedule.schedule_details.map((detail: any) => ({
+            id: detail.id,
+            assessor: {
+                id: detail.assessor.id,
+                full_name: detail.assessor.user.full_name,
+                phone_no: detail.assessor.phone_no,
+            },
+            location: detail.location,
+        })),
     };
 }
