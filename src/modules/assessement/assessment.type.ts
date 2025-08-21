@@ -27,7 +27,12 @@ interface GroupIARequest {
     scenario: string;
     duration: number;
     units: ucIARequest[];
-    tools: IA02ToolsRequest[]
+    tools: IA02ToolsRequest[];
+    qa_ia03: IA03QuestionRequest[]
+}
+
+interface IA03QuestionRequest {
+    question: string;
 }
 
 interface ucIARequest {
