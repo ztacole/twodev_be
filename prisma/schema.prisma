@@ -183,6 +183,7 @@ model result {
   is_competent  Boolean
   created_at    DateTime @default(now())
   tuk           tuk
+  approved      Boolean  @default(false)
 
   assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assessor   assessor   @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade, name: "assessor_results")

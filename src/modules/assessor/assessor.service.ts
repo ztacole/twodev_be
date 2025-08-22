@@ -102,7 +102,7 @@ export class AssessorService {
         return {
             id: assessor.id,
             user_id: assessor.user_id,
-            full_name: assessor.full_name,
+            full_name: assessor.user?.full_name || '', // ambil dari relasi user
             scheme_id: assessor.scheme_id,
             address: assessor.address,
             phone_no: assessor.phone_no,
