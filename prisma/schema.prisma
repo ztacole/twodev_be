@@ -248,7 +248,8 @@ model element_details_apl02 {
 model result_apl02_header {
   id        Int     @id @default(autoincrement())
   result_id Int
-  approved  Boolean
+  approved_assessee  Boolean
+  approved_assessor  Boolean
 
   result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows   result_apl02[]

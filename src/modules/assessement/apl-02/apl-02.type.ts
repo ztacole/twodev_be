@@ -1,5 +1,4 @@
 // Response
-
 interface AssessmentResponse {
     id: number;
     occupation: OccupationResponse;
@@ -35,4 +34,25 @@ export interface ElementResponse {
 interface ElementDetailsResponse {
     id: number;
     description: string;
+}
+
+export interface ElementsResultResponse {
+    id: number;
+    title: string;
+    details: ElementDetailsResponse[];
+}
+
+// Request
+export interface ResultHeaderRequest {
+    result_id: number;
+    elements: ElementResultRequest[];
+}
+
+export interface ElementResultRequest {
+    element_id: number;
+    evidences: EvidenceRequest[];
+}
+
+export interface EvidenceRequest {
+    evidence: string;
 }
