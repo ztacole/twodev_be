@@ -18,47 +18,23 @@ const TUK_VALUES = {
 
 export class APL1Service {
     static async createOrUpdateAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
-        const { jobs, id, user_id, ...assesseeData } = data;
-        
+        const { jobs, id, user_id, full_name, ...assesseeData } = data;
+
         let gender: any = assesseeData.gender.trim().toLowerCase();
-        if (gender === 'Laki-laki') {
-            gender = 'Male';
-        } else if (gender === 'Perempuan') {
-            gender = 'Female';
+        if (gender === 'laki-laki') {
+            gender = 'male';
+        } else if (gender === 'perempuan') {
+            gender = 'female';
         }
 
-        const existingAssessee = await prisma.assessee.findFirst({
-            where: {
-                OR: [
-                    { user_id: user_id },
-                    { identity_number: assesseeData.identity_number }
-                ]
-            }
-        });
-
-        if (existingAssessee && !id) {
-            throw new DuplicateEntryError(
-                'Assessee',
-                `User ID: ${user_id} or Identity Number: ${assesseeData.identity_number}`
-            );
+        if (full_name) {
+            await prisma.user.update({
+                where: { id: user_id },
+                data: { full_name }
+            });
         }
 
         if (id) {
-            const updateData: any = {
-                identity_number: assesseeData.identity_number,
-                birth_location: assesseeData.birth_location,
-                gender,
-                nationality: assesseeData.nationality,
-                phone_no: assesseeData.phone_no,
-                address: assesseeData.address,
-                educational_qualifications: assesseeData.educational_qualifications,
-            };
-            if (assesseeData.birth_date) updateData.birth_date = new Date(assesseeData.birth_date);
-            if (assesseeData.house_phone_no) updateData.house_phone_no = assesseeData.house_phone_no;
-            if (assesseeData.office_phone_no) updateData.office_phone_no = assesseeData.office_phone_no;
-            if (assesseeData.postal_code) updateData.postal_code = assesseeData.postal_code;
-            if (jobs && jobs.length > 0) updateData.jobs = { deleteMany: {}, create: jobs };
-
             const updatedAssessee = await prisma.assessee.update({
                 where: { id },
                 data: {
@@ -70,32 +46,18 @@ export class APL1Service {
                         create: jobs
                     } : undefined
                 },
-                include: { 
-                    jobs: true 
+                include: {
+                    user: true,
+                    jobs: true
                 }
             });
 
             return {
                 ...updatedAssessee,
+                full_name: updatedAssessee.user.full_name,
                 jobs: updatedAssessee.jobs
             } as AssesseeResponse;
         } else {
-            const createData: any = {
-                user_id,
-                identity_number: assesseeData.identity_number,
-                birth_location: assesseeData.birth_location,
-                gender,
-                nationality: assesseeData.nationality,
-                phone_no: assesseeData.phone_no,
-                address: assesseeData.address,
-                educational_qualifications: assesseeData.educational_qualifications,
-            };
-            if (assesseeData.birth_date) createData.birth_date = new Date(assesseeData.birth_date);
-            if (assesseeData.house_phone_no) createData.house_phone_no = assesseeData.house_phone_no;
-            if (assesseeData.office_phone_no) createData.office_phone_no = assesseeData.office_phone_no;
-            if (assesseeData.postal_code) createData.postal_code = assesseeData.postal_code;
-            if (jobs && jobs.length > 0) createData.jobs = { create: jobs };
-
             const newAssessee = await prisma.assessee.create({
                 data: {
                     user_id,
@@ -106,13 +68,15 @@ export class APL1Service {
                         create: jobs
                     } : undefined
                 },
-                include: { 
-                    jobs: true 
+                include: {
+                    user: true,
+                    jobs: true
                 }
             });
 
             return {
                 ...newAssessee,
+                full_name: newAssessee.user.full_name,
                 jobs: newAssessee.jobs
             } as AssesseeResponse;
         }
@@ -283,6 +247,36 @@ export class APL1Service {
         return result_doc;
     }
 
+    static async getResultDocsByAssessmentId(assessmentId: number): Promise<ResultDocResponse[]> {
+        const result_doc = await prisma.result_doc.findMany({
+            where: { result: { assessment_id: assessmentId } },
+            include: {
+                result: {
+                    include: {
+                        assessment: true,
+                        assessee: true
+                    }
+                }
+            }
+        });
+        return result_doc;
+    }
+
+    static async getResultDocsByAssessorId(assessorId: number): Promise<ResultDocResponse[]> {
+        const result_doc = await prisma.result_doc.findMany({
+            where: { result: { assessee_id: assessorId } },
+            include: {
+                result: {
+                    include: {
+                        assessment: true,
+                        assessee: true
+                    }
+                }
+            }
+        });
+        return result_doc;
+    }
+    
     static async getUnapprovedResultDoc(): Promise<ResultDocResponse[]> {
         const result_doc = await prisma.result_doc.findMany({
             where: { approved: false },

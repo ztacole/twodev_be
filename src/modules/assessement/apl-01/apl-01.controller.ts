@@ -83,6 +83,26 @@ export class APL1Controller {
         });
     });
 
+    static getResultDocsByAssessmentId = asyncHandler(async (req: Request, res: Response) => {
+        const assessmentId = Number(req.params.assessmentId);
+        const results = await APL1Service.getResultDocsByAssessmentId(assessmentId);
+        res.status(200).json({
+            success: true,
+            message: 'Hasil berhasil diambil',
+            data: results
+        });
+    })
+
+    static getResultDocsByAssessorId = asyncHandler(async (req: Request, res: Response) => {
+        const assessorId = Number(req.params.assessorId);
+        const results = await APL1Service.getResultDocsByAssessorId(assessorId);
+        res.status(200).json({
+            success: true,
+            message: 'Hasil berhasil diambil',
+            data: results
+        });
+    })
+
     static getUnapprovedResult = asyncHandler(async (req: Request, res: Response) => {
         const results = await APL1Service.getUnapprovedResultDoc();
         res.status(200).json({
