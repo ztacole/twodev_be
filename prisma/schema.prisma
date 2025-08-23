@@ -81,6 +81,7 @@ model assessor {
   id         Int       @id @default(autoincrement())
   user_id    Int       @unique
   scheme_id  Int
+  no_reg_met String
   address    String    @db.VarChar(255)
   phone_no   String    @db.VarChar(255)
   birth_date DateTime
@@ -193,6 +194,9 @@ model result {
   apl02_headers result_apl02_header[]
   ak01_headers  result_ak01_header[]
   ak02_headers  result_ak02_header[]
+  result_ak03   result_ak03[]
+  result_ak04   result_ak04[]
+  result_ak05   result_ak05[]
   ia01_headers  result_ia01_header[]
   ia02_headers  result_ia02_header[]
   ia03_headers  result_ia03_header[]
@@ -275,7 +279,7 @@ model apl02_evidence {
   row result_apl02 @relation(fields: [result_apl02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-//// ========= AK01 / AK02 =========
+//// ========= AK01 / AK02 / AK03 / AK04 / AK05 =========
 
 model result_ak01_header {
   id                 Int  @id @default(autoincrement())
@@ -312,10 +316,54 @@ model result_ak02 {
   id        Int    @id @default(autoincrement())
   header_id Int
   uc_id     Int
-  evidence  String @db.VarChar(255)
 
   header result_ak02_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   uc     uc_apl02           @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  evidences ak02_evidence[]
+}
+
+model ak02_evidence {
+  id              Int    @id @default(autoincrement())
+  result_ak02_id  Int
+  evidence        String @db.VarChar(255)
+
+  row result_ak02 @relation(fields: [result_ak02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model result_ak03 {
+  id        Int    @id @default(autoincrement())
+  result_id Int
+  component String @db.VarChar(255)
+  is_ok     Boolean
+  comment   String? @db.VarChar(255)
+
+  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model result_ak04 {
+  id            Int    @id @default(autoincrement())
+  result_id     Int
+  q1_yes        Boolean
+  q2_yes        Boolean
+  q3_yes        Boolean
+  reason        String @db.VarChar(255)
+  approved_assessee String @db.VarChar(255)
+  created_at    DateTime @default(now())
+
+  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model result_ak05 {
+  id                 Int     @id @default(autoincrement())
+  result_id          Int
+  is_competent       Boolean
+  description        String? @db.VarChar(255)
+  negative_positive_aspects String? @db.VarChar(255)
+  rejection_notes    String? @db.VarChar(255)
+  improvement_suggestions String? @db.VarChar(255)
+  approved_assessor  String? @db.VarChar(255)
+
+  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= IA02 / IA03 Struktur (Group & Tools & UC & Elements) =========

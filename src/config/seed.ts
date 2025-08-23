@@ -72,6 +72,7 @@ async function main() {
           address: 'Jalan Assessor No. 456',
           phone_no: '082345678901',
           birth_date: new Date('1985-05-15'),
+          no_reg_met: `MET.000.${(Math.random() * 100000).toFixed(0)}.${new Date().getFullYear()}`,
           scheme: {
             create: {
               code: 'RPL',
@@ -102,6 +103,7 @@ async function main() {
           address: 'Jalan Penilai No. 789',
           phone_no: '083456789012',
           birth_date: new Date('1975-08-20'),
+          no_reg_met: `MET.000.${(Math.random() * 100000).toFixed(0)}.${new Date().getFullYear()}`,
           scheme_id: assessorUser1.assessor?.scheme_id || 1,
         },
       },
