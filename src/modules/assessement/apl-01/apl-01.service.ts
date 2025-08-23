@@ -163,12 +163,11 @@ export class APL1Service {
         }
     }
 
-    static async uploadCertificateDocs(assessorId: number, assesseeId: number, files: any[]): Promise<CertificateDocsResponse> {
+    static async uploadCertificateDocs(assessorId: number, assesseeId: number, assessmentId: number, files: any[]): Promise<CertificateDocsResponse> {
         const uploadPath = `api/uploads/apl-01/${assessorId}`;
         const fileData: any = {};
-
         const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
-
+    
         const fieldMapping: { [key: string]: string } = {
             school_report_card: 'school_report_card',
             field_work_practice_certificate: 'field_work_practice_certificate',
@@ -176,26 +175,28 @@ export class APL1Service {
             family_card: 'family_card',
             id_card: 'id_card'
         };
-
+    
         for (const file of files) {
             if (fieldMapping[file.fieldname]) {
                 fileData[fieldMapping[file.fieldname]] = `${BASE_URL}/${uploadPath}/${file.filename}`;
             }
         }
-
+    
         let result = await prisma.result.findFirst({
-            where: { assessee_id: assesseeId }
+            where: { assessee_id: assesseeId, assessment_id: assessmentId }
         });
-
+    
         if (!result) {
-            const assessment = await prisma.assessment.findFirst();
+            const assessment = await prisma.assessment.findUnique({
+                where: { id: assessmentId }
+            });
             if (!assessment) {
                 throw new NotFoundError('Assessment');
             }
-
+    
             result = await prisma.result.create({
                 data: {
-                    assessment_id: assessment.id,
+                    assessment_id: assessmentId,
                     assessee_id: assesseeId,
                     assessor_id: assessorId,
                     tuk: TUK_VALUES.SEWAKTU,
@@ -203,21 +204,16 @@ export class APL1Service {
                 }
             });
         }
-
+    
         const existingDocs = await prisma.result_doc.findFirst({
-            where: {
-                result_id: result.id,
-            }
+            where: { result_id: result.id }
         });
-
+    
         if (existingDocs) {
             const updatedDocs = await prisma.result_doc.update({
                 where: { id: existingDocs.id },
-                data: {
-                    ...fileData,
-                }
+                data: { ...fileData }
             });
-
             return updatedDocs as CertificateDocsResponse;
         } else {
             const newDocs = await prisma.result_doc.create({
@@ -228,10 +224,9 @@ export class APL1Service {
                     approved: false
                 }
             });
-
             return newDocs as CertificateDocsResponse;
         }
-    }
+    }    
 
     static async getAllResultDoc(): Promise<ResultDocResponse[]> {
         const result_doc = await prisma.result_doc.findMany({
