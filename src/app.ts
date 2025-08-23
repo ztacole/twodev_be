@@ -15,6 +15,7 @@ app.use(express.json());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+import userRoutes from './modules/user/user.route';
 import authRoutes from './modules/auth/auth.routes';
 import approvalRoutes from './modules/admin/approval/approval.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
@@ -33,6 +34,7 @@ app.use('/api/schedules', scheduleRoutes);
 app.use('/api/uploads', express.static('uploads'));
 
 // Modules
+app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/approval', approvalRoutes);

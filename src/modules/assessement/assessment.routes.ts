@@ -21,10 +21,9 @@ router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', AssessmentController.deleteAssessment);
 
 router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
-router.post('/apl-01/create-certificate-data', APL1Controller.createAssesseeCertificate);
-router.put('/apl-01/upload-certificate-docs/:assessorId/:assesseeId', 
+router.post('/apl-01/create-certificate-docs', 
     upload.any(), 
-    APL1Controller.uploadCertificateDocs
+    APL1Controller.createOrUploadCertificateDocs
 );
 router.get('/apl-01/results', APL1Controller.getAllResult);
 router.get('/apl-01/results/assessor/:assessorId', APL1Controller.getResultDocsByAssessorId);
