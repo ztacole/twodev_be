@@ -128,7 +128,11 @@ export class APL1Service {
         };
     
         let result = await prisma.result.findFirst({
-            where: { assessee_id: assesseeId, assessment_id: assessmentId }
+            where: {
+                assessee_id: assesseeId,
+                assessor_id: assessorId,
+                assessment_id: assessmentId
+            }
         });
     
         if (!result) {
