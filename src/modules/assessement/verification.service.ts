@@ -18,6 +18,23 @@ export const getPendingVerifications = async () => {
 	return docs;
 };
 
+export const getApprovedVerifications = async () => {
+	const docs = await prisma.result_doc.findMany({
+		where: { approved: true },
+		include: {
+			result: {
+				include: {
+					assessee: { include: { user: true } },
+					assessor: { include: { user: true } }
+				}
+			}
+		},
+		orderBy: { id: 'desc' }
+	});
+
+	return docs;
+};
+
 export const getVerificationDetail = async (resultId: number) => {
 	const result = await prisma.result.findUnique({
 		where: { id: resultId },
