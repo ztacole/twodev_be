@@ -27,10 +27,10 @@ router.put('/apl-01/upload-certificate-docs/:assessorId/:assesseeId',
     APL1Controller.uploadCertificateDocs
 );
 router.get('/apl-01/results', APL1Controller.getAllResult);
-router.get('/apl-01/results/:assessmentId', APL1Controller.getResultDocsByAssessmentId);
 router.get('/apl-01/results/assessor/:assessorId', APL1Controller.getResultDocsByAssessorId);
 router.get('/apl-01/results/unapproved', APL1Controller.getUnapprovedResult);
-router.put('/apl-01/results/:resultId/approve', APL1Controller.approveResult);
+router.put('/apl-01/results/:resultId/approve', APL1Controller.approveResult)
+router.get('/apl-01/results/:assessmentId', APL1Controller.getResultDocsByAssessmentId);;
 
 router.get('/apl-02/units/:assessmentId', APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/elements/:unitId', APL02Controller.getElementsByUnitId);
