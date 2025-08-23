@@ -250,6 +250,7 @@ model result_apl02_header {
   result_id Int
   approved_assessee  Boolean
   approved_assessor  Boolean
+  is_continue        Boolean
 
   result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows   result_apl02[]
