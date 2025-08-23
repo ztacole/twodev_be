@@ -48,31 +48,33 @@ export class APL1Controller {
     static uploadCertificateDocs = asyncHandler(async (req: Request, res: Response) => {
         const assessorId = parseInt(req.params.assessorId);
         const assesseeId = parseInt(req.params.assesseeId);
-        
-        if (isNaN(assessorId) || isNaN(assesseeId)) {
+        const assessmentId = parseInt(req.body.assessmentId);
+    
+        if (isNaN(assessorId) || isNaN(assesseeId) || isNaN(assessmentId)) {
             return res.status(400).json({
                 success: false,
-                message: 'assessorId atau assesseeId tidak valid'
+                message: 'assessorId, assesseeId, atau assessmentId tidak valid'
             });
         }
-        
+    
         if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
             return res.status(400).json({
                 success: false,
                 message: 'Tidak ada file yang diupload'
             });
         }
-        
+    
         const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-        
-        const result = await APL1Service.uploadCertificateDocs(assessorId, assesseeId, files);
-        
+    
+        const result = await APL1Service.uploadCertificateDocs(assessorId, assesseeId, assessmentId, files);
+    
         res.status(200).json({
             success: true,
             message: 'Dokumen sertifikat berhasil diupload',
             data: result
         });
     });
+    
 
     static getAllResult = asyncHandler(async (req: Request, res: Response) => {
         const results = await APL1Service.getAllResultDoc();
