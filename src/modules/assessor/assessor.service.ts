@@ -58,6 +58,7 @@ export class AssessorService {
             data: {
                 ...data,
                 birth_date: new Date(data.birth_date),
+                no_reg_met: data.no_reg_met
             },
             include: {
                 user: { include: { role: true } },
@@ -79,6 +80,7 @@ export class AssessorService {
             data: {
                 ...data,
                 birth_date: new Date(data.birth_date),
+                no_reg_met: data.no_reg_met
             },
             include: {
                 user: { include: { role: true } },
@@ -107,6 +109,7 @@ export class AssessorService {
             address: assessor.address,
             phone_no: assessor.phone_no,
             birth_date: assessor.birth_date,
+            no_reg_met: assessor.no_reg_met
         };
     }
 }

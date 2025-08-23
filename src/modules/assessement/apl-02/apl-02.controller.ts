@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { APL02Service } from "./apl-02.service";
 import { asyncHandler } from "../../../common/async.handler";
-import { ResultHeaderRequest } from "./apl-02.type";
+import { GenerateAsssessorRequest, ResultHeaderRequest } from "./apl-02.type";
 
 export class APL02Controller {
     static getUnitsAPL02 = asyncHandler(async (req: Request, res: Response) => {
@@ -59,6 +59,26 @@ export class APL02Controller {
         res.status(200).json({
             success: true,
             message: 'Hasil berhasil diambil',
+            data: result,
+        });
+    })
+
+    static approvedByAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        const data: GenerateAsssessorRequest = req.body;
+
+        if (!data) {
+            return res.status(400).json({
+                success: false,
+                message: 'Data harus diisi',
+            });
+        }
+
+        const result = await APL02Service.approvedByAssessor(resultId, data);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Assessor telah tanda tangan!',
             data: result,
         });
     })

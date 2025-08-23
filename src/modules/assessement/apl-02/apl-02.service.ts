@@ -1,6 +1,6 @@
 import { DuplicateEntryError, NotFoundError } from '../../../common/error';
 import { prisma } from '../../../config/db';
-import { ElementResponse, ResultHeaderRequest } from './apl-02.type';
+import { ElementResponse, GenerateAsssessorRequest, ResultHeaderRequest } from './apl-02.type';
 
 export class APL02Service {
   static async getUnitsAPL02(assessmentId: number): Promise<any[]> {
@@ -67,6 +67,7 @@ export class APL02Service {
         result_id: Number(data.result_id),
         approved_assessee: true,
         approved_assessor: false,
+        is_continue: false,
         rows: {
           create: data.elements.map(element => ({
             element_id: Number(element.element_id),
@@ -112,6 +113,17 @@ export class APL02Service {
     if (!existingAssessment) {
       throw new NotFoundError('Assessment');
     }
+
+    const existingResult = await prisma.result.findFirst({
+      where: {
+        assessee_id: assesseeId,
+        assessor_id: assessorId,
+        assessment_id: assessmentId
+      }
+    });
+    if (!existingResult) {
+      throw new NotFoundError('Result');
+    }
     
     const unitsResult = await prisma.result_apl02_header.findMany({
       where: {
@@ -156,6 +168,7 @@ export class APL02Service {
         email: unitResult.result.assessee.user.email
       },
       approved_assessee: unitResult.approved_assessee,
+      approved_assessor: unitResult.approved_assessor,
       units: unitResult.result.assessment.uc_apl02s.map(unit => ({
         id: unit.id,
         unit_code: unit.unit_code,
@@ -184,6 +197,17 @@ export class APL02Service {
     });
     if (!existingAssessor) {
       throw new NotFoundError('Assessor');
+    }
+
+    const existingResult = await prisma.result.findFirst({
+      where: {
+        assessee_id: assesseeId,
+        assessor_id: assessorId,
+        assessment_id: existingUnit.assessment_id
+      }
+    });
+    if (!existingResult) {
+      throw new NotFoundError('Result');
     }
 
     const elementsResult = await prisma.result_apl02_header.findMany({
@@ -240,6 +264,7 @@ export class APL02Service {
         email: elementResult.result.assessee.user.email
       },
       approved_assessee: elementResult.approved_assessee,
+      approved_assessor: elementResult.approved_assessor,
       results: elementResult.rows.map(element => ({
         id: element.id,
         element_id: element.element_id,
@@ -247,5 +272,69 @@ export class APL02Service {
         evidences: element.evidences
       }))
     };
+  }
+
+  static async approvedByAssessor(resultId: number, data: GenerateAsssessorRequest) {
+    const existingResult = await prisma.result.findUnique({
+      where: { id: resultId }
+    });
+    if (!existingResult) {
+      throw new NotFoundError('Result');
+    }
+
+    const resultHeaders = await prisma.result_apl02_header.findMany({
+      where: { result_id: resultId },
+      include: {
+        result: {
+          include: {
+            assessee: {
+              include: {
+                user: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { id: 'desc' },
+      take: 1
+    });
+
+    if (!resultHeaders) {
+      throw new NotFoundError('Result header');
+    }
+
+    const resultHeader = resultHeaders[0];
+
+    const update = await prisma.result_apl02_header.update({
+      where: { id: resultHeader.id },
+      data: {
+        approved_assessor: true,
+        is_continue: data.reccomendation
+      },
+      include: {
+        result: {
+          include: {
+            assessee: {
+              include: {
+                user: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return {
+      id: update.id,
+      result_id: update.result_id,
+      assessee: {
+        id: update.result.assessee_id,
+        name: update.result.assessee.user.full_name,
+        email: update.result.assessee.user.email
+      },
+      approved_assessee: update.approved_assessee,
+      approved_assessor: update.approved_assessor,
+      is_continue: update.is_continue
+    }
   }
 }

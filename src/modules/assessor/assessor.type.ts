@@ -7,6 +7,7 @@ export interface AssessorResponse {
     address: string;
     phone_no: string;
     birth_date: Date;
+    no_reg_met: string
 }
 
 // Request Types
@@ -16,5 +17,6 @@ export interface AssessorRequest {
     scheme_id: number;
     address: string;
     phone_no: string;
-    birth_date: Date | string;
+    birth_date: Date | string;,
+    no_reg_met: string
 }
