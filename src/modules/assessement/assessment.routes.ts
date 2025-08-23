@@ -8,6 +8,8 @@ import { IA03Controller } from "./ia-03/ia-03.controller";
 import { IA05Controller } from "./ia-05/ia-05.controller";
 import { AssessmentController } from "./assessment.controller";
 import { AKController } from "./ak/ak.controller";
+import { AK03Controller } from "./ak-03/ak-03.controller";
+import { AK05Controller } from "./ak-05/ak-05.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
 
 const router = Router();
@@ -63,5 +65,8 @@ router.delete('/ak-02/:id', AKController.deleteAK02);
 
 router.get('/ak/result/:resultId', AKController.getAKByResultId);
 router.get('/ak', AKController.getAllAK);
+
+router.post('/ak-03', AK03Controller.createAK03);
+router.post('/ak-05', AK05Controller.createAK05);
 
 export default router;
