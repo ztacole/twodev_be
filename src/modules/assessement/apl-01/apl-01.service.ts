@@ -95,77 +95,16 @@ export class APL1Service {
         return assessee.jobs;
     }
 
-    static async createAssesseeCertificate(data: CertificateDocsRequest): Promise<CertificateDocsResponse> {
-        const { assessee_id, assessor_id, assessment_id, ...docsData } = data;
-
-        let result = await prisma.result.findFirst({
-            where: { assessee_id, assessment_id }
-        });
-
-        if (!result) {
-            const assessment = await prisma.assessment.findUnique({
-                where: { id: assessment_id }
-            });
-            if (!assessment) {
-                throw new NotFoundError('Assessment');
-            }
-
-            result = await prisma.result.create({
-                data: {
-                    assessment_id,
-                    assessee_id,
-                    assessor_id,
-                    tuk: TUK_VALUES.SEWAKTU,
-                    is_competent: false
-                }
-            });
-        }
-
-        const existingDocs = await prisma.result_doc.findFirst({
-            where: {
-                result_id: result.id,
-            }
-        });
-
-        if (existingDocs) {
-            const updatedDocs = await prisma.result_doc.update({
-                where: { id: existingDocs.id },
-                data: {
-                    ...docsData,
-                }
-            });
-
-            return updatedDocs as CertificateDocsResponse;
-        } else {
-            const newDocs = await prisma.result_doc.create({
-                data: {
-                    result_id: result.id,
-                    purpose: docsData.purpose || 'APL1 Certificate Documents',
-                    approved: false,
-                    school_report_card: docsData.school_report_card || '',
-                    field_work_practice_certificate: docsData.field_work_practice_certificate || '',
-                    student_card: docsData.student_card || '',
-                    family_card: docsData.family_card || '',
-                    id_card: docsData.id_card || ''
-                },
-                include: {
-                    result: {
-                        include: {
-                            assessment: true,
-                            assessee: true,
-                            assessor: true
-                        }
-                    }
-                }
-            });
-
-            return newDocs;
-        }
-    }
-
-    static async uploadCertificateDocs(assessorId: number, assesseeId: number, assessmentId: number, files: any[]): Promise<CertificateDocsResponse> {
+    static async createOrUploadCertificate(params: {
+        assesseeId: number;
+        assessorId: number;
+        assessmentId: number;
+        bodyData: any;
+        files: any[];
+    }): Promise<CertificateDocsResponse> {
+        const { assesseeId, assessorId, assessmentId, bodyData, files } = params;
+    
         const uploadPath = `api/uploads/apl-01/${assessorId}`;
-        const fileData: any = {};
         const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     
         const fieldMapping: { [key: string]: string } = {
@@ -176,14 +115,24 @@ export class APL1Service {
             id_card: 'id_card'
         };
     
+        const fileData: any = {};
         for (const file of files) {
             if (fieldMapping[file.fieldname]) {
                 fileData[fieldMapping[file.fieldname]] = `${BASE_URL}/${uploadPath}/${file.filename}`;
             }
         }
     
+        const docsData: any = {
+            purpose: bodyData.purpose || 'APL1 Certificate Documents',
+            ...fileData
+        };
+    
         let result = await prisma.result.findFirst({
-            where: { assessee_id: assesseeId, assessment_id: assessmentId }
+            where: {
+                assessee_id: assesseeId,
+                assessor_id: assessorId,
+                assessment_id: assessmentId
+            }
         });
     
         if (!result) {
@@ -210,21 +159,27 @@ export class APL1Service {
         });
     
         if (existingDocs) {
-            const updatedDocs = await prisma.result_doc.update({
+            return await prisma.result_doc.update({
                 where: { id: existingDocs.id },
-                data: { ...fileData }
-            });
-            return updatedDocs as CertificateDocsResponse;
+                data: { ...docsData }
+            }) as CertificateDocsResponse;
         } else {
-            const newDocs = await prisma.result_doc.create({
+            return await prisma.result_doc.create({
                 data: {
                     result_id: result.id,
-                    purpose: 'APL1 Certificate Documents',
-                    ...fileData,
-                    approved: false
+                    approved: false,
+                    ...docsData
+                },
+                include: {
+                    result: {
+                        include: {
+                            assessment: true,
+                            assessee: true,
+                            assessor: true
+                        }
+                    }
                 }
             });
-            return newDocs as CertificateDocsResponse;
         }
     }    
 

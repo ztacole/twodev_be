@@ -8,6 +8,8 @@ import { IA03Controller } from "./ia-03/ia-03.controller";
 import { IA05Controller } from "./ia-05/ia-05.controller";
 import { AssessmentController } from "./assessment.controller";
 import { AKController } from "./ak/ak.controller";
+import { AK03Controller } from "./ak-03/ak-03.controller";
+import { AK05Controller } from "./ak-05/ak-05.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
 
 const router = Router();
@@ -21,10 +23,9 @@ router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', AssessmentController.deleteAssessment);
 
 router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
-router.post('/apl-01/create-certificate-data', APL1Controller.createAssesseeCertificate);
-router.put('/apl-01/upload-certificate-docs/:assessorId/:assesseeId', 
+router.post('/apl-01/create-certificate-docs', 
     upload.any(), 
-    APL1Controller.uploadCertificateDocs
+    APL1Controller.createOrUploadCertificateDocs
 );
 router.get('/apl-01/results', APL1Controller.getAllResult);
 router.get('/apl-01/results/assessor/:assessorId', APL1Controller.getResultDocsByAssessorId);
@@ -37,6 +38,7 @@ router.get('/apl-02/units/elements/:unitId', APL02Controller.getElementsByUnitId
 router.post('/apl-02/result/send', APL02Controller.sendResult);
 router.get('/apl-02/result/units/:assessorId/:assesseeId/:assessmentId', APL02Controller.getUnitsResult);
 router.get('/apl-02/result/units/elements/:assessorId/:assesseeId/:unitId', APL02Controller.getElementsResult);
+router.put('/apl-02/result/:resultId/approve', APL02Controller.approvedByAssessor);
 
 router.get('/ia-01/units/:assessmentId', IA01Controller.getIA01Groups);
 router.get('/ia-01/units/elements/:unitId', IA01Controller.getElementsByUnitId);
@@ -63,5 +65,8 @@ router.delete('/ak-02/:id', AKController.deleteAK02);
 
 router.get('/ak/result/:resultId', AKController.getAKByResultId);
 router.get('/ak', AKController.getAllAK);
+
+router.post('/ak-03', AK03Controller.createAK03);
+router.post('/ak-05', AK05Controller.createAK05);
 
 export default router;

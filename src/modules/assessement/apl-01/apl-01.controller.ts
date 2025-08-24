@@ -28,53 +28,34 @@ export class APL1Controller {
         });
     });
 
-    static createAssesseeCertificate = asyncHandler(async (req: Request, res: Response) => {
-        if (!req.body.assessee_id || !req.body.assessor_id) {
+    static createOrUploadCertificateDocs = asyncHandler(async (req: Request, res: Response) => {
+        const assesseeId = parseInt(req.body.assessee_id);
+        const assessorId = parseInt(req.body.assessor_id);
+        const assessmentId = parseInt(req.body.assessment_id);
+    
+        if (isNaN(assesseeId) || isNaN(assessorId) || isNaN(assessmentId)) {
             return res.status(400).json({
                 success: false,
-                message: 'assessee_id dan assessor_id harus diisi'
+                message: 'assessee_id, assessor_id, assessment_id harus valid'
             });
         }
-
-        const certificate = await APL1Service.createAssesseeCertificate(req.body);
-
+    
+        const files = Array.isArray(req.files) ? req.files : [];
+    
+        const result = await APL1Service.createOrUploadCertificate({
+            assesseeId,
+            assessorId,
+            assessmentId,
+            bodyData: req.body,
+            files
+        });
+    
         res.status(201).json({
             success: true,
-            message: 'Data sertifikat berhasil disimpan',
-            data: certificate
-        });
-    });
-
-    static uploadCertificateDocs = asyncHandler(async (req: Request, res: Response) => {
-        const assessorId = parseInt(req.params.assessorId);
-        const assesseeId = parseInt(req.params.assesseeId);
-        const assessmentId = parseInt(req.body.assessmentId);
-    
-        if (isNaN(assessorId) || isNaN(assesseeId) || isNaN(assessmentId)) {
-            return res.status(400).json({
-                success: false,
-                message: 'assessorId, assesseeId, atau assessmentId tidak valid'
-            });
-        }
-    
-        if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Tidak ada file yang diupload'
-            });
-        }
-    
-        const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-    
-        const result = await APL1Service.uploadCertificateDocs(assessorId, assesseeId, assessmentId, files);
-    
-        res.status(200).json({
-            success: true,
-            message: 'Dokumen sertifikat berhasil diupload',
+            message: 'Data sertifikat dan file berhasil disimpan',
             data: result
         });
-    });
-    
+    });    
 
     static getAllResult = asyncHandler(async (req: Request, res: Response) => {
         const results = await APL1Service.getAllResultDoc();

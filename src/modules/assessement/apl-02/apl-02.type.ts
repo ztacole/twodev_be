@@ -48,11 +48,15 @@ export interface ResultHeaderRequest {
     elements: ElementResultRequest[];
 }
 
-export interface ElementResultRequest {
+interface ElementResultRequest {
     element_id: number;
     evidences: EvidenceRequest[];
 }
 
-export interface EvidenceRequest {
+interface EvidenceRequest {
     evidence: string;
+}
+
+export interface GenerateAsssessorRequest {
+    reccomendation: boolean;
 }
