@@ -104,7 +104,6 @@ export class AssessorService {
         return {
             id: assessor.id,
             user_id: assessor.user_id,
-            full_name: assessor.full_name,
             scheme_id: assessor.scheme_id,
             address: assessor.address,
             phone_no: assessor.phone_no,

@@ -24,6 +24,7 @@ import schemeRoutes from './modules/scheme/scheme.routes';
 import assessmentRoutes from './modules/assessement/assessment.routes';
 import scheduleRoutes from './modules/schedule/schedule.routes';
 import assessorRoutes from './modules/assessor/assessor.routes';
+import assesseeRoutes from './modules/assessee/asseesee.routes';
 
 // Public
 import publicRoutes from './modules/public/public.routes';
@@ -41,6 +42,7 @@ app.use('/api/approval', approvalRoutes);
 app.use('/api/occupations', occupationRoutes);
 app.use('/api/schemes', schemeRoutes);
 app.use('/api/assessor', assessorRoutes);
+app.use('/api/assessee', assesseeRoutes);
 
 // error handler middleware (DON'T MOVE IT)
 app.use(errorHandler);
