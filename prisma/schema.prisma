@@ -514,6 +514,8 @@ model result_ia01 {
 
   header        result_ia01_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   elementDetail element_details_ia @relation(fields: [element_detail_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([header_id, element_detail_id])
 }
 
 //// ========= IA02 (header saja) =========
