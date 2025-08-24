@@ -51,6 +51,7 @@ export interface ResultHeaderRequest {
 
 interface ElementResultRequest {
     element_id: number;
+    is_competent: boolean;
     evidences: EvidenceRequest[];
 }
 
