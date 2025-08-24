@@ -4,64 +4,64 @@ import { ElementResponse, GenerateAsssessorRequest, HeaderRequest, ResultRequest
 
 export class APL02Service {
   static async getUnitsAPL02(resultId: number): Promise<any[]> {
-  const existingResult = await prisma.result.findUnique({
-    where: { id: resultId },
-    include: {
-      assessment: true
+    const existingResult = await prisma.result.findUnique({
+      where: { id: resultId },
+      include: {
+        assessment: true
+      }
+    });
+
+    if (!existingResult) {
+      throw new NotFoundError('Result');
     }
-  });
-  
-  if (!existingResult) {
-    throw new NotFoundError('Result');
-  }
 
-  if (!existingResult.assessment) {
-    throw new NotFoundError('Assessment');
-  }
+    if (!existingResult.assessment) {
+      throw new NotFoundError('Assessment');
+    }
 
-  const unitCompetencies = await prisma.uc_apl02.findMany({
-    where: { 
-      assessment_id: existingResult.assessment.id 
-    },
-    include: {
-      elements: {
-        include: {
-          results: {
-            include: {
-              header: true
-            },
-            where: {
-              header: {
-                result_id: resultId
+    const unitCompetencies = await prisma.uc_apl02.findMany({
+      where: {
+        assessment_id: existingResult.assessment.id
+      },
+      include: {
+        elements: {
+          include: {
+            results: {
+              include: {
+                header: true
+              },
+              where: {
+                header: {
+                  result_id: resultId
+                }
               }
             }
           }
         }
       }
-    }
-  });
+    });
 
-  return unitCompetencies.map(unit => {
-    const totalElements = unit.elements.length;
-    const completedElements = unit.elements.filter(element => 
-      element.results.some(result => 
-        result.header.result_id === resultId
-      )
-    ).length;
+    return unitCompetencies.map(unit => {
+      const totalElements = unit.elements.length;
+      const completedElements = unit.elements.filter(element =>
+        element.results.some(result =>
+          result.header.result_id === resultId
+        )
+      ).length;
 
-    const finished = totalElements > 0 && completedElements === totalElements;
+      const finished = totalElements > 0 && completedElements === totalElements;
 
-    return {
-      id: unit.id,
-      unit_code: unit.unit_code,
-      title: unit.title,
-      finished: finished,
-      progress: totalElements > 0 ? Math.round((completedElements / totalElements) * 100) : 0,
-      total_elements: totalElements,
-      completed_elements: completedElements
-    };
-  });
-}
+      return {
+        id: unit.id,
+        unit_code: unit.unit_code,
+        title: unit.title,
+        finished: finished,
+        progress: totalElements > 0 ? Math.round((completedElements / totalElements) * 100) : 0,
+        total_elements: totalElements,
+        completed_elements: completedElements
+      };
+    });
+  }
 
   static async getElementsByUnitId(resultId: number, unitId: number): Promise<ElementResponse[]> {
     const existingUc = await prisma.uc_apl02.findUnique({
@@ -100,13 +100,20 @@ export class APL02Service {
   }
 
   static async sendResult(data: HeaderRequest) {
-    const existingResultHeader = await prisma.result_apl02_header.findUnique({
-      where: { id: Number(data.header_id) }
+    const existingResult = await prisma.result.findUnique({
+      where: { id: Number(data.result_id) },
+      include: {
+        apl02_headers: true
+      }
     });
-
-    if (!existingResultHeader) {
-      throw new NotFoundError('Header APL02');
+    if (!existingResult) {
+      throw new NotFoundError('Result');
     }
+    if (!existingResult.apl02_headers) {
+      throw new NotFoundError('APL02 header');
+    }
+    
+    const headerId = existingResult.apl02_headers.id;
 
     const elements = data.elements.map(element => Number(element.element_id));
     const existingElements = await prisma.element_apl02.findMany({
@@ -123,7 +130,7 @@ export class APL02Service {
           const resultRecord = await tx.result_apl02.upsert({
             where: {
               result_apl02_id_element_id: {
-                result_apl02_id: Number(data.header_id),
+                result_apl02_id: Number(headerId),
                 element_id: Number(element.element_id)
               }
             },
@@ -132,7 +139,7 @@ export class APL02Service {
               updated_at: new Date()
             },
             create: {
-              result_apl02_id: Number(data.header_id),
+              result_apl02_id: Number(data.result_id),
               element_id: Number(element.element_id),
               is_competent: element.is_competent
             }
