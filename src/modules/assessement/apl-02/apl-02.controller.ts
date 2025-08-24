@@ -38,10 +38,8 @@ export class APL02Controller {
     })
 
     static getUnitsResult = asyncHandler(async (req: Request, res: Response) => {
-        const assessorId = Number(req.params.assessorId);
-        const assesseeId = Number(req.params.assesseeId);
-        const assessmentId = Number(req.params.assessmentId);
-        const result = await APL02Service.getUnitsResult(assessorId, assesseeId, assessmentId);
+        const resultId = Number(req.params.resultId);
+        const result = await APL02Service.getUnitsResult(resultId);
         
         res.status(200).json({
             success: true,
@@ -51,10 +49,9 @@ export class APL02Controller {
     })
 
     static getElementsResult = asyncHandler(async (req: Request, res: Response) => {
-        const assesseeId = Number(req.params.assesseeId);
+        const resultId = Number(req.params.resultId);
         const unitId = Number(req.params.unitId);
-        const assessorId = Number(req.params.assessorId);
-        const result = await APL02Service.getElementsResult(assessorId, assesseeId, unitId);
+        const result = await APL02Service.getElementsResult(resultId, unitId);
         
         res.status(200).json({
             success: true,
