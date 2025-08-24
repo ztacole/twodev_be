@@ -104,7 +104,6 @@ export class APL1Service {
     }): Promise<CertificateDocsResponse> {
         const { assesseeId, assessorId, assessmentId, bodyData, files } = params;
     
-        const uploadPath = `api/uploads/apl-01/${assessorId}`;
         const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     
         const fieldMapping: { [key: string]: string } = {
@@ -118,7 +117,7 @@ export class APL1Service {
         const fileData: any = {};
         for (const file of files) {
             if (fieldMapping[file.fieldname]) {
-                fileData[fieldMapping[file.fieldname]] = `${BASE_URL}/${uploadPath}/${file.filename}`;
+                fileData[fieldMapping[file.fieldname]] = `${BASE_URL}/uploads/apl-01/${assesseeId}_${assessorId}_${assessmentId}/${file.filename}`;
             }
         }
     

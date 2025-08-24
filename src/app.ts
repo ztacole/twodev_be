@@ -1,4 +1,7 @@
 import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import { authUpload } from './middleware/auth.middleware';
 import { errorHandler } from './middleware/error.middleware';
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -28,7 +31,16 @@ import assesseeRoutes from './modules/assessee/asseesee.routes';
 
 // Public
 import publicRoutes from './modules/public/public.routes';
-app.use('/api/public', publicRoutes);
+app.use('/public', publicRoutes);
+
+app.get('/uploads/apl-01/:folder/:filename', authUpload, (req, res) => {
+  const { folder, filename } = req.params;
+  const filePath = path.join(__dirname, '../public/uploads/apl-01', folder, filename);
+
+  if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'File not found' });
+
+  res.sendFile(filePath);
+});
 
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/schedules', scheduleRoutes);

@@ -34,12 +34,31 @@ export const authenticateToken = async (
 }; 
 
 export const adminMiddleware = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
 ) => {
-  if (req.user?.role_id !== 1) {
-    return res.status(403).json({ message: 'Akses hanya untuk admin' });
-  }
-  next();
+    if (req.user?.role_id !== 1) {
+        return res.status(403).json({ message: 'Akses hanya untuk admin' });
+    }
+    next();
+};
+
+export const authUpload = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        await adminMiddleware(req, res, next);
+        const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoiYXNlc2kxQGV4YW1wbGUuY29tIiwicm9sZV9pZCI6MywiaWF0IjoxNzU1OTk5MzE1LCJleHAiOjE3NTY2MDQxMTV9.Q-AqqcntscCW1Duy5GlCOThPzzNZlx5sfpl4-4hbdKc";
+
+        if (!token) {
+        return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        next();
+    } catch (error: any) {
+        return res.status(403).json({ message: error.message });
+    }
 };
