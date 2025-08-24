@@ -33,15 +33,17 @@ router.get('/apl-01/results/unapproved', APL1Controller.getUnapprovedResult);
 router.put('/apl-01/results/:resultId/approve', APL1Controller.approveResult)
 router.get('/apl-01/results/:assessmentId', APL1Controller.getResultDocsByAssessmentId);;
 
-router.get('/apl-02/units/:assessmentId', APL02Controller.getUnitsAPL02);
-router.get('/apl-02/units/elements/:unitId', APL02Controller.getElementsByUnitId);
+router.get('/apl-02/units/:resultId', APL02Controller.getUnitsAPL02);
+router.get('/apl-02/units/:resultId/elements/:unitId', APL02Controller.getElementsByUnitId);
 router.post('/apl-02/result/send', APL02Controller.sendResult);
 router.get('/apl-02/result/units/:resultId', APL02Controller.getUnitsResult);
 router.get('/apl-02/result/units/elements/:resultId/:unitId', APL02Controller.getElementsResult);
 router.put('/apl-02/result/assessor/:resultId/approve', APL02Controller.approvedByAssessor);
+router.put('/apl-02/result/assessee/:resultId/approve', APL02Controller.approvedByAssessee);
 
 router.get('/ia-01/units/:assessmentId', IA01Controller.getIA01Groups);
 router.get('/ia-01/units/elements/:unitId', IA01Controller.getElementsByUnitId);
+router.post('/ia-01/result/send', IA01Controller.sendResult);
 
 router.get('/ia-02/units/:assessmentId', IA02Controller.getIA02Groups);
 
