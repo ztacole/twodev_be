@@ -92,33 +92,10 @@ export class APL02Service {
     return resultHeader;
   }
 
-  static async getUnitsResult(assessorId: number, assesseeId: number, assessmentId: number) {
-    const existingAssessee = await prisma.assessee.findUnique({
-      where: { id: assesseeId }
-    });
-    if (!existingAssessee) {
-      throw new NotFoundError('Assessee');
-    }
-
-    const existingAssessor = await prisma.assessor.findUnique({
-      where: { id: assessorId }
-    });
-    if (!existingAssessor) {
-      throw new NotFoundError('Assessor');
-    }
-
-    const existingAssessment = await prisma.assessment.findUnique({
-      where: { id: assessmentId }
-    });
-    if (!existingAssessment) {
-      throw new NotFoundError('Assessment');
-    }
-
+  static async getUnitsResult(resultId: number) {
     const existingResult = await prisma.result.findFirst({
       where: {
-        assessee_id: assesseeId,
-        assessor_id: assessorId,
-        assessment_id: assessmentId
+        id: resultId
       }
     });
     if (!existingResult) {
@@ -127,11 +104,7 @@ export class APL02Service {
     
     const unitsResult = await prisma.result_apl02_header.findMany({
       where: {
-        result: {
-          assessee_id: assesseeId,
-          assessor_id: assessorId,
-          assessment_id: assessmentId
-        }
+        result_id: resultId
       },
       include: {
         result: {
@@ -169,6 +142,7 @@ export class APL02Service {
       },
       approved_assessee: unitResult.approved_assessee,
       approved_assessor: unitResult.approved_assessor,
+      is_continue: unitResult.is_continue,
       units: unitResult.result.assessment.uc_apl02s.map(unit => ({
         id: unit.id,
         unit_code: unit.unit_code,
@@ -177,7 +151,7 @@ export class APL02Service {
     };
   }
 
-  static async getElementsResult(assessorId: number, assesseeId: number, unitId: number) {
+  static async getElementsResult(resultId: number, unitId: number) {
     const existingUnit = await prisma.uc_apl02.findUnique({
       where: { id: unitId }
     });
@@ -185,25 +159,9 @@ export class APL02Service {
       throw new NotFoundError('Unit competency');
     }
 
-    const existingAssessee = await prisma.assessee.findUnique({
-      where: { id: assesseeId }
-    });
-    if (!existingAssessee) {
-      throw new NotFoundError('Assessee');
-    }
-
-    const existingAssessor = await prisma.assessor.findUnique({
-      where: { id: assessorId }
-    });
-    if (!existingAssessor) {
-      throw new NotFoundError('Assessor');
-    }
-
     const existingResult = await prisma.result.findFirst({
       where: {
-        assessee_id: assesseeId,
-        assessor_id: assessorId,
-        assessment_id: existingUnit.assessment_id
+        id: resultId
       }
     });
     if (!existingResult) {
@@ -212,10 +170,7 @@ export class APL02Service {
 
     const elementsResult = await prisma.result_apl02_header.findMany({
       where: {
-        result: {
-          assessee_id: assesseeId,
-          assessor_id: assessorId
-        },
+        result_id: resultId,
         rows: {
           some: {
             element: {
@@ -265,10 +220,11 @@ export class APL02Service {
       },
       approved_assessee: elementResult.approved_assessee,
       approved_assessor: elementResult.approved_assessor,
+      is_continue: elementResult.is_continue,
       results: elementResult.rows.map(element => ({
         id: element.id,
-        element_id: element.element_id,
         element: element.element,
+        is_competent: element.is_competent,
         evidences: element.evidences
       }))
     };
