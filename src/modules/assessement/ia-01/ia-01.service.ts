@@ -1,23 +1,52 @@
-import { NotFoundError } from "../../../common/error";
+import { title } from "process";
+import { DuplicateEntryError, NotFoundError } from "../../../common/error";
 import { prisma } from "../../../config/db";
-import { GroupIA01Response } from "./ia-01.type";
+import { AssessorApproveRequest, GroupIA01Response, SendResultRequest } from "./ia-01.type";
+import app from "../../../app";
 
 export class IA01Service {
-    static async getIA01Groups(assessmentId: number): Promise<GroupIA01Response[]> {
-        const existingAssessment = await prisma.assessment.findUnique({
-            where: { id: assessmentId }
+    static async getIA01Groups(resultId: number): Promise<GroupIA01Response[]> {
+        const existingResult = await prisma.result.findUnique({
+            where: { id: resultId },
+            include: {
+                assessment: true
+            }
         });
 
-        if (!existingAssessment) {
+        if (!existingResult) {
+            throw new NotFoundError('Result');
+        }
+        if (!existingResult.assessment) {
             throw new NotFoundError('Assessment');
         }
 
         const groups = await prisma.group_ia.findMany({
             where: {
-                assessment_id: assessmentId
+                assessment_id: existingResult.assessment.id
             },
             include: {
-                units: true
+                units: {
+                    include: {
+                        elements: {
+                            include: {
+                                details: {
+                                    include: {
+                                        results: {
+                                            include: {
+                                                header: true
+                                            },
+                                            where: {
+                                                header: {
+                                                    result_id: resultId
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         });
 
@@ -25,32 +54,239 @@ export class IA01Service {
             id: group.id,
             assessment_id: group.assessment_id,
             name: group.name,
-            units: group.units
+            units: group.units.map((unit) => {
+                const totalElements = unit.elements.length;
+                const completedElements = unit.elements.filter((element) => {
+                    return element.details.some((detail) => detail.results.some((result) => result.header.result_id === resultId));
+                }).length;
+
+                const finished = totalElements > 0 && totalElements === completedElements;
+
+                return {
+                    id: unit.id,
+                    unit_code: unit.unit_code,
+                    title: unit.title,
+                    finished: finished,
+                    progress: finished ? 100 : Math.round((completedElements / totalElements) * 100)
+                };
+            })
         }));
     }
 
-    static async getElementsByUnitId(unitId: number) {
+    static async getElementsByUnitId(resultId: number, unitId: number) {
         const existingUnit = await prisma.uc_ia.findUnique({
             where: { id: unitId }
         });
-
         if (!existingUnit) {
             throw new NotFoundError('Unit competency');
         }
 
-        const elements = await prisma.element_ia.findUnique({
-            where: {
-                id: unitId
-            },
-            include: {
-                details: true
-            }
-        })
+        const existingResult = await prisma.result.findUnique({
+            where: { id: resultId }
+        });
+        if (!existingResult) {
+            throw new NotFoundError('Result');
+        }
 
-        if (!elements) {
+        const elements = await prisma.element_ia.findMany({
+            where: { uc_id: unitId },
+            include: {
+                details: {
+                    include: {
+                        results: {
+                            include: {
+                                header: true
+                            },
+                            where: {
+                                header: {
+                                    result_id: resultId
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return elements.map((element) => ({
+            id: element.id,
+            uc_id: element.uc_id,
+            title: element.title,
+            details: element.details.map((detail) => ({
+                id: detail.id,
+                description: detail.description,
+                benchmark: detail.benchmark
+            })),
+            results: element.details.map((detail, index) => ({
+                id: detail.results[index].id,
+                header_id: detail.results[index].header_id,
+                element_detail_id: detail.id,
+                is_competent: detail.results.length > 0 ? detail.results[0].is_competent : null,
+                evaluation: detail.results.length > 0 ? detail.results[0].evaluation : null
+            })) ?? []
+        }))
+    }
+
+    static async sendResult(data: SendResultRequest) {
+        const existingResult = await prisma.result.findUnique({
+            where: { id: data.result_id },
+            include: {
+                ia01_headers: true
+            }
+        });
+        if (!existingResult) {
+            throw new NotFoundError('Result');
+        }
+        if (!existingResult.ia01_headers) {
+            throw new NotFoundError('IA01 header');
+        }
+
+        const headerId = existingResult.ia01_headers.id;
+
+        const elements = data.elements.map(element => Number(element.element_detail_id));
+        const existingElements = await prisma.element_ia.findMany({
+            where: { id: { in: elements } }
+        });
+
+        if (existingElements.length !== elements.length) {
             throw new NotFoundError('Element');
         }
 
-        return elements;
+        const results = await Promise.all(
+            data.elements.map(async (element) => {
+                return await prisma.$transaction(async (tx) => {
+                    const resultRecord = await tx.result_ia01.upsert({
+                        where: {
+                            header_id_element_detail_id: {
+                                header_id: headerId,
+                                element_detail_id: element.element_detail_id
+                            }
+                        },
+                        update: {
+                            is_competent: element.is_competent,
+                            evaluation: element.evaluation
+                        },
+                        create: {
+                            header_id: headerId,
+                            element_detail_id: element.element_detail_id,
+                            is_competent: element.is_competent,
+                            evaluation: element.evaluation
+                        }
+                    });
+                    return resultRecord;
+                });
+            })
+        );
+
+        return results;
+    }
+
+    static async approvedByAssessor(resultId: number, data: AssessorApproveRequest) {
+        const existingResult = await prisma.result.findUnique({
+            where: { id: resultId },
+            include: {
+                ia01_headers: true
+            }
+        })
+        if (!existingResult) {
+            throw new NotFoundError('Result');
+        }
+        if (!existingResult.ia01_headers) {
+            throw new NotFoundError('IA01 header');
+        }
+
+        const headerId = existingResult.ia01_headers.id;
+
+        const update = await prisma.result_ia01_header.update({
+            where: { id: headerId },
+            data: {
+                approved_assessor: true,
+                is_competent: data.is_competent,
+                group: data.group,
+                unit: data.unit,
+                element: data.element,
+                kuk: data.kuk
+            },
+            include: {
+                result: {
+                    include: {
+                        assessee: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return {
+            id: update.id,
+            result_id: update.result_id,
+            assessee: {
+                id: update.result.assessee.id,
+                name: update.result.assessee.user.full_name,
+                email: update.result.assessee.user.email
+            },
+            approved_assessee: update.approved_assessee,
+            approved_assessor: update.approved_assessor,
+            is_competent: update.is_competent,
+            group: update.group,
+            unit: update.unit,
+            element: update.element,
+            kuk: update.kuk
+        };
+    }
+
+    static async approvedByAssessee(resultId: number) {
+        const existingResult = await prisma.result.findUnique({
+            where: { id: resultId },
+            include: {
+                ia01_headers: true
+            }
+        })
+        if (!existingResult) {
+            throw new NotFoundError('Result');
+        }
+        if (!existingResult.ia01_headers) {
+            throw new NotFoundError('IA01 header');
+        }
+
+        const headerId = existingResult.ia01_headers.id;
+
+        const update = await prisma.result_ia01_header.update({
+            where: { id: headerId },
+            data: {
+                approved_assessee: true,
+            },
+            include: {
+                result: {
+                    include: {
+                        assessee: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return {
+            id: update.id,
+            result_id: update.result_id,
+            assessee: {
+                id: update.result.assessee.id,
+                name: update.result.assessee.user.full_name,
+                email: update.result.assessee.user.email
+            },
+            approved_assessee: update.approved_assessee,
+            approved_assessor: update.approved_assessor,
+            is_competent: update.is_competent,
+            group: update.group,
+            unit: update.unit,
+            element: update.element,
+            kuk: update.kuk
+        };
     }
 }
