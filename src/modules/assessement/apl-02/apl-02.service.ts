@@ -78,7 +78,7 @@ export class APL02Service {
       throw new NotFoundError('Result');
     }
 
-    const elements: ElementResponse[] = await prisma.element_apl02.findMany({
+    const elements = await prisma.element_apl02.findMany({
       where: { uc_id: unitId },
       include: {
         details: true,
@@ -96,7 +96,25 @@ export class APL02Service {
       }
     });
 
-    return elements;
+    return elements.map(element => ({
+      id: element.id,
+      uc_id: element.uc_id,
+      title: element.title,
+      details: element.details.map(detail => ({ 
+        id: detail.id,
+        description: detail.description 
+      })),
+      results: element.results.map(result => ({
+        id: result.id,
+        header_id: result.result_apl02_id,
+        element_id: result.element_id,
+        is_competent: result.is_competent,
+        evidences: result.evidences.map(evidence => ({
+          id: evidence.id,
+          evidence: evidence.evidence
+        }))
+      })) ?? [],
+    }));
   }
 
   static async sendResult(data: HeaderRequest) {
@@ -112,7 +130,7 @@ export class APL02Service {
     if (!existingResult.apl02_headers) {
       throw new NotFoundError('APL02 header');
     }
-    
+
     const headerId = existingResult.apl02_headers.id;
 
     const elements = data.elements.map(element => Number(element.element_id));
@@ -309,37 +327,22 @@ export class APL02Service {
 
   static async approvedByAssessor(resultId: number, data: GenerateAsssessorRequest) {
     const existingResult = await prisma.result.findUnique({
-      where: { id: resultId }
+      where: { id: resultId },
+      include: {
+        apl02_headers: true
+      }
     });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
-
-    const resultHeaders = await prisma.result_apl02_header.findMany({
-      where: { result_id: resultId },
-      include: {
-        result: {
-          include: {
-            assessee: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { id: 'desc' },
-      take: 1
-    });
-
-    if (!resultHeaders) {
-      throw new NotFoundError('Result header');
+    if (!existingResult.apl02_headers) {
+      throw new NotFoundError('APL02 header');
     }
 
-    const resultHeader = resultHeaders[0];
+    const headerId = existingResult.apl02_headers.id;
 
     const update = await prisma.result_apl02_header.update({
-      where: { id: resultHeader.id },
+      where: { id: headerId },
       data: {
         approved_assessor: true,
         is_continue: data.reccomendation
@@ -373,37 +376,22 @@ export class APL02Service {
 
   static async approvedByAssessee(resultId: number) {
     const existingResult = await prisma.result.findUnique({
-      where: { id: resultId }
+      where: { id: resultId },
+      include: {
+        apl02_headers: true
+      }
     });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
-
-    const resultHeaders = await prisma.result_apl02_header.findMany({
-      where: { result_id: resultId },
-      include: {
-        result: {
-          include: {
-            assessee: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { id: 'desc' },
-      take: 1
-    });
-
-    if (!resultHeaders) {
+    if (!existingResult.apl02_headers) {
       throw new NotFoundError('Result header');
     }
 
-    const resultHeader = resultHeaders[0];
+    const headerId = existingResult.apl02_headers.id;
 
     const update = await prisma.result_apl02_header.update({
-      where: { id: resultHeader.id },
+      where: { id: headerId },
       data: {
         approved_assessee: true,
       },

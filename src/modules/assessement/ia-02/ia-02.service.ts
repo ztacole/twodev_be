@@ -24,4 +24,96 @@ export class IAO2Service {
         
         return groups
     }
+
+    static async approveByAssessor(resultId: number) {
+        const existingResult = await prisma.result.findUnique({
+            where: { id: resultId },
+            include: {
+                ia02_headers: true
+            }
+        })
+        if (!existingResult) {
+            throw new NotFoundError('Result');
+        }
+        if (!existingResult.ia02_headers) {
+            throw new NotFoundError('IA02 header');
+        }
+
+        const headerId = existingResult.ia02_headers.id;
+
+        const update = await prisma.result_ia02_header.update({
+            where: { id: headerId },
+            data: {
+                approved_assessor: true,
+            },
+            include: {
+                result: {
+                    include: {
+                        assessee: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
+            }
+        })
+        return {
+            id: update.id,
+            result_id: update.result_id,
+            assessee: {
+                id: update.result.assessee.id,
+                name: update.result.assessee.user.full_name,
+                email: update.result.assessee.user.email
+            },
+            approved_assessee: update.approved_assessee,
+            approved_assessor: update.approved_assessor,
+        };
+    }
+
+    static async approveByAssessee(resultId: number) {
+        const existingResult = await prisma.result.findUnique({
+            where: { id: resultId },
+            include: {
+                ia02_headers: true
+            }
+        })
+        if (!existingResult) {
+            throw new NotFoundError('Result');
+        }
+        if (!existingResult.ia02_headers) {
+            throw new NotFoundError('IA02 header');
+        }
+
+        const headerId = existingResult.ia02_headers.id;
+
+        const update = await prisma.result_ia02_header.update({
+            where: { id: headerId },
+            data: {
+                approved_assessee: true,
+            },
+            include: {
+                result: {
+                    include: {
+                        assessee: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
+            }
+        })
+        return {
+            id: update.id,
+            result_id: update.result_id,
+            assessee: {
+                id: update.result.assessee.id,
+                name: update.result.assessee.user.full_name,
+                email: update.result.assessee.user.email
+            },
+            approved_assessee: update.approved_assessee,
+            approved_assessor: update.approved_assessor,
+        };
+    }
 }
