@@ -51,7 +51,7 @@ export const authUpload = async (
 ) => {
     try {
         await adminMiddleware(req, res, next);
-        const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoiYXNlc2kxQGV4YW1wbGUuY29tIiwicm9sZV9pZCI6MywiaWF0IjoxNzU1OTk5MzE1LCJleHAiOjE3NTY2MDQxMTV9.Q-AqqcntscCW1Duy5GlCOThPzzNZlx5sfpl4-4hbdKc";
+        const token = req.headers['authorization'];
 
         if (!token) {
         return res.status(401).json({ message: 'Unauthorized' });
