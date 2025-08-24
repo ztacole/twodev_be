@@ -57,7 +57,7 @@ export interface ResultRequest {
 }
 
 export interface HeaderRequest {
-    header_id: number;
+    result_id: number;
     elements: ElementResultRequest[];
 }
 
