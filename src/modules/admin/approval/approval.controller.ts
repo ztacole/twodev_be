@@ -17,8 +17,12 @@ export const ApprovalController = {
       const user = req.user as JwtPayload;
       const { docId } = req.body;
 
-      await ApprovalService.approveApl01Document(Number(docId), user);
-      res.json({ success: true, message: 'Dokumen APL-01 approved' });
+      const result = await ApprovalService.approveApl01Document(Number(docId), user);
+      res.json({
+        success: true,
+        message: 'Dokumen APL-01 approved',
+        data: result
+      });
     } catch (error: any) {
       res.status(403).json({
         success: false,

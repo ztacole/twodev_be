@@ -1,56 +1,111 @@
 import { DuplicateEntryError, NotFoundError } from '../../../common/error';
 import { prisma } from '../../../config/db';
-import { ElementResponse, GenerateAsssessorRequest, ResultHeaderRequest } from './apl-02.type';
+import { ElementResponse, GenerateAsssessorRequest, HeaderRequest, ResultRequest } from './apl-02.type';
 
 export class APL02Service {
-  static async getUnitsAPL02(assessmentId: number): Promise<any[]> {
-    const existingAssessment = await prisma.assessment.findUnique({
-      where: { id: assessmentId }
-    });
-
-    if (!existingAssessment) {
-      throw new NotFoundError('Assessment');
+  static async getUnitsAPL02(resultId: number): Promise<any[]> {
+  const existingResult = await prisma.result.findUnique({
+    where: { id: resultId },
+    include: {
+      assessment: true
     }
-
-    const unitCompetencies = await prisma.uc_apl02.findMany({
-      where: { assessment_id: assessmentId }
-    });
-
-    return unitCompetencies.map(unit => {
-      return {
-        id: unit.id,
-        unit_code: unit.unit_code,
-        title: unit.title,
-      };
-    })
+  });
+  
+  if (!existingResult) {
+    throw new NotFoundError('Result');
   }
 
-  static async getElementsByUnitId(unitId: number): Promise<ElementResponse[]> {
+  if (!existingResult.assessment) {
+    throw new NotFoundError('Assessment');
+  }
+
+  const unitCompetencies = await prisma.uc_apl02.findMany({
+    where: { 
+      assessment_id: existingResult.assessment.id 
+    },
+    include: {
+      elements: {
+        include: {
+          results: {
+            include: {
+              header: true
+            },
+            where: {
+              header: {
+                result_id: resultId
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  return unitCompetencies.map(unit => {
+    const totalElements = unit.elements.length;
+    const completedElements = unit.elements.filter(element => 
+      element.results.some(result => 
+        result.header.result_id === resultId
+      )
+    ).length;
+
+    const finished = totalElements > 0 && completedElements === totalElements;
+
+    return {
+      id: unit.id,
+      unit_code: unit.unit_code,
+      title: unit.title,
+      finished: finished,
+      progress: totalElements > 0 ? Math.round((completedElements / totalElements) * 100) : 0,
+      total_elements: totalElements,
+      completed_elements: completedElements
+    };
+  });
+}
+
+  static async getElementsByUnitId(resultId: number, unitId: number): Promise<ElementResponse[]> {
     const existingUc = await prisma.uc_apl02.findUnique({
       where: { id: unitId }
     });
-
     if (!existingUc) {
       throw new NotFoundError('Unit competency');
+    }
+
+    const existingResult = await prisma.result.findUnique({
+      where: { id: resultId }
+    });
+    if (!existingResult) {
+      throw new NotFoundError('Result');
     }
 
     const elements: ElementResponse[] = await prisma.element_apl02.findMany({
       where: { uc_id: unitId },
       include: {
-        details: true
+        details: true,
+        results: {
+          include: {
+            header: true,
+            evidences: true
+          },
+          where: {
+            header: {
+              result_id: resultId
+            }
+          }
+        }
       }
     });
 
     return elements;
   }
 
-  static async sendResult(data: ResultHeaderRequest) {
-    const existingResultHeader = await prisma.result.findUnique({
-      where: { id: Number(data.result_id) }
+  static async sendResult(data: HeaderRequest) {
+    const existingResultHeader = await prisma.result_apl02_header.findUnique({
+      where: { id: Number(data.header_id) }
     });
 
     if (!existingResultHeader) {
-      throw new NotFoundError('Result');
+      throw new NotFoundError('Header APL02');
     }
 
     const elements = data.elements.map(element => Number(element.element_id));
@@ -62,34 +117,49 @@ export class APL02Service {
       throw new NotFoundError('Element');
     }
 
-    const resultHeader = await prisma.result_apl02_header.create({
-      data: {
-        result_id: Number(data.result_id),
-        approved_assessee: true,
-        approved_assessor: false,
-        is_continue: false,
-        rows: {
-          create: data.elements.map(element => ({
-            element_id: Number(element.element_id),
-            is_competent: element.is_competent,
-            evidences: {
-              create: element.evidences.map(evidence => ({
+    const results = await Promise.all(
+      data.elements.map(async (element) => {
+        return await prisma.$transaction(async (tx) => {
+          const resultRecord = await tx.result_apl02.upsert({
+            where: {
+              result_apl02_id_element_id: {
+                result_apl02_id: Number(data.header_id),
+                element_id: Number(element.element_id)
+              }
+            },
+            update: {
+              is_competent: element.is_competent,
+              updated_at: new Date()
+            },
+            create: {
+              result_apl02_id: Number(data.header_id),
+              element_id: Number(element.element_id),
+              is_competent: element.is_competent
+            }
+          });
+
+          if (element.evidences && element.evidences.length > 0) {
+            await tx.apl02_evidence.deleteMany({
+              where: { result_apl02_id: resultRecord.id }
+            });
+
+            await tx.apl02_evidence.createMany({
+              data: element.evidences.map(evidence => ({
+                result_apl02_id: resultRecord.id,
                 evidence: evidence.evidence
               }))
-            }
-          }))
-        }
-      },
-      include: {
-        rows: {
-          include: {
-            evidences: true
+            });
           }
-        }
-      }
-    });
 
-    return resultHeader;
+          return await tx.result_apl02.findUnique({
+            where: { id: resultRecord.id },
+            include: { evidences: true }
+          });
+        });
+      })
+    );
+
+    return results;
   }
 
   static async getUnitsResult(resultId: number) {
@@ -101,7 +171,7 @@ export class APL02Service {
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
-    
+
     const unitsResult = await prisma.result_apl02_header.findMany({
       where: {
         result_id: resultId
@@ -266,6 +336,69 @@ export class APL02Service {
       data: {
         approved_assessor: true,
         is_continue: data.reccomendation
+      },
+      include: {
+        result: {
+          include: {
+            assessee: {
+              include: {
+                user: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return {
+      id: update.id,
+      result_id: update.result_id,
+      assessee: {
+        id: update.result.assessee_id,
+        name: update.result.assessee.user.full_name,
+        email: update.result.assessee.user.email
+      },
+      approved_assessee: update.approved_assessee,
+      approved_assessor: update.approved_assessor,
+      is_continue: update.is_continue
+    }
+  }
+
+  static async approvedByAssessee(resultId: number) {
+    const existingResult = await prisma.result.findUnique({
+      where: { id: resultId }
+    });
+    if (!existingResult) {
+      throw new NotFoundError('Result');
+    }
+
+    const resultHeaders = await prisma.result_apl02_header.findMany({
+      where: { result_id: resultId },
+      include: {
+        result: {
+          include: {
+            assessee: {
+              include: {
+                user: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { id: 'desc' },
+      take: 1
+    });
+
+    if (!resultHeaders) {
+      throw new NotFoundError('Result header');
+    }
+
+    const resultHeader = resultHeaders[0];
+
+    const update = await prisma.result_apl02_header.update({
+      where: { id: resultHeader.id },
+      data: {
+        approved_assessee: true,
       },
       include: {
         result: {

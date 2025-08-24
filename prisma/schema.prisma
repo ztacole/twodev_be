@@ -216,22 +216,22 @@ model result {
 
   docs    result_doc[]
 
-  apl02_headers result_apl02_header[]
-  ak01_headers  result_ak01_header[]
-  ak02_headers  result_ak02_header[]
-  result_ak03   result_ak03[]
-  result_ak04   result_ak04[]
-  result_ak05   result_ak05[]
-  ia01_headers  result_ia01_header[]
-  ia02_headers  result_ia02_header[]
-  ia03_headers  result_ia03_header[]
-  ia05_headers  result_ia05_header[]
-  ia07_headers  result_ia07_header[]
+  apl02_headers result_apl02_header?
+  ak01_headers  result_ak01_header?
+  ak02_headers  result_ak02_header?
+  result_ak03   result_ak03?
+  result_ak04   result_ak04?
+  result_ak05   result_ak05?
+  ia01_headers  result_ia01_header?
+  ia02_headers  result_ia02_header?
+  ia03_headers  result_ia03_header?
+  ia05_headers  result_ia05_header?
+  ia07_headers  result_ia07_header?
 }
 
 model result_doc {
   id                           Int    @id @default(autoincrement())
-  result_id                    Int
+  result_id                    Int    
   purpose                      String @db.VarChar(255)
   school_report_card           String @db.VarChar(255)
   field_work_practice_certificate String @db.VarChar(255)
@@ -284,7 +284,7 @@ model element_details_apl02 {
 
 model result_apl02_header {
   id        Int     @id @default(autoincrement())
-  result_id Int
+  result_id Int     @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
   is_continue        Boolean
@@ -306,6 +306,8 @@ model result_apl02 {
   header  result_apl02_header @relation(fields: [result_apl02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   element element_apl02       @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   evidences apl02_evidence[]
+
+  @@unique([result_apl02_id, element_id])
 }
 
 model apl02_evidence {
@@ -322,7 +324,7 @@ model apl02_evidence {
 
 model result_ak01_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
   created_at DateTime @default(now())
@@ -344,7 +346,7 @@ model result_ak01 {
 
 model result_ak02_header {
   id                 Int     @id @default(autoincrement())
-  result_id          Int
+  result_id          Int     @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
   is_competent       Boolean
@@ -381,7 +383,7 @@ model ak02_evidence {
 
 model result_ak03 {
   id        Int    @id @default(autoincrement())
-  result_id Int
+  result_id Int    @unique
   component String @db.VarChar(255)
   is_ok     Boolean
   comment   String? @db.VarChar(255)
@@ -393,12 +395,12 @@ model result_ak03 {
 
 model result_ak04 {
   id            Int    @id @default(autoincrement())
-  result_id     Int
+  result_id     Int    @unique
+  approved_assessee Boolean
   q1_yes        Boolean
   q2_yes        Boolean
   q3_yes        Boolean
   reason        String @db.VarChar(255)
-  approved_assessee String @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -407,13 +409,13 @@ model result_ak04 {
 
 model result_ak05 {
   id                 Int     @id @default(autoincrement())
-  result_id          Int
+  result_id          Int     @unique
+  approved_assessor  Boolean
   is_competent       Boolean
   description        String? @db.VarChar(255)
   negative_positive_aspects String? @db.VarChar(255)
   rejection_notes    String? @db.VarChar(255)
   improvement_suggestions String? @db.VarChar(255)
-  approved_assessor  String? @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -486,9 +488,14 @@ model element_details_ia {
 
 model result_ia01_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
+  is_competent       Boolean
+  group              String? @db.VarChar(255)
+  unit               String? @db.VarChar(255)
+  element            String? @db.VarChar(255)
+  kuk                String? @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -513,7 +520,7 @@ model result_ia01 {
 
 model result_ia02_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
   created_at DateTime @default(now())
@@ -537,7 +544,7 @@ model ia03_question {
 
 model result_ia03_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
   created_at DateTime @default(now())
@@ -588,7 +595,7 @@ model question_option {
 
 model result_ia05_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
   created_at DateTime @default(now())
@@ -626,7 +633,7 @@ model ia07_question {
 
 model result_ia07_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
   created_at DateTime @default(now())

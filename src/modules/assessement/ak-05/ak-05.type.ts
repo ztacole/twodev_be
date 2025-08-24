@@ -9,7 +9,7 @@ export interface AK05ItemRequest {
   negative_positive_aspects?: string | null;
   rejection_notes?: string | null;
   improvement_suggestions?: string | null;
-  approved_assessor?: string | null;
+  approved_assessor: boolean;
 }
 
 export interface AK05Response {
@@ -20,8 +20,6 @@ export interface AK05Response {
   negative_positive_aspects?: string | null;
   rejection_notes?: string | null;
   improvement_suggestions?: string | null;
-  approved_assessor?: string | null;
-  created_at: Date;
-  updated_at: Date;
+  approved_assessor: boolean;
 }
 
