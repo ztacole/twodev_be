@@ -71,7 +71,7 @@ export class APL02Service {
         rows: {
           create: data.elements.map(element => ({
             element_id: Number(element.element_id),
-            is_competent: false,
+            is_competent: data.is_competent,
             evidences: {
               create: element.evidences.map(evidence => ({
                 evidence: evidence.evidence

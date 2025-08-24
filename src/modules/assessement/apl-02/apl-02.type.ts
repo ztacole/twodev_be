@@ -45,6 +45,7 @@ export interface ElementsResultResponse {
 // Request
 export interface ResultHeaderRequest {
     result_id: number;
+    is_competent: boolean;
     elements: ElementResultRequest[];
 }
 
