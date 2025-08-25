@@ -51,11 +51,18 @@ router.get('/ia-02/units/:assessmentId', IA02Controller.getIA02Groups);
 router.put('/ia-02/result/assessor/:resultId/approve', IA02Controller.approvedByAssessor);
 router.put('/ia-02/result/assessee/:resultId/approve', IA02Controller.approvedByAssessee);
 
-router.get('/ia-03/units/:assessmentId', IA03Controller.getIA03Groups);
+router.get('/ia-03/units/:resultId', IA03Controller.getIA03Groups);
+router.post('/ia-03/result/send', IA03Controller.sendResult);
+router.put('/ia-03/result/assessor/:resultId/approve', IA03Controller.approvedByAssessor);
+router.put('/ia-03/result/assessee/:resultId/approve', IA03Controller.approvedByAssessee);
 
 router.get('/ia-05/questions/:assessmentId', IA05Controller.getQuestions);
-router.get('/ia-05/answers/:assessmentId', IA05Controller.getAnswers);
-router.get('/ia-05/answers/assessee/:assesseeId', IA05Controller.getAssesseeAnswers);
+router.get('/ia-05/result/answers/keys/:assessmentId', IA05Controller.getAnswerKeys);
+router.get('/ia-05/result/answers/:resultId', IA05Controller.getAssesseeAnswers);
+router.post('/ia-05/result/assessee/send', IA05Controller.sendAssesseeResult);
+router.post('/ia-05/result/assessor/send', IA05Controller.sendAssessorResult);
+router.put('/ia-05/result/assessor/:resultId/approve', IA05Controller.approvedByAssessor);
+router.put('/ia-05/result/assessee/:resultId/approve', IA05Controller.approvedByAssessee);
 
 router.post('/ak-01', AKController.createAK01);
 router.get('/ak-01/:id', AKController.getAK01ById);

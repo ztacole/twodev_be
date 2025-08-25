@@ -567,6 +567,8 @@ model result_ia03 {
 
   header   result_ia03_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   question ia03_question      @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([header_id, question_id])
 }
 
 //// ========= IA05 (PG) =========
@@ -617,6 +619,8 @@ model result_ia05 {
 
   header result_ia05_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   option question_option    @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([header_id, option_id])
 }
 
 //// ========= IA07 (Essay/Kunci Jawaban) =========

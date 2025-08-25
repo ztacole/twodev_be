@@ -1,6 +1,7 @@
 import { IA05Service } from "./ia-05.service";
 import { asyncHandler } from "../../../common/async.handler";
 import { Request, Response } from "express";
+import { SendAssesseeResultRequest, SendAssessorResultRequest } from "./ia-05.type";
 
 export class IA05Controller {
     static getQuestions = asyncHandler(async (req: Request, res: Response) => {
@@ -14,9 +15,9 @@ export class IA05Controller {
         });
     });
 
-    static getAnswers = asyncHandler(async (req: Request, res: Response) => {
+    static getAnswerKeys = asyncHandler(async (req: Request, res: Response) => {
         const assessmentId = Number(req.params.assessmentId);
-        const answers = await IA05Service.getAnswers(assessmentId);
+        const answers = await IA05Service.getAnswerKeys(assessmentId);
         
         res.status(200).json({
             success: true,
@@ -26,13 +27,65 @@ export class IA05Controller {
     });
 
     static getAssesseeAnswers = asyncHandler(async (req: Request, res: Response) => {
-        const assesseeId = Number(req.params.assesseeId);
-        const answers = await IA05Service.getAssesseeAnswers(assesseeId);
+        const resultId = Number(req.params.resultId);
+        const answers = await IA05Service.getAssesseeAnswers(resultId);
         
         res.status(200).json({
             success: true,
             message: 'Jawaban berhasil diambil',
             data: answers
+        });
+    });
+
+    static sendAssesseeResult = asyncHandler(async (req: Request, res: Response) => {
+        const data: SendAssesseeResultRequest = req.body;
+        const result = await IA05Service.sendAssesseeResult(data);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Jawaban berhasil dikirimkan',
+            data: result
+        });
+    });
+
+    static sendAssessorResult = asyncHandler(async (req: Request, res: Response) => {
+        const data: SendAssessorResultRequest = req.body;
+        const result = await IA05Service.sendAssessorResult(data);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Jawaban berhasil dikirimkan',
+            data: result
+        });
+    });
+
+    static approvedByAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            throw new Error('Result ID is required');
+        }
+
+        const result = await IA05Service.approvedByAssessor(resultId);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Tanda tangan berhasil dikirimkan',
+            data: result
+        });
+    });
+
+    static approvedByAssessee = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            throw new Error('Result ID is required');
+        }
+
+        const result = await IA05Service.approvedByAssessee(resultId);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Tanda tangan berhasil dikirimkan',
+            data: result
         });
     });
 }
