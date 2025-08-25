@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { ScheduleService } from "./schedule.service";
 import ExcelJS from 'exceljs';
 import { asyncHandler } from "../../common/async.handler";
+import { JwtPayload } from "jsonwebtoken";
 export class ScheduleController {
     static createSchedule = asyncHandler(async (req: Request, res: Response) => {
         const schedule = await ScheduleService.createSchedule(req.body);
@@ -33,7 +34,8 @@ export class ScheduleController {
     });
 
     static getActiveSchedules = asyncHandler(async (req: Request, res: Response) => {
-        const schedules = await ScheduleService.getActiveSchedules();
+        const user = req.user as JwtPayload;
+        const schedules = await ScheduleService.getActiveSchedules(user);
         
         res.status(200).json({
             success: true,
