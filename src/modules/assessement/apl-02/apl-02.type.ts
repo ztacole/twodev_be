@@ -27,8 +27,16 @@ interface UnitCompetencyResponse {
 
 export interface ElementResponse {
     id: number;
+    uc_id: number;
     title: string;
     details: ElementDetailsResponse[];
+    result?: {
+        id?: number;
+        is_competent: boolean;
+        created_at?: Date;
+        updated_at?: Date;
+        evidences?: any[];
+    };
 }
 
 interface ElementDetailsResponse {
@@ -43,16 +51,26 @@ export interface ElementsResultResponse {
 }
 
 // Request
-export interface ResultHeaderRequest {
+export interface ResultRequest {
+    result_id: number;
+    is_competent: boolean;
+}
+
+export interface HeaderRequest {
     result_id: number;
     elements: ElementResultRequest[];
 }
 
-export interface ElementResultRequest {
+interface ElementResultRequest {
     element_id: number;
+    is_competent: boolean;
     evidences: EvidenceRequest[];
 }
 
-export interface EvidenceRequest {
+interface EvidenceRequest {
     evidence: string;
+}
+
+export interface GenerateAsssessorRequest {
+    reccomendation: boolean;
 }

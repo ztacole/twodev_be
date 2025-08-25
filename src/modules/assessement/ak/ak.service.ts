@@ -14,36 +14,27 @@ export class AKService {
   // AK01 Methods
   
   static async createAK01(data: AK01CreateRequest): Promise<AK01Response> {
-    const result = await prisma.result.findUnique({
-      where: { id: data.result_id }
-    });
-
+    const result = await prisma.result.findUnique({ where: { id: data.result_id }, include: { ak01_headers: true } });
     if (!result) {
       throw new NotFoundError('Result');
     }
-
-    const existingHeader = await prisma.result_ak01_header.findFirst({
-      where: { result_id: data.result_id }
-    });
-
-    if (existingHeader) {
-      throw new DuplicateEntryError('Header AK01', `result_id: ${data.result_id}`);
+    if (!result.ak01_headers) {
+      throw new NotFoundError('Header AK01');
     }
 
-    const ak01Header = await prisma.result_ak01_header.create({
+    const headerId = result.ak01_headers.id;
+
+    const ak01Header = await prisma.result_ak01_header.update({
+      where: { id: headerId },
       data: {
-        result_id: data.result_id,
         approved_assessee: data.approved_assessee,
         approved_assessor: data.approved_assessor,
         rows: {
-          create: data.evidences.map(evidence => ({
-            evidence
-          }))
+          deleteMany: {},
+          create: data.evidences.map(evidence => ({ evidence }))
         }
       },
-      include: {
-        rows: true
-      }
+      include: { rows: true }
     });
 
     return formatAK01Response(ak01Header);
@@ -135,53 +126,36 @@ export class AKService {
   // AK02 Methods
 
   static async createAK02(data: AK02CreateRequest): Promise<AK02Response> {
-    const result = await prisma.result.findUnique({
-      where: { id: data.result_id }
-    });
-
+    const result = await prisma.result.findUnique({ where: { id: data.result_id }, include: { ak02_headers: true } });
     if (!result) {
       throw new NotFoundError('Result');
     }
-
-    const existingHeader = await prisma.result_ak02_header.findFirst({
-      where: { result_id: data.result_id }
-    });
-
-    if (existingHeader) {
-      throw new DuplicateEntryError('Header AK02', `result_id: ${data.result_id}`);
+    if (!result.ak02_headers) {
+      throw new NotFoundError('Header AK02');
     }
 
     const ucIds = data.rows.map(row => row.uc_id);
-    const existingUCs = await prisma.uc_apl02.findMany({
-      where: { id: { in: ucIds } }
-    });
-
+    const existingUCs = await prisma.uc_apl02.findMany({ where: { id: { in: ucIds } } });
     if (existingUCs.length !== ucIds.length) {
       throw new NotFoundError('Satu atau lebih Unit Kompetensi');
     }
 
-    const ak02Header = await prisma.result_ak02_header.create({
+    const headerId = result.ak02_headers.id;
+
+    const ak02Header = await prisma.result_ak02_header.update({
+      where: { id: headerId },
       data: {
-        result_id: data.result_id,
         approved_assessee: data.approved_assessee,
         approved_assessor: data.approved_assessor,
         is_competent: data.is_competent,
         follow_up: data.follow_up,
         comment: data.comment,
         rows: {
-          create: data.rows.map(row => ({
-            uc_id: row.uc_id,
-            evidence: row.evidence
-          }))
+          deleteMany: {},
+          create: data.rows.map(row => ({ uc_id: row.uc_id, evidence: row.evidence }))
         }
       },
-      include: {
-        rows: {
-          include: {
-            uc: true
-          }
-        }
-      }
+      include: { rows: { include: { uc: true } } }
     });
 
     return formatAK02Response(ak02Header);

@@ -58,6 +58,7 @@ export class AssessorService {
             data: {
                 ...data,
                 birth_date: new Date(data.birth_date),
+                no_reg_met: data.no_reg_met
             },
             include: {
                 user: { include: { role: true } },
@@ -79,6 +80,7 @@ export class AssessorService {
             data: {
                 ...data,
                 birth_date: new Date(data.birth_date),
+                no_reg_met: data.no_reg_met
             },
             include: {
                 user: { include: { role: true } },
@@ -102,11 +104,11 @@ export class AssessorService {
         return {
             id: assessor.id,
             user_id: assessor.user_id,
-            full_name: assessor.user?.full_name || '', // ambil dari relasi user
             scheme_id: assessor.scheme_id,
             address: assessor.address,
             phone_no: assessor.phone_no,
             birth_date: assessor.birth_date,
+            no_reg_met: assessor.no_reg_met
         };
     }
 }

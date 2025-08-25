@@ -14,5 +14,25 @@ export interface IA05QuestionsAnswerResponse {
     id: number;
     order: number;
     question: string;
-    answers: string;
+    answer: IA05OptionResponse;
+}
+
+// Request
+export interface SendAssesseeResultRequest {
+    result_id: number,
+    answers: AssesseeAnswerRequest[]
+}
+
+interface AssesseeAnswerRequest {
+    option_id: number
+}
+
+export interface SendAssessorResultRequest {
+    result_id: number;
+    results: ResultDetailRequest[];
+}
+
+interface ResultDetailRequest {
+    option_id: number;
+    approved: boolean
 }

@@ -1,12 +1,16 @@
 import { Request, Response } from "express";
 import { APL02Service } from "./apl-02.service";
 import { asyncHandler } from "../../../common/async.handler";
-import { ResultHeaderRequest } from "./apl-02.type";
+import { GenerateAsssessorRequest, HeaderRequest, ResultRequest } from "./apl-02.type";
 
 export class APL02Controller {
     static getUnitsAPL02 = asyncHandler(async (req: Request, res: Response) => {
-        const assessmentId = Number(req.params.assessmentId);
-        const unitCompetencies = await APL02Service.getUnitsAPL02(assessmentId);
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            throw new Error('Result ID is required');
+        }
+
+        const unitCompetencies = await APL02Service.getUnitsAPL02(resultId);
         
         res.status(200).json({
             success: true,
@@ -16,8 +20,12 @@ export class APL02Controller {
     })
 
     static getElementsByUnitId = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
         const unitId = Number(req.params.unitId);
-        const elements = await APL02Service.getElementsByUnitId(unitId);
+        if (!resultId || !unitId) {
+            throw new Error('Result ID and Unit ID are required');
+        }
+        const elements = await APL02Service.getElementsByUnitId(resultId, unitId);
         
         res.status(200).json({
             success: true,
@@ -27,7 +35,7 @@ export class APL02Controller {
     })
 
     static sendResult = asyncHandler(async (req: Request, res: Response) => {
-        const data: ResultHeaderRequest = req.body;
+        const data: HeaderRequest = req.body;
         const result = await APL02Service.sendResult(data);
         
         res.status(200).json({
@@ -38,10 +46,8 @@ export class APL02Controller {
     })
 
     static getUnitsResult = asyncHandler(async (req: Request, res: Response) => {
-        const assessorId = Number(req.params.assessorId);
-        const assesseeId = Number(req.params.assesseeId);
-        const assessmentId = Number(req.params.assessmentId);
-        const result = await APL02Service.getUnitsResult(assessorId, assesseeId, assessmentId);
+        const resultId = Number(req.params.resultId);
+        const result = await APL02Service.getUnitsResult(resultId);
         
         res.status(200).json({
             success: true,
@@ -51,14 +57,62 @@ export class APL02Controller {
     })
 
     static getElementsResult = asyncHandler(async (req: Request, res: Response) => {
-        const assesseeId = Number(req.params.assesseeId);
+        const resultId = Number(req.params.resultId);
         const unitId = Number(req.params.unitId);
-        const assessorId = Number(req.params.assessorId);
-        const result = await APL02Service.getElementsResult(assessorId, assesseeId, unitId);
+        if (!resultId || !unitId) {
+            throw new Error('Result ID and Unit ID are required');
+        }
+
+        const result = await APL02Service.getElementsResult(resultId, unitId);
         
         res.status(200).json({
             success: true,
             message: 'Hasil berhasil diambil',
+            data: result,
+        });
+    })
+
+    static approvedByAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Result ID is required',
+            });
+        }
+
+        const data: GenerateAsssessorRequest = req.body;
+
+        if (!data) {
+            return res.status(400).json({
+                success: false,
+                message: 'Data harus diisi',
+            });
+        }
+
+        const result = await APL02Service.approvedByAssessor(resultId, data);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Assessor telah tanda tangan!',
+            data: result,
+        });
+    })
+
+    static approvedByAssessee = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Result ID is required',
+            });
+        }
+
+        const result = await APL02Service.approvedByAssessee(resultId);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Assessee telah tanda tangan!',
             data: result,
         });
     })

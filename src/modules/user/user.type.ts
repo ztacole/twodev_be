@@ -1,8 +1,9 @@
+// Request
 export interface CreateUserRequest {
-    full_name?: string;
+    full_name: string;
     email: string;
-    password?: string;
-    role_id?: number;
+    password: string;
+    role_id: number;
 }
 
 export interface UpdateUserRequest {
@@ -10,4 +11,17 @@ export interface UpdateUserRequest {
     email?: string;
     password?: string;
     role_id?: number;
+}
+
+// Response
+export interface UserResponse {
+    id: number;
+    full_name: string;
+    email: string;
+    role: {
+        id: number;
+        name: string;
+    };
+    created_at: Date;
+    updated_at: Date;
 }

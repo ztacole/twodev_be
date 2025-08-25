@@ -4,7 +4,7 @@ import { asyncHandler } from '../../common/async.handler';
 
 export class AssessorController {
     static createAssessor = asyncHandler(async (req: Request, res: Response) => {
-        const requiredFields = ['user_id', 'full_name', 'scheme_id', 'address', 'phone_no', 'birth_date'];
+        const requiredFields = ['user_id', 'scheme_id', 'address', 'phone_no', 'birth_date', 'no_reg_met'];
         for (const field of requiredFields) {
             if (!req.body[field]) {
                 return res.status(400).json({

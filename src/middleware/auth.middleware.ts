@@ -34,12 +34,47 @@ export const authenticateToken = async (
 }; 
 
 export const adminMiddleware = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
 ) => {
-  if (req.user?.role_id !== 1) {
-    return res.status(403).json({ message: 'Akses hanya untuk admin' });
-  }
-  next();
+    if (req.user?.role_id !== 1) {
+        return res.status(403).json({ message: 'Akses hanya untuk admin' });
+    }
+    next();
+};
+
+export const assesseeMiddleware = (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) => (
+    req.user?.role_id === 3 ? next() : res.status(403).json({ message: 'Akses hanya untuk assessee' })
+)
+
+export const assessorMiddleware = (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) => (
+    req.user?.role_id === 2 ? next() : res.status(403).json({ message: 'Akses hanya untuk assessor' })
+)
+
+export const authUpload = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        await adminMiddleware(req, res, next);
+        const token = req.headers['authorization'];
+
+        if (!token) {
+        return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        next();
+    } catch (error: any) {
+        return res.status(403).json({ message: error.message });
+    }
 };

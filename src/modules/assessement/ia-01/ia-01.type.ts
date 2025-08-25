@@ -23,3 +23,23 @@ interface elementDetailsIAResponse {
     description: string;
     benchmark: string;
 }
+
+// Request
+export interface AssessorApproveRequest {
+    is_competent: boolean;
+    group?: string;
+    unit?: string;
+    element?: string;
+    kuk?: string;
+}
+
+export interface SendResultRequest {
+    result_id: number;
+    elements: ElementDetailsRequest[];
+}
+
+interface ElementDetailsRequest {
+    element_detail_id: number;
+    is_competent: boolean;
+    evaluation: string;
+}

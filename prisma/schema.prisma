@@ -27,6 +27,8 @@ enum tuk {
 model role {
   id    Int    @id @default(autoincrement())
   name  String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   users user[]
 }
@@ -37,6 +39,8 @@ model user {
   email    String  @unique @db.VarChar(255)
   password String  @db.VarChar(255)
   role_id  Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   role     role     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assessee assessee[]
@@ -50,6 +54,8 @@ model admin {
   address    String   @db.VarChar(255)
   phone_no   String   @db.VarChar(255)
   birth_date DateTime
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
@@ -60,6 +66,8 @@ model scheme {
   id    Int    @id @default(autoincrement())
   code  String @db.VarChar(255)
   name  String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   occupations occupation[]
   assessors   assessor[]
@@ -69,6 +77,8 @@ model occupation {
   id        Int      @id @default(autoincrement())
   scheme_id Int
   name      String   @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   scheme    scheme  @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -81,10 +91,13 @@ model assessor {
   id         Int       @id @default(autoincrement())
   user_id    Int       @unique
   scheme_id  Int
+  no_reg_met String
   address    String    @db.VarChar(255)
   phone_no   String    @db.VarChar(255)
   birth_date DateTime
-
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  
   user       user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   scheme     scheme   @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -100,6 +113,8 @@ model assessor_detail {
   bank_book_cover String @db.VarChar(255)
   certificate     String @db.VarChar(255)
   national_id     String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   assessor        assessor @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
@@ -118,6 +133,8 @@ model assessee {
   address                    String   @db.VarChar(255)
   postal_code                String?  @db.VarChar(255)
   educational_qualifications String   @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   user     user              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   jobs     assessee_job[]
@@ -133,6 +150,8 @@ model assessee_job {
   position         String @db.VarChar(255)
   phone_no         String @db.VarChar(255)
   job_email        String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   assessee assessee @relation(fields: [assessee_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
@@ -143,6 +162,8 @@ model assessment {
   id            Int      @id @default(autoincrement())
   occupation_id Int
   code          String   @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   occupation         occupation          @relation(fields: [occupation_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assessment_schedules assessment_schedule[]
@@ -158,6 +179,8 @@ model assessment_schedule {
   assessment_id Int
   start_date    DateTime
   end_date      DateTime
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   assessment       assessment        @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   schedule_details schedule_detail[]
@@ -168,6 +191,8 @@ model schedule_detail {
   schedule_id  Int
   assessor_id  Int
   location     String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   schedule   assessment_schedule @relation(fields: [schedule_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assessor   assessor            @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -181,9 +206,9 @@ model result {
   assessor_id   Int
   assessee_id   Int
   is_competent  Boolean
-  created_at    DateTime @default(now())
   tuk           tuk
-  approved      Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assessor   assessor   @relation(fields: [assessor_id], references: [id], onDelete: Cascade, onUpdate: Cascade, name: "assessor_results")
@@ -191,19 +216,22 @@ model result {
 
   docs    result_doc[]
 
-  apl02_headers result_apl02_header[]
-  ak01_headers  result_ak01_header[]
-  ak02_headers  result_ak02_header[]
-  ia01_headers  result_ia01_header[]
-  ia02_headers  result_ia02_header[]
-  ia03_headers  result_ia03_header[]
-  ia05_headers  result_ia05_header[]
-  ia07_headers  result_ia07_header[]
+  apl02_headers result_apl02_header?
+  ak01_headers  result_ak01_header?
+  ak02_headers  result_ak02_header?
+  result_ak03   result_ak03?
+  result_ak04   result_ak04?
+  result_ak05   result_ak05?
+  ia01_headers  result_ia01_header?
+  ia02_headers  result_ia02_header?
+  ia03_headers  result_ia03_header?
+  ia05_headers  result_ia05_header?
+  ia07_headers  result_ia07_header?
 }
 
 model result_doc {
   id                           Int    @id @default(autoincrement())
-  result_id                    Int
+  result_id                    Int    
   purpose                      String @db.VarChar(255)
   school_report_card           String @db.VarChar(255)
   field_work_practice_certificate String @db.VarChar(255)
@@ -211,6 +239,8 @@ model result_doc {
   family_card                  String @db.VarChar(255)
   id_card                      String @db.VarChar(255)
   approved                     Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   result   result   @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
@@ -222,6 +252,8 @@ model uc_apl02 {
   assessment_id Int
   unit_code     String @db.VarChar(255)
   title         String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   assessment assessment    @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   elements   element_apl02[]
@@ -232,6 +264,8 @@ model element_apl02 {
   id     Int    @id @default(autoincrement())
   uc_id  Int
   title  String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   uc       uc_apl02               @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   details  element_details_apl02[]
@@ -242,15 +276,20 @@ model element_details_apl02 {
   id          Int    @id @default(autoincrement())
   element_id  Int
   description String @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   element element_apl02 @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model result_apl02_header {
   id        Int     @id @default(autoincrement())
-  result_id Int
+  result_id Int     @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
+  is_continue        Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows   result_apl02[]
@@ -261,27 +300,35 @@ model result_apl02 {
   result_apl02_id  Int
   element_id       Int
   is_competent     Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   header  result_apl02_header @relation(fields: [result_apl02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   element element_apl02       @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   evidences apl02_evidence[]
+
+  @@unique([result_apl02_id, element_id])
 }
 
 model apl02_evidence {
   id              Int    @id @default(autoincrement())
   result_apl02_id Int
   evidence        String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   row result_apl02 @relation(fields: [result_apl02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-//// ========= AK01 / AK02 =========
+//// ========= AK01 / AK02 / AK03 / AK04 / AK05 =========
 
 model result_ak01_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   result result          @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows   result_ak01[]
@@ -291,18 +338,22 @@ model result_ak01 {
   id        Int    @id @default(autoincrement())
   header_id Int
   evidence  String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   header result_ak01_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model result_ak02_header {
   id                 Int     @id @default(autoincrement())
-  result_id          Int
+  result_id          Int     @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
   is_competent       Boolean
   follow_up          String? @db.Text
   comment            String? @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   result result        @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows   result_ak02[]
@@ -312,10 +363,63 @@ model result_ak02 {
   id        Int    @id @default(autoincrement())
   header_id Int
   uc_id     Int
-  evidence  String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   header result_ak02_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   uc     uc_apl02           @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  evidences ak02_evidence[]
+}
+
+model ak02_evidence {
+  id              Int    @id @default(autoincrement())
+  result_ak02_id  Int
+  evidence        String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  row result_ak02 @relation(fields: [result_ak02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model result_ak03 {
+  id        Int    @id @default(autoincrement())
+  result_id Int    @unique
+  component String @db.VarChar(255)
+  is_ok     Boolean
+  comment   String? @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model result_ak04 {
+  id            Int    @id @default(autoincrement())
+  result_id     Int    @unique
+  approved_assessee Boolean
+  q1_yes        Boolean
+  q2_yes        Boolean
+  q3_yes        Boolean
+  reason        String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model result_ak05 {
+  id                 Int     @id @default(autoincrement())
+  result_id          Int     @unique
+  approved_assessor  Boolean
+  is_competent       Boolean
+  description        String? @db.VarChar(255)
+  negative_positive_aspects String? @db.VarChar(255)
+  rejection_notes    String? @db.VarChar(255)
+  improvement_suggestions String? @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= IA02 / IA03 Struktur (Group & Tools & UC & Elements) =========
@@ -326,6 +430,8 @@ model group_ia {
   name           String @db.VarChar(255)
   scenario       String @db.Text
   duration       Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tools      ia02_tool[]
@@ -337,6 +443,8 @@ model ia02_tool {
   id       Int    @id @default(autoincrement())
   group_id Int
   name     String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   group group_ia @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
@@ -346,6 +454,8 @@ model uc_ia {
   group_id Int
   unit_code String @db.VarChar(255)
   title     String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   group    group_ia  @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   elements element_ia[]
@@ -355,6 +465,8 @@ model element_ia {
   id    Int    @id @default(autoincrement())
   uc_id Int
   title String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   uc      uc_ia              @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   details element_details_ia[]
@@ -365,6 +477,8 @@ model element_details_ia {
   element_id  Int
   description String @db.Text
   benchmark   String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   element element_ia @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   results result_ia01[]
@@ -374,9 +488,16 @@ model element_details_ia {
 
 model result_ia01_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
+  is_competent       Boolean
+  group              String? @db.VarChar(255)
+  unit               String? @db.VarChar(255)
+  element            String? @db.VarChar(255)
+  kuk                String? @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   result result        @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows   result_ia01[]
@@ -388,18 +509,24 @@ model result_ia01 {
   element_detail_id Int
   is_competent      Boolean
   evaluation        String @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   header        result_ia01_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   elementDetail element_details_ia @relation(fields: [element_detail_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([header_id, element_detail_id])
 }
 
 //// ========= IA02 (header saja) =========
 
 model result_ia02_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
@@ -410,6 +537,8 @@ model ia03_question {
   id       Int    @id @default(autoincrement())
   group_id Int
   question String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   group group_ia @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows  result_ia03[]
@@ -417,9 +546,11 @@ model ia03_question {
 
 model result_ia03_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   result result        @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows   result_ia03[]
@@ -431,9 +562,13 @@ model result_ia03 {
   question_id Int
   answer     String @db.VarChar(255)
   approved   Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   header   result_ia03_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   question ia03_question      @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([header_id, question_id])
 }
 
 //// ========= IA05 (PG) =========
@@ -443,6 +578,8 @@ model ia05_question {
   assessment_id Int
   order         Int
   question      String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   assessment assessment     @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   options    question_option[]
@@ -453,6 +590,8 @@ model question_option {
   question_id Int
   option     String @db.Text
   is_answer  Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   question ia05_question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows     result_ia05[]
@@ -460,9 +599,11 @@ model question_option {
 
 model result_ia05_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   result result       @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows   result_ia05[]
@@ -473,9 +614,13 @@ model result_ia05 {
   header_id Int
   option_id Int
   approved  Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   header result_ia05_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   option question_option    @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([header_id, option_id])
 }
 
 //// ========= IA07 (Essay/Kunci Jawaban) =========
@@ -485,16 +630,20 @@ model ia07_question {
   assessment_id Int
   question      String @db.Text
   answer_key    String @db.Text
-
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  
   assessment assessment   @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows       result_ia07[]
 }
 
 model result_ia07_header {
   id                 Int  @id @default(autoincrement())
-  result_id          Int
+  result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   result result       @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows   result_ia07[]
@@ -505,7 +654,9 @@ model result_ia07 {
   header_id  Int
   question_id Int
   approved   Boolean
-
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  
   header   result_ia07_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   question ia07_question      @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
