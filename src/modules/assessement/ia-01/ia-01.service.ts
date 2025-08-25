@@ -112,18 +112,17 @@ export class IA01Service {
             id: element.id,
             uc_id: element.uc_id,
             title: element.title,
-            details: element.details.map((detail) => ({
+            details: element.details.map((detail, index) => ({
                 id: detail.id,
                 description: detail.description,
-                benchmark: detail.benchmark
-            })),
-            results: element.details.map((detail, index) => ({
-                id: detail.results[index].id,
-                header_id: detail.results[index].header_id,
-                element_detail_id: detail.id,
-                is_competent: detail.results.length > 0 ? detail.results[0].is_competent : null,
-                evaluation: detail.results.length > 0 ? detail.results[0].evaluation : null
-            })) ?? []
+                benchmark: detail.benchmark,
+                result: detail.results[index] ? {
+                    id: detail.results[index].id,
+                    header_id: detail.results[index].header_id,
+                    is_competent: detail.results.length > 0 ? detail.results[0].is_competent : null,
+                    evaluation: detail.results.length > 0 ? detail.results[0].evaluation : null
+                } : null
+            }))
         }))
     }
 
