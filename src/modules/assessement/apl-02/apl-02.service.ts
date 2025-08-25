@@ -63,7 +63,7 @@ export class APL02Service {
     });
   }
 
-  static async getElementsByUnitId(resultId: number, unitId: number): Promise<ElementResponse[]> {
+  static async getElementsByUnitId(resultId: number, unitId: number): Promise<any[]> {
     const existingUc = await prisma.uc_apl02.findUnique({
       where: { id: unitId }
     });
@@ -96,25 +96,30 @@ export class APL02Service {
       }
     });
 
-    return elements.map(element => ({
-      id: element.id,
-      uc_id: element.uc_id,
-      title: element.title,
-      details: element.details.map(detail => ({ 
-        id: detail.id,
-        description: detail.description 
-      })),
-      results: element.results.map(result => ({
-        id: result.id,
-        header_id: result.result_apl02_id,
-        element_id: result.element_id,
-        is_competent: result.is_competent,
-        evidences: result.evidences.map(evidence => ({
-          id: evidence.id,
-          evidence: evidence.evidence
-        }))
-      })) ?? [],
-    }));
+    return elements.map((element, index) => {
+      const result = element.results[index];
+      return {
+        id: element.id,
+        uc_id: element.uc_id,
+        title: element.title,
+        details: element.details.map((detail) => {
+          return {
+            id: detail.id,
+            description: detail.description
+          };
+        }),
+        result: result ? {
+          id: result.id,
+          header_id: result.result_apl02_id,
+          element_id: result.element_id,
+          is_competent: result.is_competent,
+          evidences: result.evidences.map(evidence => ({
+            id: evidence.id,
+            evidence: evidence.evidence
+          }))
+        } : null
+      }
+    });
   }
 
   static async sendResult(data: HeaderRequest) {
