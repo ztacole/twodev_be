@@ -219,7 +219,7 @@ model result {
   apl02_headers result_apl02_header?
   ak01_headers  result_ak01_header?
   ak02_headers  result_ak02_header?
-  result_ak03   result_ak03?
+  result_ak03_header   result_ak03_header?
   result_ak04   result_ak04?
   result_ak05   result_ak05?
   ia01_headers  result_ia01_header?
@@ -381,16 +381,27 @@ model ak02_evidence {
   row result_ak02 @relation(fields: [result_ak02_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
+model result_ak03_header {
+  id            Int     @id @default(autoincrement())
+  result_id     Int     @unique
+  comment   String? @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rows   result_ak03[]
+}
+
 model result_ak03 {
   id        Int    @id @default(autoincrement())
-  result_id Int    @unique
+  header_id Int
   component String @db.VarChar(255)
   is_ok     Boolean
   comment   String? @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  header result_ak03_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model result_ak04 {
