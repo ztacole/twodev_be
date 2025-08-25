@@ -1,30 +1,34 @@
-export interface AK03 {
+export interface AK03Header {
   id: number;
   result_id: number;
+  comment?: string | null;
+  rows: AK03[];
+}
+
+export interface AK03 {
+  id: number;
+  header_id: number;
   component: string;
   is_ok: boolean;
-  comment?: string;
-  created_at: Date;
-  updated_at: Date;
+  comment?: string | null;
+  header: AK03Header;
 }
 
 export interface AK03Request {
   result_id: number;
+  comment?: string | null;
   items: AK03ItemRequest[];
 }
 
 export interface AK03ItemRequest {
   component: string;
   is_ok: boolean;
-  comment?: string;
+  comment?: string | null;
 }
 
 export interface AK03Response {
   id: number;
   result_id: number;
-  component: string;
-  is_ok: boolean;
   comment?: string | null;
-  created_at: Date;
-  updated_at: Date;
+  rows: AK03[];
 }

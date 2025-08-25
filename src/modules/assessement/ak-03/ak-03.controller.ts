@@ -19,4 +19,21 @@ export class AK03Controller {
       });
     }
   });
+
+  static getAK03ByResultId = asyncHandler(async function (req: Request, res: Response) {
+    try {
+      const { result_id } = req.params;
+      const data = await AK03Service.getAK03ByResultId(Number(result_id));
+      if (!data) {
+        return res.status(404).json({ success: false, message: 'AK-03 tidak ditemukan' });
+      }
+      res.json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Gagal mengambil AK-03',
+        error: error.message,
+      });
+    }
+  });
 }
