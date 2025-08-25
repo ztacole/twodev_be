@@ -7,17 +7,21 @@ export class AK03Service {
     const result = await prisma.result.findUnique({ where: { id: data.result_id } });
     if (!result) throw new NotFoundError('Result');
 
-    const created = await prisma.$transaction(
-      data.items.map(item => prisma.result_ak03.create({
-        data: {
-          result_id: data.result_id,
-          component: item.component,
-          is_ok: item.is_ok,
-          comment: item.comment
-        }
-      }))
-    );
+    const upserted = await prisma.result_ak03.upsert({
+      where: { result_id: data.result_id },
+      update: {
+        component: data.items[0]?.component ?? '',
+        is_ok: data.items[0]?.is_ok ?? false,
+        comment: data.items[0]?.comment
+      },
+      create: {
+        result_id: data.result_id,
+        component: data.items[0]?.component ?? '',
+        is_ok: data.items[0]?.is_ok ?? false,
+        comment: data.items[0]?.comment
+      }
+    });
 
-    return created;
+    return [upserted];
   }
 }

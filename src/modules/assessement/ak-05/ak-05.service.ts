@@ -7,21 +7,28 @@ export class AK05Service {
     const result = await prisma.result.findUnique({ where: { id: data.result_id } });
     if (!result) throw new NotFoundError('Result');
 
-    const created = await prisma.$transaction(
-      data.items.map(item => prisma.result_ak05.create({
-        data: {
-          result_id: data.result_id,
-          is_competent: item.is_competent,
-          description: item.description,
-          negative_positive_aspects: item.negative_positive_aspects,
-          rejection_notes: item.rejection_notes,
-          improvement_suggestions: item.improvement_suggestions,
-          approved_assessor: item.approved_assessor
-        }
-      }))
-    );
+    const upserted = await prisma.result_ak05.upsert({
+      where: { result_id: data.result_id },
+      update: {
+        is_competent: data.items[0]?.is_competent ?? false,
+        description: data.items[0]?.description,
+        negative_positive_aspects: data.items[0]?.negative_positive_aspects,
+        rejection_notes: data.items[0]?.rejection_notes,
+        improvement_suggestions: data.items[0]?.improvement_suggestions,
+        approved_assessor: data.items[0]?.approved_assessor ?? false
+      },
+      create: {
+        result_id: data.result_id,
+        is_competent: data.items[0]?.is_competent ?? false,
+        description: data.items[0]?.description ?? null,
+        negative_positive_aspects: data.items[0]?.negative_positive_aspects ?? null,
+        rejection_notes: data.items[0]?.rejection_notes ?? null,
+        improvement_suggestions: data.items[0]?.improvement_suggestions ?? null,
+        approved_assessor: data.items[0]?.approved_assessor ?? false
+      }
+    });
 
-    return created;
+    return [upserted];
   }
 }
 
