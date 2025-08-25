@@ -38,7 +38,7 @@ router.get('/apl-02/units/:resultId', APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/:resultId/elements/:unitId', APL02Controller.getElementsByUnitId);
 router.post('/apl-02/result/send', APL02Controller.sendResult);
 router.get('/apl-02/result/units/:resultId', APL02Controller.getUnitsResult);
-router.get('/apl-02/result/units/elements/:resultId/:unitId', APL02Controller.getElementsResult);
+router.get('/apl-02/result/units/:resultId/elements/:unitId', APL02Controller.getElementsResult);
 router.put('/apl-02/result/assessor/:resultId/approve', APL02Controller.approvedByAssessor);
 router.put('/apl-02/result/assessee/:resultId/approve', APL02Controller.approvedByAssessee);
 

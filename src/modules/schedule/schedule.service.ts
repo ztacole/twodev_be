@@ -90,7 +90,16 @@ export class ScheduleService {
         return schedules.map(schedule => formatScheduleResponse(schedule));
     }
 
-    static async getScheduleById(id: number): Promise<ScheduleResponse> {
+    static async getScheduleById(id: number, user: JwtPayload): Promise<ScheduleResponse> {
+        const assessee = await prisma.assessee.findMany({
+            where: {
+                user_id: user.id
+            }
+        });
+        if (!assessee) {
+            throw new NotFoundError('Assessee');
+        }
+
         const schedule = await prisma.assessment_schedule.findUnique({
             where: { id },
             include: {
@@ -101,6 +110,7 @@ export class ScheduleService {
                                 scheme: true,
                             },
                         },
+                        results: true
                     },
                 },
                 schedule_details: {
@@ -119,7 +129,7 @@ export class ScheduleService {
             throw new NotFoundError('Schedule');
         }
 
-        return formatScheduleResponse(schedule);
+        return formatScheduleResponse(schedule, assessee);
     }
 
     static async getActiveSchedules(user: JwtPayload): Promise<ScheduleResponse[]> {
