@@ -38,7 +38,7 @@ router.get('/apl-02/units/:resultId', APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/:resultId/elements/:unitId', APL02Controller.getElementsByUnitId);
 router.post('/apl-02/result/send', APL02Controller.sendResult);
 router.get('/apl-02/result/units/:resultId', APL02Controller.getUnitsResult);
-router.get('/apl-02/result/units/elements/:resultId/:unitId', APL02Controller.getElementsResult);
+router.get('/apl-02/result/units/:resultId/elements/:unitId', APL02Controller.getElementsResult);
 router.put('/apl-02/result/assessor/:resultId/approve', APL02Controller.approvedByAssessor);
 router.put('/apl-02/result/assessee/:resultId/approve', APL02Controller.approvedByAssessee);
 
@@ -83,6 +83,7 @@ router.get('/ak', AKController.getAllAK);
 router.post('/ak-03', AK03Controller.createAK03);
 router.get('/ak-03/:result_id', AK03Controller.getAK03ByResultId);
 router.post('/ak-04', AK04Controller.createAK04);
+router.get('/ak-04/:resultId', AK04Controller.getAK04ByResultId);
 router.post('/ak-05', AK05Controller.createAK05);
 router.get('/ak-05/:result_id', AK05Controller.getAK05ByResultId);
 

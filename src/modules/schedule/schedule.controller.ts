@@ -24,7 +24,8 @@ export class ScheduleController {
     });
 
     static getScheduleById = asyncHandler(async (req: Request, res: Response) => {
-        const schedule = await ScheduleService.getScheduleById(Number(req.params.id));
+        const user = req.user as JwtPayload;
+        const schedule = await ScheduleService.getScheduleById(Number(req.params.id), user);
         
         res.status(200).json({
             success: true,
