@@ -1,3 +1,4 @@
+import { JwtPayload } from 'jsonwebtoken';
 import { NotFoundError } from '../../common/error';
 import { prisma } from '../../config/db';
 import { ScheduleRequest, ScheduleResponse } from './schedule.type';
@@ -86,7 +87,7 @@ export class ScheduleService {
             },
         });
 
-        return schedules.map(formatScheduleResponse);
+        return schedules.map(schedule => formatScheduleResponse(schedule));
     }
 
     static async getScheduleById(id: number): Promise<ScheduleResponse> {
@@ -121,7 +122,16 @@ export class ScheduleService {
         return formatScheduleResponse(schedule);
     }
 
-    static async getActiveSchedules(): Promise<ScheduleResponse[]> {
+    static async getActiveSchedules(user: JwtPayload): Promise<ScheduleResponse[]> {
+        const assessee = await prisma.assessee.findMany({
+            where: {
+                user_id: user.id
+            }
+        });
+        if (!assessee) {
+            throw new NotFoundError('Assessee');
+        }
+
         const schedules = await prisma.assessment_schedule.findMany({
             where: { start_date: { lte: new Date() }, end_date: { gte: new Date() } },
             include: {
@@ -132,6 +142,7 @@ export class ScheduleService {
                                 scheme: true,
                             },
                         },
+                        results: true
                     },
                 },
                 schedule_details: {
@@ -146,7 +157,7 @@ export class ScheduleService {
             },
         });
 
-        return schedules.map(formatScheduleResponse);
+        return schedules.map(schedule => formatScheduleResponse(schedule, assessee));
     }
 
     static async getCompletedSchedules(): Promise<ScheduleResponse[]> {
@@ -174,7 +185,7 @@ export class ScheduleService {
             },
         });
 
-        return schedules.map(formatScheduleResponse);
+        return schedules.map(schedule => formatScheduleResponse(schedule));
     }
 
     static async getCompletedSchedulesByAssesseeId(assesseeId: number): Promise<ScheduleResponse[]> {
@@ -208,9 +219,9 @@ export class ScheduleService {
                 }
             }
         });
-    
+
         const schedules = results.flatMap(result => result.assessment?.assessment_schedules ?? []);
-        return schedules.map(formatScheduleResponse);
+        return schedules.map(schedule => formatScheduleResponse(schedule));
     }
 
     static async getScheduleDataForExcel() {
@@ -238,7 +249,12 @@ export class ScheduleService {
     }
 }
 
-function formatScheduleResponse(schedule: any): ScheduleResponse {
+interface Assessee {
+    id: number;
+    user_id: number;
+}
+
+function formatScheduleResponse(schedule: any, user: Assessee[] | null = null): ScheduleResponse {
     return {
         id: schedule.id,
         assessment: {
@@ -256,14 +272,21 @@ function formatScheduleResponse(schedule: any): ScheduleResponse {
         },
         start_date: schedule.start_date,
         end_date: schedule.end_date,
-        schedule_details: schedule.schedule_details.map((detail: any) => ({
-            id: detail.id,
-            assessor: {
-                id: detail.assessor.id,
-                full_name: detail.assessor.user.full_name,
-                phone_no: detail.assessor.phone_no,
-            },
-            location: detail.location,
-        })),
+        schedule_details: schedule.schedule_details.map((detail: any) => {
+            const result = user ? schedule.assessment.results.find((result: any) => result.assessor_id === detail.assessor_id && user.find(assessee => assessee.id === result.assessee_id)?.id) : null;
+            return {
+                id: detail.id,
+                assessor: {
+                    id: detail.assessor.id,
+                    full_name: detail.assessor.user.full_name,
+                    phone_no: detail.assessor.phone_no,
+                },
+                location: detail.location,
+                on_going: result ? {
+                    result_id: result.id,
+                    assessee_id: result.assessee_id,
+                } : null
+            }
+        }),
     };
 }
