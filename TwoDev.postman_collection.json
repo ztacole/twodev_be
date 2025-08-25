@@ -1,123 +1,189 @@
 {
 	"info": {
-		"_postman_id": "b2612000-4104-4f20-9a06-5fbb923ca008",
+		"_postman_id": "a0c6e34b-5a6a-4d8c-85b5-969a72dcf8ad",
 		"name": "TwoDev",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "43338742",
-		"_collection_link": "https://restless-star-949001.postman.co/workspace/Team-Workspace~594d05d5-9a16-41f8-8215-319642b8ac72/collection/43338742-b2612000-4104-4f20-9a06-5fbb923ca008?action=share&source=collection_link&creator=43338742"
+		"_exporter_id": "47742069",
+		"_collection_link": "https://twodev-2461.postman.co/workspace/TwoDev-Workspace~2f338a6c-2c9e-4951-a83b-d7ee5587f81c/collection/34486215-a0c6e34b-5a6a-4d8c-85b5-969a72dcf8ad?action=share&source=collection_link&creator=47742069"
 	},
 	"item": [
-    {
-      "name": "Users",
-      "item": [
-        {
-          "name": "Create User",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"full_name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"secret123\",\n    \"role_id\": 1\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{host}}/users",
-              "host": ["{{host}}"],
-              "path": ["users"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Users",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{host}}/users",
-              "host": ["{{host}}"],
-              "path": ["users"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get User by ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{host}}/users/:id",
-              "host": ["{{host}}"],
-              "path": ["users", ":id"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update User",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"full_name\": \"John Updated\",\n    \"email\": \"john.updated@example.com\",\n    \"password\": \"newpassword\",\n    \"role_id\": 2\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{host}}/users/:id",
-              "host": ["{{host}}"],
-              "path": ["users", ":id"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete User",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{host}}/users/:id",
-              "host": ["{{host}}"],
-              "path": ["users", ":id"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },    
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"full_name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"secret123\",\n    \"role_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/users",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/users",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/users/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"full_name\": \"John Updated\",\n    \"email\": \"john.updated@example.com\",\n    \"password\": \"newpassword\",\n    \"role_id\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/users/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/users/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Assessee",
 			"item": [
 				{
-					"name": "Get Assessee",
+					"name": "Create Assessee",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"identity_number\": \"1234567890\",\n  \"birth_date\": \"1998-05-20\",\n  \"birth_location\": \"Jakarta\",\n  \"gender\": \"laki-laki\",\n  \"nationality\": \"Indonesia\",\n  \"phone_no\": \"08123456789\",\n  \"house_phone_no\": \"021555123\",\n  \"office_phone_no\": \"021444123\",\n  \"address\": \"Jl. Merdeka No. 10\",\n  \"postal_code\": \"12345\",\n  \"educational_qualifications\": \"S1 Teknik Informatika\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/assessee",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessee"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Assessees",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/assessee",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessee"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Assessee by ID",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -133,7 +199,218 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "4"
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Assessee",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"identity_number\": \"1234567890\",\n  \"birth_date\": \"1998-05-20\",\n  \"birth_location\": \"Bandung\",\n  \"gender\": \"perempuan\",\n  \"nationality\": \"Indonesia\",\n  \"phone_no\": \"08123456789\",\n  \"house_phone_no\": \"021555123\",\n  \"office_phone_no\": \"021444123\",\n  \"address\": \"Jl. Proklamasi No. 5\",\n  \"postal_code\": \"54321\",\n  \"educational_qualifications\": \"S2 Manajemen\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/assessee/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessee",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Assessee",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/assessee/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessee",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Assessor",
+			"item": [
+				{
+					"name": "Create Assessor",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"scheme_id\": 2,\n  \"address\": \"Jl. Merdeka No. 5\",\n  \"phone_no\": \"08123456789\",\n  \"birth_date\": \"1990-01-01\",\n  \"no_reg_met\": \"REG12345\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/assessor",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessor"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Assessors",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/assessor",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessor"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Assessor by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/assessor/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessor",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Assessor by User ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/assessor/user/:userId",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessor",
+								"user",
+								":userId"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Assessor",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n   \"scheme_id\": 3,\n  \"address\": \"Jl. Sudirman No. 10\",\n  \"phone_no\": \"08987654321\",\n  \"birth_date\": \"1991-02-02\",\n  \"no_reg_met\": \"REG54321\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/assessor/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessor",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Assessor",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/assessor/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"assessor",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
 								}
 							]
 						}
@@ -146,28 +423,52 @@
 			"name": "Assessments",
 			"item": [
 				{
-					"name": "IA01",
+					"name": "AK01",
 					"item": [
 						{
-							"name": "Get Units by Ass ID",
+							"name": "Create AK01",
 							"request": {
-								"method": "GET",
+								"method": "POST",
 								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"result_id\": 1,\n  \"approved_assessee\": true,\n  \"approved_assessor\": false,\n  \"evidences\": [\"Copy KTP\", \"Pas Foto\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
 								"url": {
-									"raw": "{{host}}/assessments/ia-01/units/:assessmentId",
+									"raw": "{{host}}/ak-01",
 									"host": [
 										"{{host}}"
 									],
 									"path": [
-										"assessments",
-										"ia-01",
-										"units",
-										":assessmentId"
+										"ak-01"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get AK01 by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/ak-01/:id",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-01",
+										":id"
 									],
 									"variable": [
 										{
-											"key": "assessmentId",
-											"value": "2"
+											"key": "id",
+											"value": "1"
 										}
 									]
 								}
@@ -175,27 +476,341 @@
 							"response": []
 						},
 						{
-							"name": "Get Elements by Unit ID",
+							"name": "Get AK01 by Result ID",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{host}}/assessments/ia-01/units/elements/:unitId",
+									"raw": "{{host}}/ak-01/result/:resultId",
 									"host": [
 										"{{host}}"
 									],
 									"path": [
-										"assessments",
-										"ia-01",
-										"units",
-										"elements",
-										":unitId"
+										"ak-01",
+										"result",
+										":resultId"
 									],
 									"variable": [
 										{
-											"key": "unitId",
+											"key": "resultId",
 											"value": "1"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update AK01",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"approved_assessee\": false,\n  \"approved_assessor\": true,\n  \"evidences\": [\"Ijazah\", \"Sertifikat\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/ak-01/:id",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-01",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete AK01",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/ak-01/:id",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-01",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "AK02",
+					"item": [
+						{
+							"name": "Create AK02",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"result_id\": 1,\n  \"approved_assessee\": true,\n  \"approved_assessor\": false,\n  \"is_competent\": true,\n  \"follow_up\": \"Perlu pelatihan tambahan\",\n  \"comment\": \"Bagus\",\n  \"rows\": [\n    {\"uc_id\": 1, \"evidence\": \"Dokumen UC1\"},\n    {\"uc_id\": 2, \"evidence\": \"Dokumen UC2\"}\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/ak-02",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-02"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get AK02 by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/ak-02/:id",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-02",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get AK02 by Result ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/ak-02/result/:resultId",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-02",
+										"result",
+										":resultId"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update AK02",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"approved_assessee\": false,\n  \"approved_assessor\": true,\n  \"is_competent\": false,\n  \"follow_up\": \"Tambahkan bukti\",\n  \"comment\": \"Kurang lengkap\",\n  \"rows\": [\n    {\"uc_id\": 1, \"evidence\": \"Update Dokumen\"}\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/ak-02/:id",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-02",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete AK02",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/ak-02/:id",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-02",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "AK Combined",
+					"item": [
+						{
+							"name": "Get AK by Result ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/ak/result/:resultId",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak",
+										"result",
+										":resultId"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All AK",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/ak",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "AK03",
+					"item": [
+						{
+							"name": "Create AK03",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"result_id\": 1,\n  \"items\": [\n    {\"component\": \"Komponen 1\", \"is_ok\": true, \"comment\": \"Baik\"},\n    {\"component\": \"Komponen 2\", \"is_ok\": false}\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/ak-03",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-03"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "AK04",
+					"item": [
+						{
+							"name": "Create AK04",
+							"request": {
+								"method": "POST",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "AK05",
+					"item": [
+						{
+							"name": "Create AK05",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"result_id\": 1,\n  \"items\": [\n    {\"question\": \"Pertanyaan 1\", \"answer\": \"Jawaban 1\"}\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/ak-05",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"ak-05"
 									]
 								}
 							},
@@ -213,7 +828,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\"user_id\":4,\"full_name\":\"Asesi Pertama\",\"birth_location\":\"aa\",\"birth_date\":\"1111-11-11T00:00:00.000Z\",\"nationality\":\"a\",\"address\":\"a\",\"phone_no\":\"0\",\"identity_number\":\"00\",\"house_phone_no\":\"0\",\"office_phone_no\":\"0\",\"postal_code\":\"0\",\"educational_qualifications\":\"SMA\",\"jobs\":[{\"institution_name\":\"0\",\"address\":\"as\\n\\n\",\"postal_code\":\"0\",\"position\":\"0\",\"phone_no\":\"0\",\"job_email\":\"as2@as\"}],\"gender\":\"Perempuan\"}",
+									"raw": "{\r\n    \"user_id\": 4,\r\n    \"full_name\": \"Asesi Pertama\",\r\n    \"birth_location\": \"aa\",\r\n    \"birth_date\": \"1111-11-11T00:00:00.000Z\",\r\n    \"nationality\": \"a\",\r\n    \"address\": \"a\",\r\n    \"phone_no\": \"0\",\r\n    \"identity_number\": \"00\",\r\n    \"house_phone_no\": \"0\",\r\n    \"office_phone_no\": \"0\",\r\n    \"postal_code\": \"0\",\r\n    \"educational_qualifications\": \"SMA\",\r\n    \"jobs\": [\r\n        {\r\n            \"institution_name\": \"0\",\r\n            \"address\": \"as\\n\\n\",\r\n            \"postal_code\": \"0\",\r\n            \"position\": \"0\",\r\n            \"phone_no\": \"0\",\r\n            \"job_email\": \"as2@as\"\r\n        }\r\n    ],\r\n    \"gender\": \"Perempuan\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -234,33 +849,75 @@
 							},
 							"response": []
 						},
-            {
-              "name": "Create or Upload Certificate Docs",
-              "request": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "formdata",
-                  "formdata": [
-                    { "key": "assessee_id", "value": "1", "type": "text" },
-                    { "key": "assessor_id", "value": "1", "type": "text" },
-                    { "key": "assessment_id", "value": "1", "type": "text" },
-                    { "key": "purpose", "value": "APL1 Certificate Documents", "type": "text" },
-                    { "key": "school_report_card", "type": "file", "src": "" },
-                    { "key": "field_work_practice_certificate", "type": "file", "src": "" },
-                    { "key": "student_card", "type": "file", "src": "" },
-                    { "key": "family_card", "type": "file", "src": "" },
-                    { "key": "id_card", "type": "file", "src": "" }
-                  ]
-                },
-                "url": {
-                  "raw": "{{host}}/assessments/apl-01/create-certificate-docs",
-                  "host": ["{{host}}"],
-                  "path": ["assessments", "apl-01", "create-certificate-docs"]
-                }
-              },
-              "response": []
-            },
+						{
+							"name": "Create or Upload Certificate Docs",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "assessee_id",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "assessor_id",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "assessment_id",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "purpose",
+											"value": "APL1 Certificate Documents",
+											"type": "text"
+										},
+										{
+											"key": "school_report_card",
+											"value": "",
+											"type": "file"
+										},
+										{
+											"key": "field_work_practice_certificate",
+											"value": "",
+											"type": "file"
+										},
+										{
+											"key": "student_card",
+											"value": "",
+											"type": "file"
+										},
+										{
+											"key": "family_card",
+											"value": "",
+											"type": "file"
+										},
+										{
+											"key": "id_card",
+											"value": "",
+											"type": "file"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{host}}/assessments/apl-01/create-certificate-docs",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"apl-01",
+										"create-certificate-docs"
+									]
+								}
+							},
+							"response": []
+						},
 						{
 							"name": "Admin Approved Doc",
 							"request": {
@@ -268,16 +925,20 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"docId\": 1\r\n}"
+									"raw": "{\r\n  \"docId\": 1\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
 								},
 								"url": {
-									"raw": "{{host}}/admin/approve/apl01",
+									"raw": "{{host}}/approval/apl01",
 									"host": [
 										"{{host}}"
 									],
 									"path": [
-										"admin",
-										"approve",
+										"approval",
 										"apl01"
 									]
 								}
@@ -405,7 +1066,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{host}}/assessments/apl-02/units/:assessmentId",
+									"raw": "{{host}}/assessments/apl-02/units/:resultId",
 									"host": [
 										"{{host}}"
 									],
@@ -413,12 +1074,12 @@
 										"assessments",
 										"apl-02",
 										"units",
-										":assessmentId"
+										":resultId"
 									],
 									"variable": [
 										{
-											"key": "assessmentId",
-											"value": "2"
+											"key": "resultId",
+											"value": "1"
 										}
 									]
 								}
@@ -431,7 +1092,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{host}}/assessments/apl-02/units/elements/:unitId",
+									"raw": "{{host}}/assessments/apl-02/units/:resultId/elements/:unitId",
 									"host": [
 										"{{host}}"
 									],
@@ -439,10 +1100,15 @@
 										"assessments",
 										"apl-02",
 										"units",
+										":resultId",
 										"elements",
 										":unitId"
 									],
 									"variable": [
+										{
+											"key": "resultId",
+											"value": "8"
+										},
 										{
 											"key": "unitId",
 											"value": "1"
@@ -459,7 +1125,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"result_id\": 1,\r\n    \"elements\": [\r\n        {\r\n            \"element_id\": 1,\r\n            \"evidences\": [\r\n                {\r\n                    \"evidence\": \"Copy KTP\"\r\n                },\r\n                {\r\n                    \"evidence\": \"Pas foto\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}",
+									"raw": "{\r\n    \"result_id\": 1,\r\n    \"elements\": [\r\n        {\r\n            \"element_id\": 1,\r\n            \"is_competent\": true,\r\n            \"evidences\": [\r\n                {\r\n                    \"evidence\": \"Copy KTP\"\r\n                },\r\n                {\r\n                    \"evidence\": \"Pas foto\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -487,7 +1153,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{host}}/assessments/apl-02/result/units/elements/:assessorId/:assesseeId/:unitId",
+									"raw": "{{host}}/assessments/apl-02/result/units/elements/:resultId/:unitId",
 									"host": [
 										"{{host}}"
 									],
@@ -497,18 +1163,13 @@
 										"result",
 										"units",
 										"elements",
-										":assessorId",
-										":assesseeId",
+										":resultId",
 										":unitId"
 									],
 									"variable": [
 										{
-											"key": "assessorId",
-											"value": "1"
-										},
-										{
-											"key": "assesseeId",
-											"value": "1"
+											"key": "resultId",
+											"value": "2"
 										},
 										{
 											"key": "unitId",
@@ -525,7 +1186,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{host}}/assessments/apl-02/result/units/:assessorId/:assesseeId/:assessmentId",
+									"raw": "{{host}}/assessments/apl-02/result/units/:resultId",
 									"host": [
 										"{{host}}"
 									],
@@ -534,22 +1195,252 @@
 										"apl-02",
 										"result",
 										"units",
-										":assessorId",
-										":assesseeId",
-										":assessmentId"
+										":resultId"
 									],
 									"variable": [
 										{
-											"key": "assessorId",
-											"value": "1"
-										},
-										{
-											"key": "assesseeId",
-											"value": "1"
-										},
-										{
-											"key": "assessmentId",
+											"key": "resultId",
 											"value": "2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve (Assessor)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"reccomendation\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/apl-02/result/assessor/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"apl-02",
+										"result",
+										"assessor",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve (Assessee)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"reccomendation\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/apl-02/result/assessee/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"apl-02",
+										"result",
+										"assessee",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "IA01",
+					"item": [
+						{
+							"name": "Get Units by Ass ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/assessments/ia-01/units/:resultId",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-01",
+										"units",
+										":resultId"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Elements by Unit ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/assessments/ia-01/units/:resultId/elements/:unitId",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-01",
+										"units",
+										":resultId",
+										"elements",
+										":unitId"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										},
+										{
+											"key": "unitId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Send Result (Assessor)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"result_id\": 1,\r\n    \"elements\": [\r\n        {\r\n            \"element_detail_id\": 1,\r\n            \"is_competent\": true,\r\n            \"evaluation\": \"Lebih gesit\"\r\n        }\r\n    ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-01/result/send",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-01",
+										"result",
+										"send"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve (Assessor)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-03/result/assessor/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-03",
+										"result",
+										"assessor",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve (Assessee)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-03/result/assessee/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-03",
+										"result",
+										"assessee",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
 										}
 									]
 								}
@@ -571,6 +1462,80 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Approve (Assessor)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-02/result/assessor/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-02",
+										"result",
+										"assessor",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve (Assessee)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-02/result/assessee/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-02",
+										"result",
+										"assessee",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
@@ -583,7 +1548,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{host}}/assessments/ia-03/units/:assessmentId",
+									"raw": "{{host}}/assessments/ia-03/units/:resultId",
 									"host": [
 										"{{host}}"
 									],
@@ -591,12 +1556,115 @@
 										"assessments",
 										"ia-03",
 										"units",
-										":assessmentId"
+										":resultId"
 									],
 									"variable": [
 										{
-											"key": "assessmentId",
-											"value": "3"
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Send Result (Assessor)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"result_id\": 1,\r\n    \"questions\": [\r\n        {\r\n            \"question_id\": 1,\r\n            \"answer\": \"Ambil panci trus masak air\",\r\n            \"approved\": true\r\n        }\r\n    ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-03/result/send",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-03",
+										"result",
+										"send"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve (Assessor)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-03/result/assessor/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-03",
+										"result",
+										"assessor",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve (Assessee)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-03/result/assessee/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-03",
+										"result",
+										"assessee",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
 										}
 									]
 								}
@@ -627,7 +1695,7 @@
 									"variable": [
 										{
 											"key": "assessmentId",
-											"value": "3"
+											"value": "2"
 										}
 									]
 								}
@@ -635,25 +1703,27 @@
 							"response": []
 						},
 						{
-							"name": "Get Answers by Ass ID",
+							"name": "Get Answer Keys by Ass ID",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{host}}/assessments/ia-05/answers/:assessmentId",
+									"raw": "{{host}}/assessments/ia-05/result/answers/keys/:assessmentId",
 									"host": [
 										"{{host}}"
 									],
 									"path": [
 										"assessments",
 										"ia-05",
+										"result",
 										"answers",
+										"keys",
 										":assessmentId"
 									],
 									"variable": [
 										{
 											"key": "assessmentId",
-											"value": "3"
+											"value": "2"
 										}
 									]
 								}
@@ -661,26 +1731,160 @@
 							"response": []
 						},
 						{
-							"name": "Get Assessee Answers by Assessee ID",
+							"name": "Get Assessee Answers by Result ID",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{host}}/assessments/ia-05/answers/assessee/:assesseeId",
+									"raw": "{{host}}/assessments/ia-05/result/answers/:resultId",
 									"host": [
 										"{{host}}"
 									],
 									"path": [
 										"assessments",
 										"ia-05",
+										"result",
 										"answers",
-										"assessee",
-										":assesseeId"
+										":resultId"
 									],
 									"variable": [
 										{
-											"key": "assesseeId",
-											"value": "2"
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Send Answers (Assessee)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"result_id\": 1,\r\n    \"answers\": [\r\n        {\r\n            \"option_id\": 1\r\n        }\r\n    ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-05/result/assessee/send",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-05",
+										"result",
+										"assessee",
+										"send"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Send Answers (Assessor)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"result_id\": 1,\r\n    \"results\": [\r\n        {\r\n            \"option_id\": 1,\r\n            \"approved\": true\r\n        }\r\n    ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-05/result/assessor/send",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-05",
+										"result",
+										"assessor",
+										"send"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve (Assessor)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-05/result/assessor/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-05",
+										"result",
+										"assessor",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve (Assessee)",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/assessments/ia-05/result/assessee/:resultId/approve",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"assessments",
+										"ia-05",
+										"result",
+										"assessee",
+										":resultId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": "resultId",
+											"value": "1"
 										}
 									]
 								}
@@ -784,10 +1988,153 @@
 			]
 		},
 		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Admin",
+					"item": [
+						{
+							"name": "Get Dashboard Data",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/dashboard/admin/",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"dashboard",
+										"admin",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Summary",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/dashboard/admin/summary",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"dashboard",
+										"admin",
+										"summary"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Schedules",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/dashboard/admin/schedules",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"dashboard",
+										"admin",
+										"schedules"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Verification Docs",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/dashboard/admin/verifications",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"dashboard",
+										"admin",
+										"verifications"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Assessor",
+					"item": [
+						{
+							"name": "Get Assessment Mandiri by Assessor ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/dashboard/assessor/:assessorId/mandiri",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"dashboard",
+										"assessor",
+										":assessorId",
+										"mandiri"
+									],
+									"variable": [
+										{
+											"key": "assessorId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Penilaian by Assessor ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/dashboard/assessor/:assessorId/penilaian",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"dashboard",
+										"assessor",
+										":assessorId",
+										"penilaian"
+									],
+									"variable": [
+										{
+											"key": "assessorId",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "Auth",
 			"item": [
 				{
-					"name": "Login",
+					"name": "Login Assessee",
 					"event": [
 						{
 							"listen": "test",
@@ -826,6 +2173,47 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let jsonData = pm.response.json();\r",
+									"pm.collectionVariables.set(\"token\", jsonData.data.token);\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"admin@example.com\",\r\n    \"password\": \"password\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/auth/login",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -839,7 +2227,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"assessment_id\": 1,\r\n    \"start_date\": \"2025-06-01 20:26:35.000Z\",\r\n    \"end_date\": \"2025-12-07 20:26:35.000Z\",\r\n    \"schedule_details\": [\r\n        {\r\n            \"assessor_id\": 1,\r\n            \"location\": \"Lab 1\"\r\n        },\r\n        {\r\n            \"assessor_id\": 2,\r\n            \"location\": \"Lab 2\"\r\n        }\r\n    ]\r\n}",
+							"raw": "{\r\n    \"assessment_id\": 2,\r\n    \"start_date\": \"2025-08-01 20:26:35.000Z\",\r\n    \"end_date\": \"2025-09-01 20:26:35.000Z\",\r\n    \"schedule_details\": [\r\n        {\r\n            \"assessor_id\": 1,\r\n            \"location\": \"Lab 1\"\r\n        },\r\n        {\r\n            \"assessor_id\": 2,\r\n            \"location\": \"Lab 2\"\r\n        }\r\n    ]\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"

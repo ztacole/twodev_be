@@ -9,6 +9,7 @@ import { IA05Controller } from "./ia-05/ia-05.controller";
 import { AssessmentController } from "./assessment.controller";
 import { AKController } from "./ak/ak.controller";
 import { AK03Controller } from "./ak-03/ak-03.controller";
+import { AK04Controller } from "./ak-04/ak-04.controller";
 import { AK05Controller } from "./ak-05/ak-05.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
 
@@ -80,6 +81,7 @@ router.get('/ak/result/:resultId', AKController.getAKByResultId);
 router.get('/ak', AKController.getAllAK);
 
 router.post('/ak-03', AK03Controller.createAK03);
+router.post('/ak-04', AK04Controller.createAK04);
 router.post('/ak-05', AK05Controller.createAK05);
 
 export default router;
