@@ -1,130 +1,12 @@
 import { DuplicateEntryError, NotFoundError } from '../../../common/error';
 import { prisma } from '../../../config/db';
-import { 
-  AK01CreateRequest, 
-  AK01UpdateRequest, 
-  AK01Response, 
+import {  
   AK02CreateRequest, 
   AK02UpdateRequest, 
   AK02Response,
-  AKListResponse
-} from './ak.type';
+} from './ak-02.type';
 
-export class AKService {
-  // AK01 Methods
-  
-  static async createAK01(data: AK01CreateRequest): Promise<AK01Response> {
-    const result = await prisma.result.findUnique({ where: { id: data.result_id }, include: { ak01_headers: true } });
-    if (!result) {
-      throw new NotFoundError('Result');
-    }
-    if (!result.ak01_headers) {
-      throw new NotFoundError('Header AK01');
-    }
-
-    const headerId = result.ak01_headers.id;
-
-    const ak01Header = await prisma.result_ak01_header.update({
-      where: { id: headerId },
-      data: {
-        approved_assessee: data.approved_assessee,
-        approved_assessor: data.approved_assessor,
-        rows: {
-          deleteMany: {},
-          create: data.evidences.map(evidence => ({ evidence }))
-        }
-      },
-      include: { rows: true }
-    });
-
-    return formatAK01Response(ak01Header);
-  }
-
-  static async getAK01ById(id: number): Promise<AK01Response> {
-    const ak01Header = await prisma.result_ak01_header.findUnique({
-      where: { id },
-      include: {
-        rows: true
-      }
-    });
-
-    if (!ak01Header) {
-      throw new NotFoundError('Header AK01');
-    }
-
-    return formatAK01Response(ak01Header);
-  }
-
-  static async getAK01ByResultId(resultId: number): Promise<AK01Response> {
-    const ak01Header = await prisma.result_ak01_header.findFirst({
-      where: { result_id: resultId },
-      include: {
-        rows: true
-      }
-    });
-
-    if (!ak01Header) {
-      throw new NotFoundError('Header AK01');
-    }
-
-    return formatAK01Response(ak01Header);
-  }
-
-  static async updateAK01(id: number, data: AK01UpdateRequest): Promise<AK01Response> {
-    const existingHeader = await prisma.result_ak01_header.findUnique({
-      where: { id }
-    });
-
-    if (!existingHeader) {
-      throw new NotFoundError('Header AK01');
-    }
-
-    const updateData: any = {};
-    
-    if (data.approved_assessee !== undefined) {
-      updateData.approved_assessee = data.approved_assessee;
-    }
-    
-    if (data.approved_assessor !== undefined) {
-      updateData.approved_assessor = data.approved_assessor;
-    }
-
-    if (data.evidences) {
-      updateData.rows = {
-        deleteMany: {},
-        create: data.evidences.map(evidence => ({
-          evidence
-        }))
-      };
-    }
-
-    const ak01Header = await prisma.result_ak01_header.update({
-      where: { id },
-      data: updateData,
-      include: {
-        rows: true
-      }
-    });
-
-    return formatAK01Response(ak01Header);
-  }
-
-  static async deleteAK01(id: number): Promise<void> {
-    const existingHeader = await prisma.result_ak01_header.findUnique({
-      where: { id }
-    });
-
-    if (!existingHeader) {
-      throw new NotFoundError('Header AK01');
-    }
-
-    await prisma.result_ak01_header.delete({
-      where: { id }
-    });
-  }
-
-  // AK02 Methods
-
+export class AK02Service {
   static async createAK02(data: AK02CreateRequest): Promise<AK02Response> {
     const result = await prisma.result.findUnique({ where: { id: data.result_id }, include: { ak02_headers: true } });
     if (!result) {
@@ -277,75 +159,9 @@ export class AKService {
       where: { id }
     });
   }
-
-  // Combined Methods
-
-  static async getAKByResultId(resultId: number): Promise<AKListResponse> {
-    const [ak01Headers, ak02Headers] = await Promise.all([
-      prisma.result_ak01_header.findMany({
-        where: { result_id: resultId },
-        include: {
-          rows: true
-        }
-      }),
-      prisma.result_ak02_header.findMany({
-        where: { result_id: resultId },
-        include: {
-          rows: {
-            include: {
-              uc: true
-            }
-          }
-        }
-      })
-    ]);
-
-    return {
-      ak01: ak01Headers.map(formatAK01Response),
-      ak02: ak02Headers.map(formatAK02Response)
-    };
-  }
-
-  static async getAllAK(): Promise<AKListResponse> {
-    const [ak01Headers, ak02Headers] = await Promise.all([
-      prisma.result_ak01_header.findMany({
-        include: {
-          rows: true
-        }
-      }),
-      prisma.result_ak02_header.findMany({
-        include: {
-          rows: {
-            include: {
-              uc: true
-            }
-          }
-        }
-      })
-    ]);
-
-    return {
-      ak01: ak01Headers.map(formatAK01Response),
-      ak02: ak02Headers.map(formatAK02Response)
-    };
-  }
 }
 
-// Helper Functions
-
-function formatAK01Response(ak01Header: any): AK01Response {
-  return {
-    id: ak01Header.id,
-    result_id: ak01Header.result_id,
-    approved_assessee: ak01Header.approved_assessee,
-    approved_assessor: ak01Header.approved_assessor,
-    rows: ak01Header.rows.map((row: any) => ({
-      id: row.id,
-      header_id: row.header_id,
-      evidence: row.evidence
-    }))
-  };
-}
+// Helpers
 
 function formatAK02Response(ak02Header: any): AK02Response {
   return {
