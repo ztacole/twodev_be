@@ -82,6 +82,7 @@ router.get('/ak', AKController.getAllAK);
 
 router.post('/ak-03', AK03Controller.createAK03);
 router.post('/ak-04', AK04Controller.createAK04);
+router.get('/ak-04/result/:resultId', AK04Controller.getAK04ByResultId);
 router.post('/ak-05', AK05Controller.createAK05);
 
 export default router;

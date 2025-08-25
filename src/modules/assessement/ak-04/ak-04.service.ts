@@ -27,4 +27,10 @@ export class AK04Service {
 
     return saved as unknown as AK04Response;
   }
+
+  static async getAK04ByResultId(resultId: number): Promise<AK04Response> {
+    const record = await prisma.result_ak04.findFirst({ where: { result_id: resultId } });
+    if (!record) throw new NotFoundError('AK04');
+    return record as unknown as AK04Response;
+  }
 }
