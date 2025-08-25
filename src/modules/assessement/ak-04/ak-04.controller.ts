@@ -19,4 +19,22 @@ export class AK04Controller {
       });
     }
   });
+
+  static getAK04ByResultId = asyncHandler(async function (req: Request, res: Response) {
+    try {
+      const resultId = Number(req.params.resultId);
+      const data = await AK04Service.getAK04ByResultId(resultId);
+      res.status(200).json({
+        success: true,
+        message: 'AK-04 fetched',
+        data: data,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Gagal mengambil AK-04',
+        error: error.message,
+      });
+    }
+  });
 }
