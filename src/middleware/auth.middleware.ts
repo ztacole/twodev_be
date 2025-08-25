@@ -44,6 +44,22 @@ export const adminMiddleware = (
     next();
 };
 
+export const assesseeMiddleware = (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) => (
+    req.user?.role_id === 3 ? next() : res.status(403).json({ message: 'Akses hanya untuk assessee' })
+)
+
+export const assessorMiddleware = (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) => (
+    req.user?.role_id === 2 ? next() : res.status(403).json({ message: 'Akses hanya untuk assessor' })
+)
+
 export const authUpload = async (
     req: Request,
     res: Response,
