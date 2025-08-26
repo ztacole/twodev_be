@@ -50,6 +50,11 @@ Jalankan migrasi database:
 npm run prisma:migrate
 ```
 
+Jalankan Seeder:
+```bash
+npm run seed
+```
+
 ### 5. Jalankan aplikasi
 
 #### Development (dengan hot reload):
