@@ -9,7 +9,7 @@ export class AK04Service {
     const saved = await prisma.result_ak04.upsert({
       where: { result_id: data.result_id },
       update: {
-        approved_assessee: data.approved_assessee,
+        approved_assessee: data.approved_assessee ?? false,
         q1_yes: data.q1_yes,
         q2_yes: data.q2_yes,
         q3_yes: data.q3_yes,
@@ -17,7 +17,7 @@ export class AK04Service {
       },
       create: {
         result_id: data.result_id,
-        approved_assessee: data.approved_assessee,
+        approved_assessee: data.approved_assessee ?? false,
         q1_yes: data.q1_yes,
         q2_yes: data.q2_yes,
         q3_yes: data.q3_yes,
@@ -30,6 +30,16 @@ export class AK04Service {
 
   static async getAK04ByResultId(resultId: number): Promise<AK04Response> {
     const record = await prisma.result_ak04.findFirst({ where: { result_id: resultId } });
+    if (!record) throw new NotFoundError('AK04');
+    return record as unknown as AK04Response;
+  }
+
+  // AK-04 Approval
+  static async approvedByAssessee(resultId: number): Promise<AK04Response> {
+    const record = await prisma.result_ak04.update({
+      where: { result_id: resultId },
+      data: { approved_assessee: true, updated_at: new Date() },
+    });
     if (!record) throw new NotFoundError('AK04');
     return record as unknown as AK04Response;
   }

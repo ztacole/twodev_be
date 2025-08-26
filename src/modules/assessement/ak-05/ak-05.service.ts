@@ -45,6 +45,16 @@ export class AK05Service {
 
     return ak05 ? formatAK05Response(ak05) : null;
   }
+
+  // AK-05 Approval
+  static async approvedByAssessor(resultId: number): Promise<AK05Response> {
+    const record = await prisma.result_ak05.update({
+      where: { result_id: resultId },
+      data: { approved_assessor: true, updated_at: new Date() },
+    });
+    if (!record) throw new NotFoundError('AK05');
+    return record as unknown as AK05Response;
+  }
 }
 
 function formatAK05Response(ak05: any): AK05Response {
