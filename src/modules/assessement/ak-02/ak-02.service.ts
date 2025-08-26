@@ -27,8 +27,6 @@ export class AK02Service {
     const ak02Header = await prisma.result_ak02_header.update({
       where: { id: headerId },
       data: {
-        approved_assessee: data.approved_assessee,
-        approved_assessor: data.approved_assessor,
         is_competent: data.is_competent,
         follow_up: data.follow_up,
         comment: data.comment,
@@ -91,14 +89,6 @@ export class AK02Service {
     }
 
     const updateData: any = {};
-    
-    if (data.approved_assessee !== undefined) {
-      updateData.approved_assessee = data.approved_assessee;
-    }
-    
-    if (data.approved_assessor !== undefined) {
-      updateData.approved_assessor = data.approved_assessor;
-    }
 
     if (data.is_competent !== undefined) {
       updateData.is_competent = data.is_competent;
@@ -159,6 +149,77 @@ export class AK02Service {
       where: { id }
     });
   }
+
+  // AK-02 Approval
+  static async approvedByAssessor(resultId: number) {
+    const existingResult = await prisma.result.findUnique({
+      where: { id: resultId },
+      include: {
+        ak02_headers: true,
+      },
+    });
+
+    if (!existingResult) {
+      throw new NotFoundError('Result');
+    }
+
+    if (!existingResult.ak02_headers) {
+      throw new NotFoundError('AK02 header');
+    }
+
+    const update = await prisma.result_ak02_header.update({
+      where: { id: existingResult.ak02_headers.id },
+      data: { approved_assessor: true },
+      include: {
+        result: {
+          include: {
+            assessee: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return formatApproval(update);
+  }
+
+  static async approvedByAssessee(resultId: number) {
+    const existingResult = await prisma.result.findUnique({
+      where: { id: resultId },
+      include: {
+        ak02_headers: true,
+      },
+    });
+
+    if (!existingResult) {
+      throw new NotFoundError('Result');
+    }
+
+    if (!existingResult.ak02_headers) {
+      throw new NotFoundError('AK02 header');
+    }
+
+    const update = await prisma.result_ak02_header.update({
+      where: { id: existingResult.ak02_headers.id },
+      data: { approved_assessee: true },
+      include: {
+        result: {
+          include: {
+            assessee: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return formatApproval(update);
+  }
 }
 
 // Helpers
@@ -183,5 +244,19 @@ function formatAK02Response(ak02Header: any): AK02Response {
         title: row.uc.title
       }
     }))
+  };
+}
+
+function formatApproval(result: any) {
+  return {
+    id: result.id,
+    result_id: result.result_id,
+    assessee: {
+      id: result.assessee.id,
+      name: result.assessee.user.full_name,
+      email: result.assessee.user.email,
+    },
+    approved_assessee: result.approved_assessee,
+    approved_assessor: result.approved_assessor,
   };
 }

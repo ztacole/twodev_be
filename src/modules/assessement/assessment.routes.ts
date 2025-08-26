@@ -7,7 +7,8 @@ import { IA02Controller } from "./ia-02/ia-02.controller";
 import { IA03Controller } from "./ia-03/ia-03.controller";
 import { IA05Controller } from "./ia-05/ia-05.controller";
 import { AssessmentController } from "./assessment.controller";
-import { AKController } from "./ak/ak.controller";
+import { AK01Controller } from "./ak-01/ak-01.controller";
+import { AK02Controller } from "./ak-02/ak-02.controller";
 import { AK03Controller } from "./ak-03/ak-03.controller";
 import { AK04Controller } from "./ak-04/ak-04.controller";
 import { AK05Controller } from "./ak-05/ak-05.controller";
@@ -65,26 +66,31 @@ router.post('/ia-05/result/assessor/send', IA05Controller.sendAssessorResult);
 router.put('/ia-05/result/assessor/:resultId/approve', IA05Controller.approvedByAssessor);
 router.put('/ia-05/result/assessee/:resultId/approve', IA05Controller.approvedByAssessee);
 
-router.post('/ak-01', AKController.createAK01);
-router.get('/ak-01/:id', AKController.getAK01ById);
-router.get('/ak-01/result/:resultId', AKController.getAK01ByResultId);
-router.put('/ak-01/:id', AKController.updateAK01);
-router.delete('/ak-01/:id', AKController.deleteAK01);
+router.post('/ak-01', AK01Controller.createAK01);
+router.get('/ak-01/:id', AK01Controller.getAK01ById);
+router.get('/ak-01/result/:resultId', AK01Controller.getAK01ByResultId);
+router.put('/ak-01/:id', AK01Controller.updateAK01);
+router.delete('/ak-01/:id', AK01Controller.deleteAK01);
+router.put('/ak-01/result/assessor/:resultId/approve', AK01Controller.approvedByAssessor);
+router.put('/ak-01/result/assessee/:resultId/approve', AK01Controller.approvedByAssessee);
 
-router.post('/ak-02', AKController.createAK02);
-router.get('/ak-02/:id', AKController.getAK02ById);
-router.get('/ak-02/result/:resultId', AKController.getAK02ByResultId);
-router.put('/ak-02/:id', AKController.updateAK02);
-router.delete('/ak-02/:id', AKController.deleteAK02);
-
-router.get('/ak/result/:resultId', AKController.getAKByResultId);
-router.get('/ak', AKController.getAllAK);
+router.post('/ak-02', AK02Controller.createAK02);
+router.get('/ak-02/:id', AK02Controller.getAK02ById);
+router.get('/ak-02/result/:resultId', AK02Controller.getAK02ByResultId);
+router.put('/ak-02/:id', AK02Controller.updateAK02);
+router.delete('/ak-02/:id', AK02Controller.deleteAK02);
+router.put('/ak-02/result/assessor/:resultId/approve', AK02Controller.approvedByAssessor);
+router.put('/ak-02/result/assessee/:resultId/approve', AK02Controller.approvedByAssessee);
 
 router.post('/ak-03', AK03Controller.createAK03);
 router.get('/ak-03/:result_id', AK03Controller.getAK03ByResultId);
+
 router.post('/ak-04', AK04Controller.createAK04);
 router.get('/ak-04/:resultId', AK04Controller.getAK04ByResultId);
+router.put('/ak-04/result/assessee/:resultId/approve', AK04Controller.approvedByAssessee);
+
 router.post('/ak-05', AK05Controller.createAK05);
 router.get('/ak-05/:result_id', AK05Controller.getAK05ByResultId);
+router.put('/ak-05/result/assessor/:resultId/approve', AK05Controller.approvedByAssessor);
 
 export default router;
