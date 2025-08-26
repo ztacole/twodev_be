@@ -31,7 +31,7 @@ import assesseeRoutes from './modules/assessee/asseesee.routes';
 
 // Public
 import publicRoutes from './modules/public/public.routes';
-app.use('/public', publicRoutes);
+app.use('/api/public', publicRoutes);
 
 app.get('/uploads/apl-01/:folder/:filename', authUpload, (req, res) => {
   const { folder, filename } = req.params;
