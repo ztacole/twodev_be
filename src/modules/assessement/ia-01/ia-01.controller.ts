@@ -6,7 +6,7 @@ export class IA01Controller {
     static getIA01Groups = asyncHandler(async (req, res) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
-            throw new Error('Result ID is required');
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
         }
 
         const iaGroups = await IA01Service.getIA01Groups(resultId);
@@ -17,7 +17,7 @@ export class IA01Controller {
         const resultId = Number(req.params.resultId);
         const unitId = Number(req.params.unitId);
         if (!resultId || !unitId) {
-            throw new Error('Result ID and Unit ID are required');
+            return res.status(400).json({ success: false, message: 'Result ID and Unit ID are required' });
         }
 
         const elements = await IA01Service.getElementsByUnitId(resultId, unitId);
@@ -33,7 +33,7 @@ export class IA01Controller {
     static approvedByAssessor = asyncHandler(async (req, res) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
-            throw new Error('Result ID is required');
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
         }
         const data: AssessorApproveRequest = req.body;
         const result = await IA01Service.approvedByAssessor(resultId, data);
@@ -43,9 +43,18 @@ export class IA01Controller {
     static approvedByAssessee = asyncHandler(async (req, res) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
-            throw new Error('Result ID is required');
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
         }
         const result = await IA01Service.approvedByAssessee(resultId);
         res.status(200).json({ success: true, message: 'Hasil berhasil dikirimkan', data: result });
+    });
+
+    static getResultDetails = asyncHandler(async (req, res) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
+        }
+        const result = await IA01Service.getResultDetails(resultId);
+        res.status(200).json({ success: true, message: 'Hasil berhasil diambil', data: result });
     });
 }

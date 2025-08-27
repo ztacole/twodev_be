@@ -116,4 +116,22 @@ export class APL02Controller {
             data: result,
         });
     })
+
+    static getResultDetails = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Result ID is required',
+            });
+        }
+
+        const result = await APL02Service.getResultDetails(resultId);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Hasil berhasil diambil',
+            data: result,
+        });
+    })
 }
