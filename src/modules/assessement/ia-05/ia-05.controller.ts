@@ -6,6 +6,9 @@ import { SendAssesseeResultRequest, SendAssessorResultRequest } from "./ia-05.ty
 export class IA05Controller {
     static getQuestions = asyncHandler(async (req: Request, res: Response) => {
         const assessmentId = Number(req.params.assessmentId);
+        if (!assessmentId) {
+            return res.status(400).json({ success: false, message: 'Assessment ID is required' });
+        }
         const questions = await IA05Service.getQuestions(assessmentId);
         
         res.status(200).json({
@@ -17,6 +20,9 @@ export class IA05Controller {
 
     static getAnswerKeys = asyncHandler(async (req: Request, res: Response) => {
         const assessmentId = Number(req.params.assessmentId);
+        if (!assessmentId) {
+            return res.status(400).json({ success: false, message: 'Assessment ID is required' });
+        }
         const answers = await IA05Service.getAnswerKeys(assessmentId);
         
         res.status(200).json({
@@ -28,6 +34,9 @@ export class IA05Controller {
 
     static getAssesseeAnswers = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
+        }
         const answers = await IA05Service.getAssesseeAnswers(resultId);
         
         res.status(200).json({
@@ -62,7 +71,7 @@ export class IA05Controller {
     static approvedByAssessor = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
-            throw new Error('Result ID is required');
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
         }
 
         const result = await IA05Service.approvedByAssessor(resultId);
@@ -77,7 +86,7 @@ export class IA05Controller {
     static approvedByAssessee = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
-            throw new Error('Result ID is required');
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
         }
 
         const result = await IA05Service.approvedByAssessee(resultId);
@@ -85,6 +94,20 @@ export class IA05Controller {
         res.status(200).json({
             success: true,
             message: 'Tanda tangan berhasil dikirimkan',
+            data: result
+        });
+    });
+
+    static getResultDetails = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
+        }
+        const result = await IA05Service.getResultDetails(resultId);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Hasil berhasil diambil',
             data: result
         });
     });

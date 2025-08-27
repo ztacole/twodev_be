@@ -116,4 +116,58 @@ export class IAO2Service {
             approved_assessor: update.approved_assessor,
         };
     }
+
+    static async getResultDetails(resultId: number) {
+    const result = await prisma.result.findUnique({
+      where: { id: resultId },
+      include: {
+        assessment: {
+          include: {
+            occupation: {
+              include: {
+                scheme: true
+              }
+            }
+          }
+        },
+        assessee: {
+          include: {
+            user: true
+          }
+        },
+        assessor: {
+          include: {
+            user: true
+          }
+        },
+        ia02_headers: true
+      }
+    });
+    if (!result) {
+      throw new NotFoundError('Result');
+    }
+    if (!result.ia02_headers) {
+      throw new NotFoundError('Result header');
+    }
+
+    return {
+      id: result.id,
+      assessment: result.assessment,
+      assessee: {
+        id: result.assessee.id,
+        name: result.assessee.user.full_name,
+        email: result.assessee.user.email
+      },
+      assessor: {
+        id: result.assessor.id,
+        name: result.assessor.user.full_name,
+        email: result.assessor.user.email,
+        no_reg_met: result.assessor.no_reg_met
+      },
+      tuk: result.tuk,
+      is_competent: result.is_competent,
+      created_at: result.created_at,
+      ia02_header: result.ia02_headers
+    };
+  }
 }

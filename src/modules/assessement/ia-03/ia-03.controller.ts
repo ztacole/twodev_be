@@ -7,7 +7,7 @@ export class IA03Controller {
     static getIA03Groups = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
-            throw new Error('Result ID is required');
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
         }
         const iaGroups = await IA03Service.getIA03Groups(resultId);
         res.status(200).json({
@@ -30,7 +30,7 @@ export class IA03Controller {
     static approvedByAssessor = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
-            throw new Error('Result ID is required');
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
         }
         const result = await IA03Service.approvedByAssessor(resultId);
         res.status(200).json({
@@ -43,12 +43,25 @@ export class IA03Controller {
     static approvedByAssessee = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
-            throw new Error('Result ID is required');
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
         }
         const result = await IA03Service.approvedByAssessee(resultId);
         res.status(200).json({
             success: true,
             message: 'Hasil berhasil disetujui',
+            data: result
+        });
+    })
+
+    static getResultDetails = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
+        }
+        const result = await IA03Service.getResultDetails(resultId);
+        res.status(200).json({
+            success: true,
+            message: 'Hasil berhasil diambil',
             data: result
         });
     })

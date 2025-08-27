@@ -51,7 +51,10 @@ export class AssessmentController {
     static getAssessmentResultDetails = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
-            throw new Error("Result ID is required");
+            return res.status(400).json({
+                success: false,
+                message: "Result ID is required",
+            })
         }
         const result = await AssessmentService.getAssessmentResultDetails(resultId);
         res.status(200).json({
