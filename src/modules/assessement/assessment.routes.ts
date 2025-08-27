@@ -74,11 +74,12 @@ router.get('/ia-05/result/:resultId', IA05Controller.getResultDetails);
 
 router.post('/ak-01', AK01Controller.createAK01);
 router.get('/ak-01/:id', AK01Controller.getAK01ById);
-router.get('/ak-01/result/:resultId', AK01Controller.getAK01ByResultId);
 router.put('/ak-01/:id', AK01Controller.updateAK01);
 router.delete('/ak-01/:id', AK01Controller.deleteAK01);
+router.get('/ak-01/data/:resultId', AK01Controller.getDataForAK01);
 router.put('/ak-01/result/assessor/:resultId/approve', AK01Controller.approvedByAssessor);
 router.put('/ak-01/result/assessee/:resultId/approve', AK01Controller.approvedByAssessee);
+router.get('/ak-01/result/:resultId', AK01Controller.getAK01ByResultId);
 
 router.post('/ak-02', AK02Controller.createAK02);
 router.get('/ak-02/:id', AK02Controller.getAK02ById);

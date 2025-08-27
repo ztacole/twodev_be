@@ -38,6 +38,66 @@ export class AK01Service {
   
     return formatAK01Response(updatedHeader);
   }
+
+  static async getDataForAK01(resultId: number): Promise<any> {
+    const result = await prisma.result.findUnique({
+      where: { id: resultId },
+      include: { 
+        ak01_headers: true,
+        assessment: {
+          include: {
+            occupation: {
+              include: {
+                scheme: true
+              }
+            },
+            assessment_schedules: {
+              include: {
+                schedule_details: true
+              }
+            }
+          }
+        },
+        assessee: {
+          include: {
+            user: true
+          }
+        },
+        assessor: {
+          include: {
+            user: true
+          }
+        }
+      },
+    });
+    if (!result) {
+      throw new NotFoundError('Result');
+    }
+    if (!result.ak01_headers) {
+      throw new NotFoundError('Header AK01');
+    }
+  
+    return {
+      id: result.id,
+      assessment: result.assessment,
+      assessee: {
+        id: result.assessee.id,
+        name: result.assessee.user.full_name,
+        email: result.assessee.user.email
+      },
+      assessor: {
+        id: result.assessor.id,
+        name: result.assessor.user.full_name,
+        email: result.assessor.user.email,
+        no_reg_met: result.assessor.no_reg_met
+      },
+      tuk: result.tuk,
+      is_competent: result.is_competent,
+      created_at: result.created_at,
+      locations: result.assessment.assessment_schedules.flatMap(schedule => schedule.schedule_details.filter(detail => detail.assessor_id === result.assessor_id).map(detail => detail.location)),
+      ak01_header: result.ak01_headers
+    };
+  }
   
   static async getAK01ById(id: number): Promise<AK01Response> {
     const ak01Header = await prisma.result_ak01_header.findUnique({
