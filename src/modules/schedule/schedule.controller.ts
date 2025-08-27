@@ -34,6 +34,15 @@ export class ScheduleController {
         });
     });
 
+    static deleteSchedule = asyncHandler(async (req: Request, res: Response) => {
+        const id = Number(req.params.id);
+        await ScheduleService.deleteSchedule(id);
+        res.status(200).json({
+            success: true,
+            message: 'Jadwal berhasil dihapus',
+        });
+    });
+
     static getActiveSchedules = asyncHandler(async (req: Request, res: Response) => {
         const user = req.user as JwtPayload;
         const schedules = await ScheduleService.getActiveSchedules(user);

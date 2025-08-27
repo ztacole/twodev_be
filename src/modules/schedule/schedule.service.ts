@@ -257,6 +257,15 @@ export class ScheduleService {
             end_date: schedule.end_date,
         }));
     }
+
+    static async deleteSchedule(id: number): Promise<void> {
+        const existing = await prisma.assessment_schedule.findUnique({ where: { id } });
+        if (!existing) {
+            throw new NotFoundError('Schedule');
+        }
+
+        await prisma.assessment_schedule.delete({ where: { id } });
+    }
 }
 
 interface Assessee {

@@ -6,7 +6,7 @@ export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
         const occupation = await prisma.occupation.findUnique({
             where: {
-                id: data.occupation_id
+                id: Number(data.occupation_id)
             }
         });
 
@@ -26,17 +26,17 @@ export class AssessmentService {
         // Create assessment
         const assessment = await prisma.assessment.create({
             data: {
-                occupation_id: data.occupation_id,
+                occupation_id: Number(data.occupation_id),
                 code: data.code,
                 uc_apl02s: {
-                    create: data.uc_apl02s.map(unit => ({
+                    create: (data.uc_apl02s ?? []).map(unit => ({
                         unit_code: unit.unit_code,
                         title: unit.title,
                         elements: {
-                            create: unit.elements.map(element => ({
+                            create: (unit.elements ?? []).map(element => ({
                                 title: element.title,
                                 details: {
-                                    create: element.details.map(detail => ({
+                                    create: (element.details ?? []).map(detail => ({
                                         description: detail.description
                                     }))
                                 }
@@ -45,19 +45,19 @@ export class AssessmentService {
                     }))
                 },
                 groups_ia: {
-                    create: data.groups_ia.map(group => ({
+                    create: (data.groups_ia ?? []).map(group => ({
                         name: group.name,
                         scenario: group.scenario,
                         duration: group.duration,
                         units: {
-                            create: group.units.map(unit => ({
+                            create: (group.units ?? []).map(unit => ({
                                 unit_code: unit.unit_code,
                                 title: unit.title,
                                 elements: {
-                                    create: unit.elements.map(element => ({
+                                    create: (unit.elements ?? []).map(element => ({
                                         title: element.title,
                                         details: {
-                                            create: element.details.map(detail => ({
+                                            create: (element.details ?? []).map(detail => ({
                                                 description: detail.description,
                                                 benchmark: detail.benchmark
                                             }))
@@ -67,23 +67,23 @@ export class AssessmentService {
                             }))
                         },
                         tools: {
-                            create: group.tools.map(tool => ({
+                            create: (group.tools ?? []).map(tool => ({
                                 name: tool.name
                             }))
                         },
                         qa_ia03: {
-                            create: group.qa_ia03.map(question => ({
+                            create: (group.qa_ia03 ?? []).map(question => ({
                                 question: question.question,
                             }))
                         }
                     }))
                 },
                 ia05_questions: {
-                    create: data.ia05_questions.map(question => ({
+                    create: (data.ia05_questions ?? []).map(question => ({
                         order: question.order,
                         question: question.question,
                         options: {
-                            create: question.options.map(option => ({
+                            create: (question.options ?? []).map(option => ({
                                 option: option.option,
                                 is_answer: option.is_answer
                             }))
@@ -91,7 +91,7 @@ export class AssessmentService {
                     }))
                 },
                 ia07_questions: {
-                    create: data.ia07_questions.map(question => ({
+                    create: (data.ia07_questions ?? []).map(question => ({
                         question: question.question,
                         answer_key: question.answer_key
                     }))
