@@ -43,7 +43,11 @@ export class AK01Service {
     const result = await prisma.result.findUnique({
       where: { id: resultId },
       include: { 
-        ak01_headers: true,
+        ak01_headers: {
+          include: {
+            rows: true
+          }
+        },
         assessment: {
           include: {
             occupation: {
@@ -256,9 +260,9 @@ function formatApproval(result: any) {
     id: result.id,
     result_id: result.result_id,
     assessee: {
-      id: result.assessee.id,
-      name: result.assessee.user.full_name,
-      email: result.assessee.user.email,
+      id: result.result.assessee.id,
+      name: result.result.assessee.user.full_name,
+      email: result.result.assessee.user.email,
     },
     approved_assessee: result.approved_assessee,
     approved_assessor: result.approved_assessor,
