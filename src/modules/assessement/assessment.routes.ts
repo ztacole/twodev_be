@@ -23,6 +23,7 @@ router.post('/create', AssessmentController.createAssessment);
 router.get('/', AssessmentController.getAssessments);
 router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', AssessmentController.deleteAssessment);
+router.get('/result/:resultId', AssessmentController.getAssessmentResultDetails);
 
 router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', 
