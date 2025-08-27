@@ -53,7 +53,7 @@ export const approveVerification = async (resultId: number) => {
 	const existing = await prisma.result.findUnique({ where: { id: resultId }, include: { docs: true } });
 	if (!existing) throw new NotFoundError('Result');
 
-	await prisma.result.update({ where: { id: resultId }, data: { approved: true } });
+	await prisma.result.update({ where: { id: resultId }, data: { is_competent: true } });
 
 	// mark related docs approved
 	await prisma.result_doc.updateMany({ where: { result_id: existing.id }, data: { approved: true } });
