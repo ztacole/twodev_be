@@ -450,7 +450,8 @@ export class APL02Service {
             user: true
           }
         },
-        apl02_headers: true
+        apl02_headers: true,
+        docs: true
       }
     });
     if (!result) {
@@ -458,6 +459,9 @@ export class APL02Service {
     }
     if (!result.apl02_headers) {
       throw new NotFoundError('Result header');
+    }
+    if (result.docs.length < 1) {
+      throw new NotFoundError('Result docs');
     }
 
     return {
@@ -477,7 +481,8 @@ export class APL02Service {
       tuk: result.tuk,
       is_competent: result.is_competent,
       created_at: result.created_at,
-      apl02_header: result.apl02_headers
+      apl02_header: result.apl02_headers,
+      approved_admin: result.docs[result.docs.length - 1].approved
     };
   }
 }

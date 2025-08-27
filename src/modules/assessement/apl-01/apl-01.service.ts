@@ -103,9 +103,9 @@ export class APL1Service {
         files: any[];
     }): Promise<CertificateDocsResponse> {
         const { assesseeId, assessorId, assessmentId, bodyData, files } = params;
-    
+
         const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
-    
+
         const fieldMapping: { [key: string]: string } = {
             school_report_card: 'school_report_card',
             field_work_practice_certificate: 'field_work_practice_certificate',
@@ -113,27 +113,44 @@ export class APL1Service {
             family_card: 'family_card',
             id_card: 'id_card'
         };
-    
+
         const fileData: any = {};
         for (const file of files) {
             if (fieldMapping[file.fieldname]) {
                 fileData[fieldMapping[file.fieldname]] = `${BASE_URL}/uploads/apl-01/${assesseeId}_${assessorId}_${assessmentId}/${file.filename}`;
             }
         }
-    
+
         const docsData: any = {
             purpose: bodyData.purpose || 'APL1 Certificate Documents',
             ...fileData
         };
-    
-        let result = await prisma.result.findFirst({
+
+        let results = await prisma.result.findMany({
             where: {
                 assessee_id: assesseeId,
                 assessor_id: assessorId,
                 assessment_id: assessmentId
+            },
+            take: 1,
+            orderBy: { id: 'desc' },
+            include: {
+                assessment: true,
+                assessee: true,
+                assessor: true,
+                apl02_headers: true,
+                ia01_headers: true,
+                ia02_headers: true,
+                ia03_headers: true,
+                ia05_headers: true,
+                ia07_headers: true,
+                ak01_headers: true,
+                ak02_headers: true
             }
         });
-    
+
+        let result = results[0] || null;
+
         if (!result) {
             const assessment = await prisma.assessment.findUnique({
                 where: { id: assessmentId }
@@ -141,26 +158,179 @@ export class APL1Service {
             if (!assessment) {
                 throw new NotFoundError('Assessment');
             }
-    
+
             result = await prisma.result.create({
                 data: {
                     assessment_id: assessmentId,
                     assessee_id: assesseeId,
                     assessor_id: assessorId,
                     tuk: TUK_VALUES.SEWAKTU,
-                    is_competent: false
+                    is_competent: false,
+                    apl02_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                            is_continue: false
+                        }
+                    },
+                    ia01_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                            is_competent: false
+                        }
+                    },
+                    ia02_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ia03_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ia05_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ia07_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ak01_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ak02_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                            is_competent: false
+                        }
+                    }
+                },
+                include: {
+                    assessment: true,
+                    assessee: true,
+                    assessor: true,
+                    apl02_headers: true,
+                    ia01_headers: true,
+                    ia02_headers: true,
+                    ia03_headers: true,
+                    ia05_headers: true,
+                    ia07_headers: true,
+                    ak01_headers: true,
+                    ak02_headers: true
                 }
             });
         }
-    
+
+        if (!result.apl02_headers) {
+            result = await prisma.result.update({
+                where: { id: result.id },
+                data: {
+                    apl02_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                            is_continue: false
+                        }
+                    },
+                    ia01_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                            is_competent: false
+                        }
+                    },
+                    ia02_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ia03_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ia05_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ia07_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ak01_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                        }
+                    },
+                    ak02_headers: {
+                        create: {
+                            approved_assessee: false,
+                            approved_assessor: false,
+                            is_competent: false
+                        }
+                    }
+                },
+                include: {
+                    assessment: true,
+                    assessee: true,
+                    assessor: true,
+                    apl02_headers: true,
+                    ia01_headers: true,
+                    ia02_headers: true,
+                    ia03_headers: true,
+                    ia05_headers: true,
+                    ia07_headers: true,
+                    ak01_headers: true,
+                    ak02_headers: true
+                }
+            });
+        }
+
         const existingDocs = await prisma.result_doc.findFirst({
             where: { result_id: result.id }
         });
-    
+
         if (existingDocs) {
             return await prisma.result_doc.update({
                 where: { id: existingDocs.id },
-                data: { ...docsData }
+                data: { ...docsData },
+                include: {
+                    result: {
+                        include: {
+                            assessment: true,
+                            assessee: true,
+                            assessor: true,
+                            apl02_headers: true,
+                            ia01_headers: true,
+                            ia02_headers: true,
+                            ia03_headers: true,
+                            ia05_headers: true,
+                            ia07_headers: true,
+                            ak01_headers: true,
+                            ak02_headers: true
+                        }
+                    }
+                }
             }) as CertificateDocsResponse;
         } else {
             return await prisma.result_doc.create({
@@ -174,13 +344,21 @@ export class APL1Service {
                         include: {
                             assessment: true,
                             assessee: true,
-                            assessor: true
+                            assessor: true,
+                            apl02_headers: true,
+                            ia01_headers: true,
+                            ia02_headers: true,
+                            ia03_headers: true,
+                            ia05_headers: true,
+                            ia07_headers: true,
+                            ak01_headers: true,
+                            ak02_headers: true
                         }
                     }
                 }
             });
         }
-    }    
+    }
 
     static async getAllResultDoc(): Promise<ResultDocResponse[]> {
         const result_doc = await prisma.result_doc.findMany({
@@ -225,7 +403,7 @@ export class APL1Service {
         });
         return result_doc;
     }
-    
+
     static async getUnapprovedResultDoc(): Promise<ResultDocResponse[]> {
         const result_doc = await prisma.result_doc.findMany({
             where: { approved: false },

@@ -18,74 +18,7 @@ export const ApprovalService = {
       data: { approved: true },
     });
 
-    const result = await prisma.result.update({
-      where: { id: resultDoc.result_id },
-      data: {
-        apl02_headers: { 
-          create: {
-            approved_assessee: false,
-            approved_assessor: false,
-            is_continue: false
-          }
-        },
-        ia01_headers: { 
-          create: {
-            approved_assessee: false,
-            approved_assessor: false,
-            is_competent: false
-          }
-        },
-        ia02_headers: {
-          create: {
-            approved_assessee: false,
-            approved_assessor: false,
-          }
-        },
-        ia03_headers: {
-          create: {
-            approved_assessee: false,
-            approved_assessor: false,
-          }
-        },
-        ia05_headers: {
-          create: {
-            approved_assessee: false,
-            approved_assessor: false,
-          }
-        },
-        ia07_headers: {
-          create: {
-            approved_assessee: false,
-            approved_assessor: false,
-          }
-        },
-        ak01_headers: {
-          create: {
-            approved_assessee: false,
-            approved_assessor: false,
-          }
-        },
-        ak02_headers: {
-          create: {
-            approved_assessee: false,
-            approved_assessor: false,
-            is_competent: false
-          }
-        }
-      },
-      include: {
-        apl02_headers: true,
-        ia01_headers: true,
-        ia02_headers: true,
-        ia03_headers: true,
-        ia05_headers: true,
-        ia07_headers: true,
-        ak01_headers: true,
-        ak02_headers: true
-      }
-    });
-
-    return result;
+    return resultDoc;
   },
 
   async approveCompetency(resultId: number, user: JwtPayload): Promise<void> {
