@@ -11,7 +11,6 @@ router.get('/admin/schedules', DashboardController.getSchedules);
 router.get('/admin/verifications', DashboardController.getVerificationDocs);
 
 // assessor
-router.get('/assessor/:assessorId/mandiri', DashboardAssessorController.getAssessmentMandiriByAssessor);
-router.get('/assessor/:assessorId/penilaian', DashboardAssessorController.getPenilaianByAssessor);
+router.get('/assessor/:assessorId/:assessmentId/:type', DashboardAssessorController.getAPL02Assessee);
 
 export default router;
