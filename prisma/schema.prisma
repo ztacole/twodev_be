@@ -168,7 +168,9 @@ model assessment {
   occupation         occupation          @relation(fields: [occupation_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assessment_schedules assessment_schedule[]
   results             result[]
-  groups_ia           group_ia[]
+  groups_ia01           group_ia01[]
+  groups_ia02           group_ia02[]
+  groups_ia03           group_ia03[]
   uc_apl02s           uc_apl02[]
   ia05_questions      ia05_question[]
   ia07_questions      ia07_question[]
@@ -435,32 +437,18 @@ model result_ak05 {
 
 //// ========= IA02 / IA03 Struktur (Group & Tools & UC & Elements) =========
 
-model group_ia {
+model group_ia01 {
   id             Int    @id @default(autoincrement())
   assessment_id  Int
   name           String @db.VarChar(255)
-  scenario       String @db.Text
-  duration       Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  tools      ia02_tool[]
-  units      uc_ia[]
-  qa_ia03    ia03_question[]
+  units      uc_ia01[]
 }
 
-model ia02_tool {
-  id       Int    @id @default(autoincrement())
-  group_id Int
-  name     String @db.VarChar(255)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  group group_ia @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-}
-
-model uc_ia {
+model uc_ia01 {
   id       Int    @id @default(autoincrement())
   group_id Int
   unit_code String @db.VarChar(255)
@@ -468,7 +456,7 @@ model uc_ia {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  group    group_ia  @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  group    group_ia01  @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   elements element_ia[]
 }
 
@@ -479,7 +467,7 @@ model element_ia {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  uc      uc_ia              @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  uc      uc_ia01              @relation(fields: [uc_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   details element_details_ia[]
 }
 
@@ -493,6 +481,64 @@ model element_details_ia {
 
   element element_ia @relation(fields: [element_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   results result_ia01[]
+}
+
+model group_ia02 {
+  id             Int    @id @default(autoincrement())
+  assessment_id  Int
+  name           String @db.VarChar(255)
+  scenario       String @db.Text
+  duration       Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tools      ia02_tool[]
+  units      uc_ia02[]
+}
+
+model uc_ia02 {
+  id       Int    @id @default(autoincrement())
+  group_id Int
+  unit_code String @db.VarChar(255)
+  title     String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  group    group_ia02  @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model ia02_tool {
+  id       Int    @id @default(autoincrement())
+  group_id Int
+  name     String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  group group_ia02 @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model group_ia03 {
+  id             Int    @id @default(autoincrement())
+  assessment_id  Int
+  name           String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  units      uc_ia03[]
+  qa_ia03    ia03_question[]
+}
+
+model uc_ia03 {
+  id       Int    @id @default(autoincrement())
+  group_id Int
+  unit_code String @db.VarChar(255)
+  title     String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  group    group_ia03  @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 //// ========= IA01 =========
@@ -551,7 +597,7 @@ model ia03_question {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  group group_ia @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  group group_ia03 @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   rows  result_ia03[]
 }
 
