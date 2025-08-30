@@ -12,7 +12,7 @@ export class IAO2Service {
             throw new NotFoundError('Assessment');
         }
 
-        const groups: GroupIA02Response[] = await prisma.group_ia.findMany({
+        const groups: GroupIA02Response[] = await prisma.group_ia02.findMany({
             where: {
                 assessment_id: assessmentId
             },

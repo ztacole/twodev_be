@@ -2,7 +2,9 @@ export interface AssessmentRequest {
     occupation_id: number;
     code: string;
     uc_apl02s: UCAPL02Request[];
-    groups_ia: GroupIARequest[];
+    groups_ia01: GroupIA01Request[];
+    groups_ia02: GroupIA02Request[];
+    groups_ia03: GroupIA03Request[];
     ia05_questions: IA05QuestionRequest[];
     ia07_questions: IA07QuestionRequest[];
 }
@@ -22,12 +24,22 @@ interface ElementDetailsAPL02Request {
     description: string;
 }
 
-interface GroupIARequest {
+interface GroupIA01Request {
+    name: string;
+    units: ucIA01Request[];
+}
+
+interface GroupIA02Request {
     name: string;
     scenario: string;
     duration: number;
     units: ucIARequest[];
     tools: IA02ToolsRequest[];
+}
+
+interface GroupIA03Request {
+    name: string;
+    units: ucIARequest[];
     qa_ia03: IA03QuestionRequest[]
 }
 
@@ -35,10 +47,15 @@ interface IA03QuestionRequest {
     question: string;
 }
 
-interface ucIARequest {
+interface ucIA01Request {
     unit_code: string;
     title: string;
     elements: elementIARequest[]
+}
+
+interface ucIARequest {
+    unit_code: string;
+    title: string;
 }
 
 interface elementIARequest {
@@ -96,66 +113,103 @@ export interface AssessmentDetailsResponse {
     code: string;
     occupation: OccupationResponse;
     uc_apl02s: UCAPL02Response[];
-    groups_ia: GroupIAResponse[];
+    groups_ia01: GroupIA01Response[];
+    groups_ia02: GroupIA02Response[];
+    groups_ia03: GroupIA03Response[];
     ia05_questions: IA05QuestionResponse[];
     ia07_questions: IA07QuestionResponse[];
 }
 
 interface UCAPL02Response {
+    id: number;
     unit_code: string;
     title: string;
     elements: ElementAPL02Response[];
 }
 
 interface ElementAPL02Response {
+    id: number;
     title: string;
     details: ElementDetailsAPL02Response[];
 }
 
 interface ElementDetailsAPL02Response {
+    id: number;
     description: string;
 }   
 
-interface GroupIAResponse {
+interface GroupIA01Response {
+    id: number;
+    name: string;
+    units: ucIA01Response[];
+}
+
+interface GroupIA02Response {
+    id: number;
     name: string;
     scenario: string;
     duration: number;
     units: ucIAResponse[];
-    tools: IA02ToolsResponse[]
+    tools: IA02ToolsResponse[];
 }
 
-interface ucIAResponse {
+interface GroupIA03Response {
+    id: number;
+    name: string;
+    units: ucIAResponse[];
+    qa_ia03: IA03QuestionResponse[];
+}
+
+interface IA03QuestionResponse {
+    id: number;
+    question: string;
+}
+
+interface ucIA01Response {
+    id: number;
     unit_code: string;
     title: string;
     elements: elementIAResponse[]
 }
 
+interface ucIAResponse {
+    id: number;
+    unit_code: string;
+    title: string;
+}
+
 interface elementIAResponse {
+    id: number;
     title: string;
     details: elementDetailsIAResponse[]
 }
 
 interface elementDetailsIAResponse {
+    id: number;
     description: string;
     benchmark: string;
 }
 
 interface IA02ToolsResponse {
+    id: number;
     name: string;
 }
 
 interface IA05QuestionResponse {
+    id: number;
     order: number;
     question: string;
     options: IA05OptionResponse[]
 }
 
 interface IA05OptionResponse {
+    id: number;
     option: string;
     is_answer: boolean;
 }
 
 interface IA07QuestionResponse {
+    id: number;
     question: string;
     answer_key: string;
 }

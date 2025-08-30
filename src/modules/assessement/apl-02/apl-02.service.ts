@@ -96,8 +96,8 @@ export class APL02Service {
       }
     });
 
-    return elements.map((element, index) => {
-      const result = element.results[index];
+    return elements.map((element) => {
+      const result = element.results[0];
       return {
         id: element.id,
         uc_id: element.uc_id,
@@ -159,27 +159,29 @@ export class APL02Service {
             },
             update: {
               is_competent: element.is_competent,
-              updated_at: new Date()
+              updated_at: new Date(),
+              evidences: {
+                deleteMany: {},
+                createMany: {
+                  data: element.evidences.map(evidence => ({
+                    evidence: evidence.evidence
+                  }))
+                }
+              }
             },
             create: {
               result_apl02_id: Number(data.result_id),
               element_id: Number(element.element_id),
-              is_competent: element.is_competent
+              is_competent: element.is_competent,
+              evidences: {
+                createMany: {
+                  data: element.evidences.map(evidence => ({
+                    evidence: evidence.evidence
+                  }))
+                }
+              }
             }
           });
-
-          if (element.evidences && element.evidences.length > 0) {
-            await tx.apl02_evidence.deleteMany({
-              where: { result_apl02_id: resultRecord.id }
-            });
-
-            await tx.apl02_evidence.createMany({
-              data: element.evidences.map(evidence => ({
-                result_apl02_id: resultRecord.id,
-                evidence: evidence.evidence
-              }))
-            });
-          }
 
           return await tx.result_apl02.findUnique({
             where: { id: resultRecord.id },

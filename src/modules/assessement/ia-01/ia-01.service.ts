@@ -20,7 +20,7 @@ export class IA01Service {
             throw new NotFoundError('Assessment');
         }
 
-        const groups = await prisma.group_ia.findMany({
+        const groups = await prisma.group_ia01.findMany({
             where: {
                 assessment_id: existingResult.assessment.id
             },
@@ -50,14 +50,14 @@ export class IA01Service {
             }
         });
 
-        return groups.map((group) => ({
+        return groups.map((group: any) => ({
             id: group.id,
             assessment_id: group.assessment_id,
             name: group.name,
-            units: group.units.map((unit) => {
+            units: group.units.map((unit: any) => {
                 const totalElements = unit.elements.length;
-                const completedElements = unit.elements.filter((element) => {
-                    return element.details.some((detail) => detail.results.some((result) => result.header.result_id === resultId));
+                const completedElements = unit.elements.filter((element: any) => {
+                    return element.details.some((detail: any) => detail.results.some((result: any) => result.header.result_id === resultId));
                 }).length;
 
                 const finished = totalElements > 0 && totalElements === completedElements;
@@ -74,7 +74,7 @@ export class IA01Service {
     }
 
     static async getElementsByUnitId(resultId: number, unitId: number) {
-        const existingUnit = await prisma.uc_ia.findUnique({
+        const existingUnit = await prisma.uc_ia01.findUnique({
             where: { id: unitId }
         });
         if (!existingUnit) {
@@ -112,8 +112,8 @@ export class IA01Service {
             id: element.id,
             uc_id: element.uc_id,
             title: element.title,
-            details: element.details.map((detail, index) => {
-                const result = detail.results[index];
+            details: element.details.map((detail: any) => {
+                const result = detail.results[0];
                 return {
                     id: detail.id,
                     description: detail.description,

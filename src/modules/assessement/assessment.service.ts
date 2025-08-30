@@ -44,11 +44,9 @@ export class AssessmentService {
                         }
                     }))
                 },
-                groups_ia: {
-                    create: (data.groups_ia ?? []).map(group => ({
+                groups_ia01: {
+                    create: (data.groups_ia01 ?? []).map(group => ({
                         name: group.name,
-                        scenario: group.scenario,
-                        duration: group.duration,
                         units: {
                             create: (group.units ?? []).map(unit => ({
                                 unit_code: unit.unit_code,
@@ -65,10 +63,34 @@ export class AssessmentService {
                                     }))
                                 }
                             }))
+                        }
+                    }))
+                },
+                groups_ia02: {
+                    create: (data.groups_ia02 ?? []).map(group => ({
+                        name: group.name,
+                        scenario: group.scenario,
+                        duration: group.duration,
+                        units: {
+                            create: (group.units ?? []).map(unit => ({
+                                unit_code: unit.unit_code,
+                                title: unit.title,
+                            }))
                         },
                         tools: {
                             create: (group.tools ?? []).map(tool => ({
                                 name: tool.name
+                            }))
+                        }
+                    }))
+                },
+                groups_ia03: {
+                    create: (data.groups_ia03 ?? []).map(group => ({
+                        name: group.name,
+                        units: {
+                            create: (group.units ?? []).map(unit => ({
+                                unit_code: unit.unit_code,
+                                title: unit.title,
                             }))
                         },
                         qa_ia03: {
@@ -108,7 +130,7 @@ export class AssessmentService {
                         }
                     }
                 },
-                groups_ia: {
+                groups_ia01: {
                     include: {
                         units: {
                             include: {
@@ -118,8 +140,18 @@ export class AssessmentService {
                                     }
                                 }
                             }
-                        },
-                        tools: true,
+                        }
+                    }
+                },
+                groups_ia02: {
+                    include: {
+                        units: true,
+                        tools: true
+                    }
+                },
+                groups_ia03: {
+                    include: {
+                        units: true,
                         qa_ia03: true
                     }
                 },
@@ -167,7 +199,7 @@ export class AssessmentService {
                         }
                     }
                 },
-                groups_ia: {
+                groups_ia01: {
                     include: {
                         units: {
                             include: {
@@ -177,8 +209,18 @@ export class AssessmentService {
                                     }
                                 }
                             }
-                        },
-                        tools: true,
+                        }
+                    }
+                },
+                groups_ia02: {
+                    include: {
+                        units: true,
+                        tools: true
+                    }
+                },
+                groups_ia03: {
+                    include: {
+                        units: true,
                         qa_ia03: true
                     }
                 },

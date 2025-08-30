@@ -17,7 +17,7 @@ export class IA03Service {
             throw new NotFoundError('Assessment');
         }
 
-        const groups = await prisma.group_ia.findMany({
+        const groups = await prisma.group_ia03.findMany({
             where: {
                 assessment_id: existingResult.assessment_id
             },
@@ -40,19 +40,19 @@ export class IA03Service {
             }
         });
         
-        return groups.map((group) => ({
+        return groups.map((group: any) => ({
             id: group.id,
             assessment_id: group.assessment_id,
             name: group.name,
             units: group.units,
-            questions: group.qa_ia03.map((question, index) => ({
+            questions: group.qa_ia03.map((question: any) => ({
                 id: question.id,
                 question: question.question,
-                result: question.rows[index] ? {
-                    id: question.rows[index].id,
-                    header_id: question.rows[index].header_id,
-                    answer: question.rows[index].answer,
-                    approved: question.rows[index].approved
+                result: question.rows[0] ? {
+                    id: question.rows[0].id,
+                    header_id: question.rows[0].header_id,
+                    answer: question.rows[0].answer,
+                    approved: question.rows[0].approved
                 } : null
             }))
         }));
