@@ -39,6 +39,7 @@ export class OccupationService {
 
         const existingOccupation = await prisma.occupation.findFirst({
             where: {
+                scheme_id: data.scheme_id,
                 name: data.name
             }
         });

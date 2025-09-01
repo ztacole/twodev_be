@@ -1,5 +1,6 @@
 export interface AssessmentRequest {
-    occupation_id: number;
+    scheme_id: number;
+    occupation_name: string;
     code: string;
     uc_apl02s: UCAPL02Request[];
     groups_ia01: GroupIA01Request[];

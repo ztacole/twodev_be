@@ -4,14 +4,13 @@ import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from
 
 export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
-        const occupation = await prisma.occupation.findUnique({
+        const scheme = await prisma.scheme.findUnique({
             where: {
-                id: Number(data.occupation_id)
+                id: data.scheme_id
             }
         });
-
-        if (!occupation) {
-            throw new NotFoundError("Occupation");
+        if (!scheme) {
+            throw new NotFoundError("Scheme");
         }
 
         const existingAssessment = await prisma.assessment.findFirst({
@@ -23,10 +22,26 @@ export class AssessmentService {
             throw new DuplicateEntryError("Assessment code", data.code);
         }
 
+        let occupation = await prisma.occupation.findFirst({
+            where: {
+                name: data.occupation_name,
+                scheme_id: data.scheme_id
+            }
+        });
+
+        if (!occupation) {
+            occupation = await prisma.occupation.create({
+                data: {
+                    name: data.occupation_name,
+                    scheme_id: data.scheme_id
+                }
+            })
+        }
+
         // Create assessment
         const assessment = await prisma.assessment.create({
             data: {
-                occupation_id: Number(data.occupation_id),
+                occupation_id: Number(occupation.id),
                 code: data.code,
                 uc_apl02s: {
                     create: (data.uc_apl02s ?? []).map(unit => ({
