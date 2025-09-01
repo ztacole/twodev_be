@@ -632,6 +632,7 @@ async function main() {
         create: {
           approved_assessee: false,
           approved_assessor: false,
+          is_achieved: false,
           rows: {
             create: {
               option: {

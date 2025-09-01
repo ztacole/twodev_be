@@ -659,6 +659,10 @@ model result_ia05_header {
   result_id          Int  @unique
   approved_assessee  Boolean
   approved_assessor  Boolean
+  is_achieved        Boolean
+  unit               String? @db.VarChar(255)
+  element            String? @db.VarChar(255)
+  kuk                String? @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

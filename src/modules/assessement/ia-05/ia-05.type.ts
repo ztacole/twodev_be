@@ -29,6 +29,10 @@ interface AssesseeAnswerRequest {
 
 export interface SendAssessorResultRequest {
     result_id: number;
+    is_achieved: boolean;
+    unit?: string;
+    element?: string;
+    kuk?: string;
     results: ResultDetailRequest[];
 }
 

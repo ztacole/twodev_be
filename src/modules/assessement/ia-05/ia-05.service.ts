@@ -102,7 +102,7 @@ export class IA05Service {
                     include: {
                         question: true
                     }
-                }
+                },
             }
         });
 
@@ -110,7 +110,11 @@ export class IA05Service {
             id: answer.option.question.id,
             order: answer.option.question.order,
             question: answer.option.question.question,
-            answers: answer.option.option
+            answers: {
+                id: answer.option.id,
+                option: answer.option.option,
+                approved: answer.approved
+            }
         }));
     }
 
@@ -210,6 +214,20 @@ export class IA05Service {
             throw new NotFoundError('Option');
         }
 
+        const updateHeader = await prisma.result_ia05_header.update({
+            where: { id: headerId },
+            data: {
+                is_achieved: data.is_achieved,
+                unit: data.unit,
+                element: data.element,
+                kuk: data.kuk,
+                updated_at: new Date()
+            },
+            include: {
+                rows: true
+            }
+        });
+
         const results = await Promise.all(
             data.results.map(async (result) => {
                 const update = await prisma.result_ia05.update({
@@ -228,7 +246,7 @@ export class IA05Service {
             })
         );
 
-        return results;
+        return updateHeader;
     }
 
     static async approvedByAssessor(resultId: number) {

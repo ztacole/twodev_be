@@ -196,6 +196,7 @@ export class APL1Service {
                         create: {
                             approved_assessee: false,
                             approved_assessor: false,
+                            is_achieved: false
                         }
                     },
                     ia07_headers: {
@@ -268,6 +269,7 @@ export class APL1Service {
                         create: {
                             approved_assessee: false,
                             approved_assessor: false,
+                            is_achieved: false
                         }
                     },
                     ia07_headers: {
