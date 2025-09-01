@@ -52,6 +52,7 @@ class OccupationService {
             }
             const existingOccupation = yield db_1.prisma.occupation.findFirst({
                 where: {
+                    scheme_id: data.scheme_id,
                     name: data.name
                 }
             });

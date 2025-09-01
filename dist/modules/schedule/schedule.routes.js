@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const schedule_controller_1 = require("./schedule.controller");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const router = (0, express_1.Router)();
+router.get('/', schedule_controller_1.ScheduleController.getSchedules);
+router.get('/active', auth_middleware_1.authenticateToken, auth_middleware_1.assesseeMiddleware, schedule_controller_1.ScheduleController.getActiveSchedules);
+router.get('/completed', schedule_controller_1.ScheduleController.getCompletedSchedules);
+router.get('/completed/:assesseeId', schedule_controller_1.ScheduleController.getCompletedSchedulesByAssesseeId);
+router.get('/:id', auth_middleware_1.authenticateToken, auth_middleware_1.assesseeMiddleware, schedule_controller_1.ScheduleController.getScheduleById);
+router.post('/', schedule_controller_1.ScheduleController.createSchedule);
+router.delete('/:id', schedule_controller_1.ScheduleController.deleteSchedule);
+router.get('/export/excel', schedule_controller_1.ScheduleController.exportScheduleToExcel);
+exports.default = router;

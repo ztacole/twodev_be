@@ -36,10 +36,6 @@ SchemeService.createScheme = (data) => __awaiter(void 0, void 0, void 0, functio
     if (existingSchemeCode) {
         throw new error_1.DuplicateEntryError('Scheme code', data.code);
     }
-    const existingSchemeName = yield db_1.prisma.scheme.findFirst({ where: { name: data.name } });
-    if (existingSchemeName) {
-        throw new error_1.DuplicateEntryError('Scheme name', data.name);
-    }
     return db_1.prisma.scheme.create({ data });
 });
 SchemeService.updateScheme = (id, data) => __awaiter(void 0, void 0, void 0, function* () {
@@ -51,14 +47,7 @@ SchemeService.updateScheme = (id, data) => __awaiter(void 0, void 0, void 0, fun
     if (existingSchemeCode) {
         throw new error_1.DuplicateEntryError('Scheme code', data.code);
     }
-    const existingSchemeName = yield db_1.prisma.scheme.findFirst({ where: { name: data.name } });
-    if (existingSchemeName) {
-        throw new error_1.DuplicateEntryError('Scheme name', data.name);
-    }
     const scheme = db_1.prisma.scheme.update({ where: { id }, data });
-    if (!scheme) {
-        throw new error_1.NotFoundError('Scheme');
-    }
     return scheme;
 });
 SchemeService.deleteScheme = (id) => __awaiter(void 0, void 0, void 0, function* () {

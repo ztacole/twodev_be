@@ -18,11 +18,11 @@ class AuthController {
 exports.AuthController = AuthController;
 _a = AuthController;
 AuthController.register = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, password, confirm_password, role_id } = req.body;
-    if (!email || !password || !confirm_password || !role_id) {
+    const { full_name, email, password, confirm_password, role_id } = req.body;
+    if (!full_name || !email || !password || !confirm_password || !role_id) {
         return res.status(400).json({
             success: false,
-            message: 'Email, password, confirm_password, dan role_id wajib diisi'
+            message: 'Full name, email, password, confirm_password, dan role_id wajib diisi'
         });
     }
     if (password.length < 6) {
@@ -37,7 +37,7 @@ AuthController.register = (0, async_handler_1.asyncHandler)((req, res) => __awai
             message: 'Password dan confirm password tidak sama'
         });
     }
-    const result = yield auth_service_1.AuthService.register({ email, password, confirm_password, role_id });
+    const result = yield auth_service_1.AuthService.register({ full_name, email, password, confirm_password, role_id });
     res.status(201).json({
         success: true,
         message: 'User registered successfully',

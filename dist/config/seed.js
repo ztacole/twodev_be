@@ -8,462 +8,716 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-// prisma/seed.ts
 const client_1 = require("@prisma/client");
-const client_2 = require("@prisma/client");
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma = new client_1.PrismaClient();
+const SALT_ROUNDS = 10;
+const DEFAULT_PASSWORD = 'password';
+function hashPassword(password) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return bcryptjs_1.default.hash(password, SALT_ROUNDS);
+    });
+}
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
-        // Hapus semua data yang ada (untuk development saja)
-        yield prisma.result_apl02.deleteMany();
+        console.log('Memulai seeding...');
+        // Hapus data yang ada (hati-hati di production!)
+        console.log('Menghapus data lama...');
+        yield prisma.result_ia07.deleteMany();
+        yield prisma.result_ia07_header.deleteMany();
+        yield prisma.ia07_question.deleteMany();
+        yield prisma.result_ia05.deleteMany();
+        yield prisma.result_ia05_header.deleteMany();
+        yield prisma.question_option.deleteMany();
+        yield prisma.ia05_question.deleteMany();
+        yield prisma.result_ia03.deleteMany();
+        yield prisma.result_ia03_header.deleteMany();
+        yield prisma.ia03_question.deleteMany();
+        yield prisma.result_ia02_header.deleteMany();
+        yield prisma.result_ia01.deleteMany();
+        yield prisma.result_ia01_header.deleteMany();
+        yield prisma.result_ak05.deleteMany();
+        yield prisma.result_ak04.deleteMany();
+        yield prisma.result_ak03.deleteMany();
+        yield prisma.result_ak03_header.deleteMany();
+        yield prisma.result_ak02.deleteMany();
+        yield prisma.ak02_evidence.deleteMany();
+        yield prisma.result_ak02_header.deleteMany();
+        yield prisma.result_ak01.deleteMany();
+        yield prisma.result_ak01_header.deleteMany();
         yield prisma.apl02_evidence.deleteMany();
+        yield prisma.result_apl02.deleteMany();
         yield prisma.result_apl02_header.deleteMany();
         yield prisma.element_details_apl02.deleteMany();
         yield prisma.element_apl02.deleteMany();
         yield prisma.uc_apl02.deleteMany();
-        yield prisma.result_detail.deleteMany();
         yield prisma.result_doc.deleteMany();
         yield prisma.result.deleteMany();
-        yield prisma.assessee_answer.deleteMany();
-        yield prisma.question_pg_detail.deleteMany();
-        yield prisma.assessment_question.deleteMany();
-        yield prisma.element_detail.deleteMany();
-        yield prisma.element.deleteMany();
-        yield prisma.unit_competency.deleteMany();
-        yield prisma.assessment_schedule.deleteMany();
         yield prisma.schedule_detail.deleteMany();
+        yield prisma.assessment_schedule.deleteMany();
+        yield prisma.ia02_tool.deleteMany();
+        yield prisma.uc_ia03.deleteMany();
+        yield prisma.group_ia03.deleteMany();
+        yield prisma.uc_ia02.deleteMany();
+        yield prisma.group_ia02.deleteMany();
+        yield prisma.element_details_ia.deleteMany();
+        yield prisma.element_ia.deleteMany();
+        yield prisma.uc_ia01.deleteMany();
+        yield prisma.group_ia01.deleteMany();
         yield prisma.assessment.deleteMany();
         yield prisma.occupation.deleteMany();
         yield prisma.scheme.deleteMany();
-        yield prisma.assessee_job.deleteMany();
-        yield prisma.assessee.deleteMany();
         yield prisma.assessor_detail.deleteMany();
         yield prisma.assessor.deleteMany();
+        yield prisma.assessee_job.deleteMany();
+        yield prisma.assessee.deleteMany();
         yield prisma.admin.deleteMany();
         yield prisma.user.deleteMany();
         yield prisma.role.deleteMany();
         // Buat role
-        const roles = yield prisma.role.createMany({
-            data: [
-                { name: 'Admin' },
-                { name: 'Assessor' },
-                { name: 'Assessee' },
-            ],
-        });
-        // Buat skema sertifikasi
-        const scheme = yield prisma.scheme.create({
+        console.log('Membuat role...');
+        const adminRole = yield prisma.role.create({
             data: {
-                code: 'TBG',
-                name: 'Tata Boga',
+                name: 'Admin',
+            },
+        });
+        const assessorRole = yield prisma.role.create({
+            data: {
+                name: 'Assessor',
+            },
+        });
+        const assesseeRole = yield prisma.role.create({
+            data: {
+                name: 'Assessee',
+            },
+        });
+        // Buat user dengan password ter-hash
+        console.log('Membuat user...');
+        const hashedPassword = yield hashPassword(DEFAULT_PASSWORD);
+        // Admin
+        const adminUser = yield prisma.user.create({
+            data: {
+                full_name: 'Admin Utama',
+                email: 'admin@example.com',
+                password: hashedPassword,
+                role_id: adminRole.id,
+                admin: {
+                    create: {
+                        address: 'Jalan Admin No. 123',
+                        phone_no: '081234567890',
+                        birth_date: new Date('1980-01-01'),
+                    },
+                },
+            },
+        });
+        // Buat skema terlebih dahulu
+        console.log('Membuat skema...');
+        const schemeRPL = yield prisma.scheme.create({
+            data: {
+                code: 'RPL',
+                name: 'Rekayasa Perangkat Lunak',
+            },
+        });
+        const schemePH = yield prisma.scheme.create({
+            data: {
+                code: 'PH',
+                name: 'Perhotelan',
+            },
+        });
+        // Assessor 1
+        const assessorUser1 = yield prisma.user.create({
+            data: {
+                full_name: 'Assessor Pertama',
+                email: 'assessor1@example.com',
+                password: hashedPassword,
+                role_id: assessorRole.id,
+                assessor: {
+                    create: {
+                        address: 'Jalan Assessor No. 456',
+                        phone_no: '082345678901',
+                        birth_date: new Date('1985-05-15'),
+                        no_reg_met: `MET.000.${Math.floor(Math.random() * 100000)}.${new Date().getFullYear()}`,
+                        scheme_id: schemeRPL.id,
+                    },
+                },
+            },
+            include: {
+                assessor: true,
+            },
+        });
+        // Assessor 2
+        const assessorUser2 = yield prisma.user.create({
+            data: {
+                full_name: 'Assessor Kedua',
+                email: 'assessor2@example.com',
+                password: hashedPassword,
+                role_id: assessorRole.id,
+                assessor: {
+                    create: {
+                        address: 'Jalan Penilai No. 789',
+                        phone_no: '083456789012',
+                        birth_date: new Date('1975-08-20'),
+                        no_reg_met: `MET.000.${Math.floor(Math.random() * 100000)}.${new Date().getFullYear()}`,
+                        scheme_id: schemeRPL.id,
+                    },
+                },
+            },
+            include: {
+                assessor: true,
+            },
+        });
+        // Assessee 1
+        const assesseeUser1 = yield prisma.user.create({
+            data: {
+                full_name: 'Asesi Pertama',
+                email: 'asesi1@example.com',
+                password: hashedPassword,
+                role_id: assesseeRole.id,
+                assessee: {
+                    create: {
+                        identity_number: '1234567890',
+                        birth_date: new Date('1990-03-10'),
+                        birth_location: 'Jakarta',
+                        gender: 'male',
+                        nationality: 'Indonesia',
+                        phone_no: '084567890123',
+                        address: 'Jalan Asesi No. 101',
+                        educational_qualifications: 'Sarjana',
+                    },
+                },
+            },
+            include: {
+                assessee: true,
+            },
+        });
+        // Assessee 2
+        const assesseeUser2 = yield prisma.user.create({
+            data: {
+                full_name: 'Asesi Kedua',
+                email: 'asesi2@example.com',
+                password: hashedPassword,
+                role_id: assesseeRole.id,
+                assessee: {
+                    create: {
+                        identity_number: '0987654321',
+                        birth_date: new Date('1995-07-22'),
+                        birth_location: 'Bandung',
+                        gender: 'female',
+                        nationality: 'Indonesia',
+                        phone_no: '085678901234',
+                        address: 'Jalan Peserta No. 202',
+                        educational_qualifications: 'Diploma',
+                    },
+                },
+            },
+            include: {
+                assessee: true,
+            },
+        });
+        // Tambah detail assessor
+        console.log('Membuat detail assessor...');
+        yield prisma.assessor_detail.create({
+            data: {
+                assessor_id: assessorUser1.assessor.id,
+                tax_id_number: '123456789012345',
+                bank_book_cover: 'buku_bank_1.jpg',
+                certificate: 'sertifikat_1.pdf',
+                national_id: 'ktp_1.jpg',
+            },
+        });
+        // Tambah pekerjaan asesi
+        console.log('Membuat pekerjaan asesi...');
+        yield prisma.assessee_job.create({
+            data: {
+                assessee_id: assesseeUser1.assessee[0].id,
+                institution_name: 'Perusahaan Teknologi Inc.',
+                address: 'Gedung Perkantoran Tower 200',
+                postal_code: '12345',
+                position: 'Pengembang Software',
+                phone_no: '0211234567',
+                job_email: 'asesi1@perusahaan.com',
             },
         });
         // Buat okupasi
-        const occupation = yield prisma.occupation.create({
+        console.log('Membuat okupasi...');
+        const occupation1 = yield prisma.occupation.create({
             data: {
-                scheme_id: scheme.id,
-                name: 'Butcher Commis',
+                scheme_id: schemeRPL.id,
+                name: 'Pengembang Web',
             },
         });
-        // Buat admin
-        const adminUser = yield prisma.user.create({
+        const occupation2 = yield prisma.occupation.create({
             data: {
-                email: 'admin1@example.com',
-                password: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', // password
-                role_id: 1, // Admin
+                scheme_id: schemeRPL.id,
+                name: 'Pengembang Mobile',
             },
         });
-        const admin = yield prisma.admin.create({
+        const occupation3 = yield prisma.occupation.create({
             data: {
-                user_id: adminUser.id,
-                full_name: 'Admin Satu',
-                address: 'Jl. Admin No. 1, Jakarta',
-                phone_no: '081234567890',
-                birth_date: new Date('1980-01-01'),
+                scheme_id: schemePH.id,
+                name: 'Pelayanan Hotel',
             },
         });
-        // Buat beberapa assessor
-        for (let i = 1; i <= 3; i++) {
-            const assessorUser = yield prisma.user.create({
-                data: {
-                    email: `assessor${i}@example.com`,
-                    password: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', // password
-                    role_id: 2, // Assessor
-                },
-            });
-            const assessor = yield prisma.assessor.create({
-                data: {
-                    user_id: assessorUser.id,
-                    scheme_id: scheme.id,
-                    full_name: `Assesor ${i}`,
-                    address: `Jl. Assessor No. ${i}, Jakarta`,
-                    phone_no: `0812345678${i}${i}`,
-                    birth_date: new Date(`198${i}-01-01`),
-                },
-            });
-            yield prisma.assessor_detail.create({
-                data: {
-                    assessor_id: assessor.id,
-                    tax_id_number: `1234567890${i}`,
-                    bank_book_cover: `bank_book_${i}.jpg`,
-                    certificate: `certificate_${i}.pdf`,
-                    national_id: `national_id_${i}.jpg`,
-                },
-            });
-        }
-        // Buat beberapa assessee
-        for (let i = 1; i <= 5; i++) {
-            const assesseeUser = yield prisma.user.create({
-                data: {
-                    email: `assessee${i}@example.com`,
-                    password: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', // password
-                    role_id: 3, // Assessee
-                },
-            });
-            const assessee = yield prisma.assessee.create({
-                data: {
-                    user_id: assesseeUser.id,
-                    full_name: `Assessee ${i}`,
-                    identity_number: `1234567890${i}`,
-                    birth_date: new Date(`199${i}-01-01`),
-                    birth_location: `Jakarta`,
-                    gender: i % 2 === 0 ? client_2.gender.male : client_2.gender.female,
-                    nationality: 'Indonesia',
-                    phone_no: `0812345678${i}${i}`,
-                    house_phone_no: `021123456${i}`,
-                    office_phone_no: `021987654${i}`,
-                    address: `Jl. Assessee No. ${i}, Jakarta`,
-                    postal_code: `1234${i}`,
-                    educational_qualifications: 'SMA/SMK',
-                },
-            });
-            yield prisma.assessee_job.create({
-                data: {
-                    assessee_id: assessee.id,
-                    institution_name: `Perusahaan ${i}`,
-                    address: `Jl. Perusahaan No. ${i}, Jakarta`,
-                    postal_code: `1234${i}`,
-                    position: 'Karyawan',
-                    phone_no: `021987654${i}`,
-                    job_email: `kerja${i}@example.com`,
-                },
-            });
-        }
         // Buat assessment
-        const assessment = yield prisma.assessment.create({
+        console.log('Membuat assessment...');
+        const assessment1 = yield prisma.assessment.create({
             data: {
-                occupation_id: occupation.id,
-                code: 'SKM.TBG.BC/LSPSMK24/2023',
-            },
-        });
-        // Buat unit kompetensi berdasarkan dokumen
-        const unitCompetencies = [
-            {
-                code: 'I.55HDR00.037.2',
-                title: 'Mengorganisir dan Menyiapkan Makanan',
-                elements: [
-                    'Menyiapkan perlengkapan sesuai kebutuhan',
-                    'Mengumpulkan dan menyiapkan bahan untuk jenis-jenis makanan dalam menu',
-                    'Menyiapkan produk yang terbuat dari susu, hidangan kering, buah-buahan dan sayur-sayuran',
-                    'Menyiapkan daging, seafood dan unggas',
-                ],
-            },
-            {
-                code: 'I.55HDR00.039.2',
-                title: 'Menerima dan Menyimpan Persediaan',
-                elements: [
-                    'Menerima persediaan makanan',
-                    'Menyimpan barang persediaan',
-                    'Mengevaluasi dan melaporkan hasil pelaksanaan kegiatan',
-                ],
-            },
-            {
-                code: 'I.55HDR00.040.2',
-                title: 'Membersihkan Lokasi/Area dan Peralatan Dapur',
-                elements: [
-                    'Membersihkan perlengkapan dan sanitasinya',
-                    'Membersihkan dan sanitasi lokasi',
-                    'Menangani limbah dan linen',
-                    'Mengadakan pelatihan',
-                ],
-            },
-        ];
-        for (const uc of unitCompetencies) {
-            const unit = yield prisma.unit_competency.create({
-                data: {
-                    assessment_id: assessment.id,
-                    unit_code: uc.code,
-                    title: uc.title,
+                occupation_id: occupation1.id,
+                code: 'SKM.RPL.PS/LSPSMK24/2025',
+                // Buat grup IA01
+                groups_ia01: {
+                    create: {
+                        name: 'Pengembangan Web Dasar',
+                        units: {
+                            create: {
+                                unit_code: 'RPL.WEB.01',
+                                title: 'Membangun Halaman Web Statis',
+                                elements: {
+                                    create: {
+                                        title: 'Memahami HTML dan CSS',
+                                        details: {
+                                            create: [
+                                                {
+                                                    description: 'Mampu membuat struktur HTML yang semantik',
+                                                    benchmark: 'Struktur HTML valid dan mengikuti standar W3C'
+                                                },
+                                                {
+                                                    description: 'Mampu menerapkan styling dengan CSS',
+                                                    benchmark: 'Desain responsif dan kompatibel dengan berbagai browser'
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 },
-            });
-            for (const element of uc.elements) {
-                const el = yield prisma.element.create({
-                    data: {
-                        unit_competency_id: unit.id,
-                        title: element,
-                    },
-                });
-                // Tambahkan beberapa detail elemen
-                yield prisma.element_detail.create({
-                    data: {
-                        element_id: el.id,
-                        description: `Detail kriteria unjuk kerja untuk ${element}`,
-                    },
-                });
-            }
-        }
-        // Buat jadwal asesmen
-        const schedule = yield prisma.assessment_schedule.create({
-            data: {
-                assessment_id: assessment.id,
-                start_date: new Date('2023-11-01'),
-                end_date: new Date('2023-11-30'),
-            },
-        });
-        // Assign assessor ke jadwal
-        const assessors = yield prisma.assessor.findMany();
-        for (const assessor of assessors) {
-            yield prisma.schedule_detail.create({
-                data: {
-                    schedule_id: schedule.id,
-                    assessor_id: assessor.id,
-                    location: 'TUK Sewaktu',
-                },
-            });
-        }
-        // Buat pertanyaan asesmen
-        const questions = [
-            {
-                question: 'Apa yang harus dilakukan sebelum menyiapkan perlengkapan masak?',
-                type: client_2.question_type.pg,
-                options: [
-                    { option: 'Memastikan perlengkapan dalam keadaan bersih', isAnswer: true },
-                    { option: 'Menggunakan perlengkapan tanpa pemeriksaan', isAnswer: false },
-                    { option: 'Menyimpan perlengkapan di tempat yang tidak sesuai', isAnswer: false },
-                ],
-            },
-            {
-                question: 'Bagaimana cara menyimpan bahan makanan yang benar?',
-                type: client_2.question_type.pg,
-                options: [
-                    { option: 'Di tempat yang sesuai dengan jenis bahan', isAnswer: true },
-                    { option: 'Semua bahan dicampur dalam satu wadah', isAnswer: false },
-                    { option: 'Tanpa memperhatikan suhu penyimpanan', isAnswer: false },
-                ],
-            },
-            {
-                question: 'Jelaskan prosedur membersihkan peralatan dapur!',
-                type: client_2.question_type.essay,
-            },
-        ];
-        for (const q of questions) {
-            const question = yield prisma.assessment_question.create({
-                data: {
-                    assessment_id: assessment.id,
-                    type: q.type,
-                    question: q.question,
-                },
-            });
-            if (q.type === client_2.question_type.pg) {
-                for (const opt of q.options) {
-                    yield prisma.question_pg_detail.create({
-                        data: {
-                            question_id: question.id,
-                            option: opt.option,
-                            isanswer: opt.isAnswer,
+                // Buat grup IA02
+                groups_ia02: {
+                    create: {
+                        name: 'Proyek Pengembangan Web',
+                        scenario: 'Membangun website portofolio pribadi dengan HTML, CSS, dan JavaScript',
+                        duration: 120,
+                        tools: {
+                            create: [
+                                { name: 'Text Editor (VS Code)' },
+                                { name: 'Web Browser' },
+                                { name: 'Git untuk Version Control' }
+                            ]
                         },
-                    });
+                        units: {
+                            create: {
+                                unit_code: 'RPL.WEB.02',
+                                title: 'Membangun Website Dinamis'
+                            }
+                        }
+                    }
+                },
+                // Buat grup IA03
+                groups_ia03: {
+                    create: {
+                        name: 'Wawancara Teknis',
+                        qa_ia03: {
+                            create: [
+                                { question: 'Apa perbedaan antara let, const, dan var dalam JavaScript?' },
+                                { question: 'Jelaskan apa itu responsive design dan bagaimana menerapkannya?' }
+                            ]
+                        },
+                        units: {
+                            create: {
+                                unit_code: 'RPL.WEB.03',
+                                title: 'Pemecahan Masalah Pengembangan Web'
+                            }
+                        }
+                    }
+                },
+                // Buat unit kompetensi APL02
+                uc_apl02s: {
+                    create: {
+                        unit_code: 'RPL.WEB.01',
+                        title: 'Membangun Halaman Web Statis',
+                        elements: {
+                            create: {
+                                title: 'Memahami HTML dan CSS',
+                                details: {
+                                    create: [
+                                        { description: 'Mampu membuat struktur HTML yang semantik' },
+                                        { description: 'Mampu menerapkan styling dengan CSS' }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                // Buat soal IA05 (pilihan ganda)
+                ia05_questions: {
+                    create: {
+                        order: 1,
+                        question: 'Apa kepanjangan dari CSS?',
+                        options: {
+                            create: [
+                                { option: 'Cascading Style Sheets', is_answer: true },
+                                { option: 'Computer Style Sheets', is_answer: false },
+                                { option: 'Creative Style System', is_answer: false },
+                                { option: 'Colorful Style Sheets', is_answer: false }
+                            ]
+                        }
+                    }
+                },
+                // Buat soal IA07 (essay)
+                ia07_questions: {
+                    create: {
+                        question: 'Jelaskan apa yang dimaksud dengan Box Model dalam CSS dan sebutkan komponen-komponennya!',
+                        answer_key: 'Box Model adalah konsep dalam CSS yang menggambarkan bagaimana elemen HTML dirender. Komponennya terdiri dari: content, padding, border, dan margin.'
+                    }
                 }
+            },
+            include: {
+                groups_ia01: {
+                    include: {
+                        units: {
+                            include: {
+                                elements: {
+                                    include: {
+                                        details: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                groups_ia02: {
+                    include: {
+                        tools: true,
+                        units: true
+                    }
+                },
+                groups_ia03: {
+                    include: {
+                        qa_ia03: true,
+                        units: true
+                    }
+                },
+                uc_apl02s: {
+                    include: {
+                        elements: {
+                            include: {
+                                details: true
+                            }
+                        }
+                    }
+                },
+                ia05_questions: {
+                    include: {
+                        options: true
+                    }
+                },
+                ia07_questions: true
             }
-        }
-        // Buat UC untuk APL02
-        const ucApl02 = yield prisma.uc_apl02.create({
-            data: {
-                assessment_id: assessment.id,
-                unit_code: 'I.55HDR00.037.2',
-                title: 'Mengorganisir dan Menyiapkan Makanan',
-            },
         });
-        const elementsApl02 = [
-            {
-                title: 'Menyiapkan perlengkapan sesuai kebutuhan',
-                details: [
-                    'Dipastikan perlengkapan dalam keadaan bersih',
-                    'Dipersiapkan perlengkapan sesuai kebutuhan',
-                ],
+        // Buat jadwal assessment
+        console.log('Membuat jadwal assessment...');
+        const assessmentSchedule = yield prisma.assessment_schedule.create({
+            data: {
+                assessment_id: assessment1.id,
+                start_date: new Date('2023-12-01'),
+                end_date: new Date('2023-12-05'),
+                schedule_details: {
+                    create: {
+                        assessor_id: assessorUser1.assessor.id,
+                        location: 'Gedung LSP Teknologi Lt. 3'
+                    }
+                }
             },
-            {
-                title: 'Mengumpulkan dan menyiapkan bahan untuk jenis-jenis makanan dalam menu',
-                details: [
-                    'Bahan-bahan diidentifikasi dengan benar, sesuai dengan resep standar',
-                    'Jumlah, jenis dan mutu bahan-bahan harus tepat dikumpulkan dan disiapkan dalam bentuk yang benar dan jangka waktu yang sesuai',
-                ],
-            },
-        ];
-        for (const el of elementsApl02) {
-            const element = yield prisma.element_apl02.create({
-                data: {
-                    uc_id: ucApl02.id,
-                    title: el.title,
-                },
-            });
-            for (const detail of el.details) {
-                yield prisma.element_details_apl02.create({
-                    data: {
-                        element_id: element.id,
-                        description: detail,
-                    },
-                });
+            include: {
+                schedule_details: true
             }
-        }
-        // Buat grup IA (IA02/IA03)
-        const group1 = yield prisma.group_ia.create({
-            data: {
-                assessment_id: assessment.id,
-                name: 'Kelompok Pekerjaan 1',
-                scenario: 'Dalam rangka mencapai kualifikasi food product, anda diharapkan mampu mengolah makanan secara profesional Untuk mendukung pencapaian hasil sesuai dengan spesifikasi yang telah ditentukan. Oleh karena itu anda akan diperlengkapi dengan peralatan kitchen utensil dan kitchen equipment sesuai dengan lembar kerja dan SOP/IK terkait.',
-                duration: 20,
-            },
         });
-        // Tambahkan tools untuk grup IA
-        const tools = ['Baju masak', 'Upron', 'Necktie', 'Serbet', 'Bowl', 'Pisau', 'Cutting board'];
-        for (const tool of tools) {
-            yield prisma.ia02_tool.create({
-                data: {
-                    group_id: group1.id,
-                    name: tool,
-                },
-            });
-        }
-        // Tambahkan UC untuk grup IA
-        const ucIa = yield prisma.uc_ia.create({
+        // Buat hasil assessment
+        console.log('Membuat hasil assessment...');
+        const result = yield prisma.result.create({
             data: {
-                group_id: group1.id,
-                unit_code: 'I.55HDR00.037.2',
-                title: 'Mengorganisir dan Menyiapkan Makanan',
-            },
-        });
-        const elementsIa = [
-            {
-                title: 'Menyiapkan perlengkapan sesuai kebutuhan',
-                details: [
-                    { description: 'Bahan kimia digunakan untuk pembersihan dan/atau sanitasi perlengkapan dapur secara benar', benchmark: 'Sesuai SOP' },
-                    { description: 'Perlengkapan dibersihkan dan/atau disanitasikan sesuai dengan instruksi perusahaan dan tanpa menyebabkan kerusakan', benchmark: 'Sesuai SOP' },
-                ],
-            },
-        ];
-        for (const el of elementsIa) {
-            const element = yield prisma.element_ia.create({
-                data: {
-                    uc_id: ucIa.id,
-                    title: el.title,
-                },
-            });
-            for (const detail of el.details) {
-                yield prisma.element_details_ia.create({
-                    data: {
-                        element_id: element.id,
-                        description: detail.description,
-                        benchmark: detail.benchmark,
-                    },
-                });
-            }
-        }
-        // Tambahkan pertanyaan IA03 untuk grup
-        const ia03Questions = [
-            'Apa yang harus dilakukan sebelum menggunakan perlengkapan masak?',
-            'Bagaimana cara menyimpan bahan makanan yang benar?',
-        ];
-        for (const q of ia03Questions) {
-            yield prisma.ia03_question.create({
-                data: {
-                    group_id: group1.id,
-                    question: q,
-                },
-            });
-        }
-        // Buat grup kedua (Kelompok Pekerjaan 2)
-        const group2 = yield prisma.group_ia.create({
-            data: {
-                assessment_id: assessment.id,
-                name: 'Kelompok Pekerjaan 2',
-                scenario: 'Pada sekenario kelompok 2 ini anda diminta untuk membuat: 1. 2 Porsi Maincourse 2. 2 Porsi Soup 3. 1 Porsi Sandwich',
-                duration: 180,
-            },
-        });
-        // Buat hasil asesmen untuk beberapa assessee
-        const assessees = yield prisma.assessee.findMany();
-        const assessor = yield prisma.assessor.findFirst();
-        for (const assessee of assessees.slice(0, 3)) {
-            if (assessor) {
-                const result = yield prisma.result.create({
-                    data: {
-                        assessment_id: assessment.id,
-                        assessor_id: assessor.id,
-                        assessee_id: assessee.id,
-                        approved: false,
-                        tuk: client_2.tuk.sewaktu,
-                    },
-                });
-                // Buat dokumen hasil
-                yield prisma.result_doc.create({
-                    data: {
-                        result_id: result.id,
-                        assessor_id: assessor.id,
-                        purpose: 'Sertifikasi',
-                        school_report_card: 'raport.pdf',
-                        field_work_practice_certificate: 'pkl.pdf',
-                        student_card: 'kartu_pelajar.pdf',
-                        family_card: 'kk.pdf',
+                assessment_id: assessment1.id,
+                assessor_id: assessorUser1.assessor.id,
+                assessee_id: assesseeUser1.assessee[0].id,
+                is_competent: false,
+                tuk: 'sewaktu',
+                // Dokumen hasil
+                docs: {
+                    create: {
+                        purpose: 'Sertifikasi Profesi',
+                        school_report_card: 'ijazah.pdf',
+                        field_work_practice_certificate: 'sertifikat_pkl.pdf',
+                        student_card: 'kartu_mahasiswa.pdf',
+                        family_card: 'kartu_keluarga.pdf',
                         id_card: 'ktp.pdf',
-                        approved: false,
-                    },
-                });
-                // Buat hasil APL02
-                const apl02Header = yield prisma.result_apl02_header.create({
-                    data: {
-                        result_id: result.id,
-                        approved: false,
-                    },
-                });
-                const elements = yield prisma.element_apl02.findMany();
-                for (const element of elements) {
-                    const row = yield prisma.result_apl02.create({
-                        data: {
-                            result_apl02_id: apl02Header.id,
-                            element_id: element.id,
-                            is_competent: Math.random() > 0.3, // 70% kompeten
-                        },
-                    });
-                    yield prisma.apl02_evidence.create({
-                        data: {
-                            result_apl02_id: row.id,
-                            evidence: `Bukti untuk ${element.title}`,
-                        },
-                    });
-                }
-                // Buat hasil IA01
-                const ia01Header = yield prisma.result_ia01_header.create({
-                    data: {
-                        result_id: result.id,
+                        approved: true
+                    }
+                },
+                // Hasil APL02
+                apl02_headers: {
+                    create: {
                         approved_assessee: false,
                         approved_assessor: false,
-                    },
-                });
-                const elementDetails = yield prisma.element_details_ia.findMany();
-                for (const detail of elementDetails) {
-                    yield prisma.result_ia01.create({
-                        data: {
-                            header_id: ia01Header.id,
-                            element_detail_id: detail.id,
-                            is_competent: Math.random() > 0.3, // 70% kompeten
-                            evaluation: 'Evaluasi untuk elemen ini',
-                        },
-                    });
+                        is_continue: false,
+                        rows: {
+                            create: {
+                                element: {
+                                    connect: {
+                                        id: assessment1.uc_apl02s[0].elements[0].id
+                                    }
+                                },
+                                is_competent: false,
+                                evidences: {
+                                    create: [
+                                        { evidence: 'portofolio_proyek_web.pdf' },
+                                        { evidence: 'sertifikat_pelatihan_html_css.pdf' }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                // Hasil AK01
+                ak01_headers: {
+                    create: {
+                        approved_assessee: false,
+                        approved_assessor: false,
+                        rows: {
+                            create: [
+                                { evidence: 'portofolio_proyek_web.pdf' },
+                                { evidence: 'sertifikat_pelatihan.pdf' }
+                            ]
+                        }
+                    }
+                },
+                // Hasil AK02
+                ak02_headers: {
+                    create: {
+                        approved_assessee: false,
+                        approved_assessor: false,
+                        is_competent: false,
+                        follow_up: 'Perlu peningkatan dalam penggunaan CSS Grid',
+                        comment: 'Kandidat menunjukkan pemahaman yang baik tentang HTML dan CSS dasar',
+                        rows: {
+                            create: {
+                                uc: {
+                                    connect: {
+                                        id: assessment1.uc_apl02s[0].id
+                                    }
+                                },
+                                evidences: {
+                                    create: [
+                                        { evidence: 'file_proyek_html.zip' },
+                                        { evidence: 'screenshot_tampilan_web.png' }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                // Hasil AK03
+                result_ak03_header: {
+                    create: {
+                        comment: 'Semua peralatan dalam kondisi baik dan siap digunakan',
+                        rows: {
+                            create: [
+                                {
+                                    component: 'Komputer',
+                                    is_ok: true,
+                                    comment: 'Spesifikasi memadai untuk pengembangan web'
+                                },
+                                {
+                                    component: 'Koneksi Internet',
+                                    is_ok: true,
+                                    comment: 'Kecepatan stabil 50Mbps'
+                                }
+                            ]
+                        }
+                    }
+                },
+                // Hasil AK04
+                result_ak04: {
+                    create: {
+                        approved_assessee: false,
+                        q1_yes: false,
+                        q2_yes: false,
+                        q3_yes: false,
+                        reason: 'Asesi telah memenuhi semua persyaratan dan siap mengikuti assessment'
+                    }
+                },
+                // Hasil AK05
+                result_ak05: {
+                    create: {
+                        approved_assessor: false,
+                        is_competent: false,
+                        description: 'Asesi menunjukkan kompetensi dalam pengembangan web dasar',
+                        negative_positive_aspects: 'Positif: Kreatif dalam desain. Negatif: Perlu meningkatkan pemahaman CSS advanced',
+                        improvement_suggestions: 'Disarankan untuk mempelajari CSS Grid dan Flexbox lebih dalam'
+                    }
+                },
+                // Hasil IA01
+                ia01_headers: {
+                    create: {
+                        approved_assessee: false,
+                        approved_assessor: false,
+                        is_competent: false,
+                        group: assessment1.groups_ia01[0].name,
+                        unit: assessment1.groups_ia01[0].units[0].title,
+                        element: assessment1.groups_ia01[0].units[0].elements[0].title,
+                        kuk: assessment1.groups_ia01[0].units[0].elements[0].details[0].benchmark,
+                        rows: {
+                            create: {
+                                elementDetail: {
+                                    connect: {
+                                        id: assessment1.groups_ia01[0].units[0].elements[0].details[0].id
+                                    }
+                                },
+                                is_competent: true,
+                                evaluation: 'Asesi mampu membuat struktur HTML yang semantik dengan baik'
+                            }
+                        }
+                    }
+                },
+                // Hasil IA02
+                ia02_headers: {
+                    create: {
+                        approved_assessee: false,
+                        approved_assessor: false
+                    }
+                },
+                // Hasil IA03
+                ia03_headers: {
+                    create: {
+                        approved_assessee: false,
+                        approved_assessor: false,
+                        rows: {
+                            create: [
+                                {
+                                    question: {
+                                        connect: {
+                                            id: assessment1.groups_ia03[0].qa_ia03[0].id
+                                        }
+                                    },
+                                    answer: 'Let dan const adalah block-scoped, sedangkan var adalah function-scoped. Let dapat diubah nilainya, const tidak dapat diubah setelah dideklarasikan',
+                                    approved: true
+                                },
+                                {
+                                    question: {
+                                        connect: {
+                                            id: assessment1.groups_ia03[0].qa_ia03[1].id
+                                        }
+                                    },
+                                    answer: 'Responsive design adalah pendekatan desain web yang membuat halaman web terlihat baik di semua perangkat. Diterapkan dengan media queries, fluid grids, dan flexible images',
+                                    approved: true
+                                }
+                            ]
+                        }
+                    }
+                },
+                // Hasil IA05
+                ia05_headers: {
+                    create: {
+                        approved_assessee: false,
+                        approved_assessor: false,
+                        is_achieved: false,
+                        rows: {
+                            create: {
+                                option: {
+                                    connect: {
+                                        id: assessment1.ia05_questions[0].options[0].id
+                                    }
+                                },
+                                approved: false
+                            }
+                        }
+                    }
+                },
+                // Hasil IA07
+                ia07_headers: {
+                    create: {
+                        approved_assessee: false,
+                        approved_assessor: false,
+                        rows: {
+                            create: {
+                                question: {
+                                    connect: {
+                                        id: assessment1.ia07_questions[0].id
+                                    }
+                                },
+                                approved: false
+                            }
+                        }
+                    }
+                }
+            },
+            include: {
+                docs: true,
+                apl02_headers: {
+                    include: {
+                        rows: {
+                            include: {
+                                evidences: true
+                            }
+                        }
+                    }
+                },
+                ak01_headers: {
+                    include: {
+                        rows: true
+                    }
+                },
+                ak02_headers: {
+                    include: {
+                        rows: {
+                            include: {
+                                evidences: true
+                            }
+                        }
+                    }
+                },
+                result_ak03_header: {
+                    include: {
+                        rows: true
+                    }
+                },
+                result_ak04: true,
+                result_ak05: true,
+                ia01_headers: {
+                    include: {
+                        rows: true
+                    }
+                },
+                ia03_headers: {
+                    include: {
+                        rows: true
+                    }
+                },
+                ia05_headers: {
+                    include: {
+                        rows: true
+                    }
+                },
+                ia07_headers: {
+                    include: {
+                        rows: true
+                    }
                 }
             }
-        }
-        console.log('Seeder berhasil dijalankan!');
+        });
+        console.log('Seeding selesai!');
+        console.log('Data yang dibuat:');
+        console.log(`- Admin: ${adminUser.email}`);
+        console.log(`- Assessor: ${assessorUser1.email}, ${assessorUser2.email}`);
+        console.log(`- Assessee: ${assesseeUser1.email}, ${assesseeUser2.email}`);
+        console.log(`- Scheme: ${schemeRPL.name}, ${schemePH.name}`);
+        console.log(`- Assessment: ${assessment1.code}`);
+        console.log(`- Result ID: ${result.id}`);
     });
 }
 main()
