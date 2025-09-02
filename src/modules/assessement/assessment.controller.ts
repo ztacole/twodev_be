@@ -49,14 +49,13 @@ export class AssessmentController {
     });
 
     static getAssessmentResultDetails = asyncHandler(async (req: Request, res: Response) => {
-        const resultId = Number(req.params.resultId);
-        if (!resultId) {
-            return res.status(400).json({
-                success: false,
-                message: "Result ID is required",
-            })
+        const assessmentId = Number(req.params.assessmentId);
+        const assessorId = Number(req.params.assessorId);
+        const assesseeId = Number(req.params.assesseeId);
+        if (!assessmentId || !assessorId || !assesseeId) {
+            throw new Error("Assessment ID, Assessor ID, dan Assessee ID harus diisi");
         }
-        const result = await AssessmentService.getAssessmentResultDetails(resultId);
+        const result = await AssessmentService.getAssessmentResultDetails(assessmentId, assessorId, assesseeId);
         res.status(200).json({
             success: true,
             message: "Detail hasil assessment berhasil diambil",

@@ -269,9 +269,9 @@ export class AssessmentService {
         });
     }
 
-    static async getAssessmentResultDetails(resultId: number) {
-        const result = await prisma.result.findUnique({
-            where: { id: resultId },
+    static async getAssessmentResultDetails(assessmentId: number, assessorId: number, assesseeId: number) {
+        const results = await prisma.result.findMany({
+            where: { assessment_id: assessmentId, assessor_id: assessorId, assessee_id: assesseeId },
             include: {
                 assessment: {
                     include: {
@@ -294,11 +294,11 @@ export class AssessmentService {
                 }
             }
         });
-        if (!result) {
+        if (results.length === 0) {
             throw new NotFoundError('Result');
         }
 
-        return {
+        return results.map(result => ({
             id: result.id,
             assessment: result.assessment,
             assessee: {
@@ -315,6 +315,6 @@ export class AssessmentService {
             tuk: result.tuk,
             is_competent: result.is_competent,
             created_at: result.created_at
-        };
+        }));
     }
 }
