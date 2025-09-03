@@ -298,10 +298,10 @@ class AssessmentService {
             });
         });
     }
-    static getAssessmentResultDetails(resultId) {
+    static getAssessmentResultDetails(assessmentId, assessorId, assesseeId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const result = yield db_1.prisma.result.findUnique({
-                where: { id: resultId },
+            const results = yield db_1.prisma.result.findMany({
+                where: { assessment_id: assessmentId, assessor_id: assessorId, assessee_id: assesseeId },
                 include: {
                     assessment: {
                         include: {
@@ -324,10 +324,10 @@ class AssessmentService {
                     }
                 }
             });
-            if (!result) {
+            if (results.length === 0) {
                 throw new error_1.NotFoundError('Result');
             }
-            return {
+            return results.map(result => ({
                 id: result.id,
                 assessment: result.assessment,
                 assessee: {
@@ -344,7 +344,7 @@ class AssessmentService {
                 tuk: result.tuk,
                 is_competent: result.is_competent,
                 created_at: result.created_at
-            };
+            }));
         });
     }
 }

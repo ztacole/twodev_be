@@ -15,15 +15,35 @@ class PublicController {
     static getAssesseeById(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const id = Number(req.params.id);
+            if (!id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID asesi diperlukan'
+                });
+            }
             const assessee = yield public_service_1.PublicService.getAssesseeById(id);
-            res.status(200).json(assessee);
+            res.status(200).json({
+                success: true,
+                message: 'Data asesi berhasil diambil',
+                data: assessee
+            });
         });
     }
     static getAssessorById(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const id = Number(req.params.id);
+            if (!id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID asesor diperlukan'
+                });
+            }
             const assessor = yield public_service_1.PublicService.getAssessorById(id);
-            res.status(200).json(assessor);
+            res.status(200).json({
+                success: true,
+                message: 'Data asesor berhasil diambil',
+                data: assessor
+            });
         });
     }
 }
