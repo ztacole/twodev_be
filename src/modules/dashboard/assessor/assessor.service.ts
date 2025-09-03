@@ -33,9 +33,17 @@ export class DashboardAssessorService {
                         return true;
                     case "ia-05":
                         return result.ia05_headers?.approved_assessee ? true : false;
+                    case "ia-05-c":
+                        return result.ia05_headers?.approved_assessee ? true : false;
                     case "ak-01":
                         return result.ak01_headers?.approved_assessee ? true : false;
                     case "ak-02":
+                        return true;
+                    case "ak-03":
+                        return true;
+                    case "ak-04":
+                        return true;
+                    case "ak-05":
                         return true;
                     default:
                         throw new ValidationError('Result Type tidak valid');

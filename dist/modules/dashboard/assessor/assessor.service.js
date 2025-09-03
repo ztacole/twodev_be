@@ -32,7 +32,7 @@ class DashboardAssessorService {
             });
             return results.map(result => {
                 const getHeaderStatus = (type) => {
-                    var _a, _b, _c, _d;
+                    var _a, _b, _c, _d, _e;
                     switch (type) {
                         case "apl-02":
                             return ((_a = result.apl02_headers) === null || _a === void 0 ? void 0 : _a.approved_assessee) ? true : false;
@@ -44,9 +44,17 @@ class DashboardAssessorService {
                             return true;
                         case "ia-05":
                             return ((_c = result.ia05_headers) === null || _c === void 0 ? void 0 : _c.approved_assessee) ? true : false;
+                        case "ia-05-c":
+                            return ((_d = result.ia05_headers) === null || _d === void 0 ? void 0 : _d.approved_assessee) ? true : false;
                         case "ak-01":
-                            return ((_d = result.ak01_headers) === null || _d === void 0 ? void 0 : _d.approved_assessee) ? true : false;
+                            return ((_e = result.ak01_headers) === null || _e === void 0 ? void 0 : _e.approved_assessee) ? true : false;
                         case "ak-02":
+                            return true;
+                        case "ak-03":
+                            return true;
+                        case "ak-04":
+                            return true;
+                        case "ak-05":
                             return true;
                         default:
                             throw new error_1.ValidationError('Result Type tidak valid');
