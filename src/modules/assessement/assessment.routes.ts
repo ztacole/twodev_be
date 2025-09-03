@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { upload } from "./apl-01/upload-config";
+import { upload as uploadCertificate } from "./apl-01/upload-config";
+import { uploadIA02 } from "./ia-02/upload-conifg";
 import { APL02Controller } from "./apl-02/apl-02.controller";
 import { APL1Controller } from "./apl-01/apl-01.controller";
 import { IA01Controller } from "./ia-01/ia-01.controller";
@@ -27,7 +28,7 @@ router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController
 
 router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', 
-    upload.any(), 
+    uploadCertificate.any(), 
     APL1Controller.createOrUploadCertificateDocs
 );
 router.get('/apl-01/results', APL1Controller.getAllResult);
@@ -56,6 +57,12 @@ router.get('/ia-02/units/:assessmentId', IA02Controller.getIA02Groups);
 router.put('/ia-02/result/assessor/:resultId/approve', IA02Controller.approvedByAssessor);
 router.put('/ia-02/result/assessee/:resultId/approve', IA02Controller.approvedByAssessee);
 router.get('/ia-02/result/:resultId', IA02Controller.getResultDetails);
+router.post(
+    '/ia-02/upload-pdf/:groupId', 
+    uploadIA02.single('pdf'), 
+    IA02Controller.uploadPdf
+);
+router.get('/ia-02/groups/:groupId/pdf', IA02Controller.getPdf);
 
 router.get('/ia-03/units/:resultId', IA03Controller.getIA03Groups);
 router.post('/ia-03/result/send', IA03Controller.sendResult);

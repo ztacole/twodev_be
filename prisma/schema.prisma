@@ -508,6 +508,7 @@ model group_ia02 {
   assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tools      ia02_tool[]
   units      uc_ia02[]
+  pdfs       ia02_pdf[]
 }
 
 model uc_ia02 {
@@ -524,6 +525,16 @@ model uc_ia02 {
 model ia02_tool {
   id       Int    @id @default(autoincrement())
   group_id Int
+  name     String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  group group_ia02 @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model ia02_pdf {
+  id       Int    @id @default(autoincrement())
+  group_id Int    @unique
   name     String @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

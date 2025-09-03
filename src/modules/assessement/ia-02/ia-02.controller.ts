@@ -54,4 +54,75 @@ export class IA02Controller {
             data: result
         });
     })
+
+    static async uploadPdf(req: Request, res: Response) {
+        try {
+            const groupId = Number(req.params.groupId);
+
+            if (!groupId) {
+                return res.status(400).json({
+                success: false,
+                message: "Group ID dibutuhkan",
+                });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({
+                success: false,
+                message: "Tidak ada file yang diunggah",
+                });
+            }
+
+            const fileName = req.file.filename;
+            const filePath = req.file.path;
+
+            const pdf = await IAO2Service.uploadPdf(groupId, filePath, fileName);
+
+            return res.status(201).json({
+                success: true,
+                message: "PDF berhasil diupload",
+                data: pdf,
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                message: "Gagal upload PDF",
+                error: error.message,
+            });
+        }
+    }
+
+    static async getPdf(req: Request, res: Response) {
+        try {
+            const groupId = Number(req.params.groupId);
+
+            if (!groupId) {
+                return res.status(400).json({
+                success: false,
+                message: "Group ID dibutuhkan",
+                });
+            }
+
+            const pdf = await IAO2Service.getPdf(groupId);
+
+            if (!pdf) {
+                return res.status(404).json({
+                success: false,
+                message: "PDF tidak ditemukan",
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "PDF berhasil diambil",
+                data: pdf,
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                message: "Gagal mengambil PDF",
+                error: error.message,
+            });
+        }
+    }
 }
