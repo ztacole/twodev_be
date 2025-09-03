@@ -31,7 +31,7 @@ export class AK04Controller {
         });
       }
 
-      const data = await AK04Service.getAK04ByResultId(resultId);
+      const data = await AK04Service.getResultDetails(resultId);
       res.status(200).json({
         success: true,
         message: 'AK-04 fetched',

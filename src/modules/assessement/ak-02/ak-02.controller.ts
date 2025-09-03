@@ -70,7 +70,7 @@ export class AK02Controller {
     }
 
     try {
-      const result = await AK02Service.getAK02ByResultId(resultId);
+      const result = await AK02Service.getResultDetails(resultId);
       res.status(200).json({
         success: true,
         message: 'AK02 berhasil diambil',

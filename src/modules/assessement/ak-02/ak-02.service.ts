@@ -60,23 +60,66 @@ export class AK02Service {
     return formatAK02Response(ak02Header);
   }
 
-  static async getAK02ByResultId(resultId: number): Promise<AK02Response> {
-    const ak02Header = await prisma.result_ak02_header.findFirst({
-      where: { result_id: resultId },
-      include: {
-        rows: {
-          include: {
-            uc: true
+  static async getResultDetails(resultId: number) {
+    const result = await prisma.result.findUnique({
+    where: { id: resultId },
+    include: {
+        assessment: {
+        include: {
+            occupation: {
+            include: {
+                scheme: true
+            }
+            }
+        }
+        },
+        assessee: {
+        include: {
+            user: true
+        }
+        },
+        assessor: {
+        include: {
+            user: true
+        }
+        },
+        ak02_headers: {
+        include: {
+            rows: {
+            include: {
+                uc: true
+            }
           }
         }
-      }
+      },
+    }
     });
-
-    if (!ak02Header) {
-      throw new NotFoundError('AK02 header');
+    if (!result) {
+    throw new NotFoundError('Result');
+    }
+    if (!result.ak02_headers) {
+    throw new NotFoundError('Result header');
     }
 
-    return formatAK02Response(ak02Header);
+    return {
+    id: result.id,
+    assessment: result.assessment,
+    assessee: {
+        id: result.assessee.id,
+        name: result.assessee.user.full_name,
+        email: result.assessee.user.email
+    },
+    assessor: {
+        id: result.assessor.id,
+        name: result.assessor.user.full_name,
+        email: result.assessor.user.email,
+        no_reg_met: result.assessor.no_reg_met
+    },
+    tuk: result.tuk,
+    is_competent: result.is_competent,
+    created_at: result.created_at,
+    ak02_headers: result.ak02_headers
+    };
   }
 
   static async updateAK02(id: number, data: AK02UpdateRequest): Promise<AK02Response> {
