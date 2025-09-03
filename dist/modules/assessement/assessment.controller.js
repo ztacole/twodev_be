@@ -58,14 +58,13 @@ AssessmentController.getAssessmentById = (0, async_handler_1.asyncHandler)((req,
     });
 }));
 AssessmentController.getAssessmentResultDetails = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const resultId = Number(req.params.resultId);
-    if (!resultId) {
-        return res.status(400).json({
-            success: false,
-            message: "Result ID is required",
-        });
+    const assessmentId = Number(req.params.assessmentId);
+    const assessorId = Number(req.params.assessorId);
+    const assesseeId = Number(req.params.assesseeId);
+    if (!assessmentId || !assessorId || !assesseeId) {
+        throw new Error("Assessment ID, Assessor ID, dan Assessee ID harus diisi");
     }
-    const result = yield assessment_service_1.AssessmentService.getAssessmentResultDetails(resultId);
+    const result = yield assessment_service_1.AssessmentService.getAssessmentResultDetails(assessmentId, assessorId, assesseeId);
     res.status(200).json({
         success: true,
         message: "Detail hasil assessment berhasil diambil",
