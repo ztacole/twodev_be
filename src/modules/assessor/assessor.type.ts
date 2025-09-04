@@ -3,6 +3,7 @@ export interface AssessorResponse {
     id: number;
     user_id: number;
     scheme_id: number;
+    name: string;
     address: string;
     phone_no: string;
     birth_date: Date;
