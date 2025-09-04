@@ -53,10 +53,10 @@ export interface ElementsResultResponse {
 // Request
 export interface ResultRequest {
     result_id: number;
-    is_competent: boolean;
+    is_continue: boolean;
 }
 
-export interface HeaderRequest {
+export interface ElementRequest {
     result_id: number;
     elements: ElementResultRequest[];
 }

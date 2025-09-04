@@ -40,6 +40,7 @@ router.get('/apl-01/results/:assessmentId', APL1Controller.getResultDocsByAssess
 router.get('/apl-02/units/:resultId', APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/:resultId/elements/:unitId', APL02Controller.getElementsByUnitId);
 router.post('/apl-02/result/send', APL02Controller.sendResult);
+router.post('/apl-02/result/send-header', APL02Controller.sendResultHeader);
 router.get('/apl-02/result/units/:resultId', APL02Controller.getUnitsResult);
 router.get('/apl-02/result/units/:resultId/elements/:unitId', APL02Controller.getElementsResult);
 router.put('/apl-02/result/assessor/:resultId/approve', APL02Controller.approvedByAssessor);
@@ -49,6 +50,7 @@ router.get('/apl-02/result/:resultId', APL02Controller.getResultDetails);
 router.get('/ia-01/units/:resultId', IA01Controller.getIA01Groups);
 router.get('/ia-01/units/:resultId/elements/:unitId', IA01Controller.getElementsByUnitId);
 router.post('/ia-01/result/send', IA01Controller.sendResult);
+router.post('/ia-01/result/send-header', IA01Controller.sendResultHeader);
 router.put('/ia-01/result/assessor/:resultId/approve', IA01Controller.approvedByAssessor);
 router.put('/ia-01/result/assessee/:resultId/approve', IA01Controller.approvedByAssessee);
 router.get('/ia-01/result/:resultId', IA01Controller.getResultDetails);

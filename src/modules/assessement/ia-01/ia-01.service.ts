@@ -183,9 +183,9 @@ export class IA01Service {
         return results;
     }
 
-    static async approvedByAssessor(resultId: number, data: AssessorApproveRequest) {
+    static async sendResultHeader(data: AssessorApproveRequest) {
         const existingResult = await prisma.result.findUnique({
-            where: { id: resultId },
+            where: { id: data.result_id },
             include: {
                 ia01_headers: true
             }
@@ -202,7 +202,6 @@ export class IA01Service {
         const update = await prisma.result_ia01_header.update({
             where: { id: headerId },
             data: {
-                approved_assessor: true,
                 is_competent: data.is_competent,
                 group: data.group,
                 unit: data.unit,
@@ -260,6 +259,58 @@ export class IA01Service {
             where: { id: headerId },
             data: {
                 approved_assessee: true,
+            },
+            include: {
+                result: {
+                    include: {
+                        assessee: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return {
+            id: update.id,
+            result_id: update.result_id,
+            assessee: {
+                id: update.result.assessee.id,
+                name: update.result.assessee.user.full_name,
+                email: update.result.assessee.user.email
+            },
+            approved_assessee: update.approved_assessee,
+            approved_assessor: update.approved_assessor,
+            is_competent: update.is_competent,
+            group: update.group,
+            unit: update.unit,
+            element: update.element,
+            kuk: update.kuk
+        };
+    }
+
+    static async approvedByAssessor(resultId: number) {
+        const existingResult = await prisma.result.findUnique({
+            where: { id: resultId },
+            include: {
+                ia01_headers: true
+            }
+        })
+        if (!existingResult) {
+            throw new NotFoundError('Result');
+        }
+        if (!existingResult.ia01_headers) {
+            throw new NotFoundError('IA01 header');
+        }
+
+        const headerId = existingResult.ia01_headers.id;
+
+        const update = await prisma.result_ia01_header.update({
+            where: { id: headerId },
+            data: {
+                approved_assessor: true,
             },
             include: {
                 result: {

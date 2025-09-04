@@ -442,6 +442,7 @@ model result_ak05 {
   negative_positive_aspects String? @db.VarChar(255)
   rejection_notes    String? @db.VarChar(255)
   improvement_suggestions String? @db.VarChar(255)
+  notes              String? @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

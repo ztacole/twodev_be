@@ -623,7 +623,8 @@ async function main() {
           is_competent: false,
           description: 'Asesi menunjukkan kompetensi dalam pengembangan web dasar',
           negative_positive_aspects: 'Positif: Kreatif dalam desain. Negatif: Perlu meningkatkan pemahaman CSS advanced',
-          improvement_suggestions: 'Disarankan untuk mempelajari CSS Grid dan Flexbox lebih dalam'
+          improvement_suggestions: 'Disarankan untuk mempelajari CSS Grid dan Flexbox lebih dalam',
+          notes: 'Asesi menunjukkan kemampuan dalam pengembangan web dasar'
         }
       },
       // Hasil IA01
