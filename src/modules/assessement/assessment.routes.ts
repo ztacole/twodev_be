@@ -90,11 +90,9 @@ router.put('/ak-01/result/assessor/:resultId/approve', AK01Controller.approvedBy
 router.put('/ak-01/result/assessee/:resultId/approve', AK01Controller.approvedByAssessee);
 router.get('/ak-01/result/:resultId', AK01Controller.getAK01ByResultId);
 
-router.post('/ak-02', AK02Controller.createAK02);
-router.get('/ak-02/:id', AK02Controller.getAK02ById);
+router.post('/ak-02/result/send', AK02Controller.sendResult);
+router.get('/ak-02/units/:assessmentId', AK02Controller.getUnits);
 router.get('/ak-02/result/:resultId', AK02Controller.getAK02ByResultId);
-router.put('/ak-02/:id', AK02Controller.updateAK02);
-router.delete('/ak-02/:id', AK02Controller.deleteAK02);
 router.put('/ak-02/result/assessor/:resultId/approve', AK02Controller.approvedByAssessor);
 router.put('/ak-02/result/assessee/:resultId/approve', AK02Controller.approvedByAssessee);
 

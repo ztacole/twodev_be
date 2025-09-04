@@ -146,7 +146,7 @@ export class IA01Service {
         const headerId = existingResult.ia01_headers.id;
 
         const elements = data.elements.map(element => Number(element.element_detail_id));
-        const existingElements = await prisma.element_ia.findMany({
+        const existingElements = await prisma.element_details_ia.findMany({
             where: { id: { in: elements } }
         });
 

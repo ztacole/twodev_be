@@ -7,7 +7,7 @@ import {
 } from './ak-02.type';
 
 export class AK02Controller {
-  static createAK02 = asyncHandler(async (req: Request, res: Response) => {
+  static sendResult = asyncHandler(async (req: Request, res: Response) => {
     const data: AK02CreateRequest = req.body;
 
     if(!data) {
@@ -18,7 +18,7 @@ export class AK02Controller {
     }
 
     try {
-      const result = await AK02Service.createAK02(data);
+      const result = await AK02Service.sendResult(data);
       res.status(201).json({
         success: true,
         message: 'AK02 berhasil dibuat',
@@ -33,27 +33,27 @@ export class AK02Controller {
     }
   });
 
-  static getAK02ById = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+  static getUnits = asyncHandler(async (req: Request, res: Response) => {
+    const assessmentId = parseInt(req.params.assessmentId);
 
-    if(!id) {
+    if(!assessmentId) {
       return res.status(400).json({
         success: false,
-        message: 'ID diperlukan'
+        message: 'Assessment ID diperlukan'
       });
     }
 
     try {
-      const result = await AK02Service.getAK02ById(id);
+      const result = await AK02Service.getUnits(assessmentId);
       res.status(200).json({
         success: true,
-        message: 'AK02 berhasil diambil',
+        message: 'Unit berhasil diambil',
         data: result
       });
     } catch (error: any) {
       res.status(500).json({
         success: false,
-        message: 'Gagal mengambil AK02',
+        message: 'Gagal mengambil unit',
         error: error.message
       });
     }
@@ -80,65 +80,6 @@ export class AK02Controller {
       res.status(500).json({
         success: false,
         message: 'Gagal mengambil AK02',
-        error: error.message
-      });
-    }
-  });
-
-  static updateAK02 = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-    const data: AK02UpdateRequest = req.body;
-
-    if(!id) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID diperlukan'
-      });
-    }
-
-    if(!data) {
-      return res.status(400).json({
-        success: false,
-        message: 'Data diperlukan'
-      });
-    }
-
-    try {
-      const result = await AK02Service.updateAK02(id, data);
-      res.status(200).json({
-        success: true,
-        message: 'AK02 berhasil diperbarui',
-        data: result
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: 'Gagal memperbarui AK02',
-        error: error.message
-      });
-    }
-  });
-
-  static deleteAK02 = asyncHandler(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-
-    if(!id) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID diperlukan'
-      });
-    }
-
-    try {
-      await AK02Service.deleteAK02(id);    
-      res.status(200).json({
-        success: true,
-        message: 'AK02 berhasil dihapus'
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: 'Gagal menghapus AK02',
         error: error.message
       });
     }

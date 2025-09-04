@@ -10,7 +10,7 @@ export interface AK02CreateRequest {
 
 export interface AK02RowRequest {
   uc_id: number;
-  evidence: string;
+  evidences: string[];
 }
 
 export interface AK02UpdateRequest {
