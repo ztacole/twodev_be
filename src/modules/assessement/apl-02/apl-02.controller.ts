@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { APL02Service } from "./apl-02.service";
 import { asyncHandler } from "../../../common/async.handler";
-import { GenerateAsssessorRequest, HeaderRequest, ResultRequest } from "./apl-02.type";
+import { GenerateAsssessorRequest, ElementRequest, ResultRequest } from "./apl-02.type";
 
 export class APL02Controller {
     static getUnitsAPL02 = asyncHandler(async (req: Request, res: Response) => {
@@ -35,8 +35,19 @@ export class APL02Controller {
     })
 
     static sendResult = asyncHandler(async (req: Request, res: Response) => {
-        const data: HeaderRequest = req.body;
+        const data: ElementRequest = req.body;
         const result = await APL02Service.sendResult(data);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Hasil berhasil dikirimkan',
+            data: result,
+        });
+    })
+
+    static sendResultHeader = asyncHandler(async (req: Request, res: Response) => {
+        const data: ResultRequest = req.body;
+        const result = await APL02Service.sendResultHeader(data);
         
         res.status(200).json({
             success: true,

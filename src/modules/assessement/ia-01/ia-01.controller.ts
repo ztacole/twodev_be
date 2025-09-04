@@ -30,13 +30,18 @@ export class IA01Controller {
         res.status(200).json({ success: true, message: 'Hasil berhasil dikirimkan', data: result });
     });
 
+    static sendResultHeader = asyncHandler(async (req, res) => {
+        const data: AssessorApproveRequest = req.body;
+        const result = await IA01Service.sendResultHeader(data);
+        res.status(200).json({ success: true, message: 'Hasil berhasil dikirimkan', data: result });
+    });
+
     static approvedByAssessor = asyncHandler(async (req, res) => {
         const resultId = Number(req.params.resultId);
         if (!resultId) {
             return res.status(400).json({ success: false, message: 'Result ID is required' });
         }
-        const data: AssessorApproveRequest = req.body;
-        const result = await IA01Service.approvedByAssessor(resultId, data);
+        const result = await IA01Service.approvedByAssessor(resultId);
         res.status(200).json({ success: true, message: 'Hasil berhasil dikirimkan', data: result });
     });
 

@@ -15,6 +15,7 @@ export class AK05Service {
         negative_positive_aspects: data.items[0]?.negative_positive_aspects,
         rejection_notes: data.items[0]?.rejection_notes,
         improvement_suggestions: data.items[0]?.improvement_suggestions,
+        notes: data.items[0]?.notes,
         approved_assessor: data.items[0]?.approved_assessor ?? false,
       },
       create: {
@@ -24,6 +25,7 @@ export class AK05Service {
         negative_positive_aspects: data.items[0]?.negative_positive_aspects ?? null,
         rejection_notes: data.items[0]?.rejection_notes ?? null,
         improvement_suggestions: data.items[0]?.improvement_suggestions ?? null,
+        notes: data.items[0]?.notes ?? null,
         approved_assessor: data.items[0]?.approved_assessor ?? false,
       },
     });

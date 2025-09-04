@@ -26,6 +26,7 @@ interface elementDetailsIAResponse {
 
 // Request
 export interface AssessorApproveRequest {
+    result_id: number;
     is_competent: boolean;
     group?: string;
     unit?: string;

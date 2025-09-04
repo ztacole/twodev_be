@@ -395,28 +395,16 @@ model result_ak03_header {
   answers    result_ak03[]
 }
 
-model result_ak03_question {
-  id         Int      @id @default(autoincrement())
-  question   String   @db.VarChar(255)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  answers    result_ak03[]
-}
-
 model result_ak03 {
   id          Int      @id @default(autoincrement())
   header_id   Int
-  question_id Int
+  question   String   @db.VarChar(255)
   answer      Boolean
   comment     String?  @db.VarChar(255)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   header   result_ak03_header  @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  question result_ak03_question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@unique([header_id, question_id])
 }
 
 model result_ak04 {
@@ -442,6 +430,7 @@ model result_ak05 {
   negative_positive_aspects String? @db.VarChar(255)
   rejection_notes    String? @db.VarChar(255)
   improvement_suggestions String? @db.VarChar(255)
+  notes              String? @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

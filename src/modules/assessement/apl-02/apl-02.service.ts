@@ -1,6 +1,6 @@
 import { DuplicateEntryError, NotFoundError } from '../../../common/error';
 import { prisma } from '../../../config/db';
-import { ElementResponse, GenerateAsssessorRequest, HeaderRequest, ResultRequest } from './apl-02.type';
+import { ElementResponse, GenerateAsssessorRequest, ElementRequest, ResultRequest } from './apl-02.type';
 
 export class APL02Service {
   static async getUnitsAPL02(resultId: number): Promise<any[]> {
@@ -122,7 +122,7 @@ export class APL02Service {
     });
   }
 
-  static async sendResult(data: HeaderRequest) {
+  static async sendResult(data: ElementRequest) {
     const existingResult = await prisma.result.findUnique({
       where: { id: Number(data.result_id) },
       include: {
@@ -192,6 +192,43 @@ export class APL02Service {
     );
 
     return results;
+  }
+
+  static async sendResultHeader(data: ResultRequest) {
+    const existingResult = await prisma.result.findUnique({
+      where: { id: data.result_id },
+      include: {
+        apl02_headers: true
+      }
+    });
+    if (!existingResult) {
+      throw new NotFoundError('Result');
+    }
+    if (!existingResult.apl02_headers) {
+      throw new NotFoundError('APL02 header');
+    }
+
+    const headerId = existingResult.apl02_headers.id;
+
+    const update = await prisma.result_apl02_header.update({
+      where: { id: headerId },
+      data: {
+        is_continue: data.is_continue,
+      },
+      include: {
+        result: {
+          include: {
+            assessee: {
+              include: {
+                user: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return update;
   }
 
   static async getUnitsResult(resultId: number) {

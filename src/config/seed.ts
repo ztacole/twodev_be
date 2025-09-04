@@ -32,7 +32,6 @@ async function main() {
   await prisma.result_ak04.deleteMany();
   await prisma.result_ak03.deleteMany();
   await prisma.result_ak03_header.deleteMany();
-  await prisma.result_ak03_question.deleteMany();
   await prisma.result_ak02.deleteMany();
   await prisma.ak02_evidence.deleteMany();
   await prisma.result_ak02_header.deleteMany();
@@ -446,23 +445,6 @@ async function main() {
     }
   });
 
-  // Buat pertanyaan AK-03
-  console.log('Membuat pertanyaan AK-03...');
-  const ak03Questions = await prisma.result_ak03_question.createMany({
-    data: [
-      { question: 'Apakah komputer tersedia dan berfungsi?' },
-      { question: 'Apakah koneksi internet stabil?' },
-      { question: 'Apakah ruangan assessment sesuai standar?' },
-      { question: 'Apakah perangkat keras tersedia?' },
-      { question: 'Apakah perangkat lunak tersedia?' },
-      { question: 'Apakah dokumen panduan tersedia?' },
-      { question: 'Apakah instrumen assessment tersedia?' },
-      { question: 'Apakah ruangan assessment memiliki ventilasi yang baik?' },
-      { question: 'Apakah ruangan assessment memiliki pencahayaan yang baik?' },
-      { question: 'Apakah ruangan assessment memiliki keamanan yang baik?' },
-    ],
-  });
-
   // Buat hasil assessment
   console.log('Membuat hasil assessment...');
   const result = await prisma.result.create({
@@ -553,52 +535,52 @@ async function main() {
           answers: {
             create: [
               {
-                question: { connect: { id: 1 } },
+                question: 'Apakah komputer tersedia dan berfungsi?',
                 answer: true,
                 comment: 'Tersedia 1 unit komputer yang berfungsi dengan baik'
               },
               {
-                question: { connect: { id: 2 } },
+                question: 'Apakah koneksi internet stabil?',
                 answer: true,
                 comment: 'Stabil 50Mbps, tapi kadang-kadang kurang stabil'
               },
               {
-                question: { connect: { id: 3 } },
+                question: 'Apakah ruangan assessment sesuai standar?',
                 answer: true,
                 comment: 'Standar ruangan cukup baik'
               },
               {
-                question: { connect: { id: 4 } },
+                question: 'Apakah perangkat keras tersedia?',
                 answer: true,
                 comment: 'Perangkat keras lengkap dan berfungsi'
               },
               {
-                question: { connect: { id: 5 } },
+                question: 'Apakah perangkat lunak tersedia?',
                 answer: true,
                 comment: 'Seluruh perangkat lunak yang diperlukan tersedia'
               },
               {
-                question: { connect: { id: 6 } },
+                question: 'Apakah dokumen panduan tersedia?',
                 answer: true,
                 comment: 'Seluruh dokumen panduan assessment tersedia'
               },
               {
-                question: { connect: { id: 7 } },
+                question: 'Apakah instrumen assessment tersedia?',
                 answer: true,
                 comment: 'Seluruh instrumen assessment tersedia'
               },
               {
-                question: { connect: { id: 8 } },
+                question: 'Apakah ruangan assessment memiliki ventilasi yang baik?',
                 answer: true,
                 comment: 'Ventilasi ruangan cukup baik'
               },
               {
-                question: { connect: { id: 9 } },
+                question: 'Apakah ruangan assessment memiliki pencahayaan yang baik?',
                 answer: true,
                 comment: 'Pencahayaan ruangan cukup baik'
               },
               {
-                question: { connect: { id: 10 } },
+                question: 'Apakah ruangan assessment memiliki keamanan yang baik?',
                 answer: true,
                 comment: 'Keamanan ruangan cukup baik'
               }
@@ -623,7 +605,8 @@ async function main() {
           is_competent: false,
           description: 'Asesi menunjukkan kompetensi dalam pengembangan web dasar',
           negative_positive_aspects: 'Positif: Kreatif dalam desain. Negatif: Perlu meningkatkan pemahaman CSS advanced',
-          improvement_suggestions: 'Disarankan untuk mempelajari CSS Grid dan Flexbox lebih dalam'
+          improvement_suggestions: 'Disarankan untuk mempelajari CSS Grid dan Flexbox lebih dalam',
+          notes: 'Asesi menunjukkan kemampuan dalam pengembangan web dasar'
         }
       },
       // Hasil IA01
