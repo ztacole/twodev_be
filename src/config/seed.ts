@@ -32,6 +32,7 @@ async function main() {
   await prisma.result_ak04.deleteMany();
   await prisma.result_ak03.deleteMany();
   await prisma.result_ak03_header.deleteMany();
+  await prisma.result_ak03_question.deleteMany();
   await prisma.result_ak02.deleteMany();
   await prisma.ak02_evidence.deleteMany();
   await prisma.result_ak02_header.deleteMany();
@@ -445,6 +446,23 @@ async function main() {
     }
   });
 
+  // Buat pertanyaan AK-03
+  console.log('Membuat pertanyaan AK-03...');
+  const ak03Questions = await prisma.result_ak03_question.createMany({
+    data: [
+      { question: 'Apakah komputer tersedia dan berfungsi?' },
+      { question: 'Apakah koneksi internet stabil?' },
+      { question: 'Apakah ruangan assessment sesuai standar?' },
+      { question: 'Apakah perangkat keras tersedia?' },
+      { question: 'Apakah perangkat lunak tersedia?' },
+      { question: 'Apakah dokumen panduan tersedia?' },
+      { question: 'Apakah instrumen assessment tersedia?' },
+      { question: 'Apakah ruangan assessment memiliki ventilasi yang baik?' },
+      { question: 'Apakah ruangan assessment memiliki pencahayaan yang baik?' },
+      { question: 'Apakah ruangan assessment memiliki keamanan yang baik?' },
+    ],
+  });
+
   // Buat hasil assessment
   console.log('Membuat hasil assessment...');
   const result = await prisma.result.create({
@@ -532,17 +550,57 @@ async function main() {
       result_ak03_header: {
         create: {
           comment: 'Semua peralatan dalam kondisi baik dan siap digunakan',
-          rows: {
+          answers: {
             create: [
               {
-                component: 'Komputer',
-                is_ok: true,
-                comment: 'Spesifikasi memadai untuk pengembangan web'
+                question: { connect: { id: 1 } },
+                answer: true,
+                comment: 'Tersedia 1 unit komputer yang berfungsi dengan baik'
               },
               {
-                component: 'Koneksi Internet',
-                is_ok: true,
-                comment: 'Kecepatan stabil 50Mbps'
+                question: { connect: { id: 2 } },
+                answer: true,
+                comment: 'Stabil 50Mbps, tapi kadang-kadang kurang stabil'
+              },
+              {
+                question: { connect: { id: 3 } },
+                answer: true,
+                comment: 'Standar ruangan cukup baik'
+              },
+              {
+                question: { connect: { id: 4 } },
+                answer: true,
+                comment: 'Perangkat keras lengkap dan berfungsi'
+              },
+              {
+                question: { connect: { id: 5 } },
+                answer: true,
+                comment: 'Seluruh perangkat lunak yang diperlukan tersedia'
+              },
+              {
+                question: { connect: { id: 6 } },
+                answer: true,
+                comment: 'Seluruh dokumen panduan assessment tersedia'
+              },
+              {
+                question: { connect: { id: 7 } },
+                answer: true,
+                comment: 'Seluruh instrumen assessment tersedia'
+              },
+              {
+                question: { connect: { id: 8 } },
+                answer: true,
+                comment: 'Ventilasi ruangan cukup baik'
+              },
+              {
+                question: { connect: { id: 9 } },
+                answer: true,
+                comment: 'Pencahayaan ruangan cukup baik'
+              },
+              {
+                question: { connect: { id: 10 } },
+                answer: true,
+                comment: 'Keamanan ruangan cukup baik'
               }
             ]
           }
@@ -690,7 +748,7 @@ async function main() {
       },
       result_ak03_header: {
         include: {
-          rows: true
+          answers: true
         }
       },
       result_ak04: true,

@@ -8,10 +8,9 @@ export interface AK03Header {
 export interface AK03 {
   id: number;
   header_id: number;
-  component: string;
-  is_ok: boolean;
+  question_id: number;
+  answer: boolean;
   comment?: string | null;
-  header: AK03Header;
 }
 
 export interface AK03Request {
@@ -21,8 +20,8 @@ export interface AK03Request {
 }
 
 export interface AK03ItemRequest {
-  component: string;
-  is_ok: boolean;
+  question_id: number;
+  answer: boolean;
   comment?: string | null;
 }
 

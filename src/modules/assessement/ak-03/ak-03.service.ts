@@ -4,7 +4,9 @@ import { NotFoundError } from '../../../common/error';
 
 export class AK03Service {
   static async createAK03(data: AK03Request): Promise<AK03Response> {
-    const result = await prisma.result.findUnique({ where: { id: data.result_id } });
+    const result = await prisma.result.findUnique({
+      where: { id: data.result_id },
+    });
     if (!result) throw new NotFoundError('Result');
 
     const header = await prisma.result_ak03_header.create({
@@ -14,13 +16,13 @@ export class AK03Service {
       },
     });
 
-    const rows = await prisma.$transaction(
-      data.items.map(item =>
+    await prisma.$transaction(
+      data.items.map((item) =>
         prisma.result_ak03.create({
           data: {
             header_id: header.id,
-            component: item.component,
-            is_ok: item.is_ok,
+            question_id: item.question_id,
+            answer: item.answer,
             comment: item.comment ?? null,
           },
         })
@@ -29,18 +31,72 @@ export class AK03Service {
 
     const fullHeader = await prisma.result_ak03_header.findUnique({
       where: { id: header.id },
-      include: { rows: true },
+      include: { answers: true },
     });
 
     return formatAK03Response(fullHeader!);
   }
 
-  static async getAK03ByResultId(result_id: number): Promise<AK03Response | null> {
-    const header = await prisma.result_ak03_header.findUnique({
-      where: { result_id },
-      include: { rows: true },
+  static async getResultDetails(resultId: number) {
+    const result = await prisma.result.findUnique({
+    where: { id: resultId },
+    include: {
+        assessment: {
+        include: {
+            occupation: {
+            include: {
+                scheme: true
+            }
+            }
+        }
+        },
+        assessee: {
+        include: {
+            user: true
+        }
+        },
+        assessor: {
+        include: {
+            user: true
+        }
+        },
+        result_ak03_header: {
+        include: {
+            answers: {
+            include: {
+                question: true
+            }
+            }
+        }
+        }
+      }
     });
-    return header ? formatAK03Response(header) : null;
+    if (!result) {
+    throw new NotFoundError('Result');
+    }
+    if (!result.result_ak03_header) {
+    throw new NotFoundError('Result header');
+    }
+
+    return {
+    id: result.id,
+    assessment: result.assessment,
+    assessee: {
+        id: result.assessee.id,
+        name: result.assessee.user.full_name,
+        email: result.assessee.user.email
+    },
+    assessor: {
+        id: result.assessor.id,
+        name: result.assessor.user.full_name,
+        email: result.assessor.user.email,
+        no_reg_met: result.assessor.no_reg_met
+    },
+    tuk: result.tuk,
+    is_competent: result.is_competent,
+    created_at: result.created_at,
+    result_ak03: result.result_ak03_header
+    };
   }
 }
 
@@ -52,8 +108,8 @@ function formatAK03Response(header: any): AK03Response {
     rows: header.rows.map((row: any) => ({
       id: row.id,
       header_id: row.header_id,
-      component: row.component,
-      is_ok: row.is_ok,
+      question_id: row.question_id,
+      answer: row.answer,
       comment: row.comment,
     })),
   };

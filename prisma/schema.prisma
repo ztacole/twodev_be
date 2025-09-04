@@ -385,26 +385,38 @@ model ak02_evidence {
 }
 
 model result_ak03_header {
-  id            Int     @id @default(autoincrement())
-  result_id     Int     @unique
-  comment   String? @db.VarChar(255)
+  id         Int      @id @default(autoincrement())
+  result_id  Int      @unique
+  comment    String?  @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  result result @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  rows   result_ak03[]
+  result     result   @relation(fields: [result_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  answers    result_ak03[]
+}
+
+model result_ak03_question {
+  id         Int      @id @default(autoincrement())
+  question   String   @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  answers    result_ak03[]
 }
 
 model result_ak03 {
-  id        Int    @id @default(autoincrement())
-  header_id Int
-  component String @db.VarChar(255)
-  is_ok     Boolean
-  comment   String? @db.VarChar(255)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  header_id   Int
+  question_id Int
+  answer      Boolean
+  comment     String?  @db.VarChar(255)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-  header result_ak03_header @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  header   result_ak03_header  @relation(fields: [header_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question result_ak03_question @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([header_id, question_id])
 }
 
 model result_ak04 {
@@ -496,6 +508,7 @@ model group_ia02 {
   assessment assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tools      ia02_tool[]
   units      uc_ia02[]
+  pdfs       ia02_pdf[]
 }
 
 model uc_ia02 {
@@ -512,6 +525,16 @@ model uc_ia02 {
 model ia02_tool {
   id       Int    @id @default(autoincrement())
   group_id Int
+  name     String @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  group group_ia02 @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model ia02_pdf {
+  id       Int    @id @default(autoincrement())
+  group_id Int    @unique
   name     String @db.VarChar(255)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

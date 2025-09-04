@@ -1,4 +1,4 @@
-import { NotFoundError } from "../../../common/error";
+import { NotFoundError, AppError } from "../../../common/error";
 import { prisma } from "../../../config/db";
 import { GroupIA02Response } from "./ia-02.type";
 
@@ -18,7 +18,8 @@ export class IAO2Service {
             },
             include: {
                 units: true,
-                tools: true
+                tools: true,
+                pdfs: true
             }
         });
         
@@ -118,56 +119,86 @@ export class IAO2Service {
     }
 
     static async getResultDetails(resultId: number) {
-    const result = await prisma.result.findUnique({
-      where: { id: resultId },
-      include: {
-        assessment: {
-          include: {
-            occupation: {
-              include: {
-                scheme: true
-              }
+        const result = await prisma.result.findUnique({
+        where: { id: resultId },
+        include: {
+            assessment: {
+            include: {
+                occupation: {
+                include: {
+                    scheme: true
+                }
+                }
             }
-          }
-        },
+            },
+            assessee: {
+            include: {
+                user: true
+            }
+            },
+            assessor: {
+            include: {
+                user: true
+            }
+            },
+            ia02_headers: true
+        }
+        });
+        if (!result) {
+        throw new NotFoundError('Result');
+        }
+        if (!result.ia02_headers) {
+        throw new NotFoundError('Result header');
+        }
+
+        return {
+        id: result.id,
+        assessment: result.assessment,
         assessee: {
-          include: {
-            user: true
-          }
+            id: result.assessee.id,
+            name: result.assessee.user.full_name,
+            email: result.assessee.user.email
         },
         assessor: {
-          include: {
-            user: true
-          }
+            id: result.assessor.id,
+            name: result.assessor.user.full_name,
+            email: result.assessor.user.email,
+            no_reg_met: result.assessor.no_reg_met
         },
-        ia02_headers: true
-      }
-    });
-    if (!result) {
-      throw new NotFoundError('Result');
+        tuk: result.tuk,
+        is_competent: result.is_competent,
+        created_at: result.created_at,
+        ia02_header: result.ia02_headers
+        };
     }
-    if (!result.ia02_headers) {
-      throw new NotFoundError('Result header');
+    
+    static async uploadPdf(groupId: number, filePath: string, fileName: string) {
+        try {
+            return await prisma.ia02_pdf.upsert({
+                where: { group_id: groupId },
+                update: { name: fileName },
+                create: {
+                group_id: groupId,
+                name: fileName,
+                },
+            });
+        } catch (error: any) {
+            throw new AppError(`Gagal mengunggah file PDF: ${error.message}`, 500);
+        }
     }
 
-    return {
-      id: result.id,
-      assessment: result.assessment,
-      assessee: {
-        id: result.assessee.id,
-        name: result.assessee.user.full_name,
-        email: result.assessee.user.email
-      },
-      assessor: {
-        id: result.assessor.id,
-        name: result.assessor.user.full_name,
-        email: result.assessor.user.email,
-        no_reg_met: result.assessor.no_reg_met
-      },
-      tuk: result.tuk,
-      is_competent: result.is_competent,
-      created_at: result.created_at,
-      ia02_header: result.ia02_headers
-    };
-  }
+    static async getPdf(groupId: number) {
+        try {
+            const pdf = await prisma.ia02_pdf.findUnique({
+                where: { group_id: groupId },
+            });
+
+            return pdf;
+        } catch (error: any) {
+        if (error instanceof AppError) {
+            throw error;
+        }
+            throw new AppError(`Gagal mendapatkan file PDF: ${error.message}`, 500);
+        }
+    }
 }
