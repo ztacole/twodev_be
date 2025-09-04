@@ -8,7 +8,7 @@ export interface AK03Header {
 export interface AK03 {
   id: number;
   header_id: number;
-  question_id: number;
+  question: string;
   answer: boolean;
   comment?: string | null;
 }
@@ -20,7 +20,7 @@ export interface AK03Request {
 }
 
 export interface AK03ItemRequest {
-  question_id: number;
+  question: string;
   answer: boolean;
   comment?: string | null;
 }

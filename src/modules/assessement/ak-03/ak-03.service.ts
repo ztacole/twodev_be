@@ -1,6 +1,7 @@
 import { prisma } from '../../../config/db';
 import { AK03Request, AK03Response } from './ak-03.type';
 import { NotFoundError } from '../../../common/error';
+import { tr } from '@faker-js/faker/.';
 
 export class AK03Service {
   static async createAK03(data: AK03Request): Promise<AK03Response> {
@@ -8,6 +9,15 @@ export class AK03Service {
       where: { id: data.result_id },
     });
     if (!result) throw new NotFoundError('Result');
+
+    const existingHeader = await prisma.result_ak03_header.findUnique({
+      where: { result_id: data.result_id },
+    });
+    if (existingHeader) {
+      throw new Error(
+        `AK-03 with result_id ${data.result_id} already exists`
+      );
+    }
 
     const header = await prisma.result_ak03_header.create({
       data: {
@@ -21,7 +31,7 @@ export class AK03Service {
         prisma.result_ak03.create({
           data: {
             header_id: header.id,
-            question_id: item.question_id,
+            question: item.question,
             answer: item.answer,
             comment: item.comment ?? null,
           },
@@ -62,14 +72,10 @@ export class AK03Service {
         },
         result_ak03_header: {
         include: {
-            answers: {
-            include: {
-                question: true
-            }
-            }
+            answers: true
         }
+        },
         }
-      }
     });
     if (!result) {
     throw new NotFoundError('Result');
@@ -105,10 +111,10 @@ function formatAK03Response(header: any): AK03Response {
     id: header.id,
     result_id: header.result_id,
     comment: header.comment,
-    rows: header.rows.map((row: any) => ({
+    rows: header.answers.map((row: any) => ({
       id: row.id,
       header_id: row.header_id,
-      question_id: row.question_id,
+      question: row.question,
       answer: row.answer,
       comment: row.comment,
     })),
