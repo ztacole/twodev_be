@@ -16,13 +16,13 @@ import {
 import { and, eq, inArray } from "drizzle-orm";
 
 export class IA05Service {
-    static async getQuestions(assessmentId: number): Promise<IA05QuestionResponse[]> {
-    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessmentId) });
+    static async getQuestions(assessment_id: number): Promise<IA05QuestionResponse[]> {
+    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
     if (!existingAssessment) throw new NotFoundError('Assessment');
 
-    const questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessmentId, assessmentId)).orderBy(ia05QuestionTable.order);
+    const questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, assessment_id)).orderBy(ia05QuestionTable.order);
     return Promise.all(questions.map(async (q) => {
-      const options = await db.select().from(questionOptionTable).where(eq(questionOptionTable.questionId, q.id));
+      const options = await db.select().from(questionOptionTable).where(eq(questionOptionTable.question_id, q.id));
       return {
         id: q.id,
         order: q.order,
@@ -32,13 +32,13 @@ export class IA05Service {
         }));
     }
 
-    static async getAnswerKeys(assessmentId: number): Promise<IA05QuestionsAnswerResponse[]> {
-    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessmentId) });
+    static async getAnswerKeys(assessment_id: number): Promise<IA05QuestionsAnswerResponse[]> {
+    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
     if (!existingAssessment) throw new NotFoundError('Assessment');
 
-    const questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessmentId, assessmentId)).orderBy(ia05QuestionTable.order);
+    const questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, assessment_id)).orderBy(ia05QuestionTable.order);
     return Promise.all(questions.map(async (q) => {
-      const answer = await db.query.questionOption.findFirst({ where: and(eq(questionOptionTable.questionId, q.id), eq(questionOptionTable.isAnswer, true)) });
+      const answer = await db.query.questionOption.findFirst({ where: and(eq(questionOptionTable.question_id, q.id), eq(questionOptionTable.is_answer, true)) });
       return {
         id: q.id,
         order: q.order,
@@ -48,19 +48,19 @@ export class IA05Service {
         }));
     }
 
-    static async getAssesseeAnswers(resultId: number): Promise<any[]> {
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, resultId), });
+    static async getAssesseeAnswers(result_id: number): Promise<any[]> {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id), });
     if (!existingResult) throw new NotFoundError('Result');
-    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.resultId, resultId) });
+    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result_id) });
     if (!header) throw new NotFoundError('IA05 header');
 
-    const answers = await db.select().from(ia05RowTable).where(eq(ia05RowTable.headerId, header.id));
+    const answers = await db.select().from(ia05RowTable).where(eq(ia05RowTable.header_id, header.id));
 
     const mapped = [] as any[];
     for (const row of answers) {
-      const option = await db.query.questionOption.findFirst({ where: eq(questionOptionTable.id, row.optionId) });
+      const option = await db.query.questionOption.findFirst({ where: eq(questionOptionTable.id, row.option_id) });
       if (!option) continue;
-      const question = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.id, option.questionId) });
+      const question = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.id, option.question_id) });
       if (!question) continue;
       mapped.push({
         id: question.id,
@@ -75,14 +75,14 @@ export class IA05Service {
     static async sendAssesseeResult(data: SendAssesseeResultRequest) {
     const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, data.result_id) });
     if (!existingResult) throw new NotFoundError('Result');
-    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.resultId, data.result_id) });
+    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, data.result_id) });
     if (!header) throw new NotFoundError('IA05 header');
 
-    const optionIds = data.answers.map(a => Number(a.option_id));
-    const options = optionIds.length ? await db.select().from(questionOptionTable).where(inArray(questionOptionTable.id, optionIds)) : [];
-    if (options.length !== optionIds.length) throw new NotFoundError('Option');
+    const option_ids = data.answers.map(a => Number(a.option_id));
+    const options = option_ids.length ? await db.select().from(questionOptionTable).where(inArray(questionOptionTable.id, option_ids)) : [];
+    if (options.length !== option_ids.length) throw new NotFoundError('Option');
 
-    const existingRows = await db.select().from(ia05RowTable).where(eq(ia05RowTable.headerId, header.id));
+    const existingRows = await db.select().from(ia05RowTable).where(eq(ia05RowTable.header_id, header.id));
 
     const results: any[] = [];
     for (const answer of data.answers) {
@@ -91,16 +91,16 @@ export class IA05Service {
       // Find existing row by question (through option)
       let existingForQuestion: number | null = null;
       for (const r of existingRows) {
-        const opt = await db.query.questionOption.findFirst({ where: eq(questionOptionTable.id, r.optionId) });
-        if (opt && opt.questionId === selected.questionId) { existingForQuestion = r.id; break; }
+        const opt = await db.query.questionOption.findFirst({ where: eq(questionOptionTable.id, r.option_id) });
+        if (opt && opt.question_id === selected.question_id) { existingForQuestion = r.id; break; }
       }
       if (existingForQuestion) {
-        await db.update(ia05RowTable).set({ optionId: answer.option_id }).where(eq(ia05RowTable.id, existingForQuestion));
+        await db.update(ia05RowTable).set({ option_id: answer.option_id }).where(eq(ia05RowTable.id, existingForQuestion));
         const updated = await db.query.resultIa05.findFirst({ where: eq(ia05RowTable.id, existingForQuestion) });
         if (updated) results.push(updated);
                 } else {
-        await db.insert(ia05RowTable).values({ headerId: header.id, optionId: answer.option_id, approved: false });
-        const created = await db.query.resultIa05.findFirst({ where: and(eq(ia05RowTable.headerId, header.id), eq(ia05RowTable.optionId, answer.option_id)) });
+        await db.insert(ia05RowTable).values({ header_id: header.id, option_id: answer.option_id, approved: false });
+        const created = await db.query.resultIa05.findFirst({ where: and(eq(ia05RowTable.header_id, header.id), eq(ia05RowTable.option_id, answer.option_id)) });
         if (created) results.push(created);
       }
     }
@@ -110,11 +110,11 @@ export class IA05Service {
     static async sendAssessorResult(data: SendAssessorResultRequest) {
     const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, data.result_id) });
     if (!existingResult) throw new NotFoundError('Result');
-    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.resultId, data.result_id) });
+    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, data.result_id) });
     if (!header) throw new NotFoundError('IA05 header');
 
     await db.update(ia05HeaderTable).set({
-      isAchieved: data.is_achieved,
+      is_achieved: data.is_achieved,
       unit: data.unit as any,
       element: data.element as any,
       kuk: data.kuk as any,
@@ -122,7 +122,7 @@ export class IA05Service {
 
     const results: any[] = [];
     for (const r of data.results) {
-      const row = await db.query.resultIa05.findFirst({ where: and(eq(ia05RowTable.headerId, header.id), eq(ia05RowTable.optionId, r.option_id)) });
+      const row = await db.query.resultIa05.findFirst({ where: and(eq(ia05RowTable.header_id, header.id), eq(ia05RowTable.option_id, r.option_id)) });
       if (row) {
         await db.update(ia05RowTable).set({ approved: r.approved }).where(eq(ia05RowTable.id, row.id));
         const updated = await db.query.resultIa05.findFirst({ where: eq(ia05RowTable.id, row.id) });
@@ -134,46 +134,46 @@ export class IA05Service {
     return updatedHeader;
     }
 
-    static async approvedByAssessor(resultId: number) {
-    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.resultId, resultId) });
+    static async approvedByAssessor(result_id: number) {
+    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result_id) });
     if (!header) throw new NotFoundError('IA05 header');
-    await db.update(ia05HeaderTable).set({ approvedAssessor: true }).where(eq(ia05HeaderTable.id, header.id));
+    await db.update(ia05HeaderTable).set({ approved_assessor: true }).where(eq(ia05HeaderTable.id, header.id));
     const updated = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.id, header.id) });
     if (!updated) throw new NotFoundError('IA05 header');
     return updated;
     }
 
-    static async approvedByAssessee(resultId: number) {
-    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.resultId, resultId) });
+    static async approvedByAssessee(result_id: number) {
+    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result_id) });
     if (!header) throw new NotFoundError('IA05 header');
-    await db.update(ia05HeaderTable).set({ approvedAssessee: true }).where(eq(ia05HeaderTable.id, header.id));
+    await db.update(ia05HeaderTable).set({ approved_assessee: true }).where(eq(ia05HeaderTable.id, header.id));
     const updated = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.id, header.id) });
     if (!updated) throw new NotFoundError('IA05 header');
     return updated;
     }
 
-    static async getResultDetails(resultId: number) {
-    const result = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+    static async getResultDetails(result_id: number) {
+    const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!result) throw new NotFoundError('Result');
 
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessmentId) });
-    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupationId) }) : null;
-    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) }) : null;
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
 
-    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assesseeId) });
-    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) }) : null;
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
 
-    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.resultId, result.id) });
+    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result.id) });
     if (!header) throw new NotFoundError('Result header');
 
     return {
       id: result.id,
       assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
-      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.fullName, email: assesseeUser.email } : null,
+      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
       assessor: null,
       tuk: result.tuk,
-      is_competent: result.isCompetent,
-      created_at: result.createdAt,
+      is_competent: result.is_competent,
+      created_at: result.created_at,
       ia05_header: header,
     };
   }
