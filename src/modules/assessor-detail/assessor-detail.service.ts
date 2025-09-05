@@ -9,7 +9,7 @@ export class AssessorDetailService {
         return detail;
     }
 
-    static async upsertByassessor_id(assessor_id: number, data: { tax_id_number?: string; bank_book_cover?: string; certificate?: string; national_id?: string }) {
+    static async upsertByAssessorId(assessor_id: number, data: { tax_id_number?: string; bank_book_cover?: string; certificate?: string; national_id?: string }) {
         const existing = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, assessor_id) });
         if (existing) {
             await db.update(assessorDetailTable)

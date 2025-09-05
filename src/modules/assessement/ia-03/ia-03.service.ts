@@ -2,17 +2,18 @@ import { NotFoundError } from "../../../common/error";
 import { GroupIA03Response, SendResultRequest } from "./ia-03.type";
 import { db } from "../../../config/drizzle";
 import {
-  result as resultTable,
-  assessment as assessmentTable,
-  groupIa03 as groupIa03Table,
-  ucIa03 as ucIa03Table,
-  ia03Question as ia03QuestionTable,
-  resultIa03Header as ia03HeaderTable,
-  resultIa03 as ia03RowTable,
-  assessee as assesseeTable,
-  user as userTable,
-  occupation as occupationTable,
-  scheme as schemeTable,
+    assessor as assessorTable,
+    result as resultTable,
+    assessment as assessmentTable,
+    groupIa03 as groupIa03Table,
+    ucIa03 as ucIa03Table,
+    ia03Question as ia03QuestionTable,
+    resultIa03Header as ia03HeaderTable,
+    resultIa03 as ia03RowTable,
+    assessee as assesseeTable,
+    user as userTable,
+    occupation as occupationTable,
+    scheme as schemeTable,
 } from "../../../../drizzle/schema";
 import { and, eq, inArray } from "drizzle-orm";
 
@@ -42,8 +43,8 @@ export class IA03Service {
                         header_id: header?.id,
                         answer: rows.find(r => r.question_id === q.id)!.answer,
                         approved: rows.find(r => r.question_id === q.id)!.approved,
-                } : null
-            }))
+                    } : null
+                }))
             };
         }));
     }
@@ -101,18 +102,20 @@ export class IA03Service {
         const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
         const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
+        const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
         const header = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.result_id, result.id) });
         if (!header) throw new NotFoundError('Result header');
 
-    return {
-      id: result.id,
+        return {
+            id: result.id,
             assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
             assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
-            assessor: null,
-      tuk: result.tuk,
+            assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,
+            tuk: result.tuk,
             is_competent: result.is_competent,
             created_at: result.created_at,
             ia03_header: header,
-    };
-  }
+        };
+    }
 }

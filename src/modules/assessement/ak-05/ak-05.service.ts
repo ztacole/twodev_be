@@ -47,7 +47,7 @@ export class AK05Service {
     return [enriched];
   }
 
-  static async getAK05ByResult_id(result_id: number): Promise<AK05Response | null> {
+  static async getAK05ByResultId(result_id: number): Promise<AK05Response | null> {
     const ak05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, result_id) });
     if (!ak05) return null;
     return await buildAK05Response(ak05);
@@ -86,8 +86,8 @@ async function buildAK05Response(ak05: any): Promise<AK05Response> {
     result: {
       id: result.id,
       assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
-      assessee: assessee && assesseeUser ? { id: assessee.id, user: { full_name: assesseeUser.full_name, email: assesseeUser.email } } as any : null,
-      assessor: assessor && assessorUser ? { id: assessor.id, user: { full_name: assessorUser.full_name, email: assessorUser.email }, no_reg_met: assessor.no_reg_met } as any : null,
+      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } as any : null,
+      assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } as any : null,
       tuk: result.tuk,
       created_at: result.created_at,
       result_ak05: ak05 as any,

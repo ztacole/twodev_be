@@ -18,6 +18,9 @@ import {
     resultAk03Header,
     resultAk04,
     resultAk05,
+    result,
+    assessment,
+    assessee,
 } from '../../../../drizzle/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import {
@@ -27,7 +30,6 @@ import {
     AssesseeRequest,
     AssesseeJobRequest,
     CertificateDocsRequest,
-    ResultDocResponse
 } from './apl-01.type';
 
 const TUK_VALUES = {
@@ -209,7 +211,7 @@ export class APL1Service {
             const found = await db.query.result.findFirst({
                 where: and(eq(resultTable.assessment_id, assessment_id), eq(resultTable.assessor_id, assessor_id), eq(resultTable.assessee_id, assessee_id))
             });
-            if (!found) throw new NotFoundError('Result');
+            if (!found) throw new NotFoundError('result');
             resultRow = found as any;
 
             // create headers
@@ -242,8 +244,8 @@ export class APL1Service {
             // fetch updated doc
             const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, existingDocs.id) });
             // build full result nested
-            const fullResult = await APL1Service._buildFullResult(resultRow.id);
-            return { ...(updated as any), result: fullResult } as CertificateDocsResponse;
+            const fullresult = await APL1Service._buildFullresult(resultRow.id);
+            return { ...(updated as any), result: fullresult } as CertificateDocsResponse;
         } else {
             // create new doc
             const [ins] = await db.insert(resultDocTable).values({
@@ -259,13 +261,13 @@ export class APL1Service {
 
             // fetch created doc (by result_id)
             const created = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, resultRow.id) });
-            const fullResult = await APL1Service._buildFullResult(resultRow.id);
-            return { ...(created as any), result: fullResult } as CertificateDocsResponse;
+            const fullresult = await APL1Service._buildFullresult(resultRow.id);
+            return { ...(created as any), result: fullresult } as CertificateDocsResponse;
         }
     }
 
     // helper untuk membangun nested result object mirip Prisma include
-    private static async _buildFullResult(result_id: number) {
+    private static async _buildFullresult(result_id: number) {
         const resultRow = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
         if (!resultRow) return null;
 
@@ -300,32 +302,51 @@ export class APL1Service {
         };
     }
 
-    static async getAllResultDoc(): Promise<ResultDocResponse[]> {
+    static async getAllResultDoc(): Promise<any[]> {
         const docs = await db.select().from(resultDocTable);
         return docs as any;
     }
 
-    static async getResultDocsByAssessmentId(assessment_id: number): Promise<ResultDocResponse[]> {
-        // ambil semua result ids untuk assessment
-        const results = await db.select().from(resultTable).where(eq(resultTable.assessment_id, assessment_id));
-        const ids = new Set(results.map(r => r.id));
-        const docs = await db.select().from(resultDocTable);
-        return (docs.filter(d => ids.has(d.result_id)) as any);
+    static async getResultDocsByAssessmentId(assessmentId: number) {
+        const rows = await db
+            .select({
+                id: resultDocTable.id,
+                result_id: resultDocTable.result_id,
+                approved: resultDocTable.approved,
+                purpose: resultDocTable.purpose,
+                school_report_card: resultDocTable.school_report_card,
+                field_work_practice_certificate: resultDocTable.field_work_practice_certificate,
+                student_card: resultDocTable.student_card,
+                family_card: resultDocTable.family_card,
+                id_card: resultDocTable.id_card,
+                created_at: resultDocTable.created_at,
+                updated_at: resultDocTable.updated_at,
+                result: result,
+                assessment: assessment,
+                assessee: assessee
+            })
+            .from(resultDocTable)
+            .innerJoin(result, eq(resultDocTable.result_id, result.id))
+            .innerJoin(assessment, eq(result.assessment_id, assessment.id))
+            .innerJoin(assessee, eq(result.assessee_id, assessee.id))
+            .where(eq(result.assessment_id, assessmentId));
+
+        return rows;
     }
 
-    static async getResultDocsByAssessorId(assessor_id: number): Promise<ResultDocResponse[]> {
+    static async getResultDocsByAssessorId(assessor_id: number): Promise<any[]> {
         const results = await db.select().from(resultTable).where(eq(resultTable.assessee_id, assessor_id));
         const ids = new Set(results.map(r => r.id));
         const docs = await db.select().from(resultDocTable);
         return (docs.filter(d => ids.has(d.result_id)) as any);
     }
 
-    static async getUnapprovedResultDoc(): Promise<ResultDocResponse[]> {
+    static async getUnapprovedResultDoc(): Promise<any[]> {
         const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.approved, false));
         return docs as any;
     }
 
-    static async approveResultDoc(result_id: number): Promise<ResultDocResponse> {
+    static async approveResultDoc(result_id: number): Promise<any> {
         await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.id, result_id));
         const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, result_id) });
         return updated as any;

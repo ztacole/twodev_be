@@ -2,17 +2,18 @@ import { NotFoundError, AppError } from "../../../common/error";
 import { GroupIA02Response } from "./ia-02.type";
 import { db } from "../../../config/drizzle";
 import {
-  assessment as assessmentTable,
-  groupIa02 as groupIa02Table,
-  ucIa02 as ucIa02Table,
-  ia02Tool as ia02ToolTable,
-  ia02Pdf as ia02PdfTable,
-  result as resultTable,
-  resultIa02Header as ia02HeaderTable,
-  assessee as assesseeTable,
-  user as userTable,
-  occupation as occupationTable,
-  scheme as schemeTable,
+    assessor as assessorTable,
+    assessment as assessmentTable,
+    groupIa02 as groupIa02Table,
+    ucIa02 as ucIa02Table,
+    ia02Tool as ia02ToolTable,
+    ia02Pdf as ia02PdfTable,
+    result as resultTable,
+    resultIa02Header as ia02HeaderTable,
+    assessee as assesseeTable,
+    user as userTable,
+    occupation as occupationTable,
+    scheme as schemeTable,
 } from "../../../../drizzle/schema";
 import { eq } from "drizzle-orm";
 
@@ -90,6 +91,8 @@ export class IAO2Service {
         const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
         const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
+        const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
         const header = await db.query.resultIa02Header.findFirst({ where: eq(ia02HeaderTable.result_id, result_id) });
         if (!header) throw new NotFoundError('Result header');
 
@@ -97,14 +100,14 @@ export class IAO2Service {
             id: result.id,
             assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
             assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
-            assessor: null,
+            assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,
             tuk: result.tuk,
             is_competent: false,
             created_at: result.created_at,
             ia02_header: header,
         };
     }
-    
+
     static async uploadPdf(assessment_id: number, _filePath: string, file_name: string) {
         try {
             const existing = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });

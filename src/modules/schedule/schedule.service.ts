@@ -84,7 +84,7 @@ export class ScheduleService {
         return Promise.all(schedules.map(s => buildScheduleResponse(s)));
     }
 
-    static async getCompletedSchedulesByassessee_id(assessee_id: number): Promise<ScheduleResponse[]> {
+    static async getCompletedSchedulesByAssesseeId(assessee_id: number): Promise<ScheduleResponse[]> {
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assessee_id) });
         if (!assessee) {
             throw new NotFoundError('Assessee');

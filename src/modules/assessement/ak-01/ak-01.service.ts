@@ -56,6 +56,8 @@ export class AK01Service {
       throw new NotFoundError('Header AK01');
     }
 
+    const rows = await db.query.resultAk01.findMany({ where: eq(ak01RowTable.header_id, header.id) });
+
     const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
     const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
     const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
@@ -77,7 +79,7 @@ export class AK01Service {
       is_competent: result.is_competent,
       created_at: result.created_at,
       locations,
-      ak01_header: header,
+      ak01_header: { ...header, rows },
     };
   }
   
@@ -92,7 +94,7 @@ export class AK01Service {
     return formatAK01Response({ ...header, rows });
   }
   
-  static async getAK01ByResult_id(result_id: number): Promise<AK01Response> {
+  static async getAK01ByResultId(result_id: number): Promise<AK01Response> {
     const header = await db.query.resultAk01Header.findFirst({ where: eq(ak01HeaderTable.result_id, result_id) });
   
     if (!header) {

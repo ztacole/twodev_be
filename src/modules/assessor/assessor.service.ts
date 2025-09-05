@@ -31,7 +31,7 @@ export class AssessorService {
         return this.formatAssessorResponse({ ...a, user: { ...user, role }, scheme } as any);
     }
 
-    static async getAssessorByuser_id(user_id: number): Promise<AssessorResponse> {
+    static async getAssessorByUserId(user_id: number): Promise<AssessorResponse> {
         const a = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, user_id) });
         if (!a) throw new NotFoundError('Assessor');
         const user = await db.query.user.findFirst({ where: eq(userTable.id, a.user_id) });

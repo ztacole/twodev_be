@@ -21,8 +21,10 @@ import {
     ia07Question as ia07QuestionTable,
     questionOption as questionOptionTable,
     result as resultTable,
+    assessor,
+    assessee,
 } from "../../../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
 
 export class AssessmentService {
@@ -312,13 +314,27 @@ export class AssessmentService {
     }
 
     static async getAssessmentResultDetails(assessment_id: number, assessor_id: number, assessee_id: number) {
-        const result = await db.query.result.findFirst({
-            where: and(
-                eq(resultTable.assessment_id, assessment_id),
-                eq(resultTable.assessor_id, assessor_id),
-                eq(resultTable.assessee_id, assessee_id)
-            )
-        });
+        const result = await db
+        .select({
+            id: resultTable.id,
+            assessment: assessmentTable,
+            assessee: assessee,
+            assessor: assessor,
+            tuk: resultTable.tuk,
+            is_competent: resultTable.is_competent,
+            created_at: resultTable.created_at,
+        })
+        .from(resultTable)
+        .innerJoin(assessmentTable, eq(resultTable.assessment_id, assessmentTable.id))
+        .innerJoin(assessee, eq(resultTable.assessee_id, assessee.id))
+        .innerJoin(assessor, eq(resultTable.assessor_id, assessor.id))
+        .where(and(
+            eq(assessmentTable.id, assessment_id),
+            eq(assessor.id, assessor_id),
+            eq(assessee.id, assessee_id)
+        ))
+        .orderBy(desc(resultTable.created_at))
+        .limit(1);
 
         if (!result) {
             throw new NotFoundError('Result');

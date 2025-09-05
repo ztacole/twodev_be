@@ -1,5 +1,14 @@
 import { db } from '../../../config/drizzle';
-import { resultAk04, result as resultTable } from '../../../../drizzle/schema';
+import { 
+  resultAk04,
+  result as resultTable,
+  assessee as assesseeTable,
+  user as userTable,
+  assessment as assessmentTable,
+  occupation as occupationTable,
+  scheme as schemeTable,
+  assessor as assessorTable,
+} from '../../../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { AK04Request, AK04Response } from './ak-04.type';
 import { NotFoundError } from '../../../common/error';
@@ -52,12 +61,31 @@ export class AK04Service {
     return record as unknown as AK04Response;
   }
 
-  static async getResultDetails(result_id: number): Promise<AK04Response> {
-    const record = await db.query.resultAk04.findFirst({
-      where: eq(resultAk04.result_id, result_id)
-    });
-    if (!record) throw new NotFoundError('AK04');
-    return record as unknown as AK04Response;
+  static async getResultDetails(result_id: number): Promise<any> {
+    const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
+    if (!result) {
+      throw new NotFoundError('Result');
+    }
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+    const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
+    const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
+    const header = await db.query.resultAk03Header.findFirst({ where: eq(resultAk04.result_id, result.id) });
+    if (!header) throw new NotFoundError('Result header');
+    
+    return {
+      id: result.id,
+      assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
+      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
+      assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,
+      tuk: result.tuk,
+      is_competent: result.is_competent,
+      created_at: result.created_at,
+      result_ak04: { ...header },
+    };
   }
 
   static async approvedByAssessee(result_id: number): Promise<AK04Response> {

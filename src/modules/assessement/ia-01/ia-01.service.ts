@@ -2,6 +2,7 @@ import { NotFoundError } from "../../../common/error";
 import { AssessorApproveRequest, GroupIA01Response, SendResultRequest } from "./ia-01.type";
 import { db } from "../../../config/drizzle";
 import {
+  assessor as assessorTable,
   result as resultTable,
   assessment as assessmentTable,
   groupIa01 as groupIa01Table,
@@ -199,6 +200,9 @@ export class IA01Service {
     const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
     const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
 
+    const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
+    const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
+
     const header = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.result_id, result.id) });
     if (!header) throw new NotFoundError('Result header');
 
@@ -206,7 +210,7 @@ export class IA01Service {
       id: result.id,
       assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
       assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
-      assessor: null,
+      assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,
       tuk: result.tuk,
       is_competent: result.is_competent,
       created_at: result.created_at,
