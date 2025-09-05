@@ -1,15 +1,17 @@
-import { prisma } from '../../config/db';
+import { db } from '../../config/drizzle';
 import ExcelJS from 'exceljs';
 import { SchemeRequest } from './scheme.type';
 import { DuplicateEntryError, NotFoundError } from '../../common/error';
+import { scheme as schemeTable } from '../../../drizzle/schema';
+import { and, eq } from 'drizzle-orm';
 
 export class SchemeService {
   public static getSchemes = async (): Promise<any> => {
-    return prisma.scheme.findMany();
+    return db.select().from(schemeTable);
   };
 
   public static getSchemeById = async (id: number): Promise<any> => {
-    const scheme = await prisma.scheme.findUnique({ where: { id } });
+    const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, id) });
 
     if (!scheme) {
       throw new NotFoundError('Scheme');
@@ -19,41 +21,44 @@ export class SchemeService {
   };
 
   public static createScheme = async (data: SchemeRequest) => {
-    const existingSchemeCode = await prisma.scheme.findFirst({ where: { code: data.code } });
+    const existingSchemeCode = await db.query.scheme.findFirst({ where: eq(schemeTable.code, data.code) });
     if (existingSchemeCode) {
       throw new DuplicateEntryError('Scheme code', data.code);
     }
 
-    return prisma.scheme.create({ data });
+    await db.insert(schemeTable).values({ code: data.code, name: data.name });
+    return await db.query.scheme.findFirst({ where: eq(schemeTable.code, data.code) });
   };
 
   public static updateScheme = async (id: number, data: SchemeRequest) => {
-    const existingScheme = await prisma.scheme.findUnique({ where: { id } });
+    const existingScheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, id) });
     if (!existingScheme) {
       throw new NotFoundError('Scheme');
     }
 
-    const existingSchemeCode = await prisma.scheme.findFirst({ where: { code: data.code } });
-    if (existingSchemeCode) {
+    const existingSchemeCode = await db.query.scheme.findFirst({ where: eq(schemeTable.code, data.code) });
+    if (existingSchemeCode && existingSchemeCode.id !== id) {
       throw new DuplicateEntryError('Scheme code', data.code);
     }
 
-    const scheme = prisma.scheme.update({ where: { id }, data });
+    await db.update(schemeTable).set({ code: data.code, name: data.name }).where(eq(schemeTable.id, id));
+
+    const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, id) });
 
     return scheme;
   };
 
   public static deleteScheme = async (id: number) => {
-    const existingScheme = await prisma.scheme.findUnique({ where: { id } });
+    const existingScheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, id) });
     if (!existingScheme) {
       throw new NotFoundError('Scheme');
     }
 
-    return await prisma.scheme.delete({ where: { id: id } });
+    await db.delete(schemeTable).where(eq(schemeTable.id, id));
   };
 
   public static exportSchemesToExcel = async () => {
-    const schemes = await prisma.scheme.findMany();
+    const schemes = await db.select().from(schemeTable);
 
     if (!schemes.length) {
       throw new NotFoundError('Schemes');

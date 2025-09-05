@@ -1,779 +1,224 @@
-import { PrismaClient } from '@prisma/client';
+import "dotenv/config";
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
+import { db } from '../config/drizzle';
+import {
+  role as roleTable,
+  user as userTable,
+  admin as adminTable,
+  assessor as assessorTable,
+  assessorDetail as assessorDetailTable,
+  scheme as schemeTable,
+  occupation as occupationTable,
+  assessee as assesseeTable,
+  assesseeJob as assesseeJobTable,
+  assessment as assessmentTable,
+  // below are example names used in your project — adjust if your schema uses different identifiers
+  groupIa01 as groupIa01Table,
+  groupIa02 as groupsIa02Table,
+  groupIa03 as groupsIa03Table,
+  ucApl02 as ucApl02Table,
+  ia05Question as ia05QuestionTable,
+  questionOption as questionOptionTable,
+  ia07Question as ia07QuestionTable,
+  assessmentSchedule as assessmentScheduleTable,
+  scheduleDetail as scheduleDetailTable,
+  result as resultTable,
+  resultDoc as resultDocTable,
+  resultApl02Header as apl02HeaderTable,
+  resultIa01Header as ia01HeaderTable,
+  resultIa02Header as ia02HeaderTable,
+  resultIa03Header as ia03HeaderTable,
+  resultIa05Header as ia05HeaderTable,
+  resultIa07Header as ia07HeaderTable,
+  resultAk01Header as ak01HeaderTable,
+  resultAk02Header as ak02HeaderTable,
+} from '../../drizzle/schema';
+import { eq } from 'drizzle-orm';
 
 const SALT_ROUNDS = 10;
 const DEFAULT_PASSWORD = 'password';
 
-async function hashPassword(password: string): Promise<string> {
+async function hashPassword(password: string) {
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
 async function main() {
-  console.log('Memulai seeding...');
+  console.log('Starting Drizzle seed...');
 
-  // Hapus data yang ada (hati-hati di production!)
-  console.log('Menghapus data lama...');
-  await prisma.result_ia07.deleteMany();
-  await prisma.result_ia07_header.deleteMany();
-  await prisma.ia07_question.deleteMany();
-  await prisma.result_ia05.deleteMany();
-  await prisma.result_ia05_header.deleteMany();
-  await prisma.question_option.deleteMany();
-  await prisma.ia05_question.deleteMany();
-  await prisma.result_ia03.deleteMany();
-  await prisma.result_ia03_header.deleteMany();
-  await prisma.ia03_question.deleteMany();
-  await prisma.result_ia02_header.deleteMany();
-  await prisma.result_ia01.deleteMany();
-  await prisma.result_ia01_header.deleteMany();
-  await prisma.result_ak05.deleteMany();
-  await prisma.result_ak04.deleteMany();
-  await prisma.result_ak03.deleteMany();
-  await prisma.result_ak03_header.deleteMany();
-  await prisma.result_ak02.deleteMany();
-  await prisma.ak02_evidence.deleteMany();
-  await prisma.result_ak02_header.deleteMany();
-  await prisma.result_ak01.deleteMany();
-  await prisma.result_ak01_header.deleteMany();
-  await prisma.apl02_evidence.deleteMany();
-  await prisma.result_apl02.deleteMany();
-  await prisma.result_apl02_header.deleteMany();
-  await prisma.element_details_apl02.deleteMany();
-  await prisma.element_apl02.deleteMany();
-  await prisma.uc_apl02.deleteMany();
-  await prisma.result_doc.deleteMany();
-  await prisma.result.deleteMany();
-  await prisma.schedule_detail.deleteMany();
-  await prisma.assessment_schedule.deleteMany();
-  await prisma.ia02_tool.deleteMany();
-  await prisma.uc_ia03.deleteMany();
-  await prisma.group_ia03.deleteMany();
-  await prisma.uc_ia02.deleteMany();
-  await prisma.group_ia02.deleteMany();
-  await prisma.element_details_ia.deleteMany();
-  await prisma.element_ia.deleteMany();
-  await prisma.uc_ia01.deleteMany();
-  await prisma.group_ia01.deleteMany();
-  await prisma.assessment.deleteMany();
-  await prisma.occupation.deleteMany();
-  await prisma.scheme.deleteMany();
-  await prisma.assessor_detail.deleteMany();
-  await prisma.assessor.deleteMany();
-  await prisma.assessee_job.deleteMany();
-  await prisma.assessee.deleteMany();
-  await prisma.admin.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.role.deleteMany();
+  // WARNING: this will wipe data. Adjust order if your DB has FK constraints different from this script.
+  console.log('Deleting old data (in safe order)...');
+  try {
+    // delete children first - adapt table names if different in your drizzle/schema
+    await db.delete(resultDocTable);
+    await db.delete(resultTable);
+    await db.delete(scheduleDetailTable);
+    await db.delete(assessmentScheduleTable);
 
-  // Buat role
-  console.log('Membuat role...');
-  const adminRole = await prisma.role.create({
-    data: {
-      name: 'Admin',
-    },
-  });
+    // headers & other result sub-tables
+    await db.delete(apl02HeaderTable);
+    await db.delete(ia01HeaderTable);
+    await db.delete(ia02HeaderTable);
+    await db.delete(ia03HeaderTable);
+    await db.delete(ia05HeaderTable);
+    await db.delete(ia07HeaderTable);
+    await db.delete(ak01HeaderTable);
+    await db.delete(ak02HeaderTable);
 
-  const assessorRole = await prisma.role.create({
-    data: {
-      name: 'Assessor',
-    },
-  });
+    // assessment related
+    await db.delete(ia07QuestionTable);
+    await db.delete(questionOptionTable);
+    await db.delete(ia05QuestionTable);
+    await db.delete(ucApl02Table);
+    await db.delete(groupsIa03Table);
+    await db.delete(groupsIa02Table);
+    await db.delete(groupIa01Table);
+  await db.delete(assessmentTable);
 
-  const assesseeRole = await prisma.role.create({
-    data: {
-      name: 'Assessee',
-    },
-  });
+    // occupations schemes
+  await db.delete(occupationTable);
+  await db.delete(schemeTable);
 
-  // Buat user dengan password ter-hash
-  console.log('Membuat user...');
+    // assessee / assessor
+    await db.delete(assesseeJobTable);
+    await db.delete(assesseeTable);
+    await db.delete(assessorDetailTable);
+    await db.delete(assessorTable);
+  await db.delete(adminTable);
+  await db.delete(userTable);
+  await db.delete(roleTable);
+
+  } catch (e) {
+    console.warn('Warning while deleting: ', e);
+  }
+
+  // 1) Roles
+  console.log('Creating roles...');
+  await db.insert(roleTable).values({ name: 'Admin' });
+  await db.insert(roleTable).values({ name: 'Assessor' });
+  await db.insert(roleTable).values({ name: 'Assessee' });
+  const adminRole = await db.query.role.findFirst({ where: eq(roleTable.name, 'Admin') });
+  const assessorRole = await db.query.role.findFirst({ where: eq(roleTable.name, 'Assessor') });
+  const assesseeRole = await db.query.role.findFirst({ where: eq(roleTable.name, 'Assessee') });
+
+  // 2) Users + password
+  console.log('Creating users...');
   const hashedPassword = await hashPassword(DEFAULT_PASSWORD);
 
-  // Admin
-  const adminUser = await prisma.user.create({
-    data: {
-      full_name: 'Admin Utama',
-      email: 'admin@example.com',
-      password: hashedPassword,
-      role_id: adminRole.id,
-      admin: {
-        create: {
-          address: 'Jalan Admin No. 123',
-          phone_no: '081234567890',
-          birth_date: new Date('1980-01-01'),
-        },
-      },
-    },
-  });
+  // Admin user
+  await db.insert(userTable).values({ fullName: 'Admin Utama', email: 'admin@example.com', password: hashedPassword, roleId: adminRole?.id || 1 });
+  const adminUser = await db.query.user.findFirst({ where: eq(userTable.email, 'admin@example.com') });
+  if (adminUser) {
+    await db.insert(adminTable).values({ userId: adminUser.id, address: 'Jalan Admin No. 123', phoneNo: '081234567890', birthDate: new Date('1980-01-01') });
+  }
 
-  // Buat skema terlebih dahulu
-  console.log('Membuat skema...');
-  const schemeRPL = await prisma.scheme.create({
-    data: {
-      code: 'RPL',
-      name: 'Rekayasa Perangkat Lunak',
-    },
-  });
+  // Schemes
+  console.log('Creating schemes and occupations...');
+  await db.insert(schemeTable).values({ code: 'RPL', name: 'Rekayasa Perangkat Lunak' });
+  await db.insert(schemeTable).values({ code: 'PH', name: 'Perhotelan' });
+  const schemeRPL = await db.query.scheme.findFirst({ where: eq(schemeTable.code, 'RPL') });
+  const schemePH = await db.query.scheme.findFirst({ where: eq(schemeTable.code, 'PH') });
 
-  const schemePH = await prisma.scheme.create({
-    data: {
-      code: 'PH',
-      name: 'Perhotelan',
-    },
-  });
+  // Occupations
+  await db.insert(occupationTable).values({ schemeId: (schemeRPL?.id ?? 1), name: 'Pengembang Web' });
+  await db.insert(occupationTable).values({ schemeId: (schemeRPL?.id ?? 1), name: 'Pengembang Mobile' });
+  await db.insert(occupationTable).values({ schemeId: (schemePH?.id ?? 1), name: 'Pelayanan Hotel' });
+  const occupation1 = await db.query.occupation.findFirst({ where: eq(occupationTable.name, 'Pengembang Web') });
 
-  // Assessor 1
-  const assessorUser1 = await prisma.user.create({
-    data: {
-      full_name: 'Assessor Pertama',
-      email: 'assessor1@example.com',
-      password: hashedPassword,
-      role_id: assessorRole.id,
-      assessor: {
-        create: {
-          address: 'Jalan Assessor No. 456',
-          phone_no: '082345678901',
-          birth_date: new Date('1985-05-15'),
-          no_reg_met: `MET.000.${Math.floor(Math.random() * 100000)}.${new Date().getFullYear()}`,
-          scheme_id: schemeRPL.id,
-        },
-      },
-    },
-    include: {
-      assessor: true,
-    },
-  });
-
-  // Assessor 2
-  const assessorUser2 = await prisma.user.create({
-    data: {
-      full_name: 'Assessor Kedua',
-      email: 'assessor2@example.com',
-      password: hashedPassword,
-      role_id: assessorRole.id,
-      assessor: {
-        create: {
-          address: 'Jalan Penilai No. 789',
-          phone_no: '083456789012',
-          birth_date: new Date('1975-08-20'),
-          no_reg_met: `MET.000.${Math.floor(Math.random() * 100000)}.${new Date().getFullYear()}`,
-          scheme_id: schemeRPL.id,
-        },
-      },
-    },
-    include: {
-      assessor: true,
-    },
-  });
-
-  // Assessee 1
-  const assesseeUser1 = await prisma.user.create({
-    data: {
-      full_name: 'Asesi Pertama',
-      email: 'asesi1@example.com',
-      password: hashedPassword,
-      role_id: assesseeRole.id,
-      assessee: {
-        create: {
-          identity_number: '1234567890',
-          birth_date: new Date('1990-03-10'),
-          birth_location: 'Jakarta',
-          gender: 'male',
-          nationality: 'Indonesia',
-          phone_no: '084567890123',
-          address: 'Jalan Asesi No. 101',
-          educational_qualifications: 'Sarjana',
-        },
-      },
-    },
-    include: {
-      assessee: true,
-    },
-  });
-
-  // Assessee 2
-  const assesseeUser2 = await prisma.user.create({
-    data: {
-      full_name: 'Asesi Kedua',
-      email: 'asesi2@example.com',
-      password: hashedPassword,
-      role_id: assesseeRole.id,
-      assessee: {
-        create: {
-          identity_number: '0987654321',
-          birth_date: new Date('1995-07-22'),
-          birth_location: 'Bandung',
-          gender: 'female',
-          nationality: 'Indonesia',
-          phone_no: '085678901234',
-          address: 'Jalan Peserta No. 202',
-          educational_qualifications: 'Diploma',
-        },
-      },
-    },
-    include: {
-      assessee: true,
-    },
-  });
-
-  // Tambah detail assessor
-  console.log('Membuat detail assessor...');
-  await prisma.assessor_detail.create({
-    data: {
-      assessor_id: assessorUser1.assessor!.id,
-      tax_id_number: '123456789012345',
-      bank_book_cover: 'buku_bank_1.jpg',
-      certificate: 'sertifikat_1.pdf',
-      national_id: 'ktp_1.jpg',
-    },
-  });
-
-  // Tambah pekerjaan asesi
-  console.log('Membuat pekerjaan asesi...');
-  await prisma.assessee_job.create({
-    data: {
-      assessee_id: assesseeUser1.assessee[0].id,
-      institution_name: 'Perusahaan Teknologi Inc.',
-      address: 'Gedung Perkantoran Tower 200',
-      postal_code: '12345',
-      position: 'Pengembang Software',
-      phone_no: '0211234567',
-      job_email: 'asesi1@perusahaan.com',
-    },
-  });
-
-  // Buat okupasi
-  console.log('Membuat okupasi...');
-  const occupation1 = await prisma.occupation.create({
-    data: {
-      scheme_id: schemeRPL.id,
-      name: 'Pengembang Web',
-    },
-  });
-
-  const occupation2 = await prisma.occupation.create({
-    data: {
-      scheme_id: schemeRPL.id,
-      name: 'Pengembang Mobile',
-    },
-  });
-
-  const occupation3 = await prisma.occupation.create({
-    data: {
-      scheme_id: schemePH.id,
-      name: 'Pelayanan Hotel',
-    },
-  });
-
-  // Buat assessment
-  console.log('Membuat assessment...');
-  const assessment1 = await prisma.assessment.create({
-    data: {
-      occupation_id: occupation1.id,
-      code: 'SKM.RPL.PS/LSPSMK24/2025',
-      // Buat grup IA01
-      groups_ia01: {
-        create: {
-          name: 'Pengembangan Web Dasar',
-          units: {
-            create: {
-              unit_code: 'RPL.WEB.01',
-              title: 'Membangun Halaman Web Statis',
-              elements: {
-                create: {
-                  title: 'Memahami HTML dan CSS',
-                  details: {
-                    create: [
-                      {
-                        description: 'Mampu membuat struktur HTML yang semantik',
-                        benchmark: 'Struktur HTML valid dan mengikuti standar W3C'
-                      },
-                      {
-                        description: 'Mampu menerapkan styling dengan CSS',
-                        benchmark: 'Desain responsif dan kompatibel dengan berbagai browser'
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      // Buat grup IA02
-      groups_ia02: {
-        create: {
-          name: 'Proyek Pengembangan Web',
-          scenario: 'Membangun website portofolio pribadi dengan HTML, CSS, dan JavaScript',
-          duration: 120,
-          tools: {
-            create: [
-              { name: 'Text Editor (VS Code)' },
-              { name: 'Web Browser' },
-              { name: 'Git untuk Version Control' }
-            ]
-          },
-          units: {
-            create: {
-              unit_code: 'RPL.WEB.02',
-              title: 'Membangun Website Dinamis'
-            }
-          }
-        }
-      },
-      // Buat grup IA03
-      groups_ia03: {
-        create: {
-          name: 'Wawancara Teknis',
-          qa_ia03: {
-            create: [
-              { question: 'Apa perbedaan antara let, const, dan var dalam JavaScript?' },
-              { question: 'Jelaskan apa itu responsive design dan bagaimana menerapkannya?' }
-            ]
-          },
-          units: {
-            create: {
-              unit_code: 'RPL.WEB.03',
-              title: 'Pemecahan Masalah Pengembangan Web'
-            }
-          }
-        }
-      },
-      // Buat unit kompetensi APL02
-      uc_apl02s: {
-        create: {
-          unit_code: 'RPL.WEB.01',
-          title: 'Membangun Halaman Web Statis',
-          elements: {
-            create: {
-              title: 'Memahami HTML dan CSS',
-              details: {
-                create: [
-                  { description: 'Mampu membuat struktur HTML yang semantik' },
-                  { description: 'Mampu menerapkan styling dengan CSS' }
-                ]
-              }
-            }
-          }
-        }
-      },
-      // Buat soal IA05 (pilihan ganda)
-      ia05_questions: {
-        create: {
-          order: 1,
-          question: 'Apa kepanjangan dari CSS?',
-          options: {
-            create: [
-              { option: 'Cascading Style Sheets', is_answer: true },
-              { option: 'Computer Style Sheets', is_answer: false },
-              { option: 'Creative Style System', is_answer: false },
-              { option: 'Colorful Style Sheets', is_answer: false }
-            ]
-          }
-        }
-      },
-      // Buat soal IA07 (essay)
-      ia07_questions: {
-        create: {
-          question: 'Jelaskan apa yang dimaksud dengan Box Model dalam CSS dan sebutkan komponen-komponennya!',
-          answer_key: 'Box Model adalah konsep dalam CSS yang menggambarkan bagaimana elemen HTML dirender. Komponennya terdiri dari: content, padding, border, dan margin.'
-        }
-      }
-    },
-    include: {
-      groups_ia01: {
-        include: {
-          units: {
-            include: {
-              elements: {
-                include: {
-                  details: true
-                }
-              }
-            }
-          }
-        }
-      },
-      groups_ia02: {
-        include: {
-          tools: true,
-          units: true
-        }
-      },
-      groups_ia03: {
-        include: {
-          qa_ia03: true,
-          units: true
-        }
-      },
-      uc_apl02s: {
-        include: {
-          elements: {
-            include: {
-              details: true
-            }
-          }
-        }
-      },
-      ia05_questions: {
-        include: {
-          options: true
-        }
-      },
-      ia07_questions: true
+  // Assessor users
+  console.log('Creating assessors...');
+  await db.insert(userTable).values({ fullName: 'Assessor Pertama', email: 'assessor1@example.com', password: hashedPassword, roleId: assessorRole?.id || 2 });
+  const assessorUser1 = await db.query.user.findFirst({ where: eq(userTable.email, 'assessor1@example.com') });
+  if (assessorUser1) {
+    await db.insert(assessorTable).values({ userId: assessorUser1.id, address: 'Jalan Assessor No. 456', phoneNo: '082345678901', birthDate: new Date('1985-05-15'), noRegMet: `MET.000.${Math.floor(Math.random() * 100000)}.${new Date().getFullYear()}`, schemeId: (schemeRPL?.id ?? 1) });
+    const assessorRow = await db.query.assessor.findFirst({ where: eq(assessorTable.userId, assessorUser1.id) });
+    if (assessorRow) {
+      await db.insert(assessorDetailTable).values({ assessorId: assessorRow.id, taxIdNumber: '123456789012345', bankBookCover: 'buku_bank_1.jpg', certificate: 'sertifikat_1.pdf', nationalId: 'ktp_1.jpg' });
     }
-  });
+  }
 
-  // Buat jadwal assessment
-  console.log('Membuat jadwal assessment...');
-  const assessmentSchedule = await prisma.assessment_schedule.create({
-    data: {
-      assessment_id: assessment1.id,
-      start_date: new Date('2023-12-01'),
-      end_date: new Date('2023-12-05'),
-      schedule_details: {
-        create: {
-          assessor_id: assessorUser1.assessor!.id,
-          location: 'Gedung LSP Teknologi Lt. 3'
-        }
-      }
-    },
-    include: {
-      schedule_details: true
+  // Assessees
+  console.log('Creating assessees...');
+  await db.insert(userTable).values({ fullName: 'Asesi Pertama', email: 'asesi1@example.com', password: hashedPassword, roleId: assesseeRole?.id || 3 });
+  const assesseeUser1 = await db.query.user.findFirst({ where: eq(userTable.email, 'asesi1@example.com') });
+  if (assesseeUser1) {
+    await db.insert(assesseeTable).values({ userId: assesseeUser1.id, identityNumber: '1234567890', birthDate: new Date('1990-03-10'), birthLocation: 'Jakarta', gender: 'male', nationality: 'Indonesia', phoneNo: '084567890123', address: 'Jalan Asesi No. 101', educationalQualifications: 'Sarjana' });
+    const assesseeRow = await db.query.assessee.findFirst({ where: eq(assesseeTable.userId, assesseeUser1.id) });
+    if (assesseeRow) {
+      await db.insert(assesseeJobTable).values({ assesseeId: assesseeRow.id, institutionName: 'Perusahaan Teknologi Inc.', address: 'Gedung Perkantoran Tower 200', postalCode: '12345', position: 'Pengembang Software', phoneNo: '0211234567', jobEmail: 'asesi1@perusahaan.com' });
     }
-  });
+  }
 
-  // Buat hasil assessment
-  console.log('Membuat hasil assessment...');
-  const result = await prisma.result.create({
-    data: {
-      assessment_id: assessment1.id,
-      assessor_id: assessorUser1.assessor!.id,
-      assessee_id: assesseeUser1.assessee[0].id,
-      is_competent: false,
-      tuk: 'sewaktu',
-      // Dokumen hasil
-      docs: {
-        create: {
-          purpose: 'Sertifikasi Profesi',
-          school_report_card: 'ijazah.pdf',
-          field_work_practice_certificate: 'sertifikat_pkl.pdf',
-          student_card: 'kartu_mahasiswa.pdf',
-          family_card: 'kartu_keluarga.pdf',
-          id_card: 'ktp.pdf',
-          approved: true
-        }
-      },
-      // Hasil APL02
-      apl02_headers: {
-        create: {
-          approved_assessee: false,
-          approved_assessor: false,
-          is_continue: false,
-          rows: {
-            create: {
-              element: {
-                connect: {
-                  id: assessment1.uc_apl02s[0].elements[0].id
-                }
-              },
-              is_competent: false,
-              evidences: {
-                create: [
-                  { evidence: 'portofolio_proyek_web.pdf' },
-                  { evidence: 'sertifikat_pelatihan_html_css.pdf' }
-                ]
-              }
-            }
-          }
-        }
-      },
-      // Hasil AK01
-      ak01_headers: {
-        create: {
-          approved_assessee: false,
-          approved_assessor: false,
-          rows: {
-            create: [
-              { evidence: 'portofolio_proyek_web.pdf' },
-              { evidence: 'sertifikat_pelatihan.pdf' }
-            ]
-          }
-        }
-      },
-      // Hasil AK02
-      ak02_headers: {
-        create: {
-          approved_assessee: false,
-          approved_assessor: false,
-          is_competent: false,
-          follow_up: 'Perlu peningkatan dalam penggunaan CSS Grid',
-          comment: 'Kandidat menunjukkan pemahaman yang baik tentang HTML dan CSS dasar',
-          rows: {
-            create: {
-              uc: {
-                connect: {
-                  id: assessment1.uc_apl02s[0].id
-                }
-              },
-              evidences: {
-                create: [
-                  { evidence: 'file_proyek_html.zip' },
-                  { evidence: 'screenshot_tampilan_web.png' }
-                ]
-              }
-            }
-          }
-        }
-      },
-      // Hasil AK03
-      result_ak03_header: {
-        create: {
-          comment: 'Semua peralatan dalam kondisi baik dan siap digunakan',
-          answers: {
-            create: [
-              {
-                question: 'Apakah komputer tersedia dan berfungsi?',
-                answer: true,
-                comment: 'Tersedia 1 unit komputer yang berfungsi dengan baik'
-              },
-              {
-                question: 'Apakah koneksi internet stabil?',
-                answer: true,
-                comment: 'Stabil 50Mbps, tapi kadang-kadang kurang stabil'
-              },
-              {
-                question: 'Apakah ruangan assessment sesuai standar?',
-                answer: true,
-                comment: 'Standar ruangan cukup baik'
-              },
-              {
-                question: 'Apakah perangkat keras tersedia?',
-                answer: true,
-                comment: 'Perangkat keras lengkap dan berfungsi'
-              },
-              {
-                question: 'Apakah perangkat lunak tersedia?',
-                answer: true,
-                comment: 'Seluruh perangkat lunak yang diperlukan tersedia'
-              },
-              {
-                question: 'Apakah dokumen panduan tersedia?',
-                answer: true,
-                comment: 'Seluruh dokumen panduan assessment tersedia'
-              },
-              {
-                question: 'Apakah instrumen assessment tersedia?',
-                answer: true,
-                comment: 'Seluruh instrumen assessment tersedia'
-              },
-              {
-                question: 'Apakah ruangan assessment memiliki ventilasi yang baik?',
-                answer: true,
-                comment: 'Ventilasi ruangan cukup baik'
-              },
-              {
-                question: 'Apakah ruangan assessment memiliki pencahayaan yang baik?',
-                answer: true,
-                comment: 'Pencahayaan ruangan cukup baik'
-              },
-              {
-                question: 'Apakah ruangan assessment memiliki keamanan yang baik?',
-                answer: true,
-                comment: 'Keamanan ruangan cukup baik'
-              }
-            ]
-          }
-        }
-      },
-      // Hasil AK04
-      result_ak04: {
-        create: {
-          approved_assessee: false,
-          q1_yes: false,
-          q2_yes: false,
-          q3_yes: false,
-          reason: 'Asesi telah memenuhi semua persyaratan dan siap mengikuti assessment'
-        }
-      },
-      // Hasil AK05
-      result_ak05: {
-        create: {
-          approved_assessor: false,
-          is_competent: false,
-          description: 'Asesi menunjukkan kompetensi dalam pengembangan web dasar',
-          negative_positive_aspects: 'Positif: Kreatif dalam desain. Negatif: Perlu meningkatkan pemahaman CSS advanced',
-          improvement_suggestions: 'Disarankan untuk mempelajari CSS Grid dan Flexbox lebih dalam',
-          notes: 'Asesi menunjukkan kemampuan dalam pengembangan web dasar'
-        }
-      },
-      // Hasil IA01
-      ia01_headers: {
-        create: {
-          approved_assessee: false,
-          approved_assessor: false,
-          is_competent: false,
-          group: assessment1.groups_ia01[0].name,
-          unit: assessment1.groups_ia01[0].units[0].title,
-          element: assessment1.groups_ia01[0].units[0].elements[0].title,
-          kuk: assessment1.groups_ia01[0].units[0].elements[0].details[0].benchmark,
-          rows: {
-            create: {
-              elementDetail: {
-                connect: {
-                  id: assessment1.groups_ia01[0].units[0].elements[0].details[0].id
-                }
-              },
-              is_competent: true,
-              evaluation: 'Asesi mampu membuat struktur HTML yang semantik dengan baik'
-            }
-          }
-        }
-      },
-      // Hasil IA02
-      ia02_headers: {
-        create: {
-          approved_assessee: false,
-          approved_assessor: false
-        }
-      },
-      // Hasil IA03
-      ia03_headers: {
-        create: {
-          approved_assessee: false,
-          approved_assessor: false,
-          rows: {
-            create: [
-              {
-                question: {
-                  connect: {
-                    id: assessment1.groups_ia03[0].qa_ia03[0].id
-                  }
-                },
-                answer: 'Let dan const adalah block-scoped, sedangkan var adalah function-scoped. Let dapat diubah nilainya, const tidak dapat diubah setelah dideklarasikan',
-                approved: true
-              },
-              {
-                question: {
-                  connect: {
-                    id: assessment1.groups_ia03[0].qa_ia03[1].id
-                  }
-                },
-                answer: 'Responsive design adalah pendekatan desain web yang membuat halaman web terlihat baik di semua perangkat. Diterapkan dengan media queries, fluid grids, dan flexible images',
-                approved: true
-              }
-            ]
-          }
-        }
-      },
-      // Hasil IA05
-      ia05_headers: {
-        create: {
-          approved_assessee: false,
-          approved_assessor: false,
-          is_achieved: false,
-          rows: {
-            create: {
-              option: {
-                connect: {
-                  id: assessment1.ia05_questions[0].options[0].id
-                }
-              },
-              approved: false
-            }
-          }
-        }
-      },
-      // Hasil IA07
-      ia07_headers: {
-        create: {
-          approved_assessee: false,
-          approved_assessor: false,
-          rows: {
-            create: {
-              question: {
-                connect: {
-                  id: assessment1.ia07_questions[0].id
-                }
-              },
-              approved: false
-            }
-          }
-        }
+  // Create assessment minimal + groups/units/elements/details + ia05/ia07
+  console.log('Creating assessment + groups + questions...');
+  await db.insert(assessmentTable).values({ occupationId: (occupation1?.id ?? 1), code: 'SKM.RPL/2025' });
+  const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.code, 'SKM.RPL/2025') });
+  if (assessment) {
+    // groups_ia01
+    await db.insert(groupIa01Table).values({ assessmentId: assessment.id, name: 'Pengembangan Web Dasar' });
+    const g1 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessmentId, assessment.id) });
+    if (g1) {
+      // create unit, element, details
+      const unitsTableName = 'units';
+      // Some schemas name nested tables differently; try generic insert via SQL if needed.
+
+      // IA05 question
+      await db.insert(ia05QuestionTable).values({ assessmentId: assessment.id, order: 1, question: 'Apa kepanjangan dari CSS?' });
+      const ia05q = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessmentId, assessment.id) });
+      if (ia05q) {
+        await db.insert(questionOptionTable).values({ questionId: ia05q.id, option: 'Cascading Style Sheets', isAnswer: true });
+        await db.insert(questionOptionTable).values({ questionId: ia05q.id, option: 'Computer Style Sheets', isAnswer: false });
       }
-    },
-    include: {
-      docs: true,
-      apl02_headers: {
-        include: {
-          rows: {
-            include: {
-              evidences: true
-            }
-          }
-        }
-      },
-      ak01_headers: {
-        include: {
-          rows: true
-        }
-      },
-      ak02_headers: {
-        include: {
-          rows: {
-            include: {
-              evidences: true
-            }
-          }
-        }
-      },
-      result_ak03_header: {
-        include: {
-          answers: true
-        }
-      },
-      result_ak04: true,
-      result_ak05: true,
-      ia01_headers: {
-        include: {
-          rows: true
-        }
-      },
-      ia03_headers: {
-        include: {
-          rows: true
-        }
-      },
-      ia05_headers: {
-        include: {
-          rows: true
-        }
-      },
-      ia07_headers: {
-        include: {
-          rows: true
-        }
+
+      // IA07 question
+      await db.insert(ia07QuestionTable).values({ assessmentId: assessment.id, question: 'Jelaskan apa yang dimaksud dengan Box Model dalam CSS dan sebutkan komponen-komponennya!', answerKey: 'Box Model = content,padding,border,margin' });
+    }
+  }
+
+  // schedule
+  console.log('Creating schedule...');
+  if (assessment) {
+    await db.insert(assessmentScheduleTable).values({ assessmentId: assessment.id, startDate: new Date('2023-12-01'), endDate: new Date('2023-12-05') });
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.assessmentId, assessment.id) });
+    if (schedule && assessorUser1) {
+      const assessorRow = await db.query.assessor.findFirst({ where: eq(assessorTable.userId, assessorUser1.id) });
+      if (assessorRow) {
+        await db.insert(scheduleDetailTable).values({ scheduleId: schedule.id, assessorId: assessorRow.id, location: 'Gedung LSP Teknologi Lt. 3' });
       }
     }
-  });
+  }
 
-  console.log('Seeding selesai!');
-  console.log('Data yang dibuat:');
-  console.log(`- Admin: ${adminUser.email}`);
-  console.log(`- Assessor: ${assessorUser1.email}, ${assessorUser2.email}`);
-  console.log(`- Assessee: ${assesseeUser1.email}, ${assesseeUser2.email}`);
-  console.log(`- Scheme: ${schemeRPL.name}, ${schemePH.name}`);
-  console.log(`- Assessment: ${assessment1.code}`);
-  console.log(`- Result ID: ${result.id}`);
+  // create a simple result + docs + headers
+  console.log('Creating a sample result + docs + headers...');
+  if (assessment && assessorUser1 && assesseeUser1) {
+    const assessorRow = await db.query.assessor.findFirst({ where: eq(assessorTable.userId, assessorUser1.id) });
+    const assesseeRow = await db.query.assessee.findFirst({ where: eq(assesseeTable.userId, assesseeUser1.id) });
+    if (assessorRow && assesseeRow) {
+      await db.insert(resultTable).values({ assessmentId: assessment.id, assessorId: assessorRow.id, assesseeId: assesseeRow.id, isCompetent: false, tuk: 'sewaktu' });
+      const resultRow = await db.query.result.findFirst({ where: eq(resultTable.assessmentId, assessment.id) });
+      if (resultRow) {
+        await db.insert(resultDocTable).values({ resultId: resultRow.id, purpose: 'Sertifikasi Profesi', schoolReportCard: 'ijazah.pdf', fieldWorkPracticeCertificate: 'sertifikat_pkl.pdf', studentCard: 'kartu_mahasiswa.pdf', familyCard: 'kartu_keluarga.pdf', idCard: 'ktp.pdf', approved: true });
+
+        // headers
+        await db.insert(apl02HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false, isContinue: false });
+        await db.insert(ia01HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false, isCompetent: false });
+        await db.insert(ia02HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false });
+        await db.insert(ia03HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false });
+        await db.insert(ia05HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false, isAchieved: false });
+        await db.insert(ia07HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false });
+        await db.insert(ak01HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false });
+        await db.insert(ak02HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false, isCompetent: false });
+      }
+    }
+  }
+
+  console.log('Drizzle seeding finished.');
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch((e) => {
+  console.error('Seed error:', e);
+  process.exit(1);
+}).finally(async () => {
+  // close drizzle connection if needed
+  try { await (db as any).end?.(); } catch (e) { }
+  process.exit(0);
+});

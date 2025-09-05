@@ -1,6 +1,8 @@
-import { prisma } from '../../config/db';
+import { db } from '../../config/drizzle';
 import { NotFoundError, DuplicateEntryError } from '../../common/error';
 import { AssesseeResponse, AssesseeRequest } from './asseessee.type';
+import { assessee as assesseeTable, user as userTable, role as roleTable } from '../../../drizzle/schema';
+import { eq } from 'drizzle-orm';
 
 const translateGenderToEn = (gender: string): 'male' | 'female' => {
     const lowerGender = gender.toLowerCase().trim();
@@ -28,76 +30,84 @@ const translateGenderToId = (gender: string): 'LAKI-LAKI' | 'PEREMPUAN' => {
 
 export class AssesseeService {
     static async getAssessees(): Promise<AssesseeResponse[]> {
-        const assessees = await prisma.assessee.findMany({
-            include: {
-                user: { include: { role: true } },
-            },
-        });
+        const assessees = await db.select().from(assesseeTable);
         return assessees.map(this.formatAssesseeResponse);
     }
 
     static async getAssesseeById(id: number): Promise<AssesseeResponse> {
-        const assessee = await prisma.assessee.findUnique({
-            where: { id },
-            include: { user: { include: { role: true } } },
-        });
-
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
         if (!assessee) throw new NotFoundError('Assessee');
         return this.formatAssesseeResponse(assessee);
     }
 
     static async createAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
-        const existing = await prisma.assessee.findFirst({ where: { user_id: data.user_id } });
+        const existing = await db.query.assessee.findFirst({ where: eq(assesseeTable.userId, data.user_id) });
         if (existing) throw new DuplicateEntryError('Assessee untuk user_id', data.user_id.toString());
 
-        const assessee = await prisma.assessee.create({
-            data: {
-                ...data,
-                birth_date: new Date(data.birth_date),
-                gender: translateGenderToEn(data.gender),
-            },
-            include: { user: { include: { role: true } } },
+        await db.insert(assesseeTable).values({
+            userId: data.user_id,
+            identityNumber: data.identity_number,
+            birthDate: new Date(data.birth_date) as any,
+            birthLocation: data.birth_location,
+            gender: translateGenderToEn(data.gender) as any,
+            nationality: data.nationality,
+            phoneNo: data.phone_no,
+            housePhoneNo: data.house_phone_no ?? null as any,
+            officePhoneNo: data.office_phone_no ?? null as any,
+            address: data.address,
+            postalCode: data.postal_code ?? null as any,
+            educationalQualifications: data.educational_qualifications,
         });
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.userId, data.user_id) });
+        if (!assessee) throw new NotFoundError('Assessee');
         return this.formatAssesseeResponse(assessee);
     }
 
     static async updateAssessee(id: number, data: AssesseeRequest): Promise<AssesseeResponse> {
-        const existing = await prisma.assessee.findUnique({ where: { id } });
+        const existing = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
         if (!existing) throw new NotFoundError('Assessee');
 
-        const assessee = await prisma.assessee.update({
-            where: { id },
-            data: {
-                ...data,
-                birth_date: new Date(data.birth_date),
-                gender: translateGenderToEn(data.gender),
-            },
-            include: { user: { include: { role: true } } },
-        });
+        await db.update(assesseeTable).set({
+            userId: data.user_id,
+            identityNumber: data.identity_number,
+            birthDate: new Date(data.birth_date) as any,
+            birthLocation: data.birth_location,
+            gender: translateGenderToEn(data.gender) as any,
+            nationality: data.nationality,
+            phoneNo: data.phone_no,
+            housePhoneNo: data.house_phone_no ?? null as any,
+            officePhoneNo: data.office_phone_no ?? null as any,
+            address: data.address,
+            postalCode: data.postal_code ?? null as any,
+            educationalQualifications: data.educational_qualifications,
+        }).where(eq(assesseeTable.id, id));
+
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
+        if (!assessee) throw new NotFoundError('Assessee');
         return this.formatAssesseeResponse(assessee);
     }
 
     static async deleteAssessee(id: number): Promise<void> {
-        const existing = await prisma.assessee.findUnique({ where: { id } });
+        const existing = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
         if (!existing) throw new NotFoundError('Assessee');
-        await prisma.assessee.delete({ where: { id } });
+        await db.delete(assesseeTable).where(eq(assesseeTable.id, id));
     }
 
     private static formatAssesseeResponse(assessee: any): AssesseeResponse {
         return {
             id: assessee.id,
-            user_id: assessee.user_id,
-            identity_number: assessee.identity_number,
-            birth_date: assessee.birth_date,
-            birth_location: assessee.birth_location,
+            user_id: assessee.userId,
+            identity_number: assessee.identityNumber,
+            birth_date: assessee.birthDate,
+            birth_location: assessee.birthLocation,
             gender: assessee.gender,
             nationality: assessee.nationality,
-            phone_no: assessee.phone_no,
-            house_phone_no: assessee.house_phone_no,
-            office_phone_no: assessee.office_phone_no,
+            phone_no: assessee.phoneNo,
+            house_phone_no: assessee.housePhoneNo,
+            office_phone_no: assessee.officePhoneNo,
             address: assessee.address,
-            postal_code: assessee.postal_code,
-            educational_qualifications: assessee.educational_qualifications,
+            postal_code: assessee.postalCode,
+            educational_qualifications: assessee.educationalQualifications,
         };
     }
 }

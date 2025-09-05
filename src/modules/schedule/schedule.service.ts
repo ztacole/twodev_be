@@ -1,270 +1,129 @@
 import { JwtPayload } from 'jsonwebtoken';
 import { NotFoundError } from '../../common/error';
-import { prisma } from '../../config/db';
+import { db } from '../../config/drizzle';
+import {
+  assessment as assessmentTable,
+  assessmentSchedule as scheduleTable,
+  scheduleDetail as scheduleDetailTable,
+  occupation as occupationTable,
+  scheme as schemeTable,
+  user as userTable,
+  assessor as assessorTable,
+  assessee as assesseeTable,
+  result as resultTable,
+} from '../../../drizzle/schema';
+import { and, between, eq, gte, lte } from 'drizzle-orm';
 import { ScheduleRequest, ScheduleResponse } from './schedule.type';
 
 export class ScheduleService {
     static async createSchedule(data: ScheduleRequest): Promise<ScheduleResponse> {
-        const assessment = await prisma.assessment.findUnique({
-            where: {
-                id: Number(data.assessment_id)
-            }
-        });
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, Number(data.assessment_id)) });
 
         if (!assessment) {
             throw new NotFoundError('Assessment');
         }
 
         const assessorIds = data.schedule_details.map(detail => Number(detail.assessor_id));
-        const existingAssessors = await prisma.user.findMany({
-            where: {
-                id: { in: assessorIds }
-            }
-        });
-
+        const existingAssessors = assessorIds.length ? await db.select().from(userTable).where(eq(userTable.id, assessorIds[0])) : [];
         if (existingAssessors.length !== assessorIds.length) {
             throw new NotFoundError('Assessor');
         }
 
-        const schedule = await prisma.assessment_schedule.create({
-            data: {
-                assessment_id: data.assessment_id,
-                start_date: data.start_date,
-                end_date: data.end_date,
-                schedule_details: {
-                    create: data.schedule_details.map(detail => ({
-                        assessor_id: Number(detail.assessor_id),
-                        location: detail.location
-                    }))
-                }
-            },
-            include: {
-                assessment: {
-                    include: {
-                        occupation: {
-                            include: {
-                                scheme: true
-                            }
-                        }
-                    }
-                },
-                schedule_details: {
-                    include: {
-                        assessor: {
-                            include: {
-                                user: true
-                            }
-                        }
-                    }
-                }
-            }
+        const [created] = await db.insert(scheduleTable).values({
+            assessmentId: data.assessment_id,
+            startDate: data.start_date as any,
+            endDate: data.end_date as any,
         });
 
-        return formatScheduleResponse(schedule);
+        for (const detail of data.schedule_details) {
+            await db.insert(scheduleDetailTable).values({
+                scheduleId: (created as any).insertId ?? undefined,
+                assessorId: Number(detail.assessor_id),
+                location: detail.location,
+            });
+        }
+
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.assessmentId, data.assessment_id) });
+        if (!schedule) throw new NotFoundError('Schedule');
+        return await buildScheduleResponse(schedule);
     }
 
     static async getSchedules(): Promise<ScheduleResponse[]> {
-        const schedules = await prisma.assessment_schedule.findMany({
-            include: {
-                assessment: {
-                    include: {
-                        occupation: {
-                            include: {
-                                scheme: true,
-                            },
-                        },
-                    },
-                },
-                schedule_details: {
-                    include: {
-                        assessor: {
-                            include: {
-                                user: true
-                            }
-                        }
-                    }
-                }
-            },
-        });
-
-        return schedules.map(schedule => formatScheduleResponse(schedule));
+        const schedules = await db.select().from(scheduleTable);
+        return Promise.all(schedules.map(s => buildScheduleResponse(s)));
     }
 
     static async getScheduleById(id: number, user: JwtPayload): Promise<ScheduleResponse> {
-        const assessee = await prisma.assessee.findMany({
-            where: {
-                user_id: user.id
-            }
-        });
+        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.userId, user.id as any));
         if (!assessee) {
             throw new NotFoundError('Assessee');
         }
 
-        const schedule = await prisma.assessment_schedule.findUnique({
-            where: { id },
-            include: {
-                assessment: {
-                    include: {
-                        occupation: {
-                            include: {
-                                scheme: true,
-                            },
-                        },
-                        results: true
-                    },
-                },
-                schedule_details: {
-                    include: {
-                        assessor: {
-                            include: {
-                                user: true
-                            }
-                        }
-                    }
-                }
-            },
-        });
-
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, id) });
         if (!schedule) {
             throw new NotFoundError('Schedule');
         }
 
-        return formatScheduleResponse(schedule, assessee);
+        return await buildScheduleResponse(schedule, assessee as any);
     }
 
     static async getActiveSchedules(user: JwtPayload): Promise<ScheduleResponse[]> {
-        const assessee = await prisma.assessee.findMany({
-            where: {
-                user_id: user.id
-            }
-        });
+        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.userId, user.id as any));
         if (!assessee) {
             throw new NotFoundError('Assessee');
         }
 
-        const schedules = await prisma.assessment_schedule.findMany({
-            where: { start_date: { lte: new Date() }, end_date: { gte: new Date() } },
-            include: {
-                assessment: {
-                    include: {
-                        occupation: {
-                            include: {
-                                scheme: true,
-                            },
-                        },
-                        results: true
-                    },
-                },
-                schedule_details: {
-                    include: {
-                        assessor: {
-                            include: {
-                                user: true
-                            }
-                        }
-                    }
-                }
-            },
-        });
-
-        return schedules.map(schedule => formatScheduleResponse(schedule, assessee));
+        const now = new Date();
+        const schedules = await db.select().from(scheduleTable).where(and(lte(scheduleTable.startDate, now as any), gte(scheduleTable.endDate, now as any)));
+        return Promise.all(schedules.map(s => buildScheduleResponse(s, assessee as any)));
     }
 
     static async getCompletedSchedules(): Promise<ScheduleResponse[]> {
-        const schedules = await prisma.assessment_schedule.findMany({
-            where: { end_date: { lte: new Date() } },
-            include: {
-                assessment: {
-                    include: {
-                        occupation: {
-                            include: {
-                                scheme: true,
-                            },
-                        },
-                    },
-                },
-                schedule_details: {
-                    include: {
-                        assessor: {
-                            include: {
-                                user: true
-                            }
-                        }
-                    }
-                }
-            },
-        });
-
-        return schedules.map(schedule => formatScheduleResponse(schedule));
+        const now = new Date();
+        const schedules = await db.select().from(scheduleTable).where(lte(scheduleTable.endDate, now as any));
+        return Promise.all(schedules.map(s => buildScheduleResponse(s)));
     }
 
     static async getCompletedSchedulesByAssesseeId(assesseeId: number): Promise<ScheduleResponse[]> {
-        const assessee = await prisma.assessee.findUnique({ where: { id: assesseeId } });
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assesseeId) });
         if (!assessee) {
             throw new NotFoundError('Assessee');
         }
 
-        const results = await prisma.result.findMany({
-            where: { assessee_id: assesseeId },
-            include: {
-                assessment: {
-                    include: {
-                        assessment_schedules: {
-                            include: {
-                                assessment: {
-                                    include: {
-                                        occupation: {
-                                            include: { scheme: true }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                assessor: {
-                    include: {
-                        user: true
-                    }
-                }
-            }
-        });
-
-        const schedules = results.flatMap(result => result.assessment?.assessment_schedules ?? []);
-        return schedules.map(schedule => formatScheduleResponse(schedule));
+        const results = await db.select().from(resultTable).where(eq(resultTable.assesseeId, assesseeId));
+        const scheduleIds = new Set<number>();
+        for (const r of results) {
+            const schedules = await db.select().from(scheduleTable).where(eq(scheduleTable.assessmentId, r.assessmentId));
+            for (const s of schedules) scheduleIds.add(s.id);
+        }
+        const schedules = await db.select().from(scheduleTable).where(eq(scheduleTable.id, Array.from(scheduleIds)[0] || 0));
+        return Promise.all(schedules.map(s => buildScheduleResponse(s)));
     }
 
     static async getScheduleDataForExcel() {
-        const schedules = await prisma.assessment_schedule.findMany({
-            include: {
-                assessment: {
-                    include: {
-                        occupation: {
-                            include: {
-                                scheme: true,
-                            },
-                        },
-                    },
-                },
-            },
-        });
+        const schedules = await db.select().from(scheduleTable);
 
-        return schedules.map(schedule => ({
-            assessment_id: schedule.assessment_id,
-            scheme_code: schedule.assessment.occupation.scheme.code,
-            occupation_name: schedule.assessment.occupation.name,
-            start_date: schedule.start_date,
-            end_date: schedule.end_date,
+        return Promise.all(schedules.map(async (schedule) => {
+            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessmentId) });
+            const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupationId) }) : null;
+            const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) }) : null;
+            return {
+                assessment_id: schedule.assessmentId,
+                scheme_code: scheme?.code,
+                occupation_name: occupation?.name,
+                start_date: schedule.startDate,
+                end_date: schedule.endDate,
+            };
         }));
     }
 
     static async deleteSchedule(id: number): Promise<void> {
-        const existing = await prisma.assessment_schedule.findUnique({ where: { id } });
+        const existing = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, id) });
         if (!existing) {
             throw new NotFoundError('Schedule');
         }
-
-        await prisma.assessment_schedule.delete({ where: { id } });
+        await db.delete(scheduleDetailTable).where(eq(scheduleDetailTable.scheduleId, id));
+        await db.delete(scheduleTable).where(eq(scheduleTable.id, id));
     }
 }
 
@@ -273,39 +132,45 @@ interface Assessee {
     user_id: number;
 }
 
-function formatScheduleResponse(schedule: any, user: Assessee[] | null = null): ScheduleResponse {
+async function buildScheduleResponse(schedule: any, user: Assessee[] | null = null): Promise<ScheduleResponse> {
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessmentId) });
+    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupationId) }) : null;
+    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) }) : null;
+    const details = await db.select().from(scheduleDetailTable).where(eq(scheduleDetailTable.scheduleId, schedule.id));
+    const detailed = await Promise.all(details.map(async (detail) => {
+        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, detail.assessorId) });
+        const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.userId) }) : null;
+        const results = await db.select().from(resultTable).where(and(eq(resultTable.assessmentId, schedule.assessmentId), eq(resultTable.assessorId, detail.assessorId)));
+        const onGoing = user ? results.find(r => user.find(a => a.id === r.assesseeId)) : null;
+        return {
+            id: detail.id,
+            assessor: assessor && assessorUser ? {
+                id: assessor.id,
+                full_name: assessorUser.fullName,
+                phone_no: assessor.phoneNo,
+            } : null,
+            location: detail.location,
+            on_going: onGoing ? { result_id: onGoing.id, assessee_id: onGoing.assesseeId } : null,
+        };
+    }));
+
     return {
         id: schedule.id,
         assessment: {
-            id: schedule.assessment.id,
-            code: schedule.assessment.code,
+            id: assessment?.id,
+            code: assessment?.code,
             occupation: {
-                id: schedule.assessment.occupation.id,
-                name: schedule.assessment.occupation.name,
+                id: occupation?.id,
+                name: occupation?.name,
                 scheme: {
-                    id: schedule.assessment.occupation.scheme.id,
-                    code: schedule.assessment.occupation.scheme.code,
-                    name: schedule.assessment.occupation.scheme.name,
+                    id: scheme?.id,
+                    code: scheme?.code,
+                    name: scheme?.name,
                 },
             },
         },
-        start_date: schedule.start_date,
-        end_date: schedule.end_date,
-        schedule_details: schedule.schedule_details.map((detail: any) => {
-            const result = user ? schedule.assessment.results.find((result: any) => result.assessor_id === detail.assessor_id && user.find(assessee => assessee.id === result.assessee_id)?.id) : null;
-            return {
-                id: detail.id,
-                assessor: {
-                    id: detail.assessor.id,
-                    full_name: detail.assessor.user.full_name,
-                    phone_no: detail.assessor.phone_no,
-                },
-                location: detail.location,
-                on_going: result ? {
-                    result_id: result.id,
-                    assessee_id: result.assessee_id,
-                } : null
-            }
-        }),
-    };
+        start_date: schedule.startDate,
+        end_date: schedule.endDate,
+        schedule_details: detailed,
+    } as any;
 }

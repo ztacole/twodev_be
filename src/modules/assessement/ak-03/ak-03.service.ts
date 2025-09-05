@@ -1,107 +1,65 @@
-import { prisma } from '../../../config/db';
+import { db } from '../../../config/drizzle';
 import { AK03Request, AK03Response } from './ak-03.type';
 import { NotFoundError } from '../../../common/error';
-import { tr } from '@faker-js/faker/.';
+import { result as resultTable, resultAk03Header as ak03HeaderTable, resultAk03 as ak03RowTable, assessment as assessmentTable, occupation as occupationTable, scheme as schemeTable, assessee as assesseeTable, assessor as assessorTable, user as userTable } from '../../../../drizzle/schema';
+import { eq } from 'drizzle-orm';
 
 export class AK03Service {
   static async createAK03(data: AK03Request): Promise<AK03Response> {
-    const result = await prisma.result.findUnique({
-      where: { id: data.result_id },
-    });
+    const result = await db.query.result.findFirst({ where: eq(resultTable.id, data.result_id) });
     if (!result) throw new NotFoundError('Result');
 
-    const existingHeader = await prisma.result_ak03_header.findUnique({
-      where: { result_id: data.result_id },
-    });
+    const existingHeader = await db.query.resultAk03Header.findFirst({ where: eq(ak03HeaderTable.resultId, data.result_id) });
     if (existingHeader) {
-      throw new Error(
-        `AK-03 with result_id ${data.result_id} already exists`
-      );
+      throw new Error(`AK-03 with result_id ${data.result_id} already exists`);
     }
 
-    const header = await prisma.result_ak03_header.create({
-      data: {
-        result_id: data.result_id,
-        comment: data.comment ?? null,
-      },
+    const [created] = await db.insert(ak03HeaderTable).values({
+      resultId: data.result_id,
+      comment: data.comment ?? null as any,
     });
 
-    await prisma.$transaction(
-      data.items.map((item) =>
-        prisma.result_ak03.create({
-          data: {
-            header_id: header.id,
-            question: item.question,
-            answer: item.answer,
-            comment: item.comment ?? null,
-          },
-        })
-      )
-    );
+    const header = await db.query.resultAk03Header.findFirst({ where: eq(ak03HeaderTable.resultId, data.result_id) });
+    if (!header) throw new NotFoundError('AK03 Header');
 
-    const fullHeader = await prisma.result_ak03_header.findUnique({
-      where: { id: header.id },
-      include: { answers: true },
-    });
+    for (const item of data.items) {
+      await db.insert(ak03RowTable).values({
+        headerId: header.id,
+        question: item.question,
+        answer: item.answer,
+        comment: item.comment ?? null as any,
+      });
+    }
 
-    return formatAK03Response(fullHeader!);
+    const answers = await db.query.resultAk03.findMany({ where: eq(ak03RowTable.headerId, header.id) });
+    return formatAK03Response({ ...header, answers });
   }
 
   static async getResultDetails(resultId: number) {
-    const result = await prisma.result.findUnique({
-    where: { id: resultId },
-    include: {
-        assessment: {
-        include: {
-            occupation: {
-            include: {
-                scheme: true
-            }
-            }
-        }
-        },
-        assessee: {
-        include: {
-            user: true
-        }
-        },
-        assessor: {
-        include: {
-            user: true
-        }
-        },
-        result_ak03_header: {
-        include: {
-            answers: true
-        }
-        },
-        }
-    });
+    const result = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
     if (!result) {
-    throw new NotFoundError('Result');
+      throw new NotFoundError('Result');
     }
-    if (!result.result_ak03_header) {
-    throw new NotFoundError('Result header');
-    }
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessmentId) });
+    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupationId) }) : null;
+    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) }) : null;
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assesseeId) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) }) : null;
+    const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessorId) });
+    const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.userId) }) : null;
+    const header = await db.query.resultAk03Header.findFirst({ where: eq(ak03HeaderTable.resultId, result.id) });
+    if (!header) throw new NotFoundError('Result header');
+    const answers = await db.query.resultAk03.findMany({ where: eq(ak03RowTable.headerId, header.id) });
 
     return {
-    id: result.id,
-    assessment: result.assessment,
-    assessee: {
-        id: result.assessee.id,
-        name: result.assessee.user.full_name,
-        email: result.assessee.user.email
-    },
-    assessor: {
-        id: result.assessor.id,
-        name: result.assessor.user.full_name,
-        email: result.assessor.user.email,
-        no_reg_met: result.assessor.no_reg_met
-    },
-    tuk: result.tuk,
-    is_competent: result.is_competent,
-    created_at: result.created_at,
-    result_ak03: result.result_ak03_header
+      id: result.id,
+      assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
+      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.fullName, email: assesseeUser.email } : null,
+      assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.fullName, email: assessorUser.email, no_reg_met: assessor.noRegMet } : null,
+      tuk: result.tuk,
+      is_competent: result.isCompetent,
+      created_at: result.createdAt,
+      result_ak03: { ...header, answers },
     };
   }
 }
@@ -109,11 +67,11 @@ export class AK03Service {
 function formatAK03Response(header: any): AK03Response {
   return {
     id: header.id,
-    result_id: header.result_id,
+    result_id: header.resultId,
     comment: header.comment,
     rows: header.answers.map((row: any) => ({
       id: row.id,
-      header_id: row.header_id,
+      header_id: row.headerId,
       question: row.question,
       answer: row.answer,
       comment: row.comment,

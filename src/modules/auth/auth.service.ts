@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../../config/db';
+import { db } from '../../config/drizzle';
+import { role as roleTable, user as userTable } from '../../../drizzle/schema';
+import { eq } from 'drizzle-orm';
 import { RegisterRequest, LoginRequest, AuthResponse, JwtPayload } from './auth.type';
 import { DuplicateEntryError, NotFoundError, ValidationError } from '../../common/error';
 
@@ -9,16 +11,16 @@ const JWT_EXPIRES_IN = '7d';
 
 export class AuthService {
     static async register(data: RegisterRequest): Promise<AuthResponse> {
-        const existingUser = await prisma.user.findUnique({
-            where: { email: data.email }
+        const existingUser = await db.query.user.findFirst({
+            where: eq(userTable.email, data.email)
         });
 
         if (existingUser) {
             throw new DuplicateEntryError('Pengguna', data.email);
         }
 
-        const existingRole = await prisma.role.findUnique({
-            where: { id: data.role_id }
+        const existingRole = await db.query.role.findFirst({
+            where: eq(roleTable.id, data.role_id)
         });
 
         if (!existingRole) {
@@ -28,38 +30,32 @@ export class AuthService {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
-        const user = await prisma.user.create({
-            data: {
-                full_name: data.full_name,
-                email: data.email,
-                password: hashedPassword,
-                role_id: data.role_id
-            }
+        await db.insert(userTable).values({
+            fullName: data.full_name,
+            email: data.email,
+            password: hashedPassword,
+            roleId: data.role_id
         });
 
-        const token = this.generateToken(user.id, user.email, user.role_id);
+        const user = await db.query.user.findFirst({ where: eq(userTable.email, data.email) });
+        if (!user) throw new NotFoundError('Pengguna');
+
+        const token = this.generateToken(user.id, user.email, user.roleId);
 
         return {
             user: {
                 id: user.id,
-                full_name: user.full_name,
+                full_name: user.fullName,
                 email: user.email,
-                role_id: user.role_id
+                role_id: user.roleId
             },
             token
         };
     }
 
     static async login(data: LoginRequest): Promise<AuthResponse> {
-        const user = await prisma.user.findUnique({
-            where: { email: data.email },
-            select: {
-                id: true,
-                full_name: true,
-                email: true,
-                password: true,
-                role_id: true
-            }
+        const user = await db.query.user.findFirst({
+            where: eq(userTable.email, data.email),
         });
 
         if (!user) {
@@ -71,35 +67,34 @@ export class AuthService {
             throw new ValidationError('Email atau password tidak valid');
         }
 
-        const token = this.generateToken(user.id, user.email, user.role_id);
+        const token = this.generateToken(user.id, user.email, user.roleId);
 
         return {
             user: {
                 id: user.id,
-                full_name: user.full_name,
+                full_name: user.fullName,
                 email: user.email,
-                role_id: user.role_id
+                role_id: user.roleId
             },
             token
         };
     }
 
     static async getMe(userId: number): Promise<any> {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            include: {
-                role: true,
-                assessor: true,
-                assessee: true,
-                admin: true
-            }
+        const user = await db.query.user.findFirst({
+            where: eq(userTable.id, userId),
         });
 
         if (!user) {
             throw new NotFoundError('Pengguna');
         }
 
-        return user;
+        const role = await db.query.role.findFirst({ where: eq(roleTable.id, user.roleId) });
+        // assessor / assessee / admin relations can be fetched where needed in their modules
+        return {
+            ...user,
+            role,
+        };
     }
 
     static async verifyToken(token: string): Promise<JwtPayload> {
