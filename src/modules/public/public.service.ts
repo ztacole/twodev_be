@@ -10,23 +10,23 @@ export class PublicService {
         if (!assessee) {
             throw new NotFoundError("Assessee not found");
         }
-        const user = await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) });
-        const jobs = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assesseeId, id));
+        const user = await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) });
+        const jobs = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, id));
 
         return {
             id: assessee.id,
-            full_name: user?.fullName || "",
-            identity_number: assessee.identityNumber,
-            birth_date: assessee.birthDate as any,
-            birth_location: assessee.birthLocation,
+            full_name: user?.full_name || "",
+            identity_number: assessee.identity_number,
+            birth_date: assessee.birth_date as any,
+            birth_location: assessee.birth_location,
             gender: assessee.gender as any,
             nationality: assessee.nationality,
-            phone_no: assessee.phoneNo,
-            house_phone_no: assessee.housePhoneNo || "",
-            office_phone_no: assessee.officePhoneNo || "",
+            phone_no: assessee.phone_no,
+            house_phone_no: assessee.house_phone_no || "",
+            office_phone_no: assessee.office_phone_no || "",
             address: assessee.address,
-            postal_code: assessee.postalCode || "",
-            educational_qualifications: assessee.educationalQualifications,
+            postal_code: assessee.postal_code || "",
+            educational_qualifications: assessee.educational_qualifications,
             jobs: jobs as any
         };
     }
@@ -36,16 +36,16 @@ export class PublicService {
         if (!assessor) {
             throw new NotFoundError("Assessor not found");
         }
-        const user = await db.query.user.findFirst({ where: eq(userTable.id, assessor.userId) });
-        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, assessor.schemeId) });
+        const user = await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) });
+        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, assessor.scheme_id) });
 
         return {
             id: assessor.id,
-            full_name: user?.fullName || "",
+            full_name: user?.full_name || "",
             scheme: scheme as any,
             address: assessor.address,
-            phone_no: assessor.phoneNo,
-            birth_date: assessor.birthDate as any
+            phone_no: assessor.phone_no,
+            birth_date: assessor.birth_date as any
         };
     }
 }
