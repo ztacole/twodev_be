@@ -31,23 +31,23 @@ export class AuthService {
         const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
         await db.insert(userTable).values({
-            fullName: data.full_name,
+            full_name: data.full_name,
             email: data.email,
             password: hashedPassword,
-            roleId: data.role_id
+            role_id: data.role_id
         });
 
         const user = await db.query.user.findFirst({ where: eq(userTable.email, data.email) });
         if (!user) throw new NotFoundError('Pengguna');
 
-        const token = this.generateToken(user.id, user.email, user.roleId);
+        const token = this.generateToken(user.id, user.email, user.role_id);
 
         return {
             user: {
                 id: user.id,
-                full_name: user.fullName,
+                full_name: user.full_name,
                 email: user.email,
-                role_id: user.roleId
+                role_id: user.role_id
             },
             token
         };
@@ -67,14 +67,14 @@ export class AuthService {
             throw new ValidationError('Email atau password tidak valid');
         }
 
-        const token = this.generateToken(user.id, user.email, user.roleId);
+        const token = this.generateToken(user.id, user.email, user.role_id);
 
         return {
             user: {
                 id: user.id,
-                full_name: user.fullName,
+                full_name: user.full_name,
                 email: user.email,
-                role_id: user.roleId
+                role_id: user.role_id
             },
             token
         };
@@ -89,7 +89,7 @@ export class AuthService {
             throw new NotFoundError('Pengguna');
         }
 
-        const role = await db.query.role.findFirst({ where: eq(roleTable.id, user.roleId) });
+        const role = await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) });
         // assessor / assessee / admin relations can be fetched where needed in their modules
         return {
             ...user,

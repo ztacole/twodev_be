@@ -8,12 +8,12 @@ import { and, eq } from 'drizzle-orm';
 export class OccupationService {
     static async getOccupations(): Promise<OccupationResponse[]> {
         const occupations = await db.select().from(occupationTable);
-        const schemeIds = [...new Set(occupations.map(o => o.schemeId))];
+        const schemeIds = [...new Set(occupations.map(o => o.scheme_id))];
         const schemes = schemeIds.length ? await db.select().from(schemeTable).where(eq(schemeTable.id, schemeIds[0])) : [];
         const schemeById = new Map(schemes.map(s => [s.id, s]));
         return occupations.map(o => ({
             ...o,
-            scheme: schemeById.get(o.schemeId) || null,
+            scheme: schemeById.get(o.scheme_id) || null,
         }) as any);
     }
 
@@ -22,7 +22,7 @@ export class OccupationService {
         if (!occupation) {
             throw new NotFoundError('Occupation');
         }
-        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) });
+        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) });
         return { ...occupation, scheme } as any;
     }
 
@@ -33,14 +33,14 @@ export class OccupationService {
         }
 
         const existingOccupation = await db.query.occupation.findFirst({
-            where: and(eq(occupationTable.schemeId, data.scheme_id), eq(occupationTable.name, data.name)),
+            where: and(eq(occupationTable.scheme_id, data.scheme_id), eq(occupationTable.name, data.name)),
         });
         if (existingOccupation) {
             throw new DuplicateEntryError('Occupation name', data.name);
         }
 
-        await db.insert(occupationTable).values({ schemeId: data.scheme_id, name: data.name });
-        return await db.query.occupation.findFirst({ where: and(eq(occupationTable.schemeId, data.scheme_id), eq(occupationTable.name, data.name)) });
+        await db.insert(occupationTable).values({ scheme_id: data.scheme_id, name: data.name });
+        return await db.query.occupation.findFirst({ where: and(eq(occupationTable.scheme_id, data.scheme_id), eq(occupationTable.name, data.name)) });
     }
 
     static async updateOccupation(id: number, data: OccupationRequest) {
@@ -59,7 +59,7 @@ export class OccupationService {
         }
 
         await db.update(occupationTable)
-            .set({ schemeId: data.scheme_id, name: data.name })
+            .set({ scheme_id: data.scheme_id, name: data.name })
             .where(eq(occupationTable.id, id));
 
         const occupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, id) });
@@ -83,8 +83,8 @@ export class OccupationService {
         if (!occupations.length) {
             throw new NotFoundError('Occupations');
         }
-        const schemeIds = [...new Set(occupations.map(o => o.schemeId))];
-        const schemes = schemeIds.length ? await db.select().from(schemeTable).where(eq(schemeTable.id, schemeIds[0])) : [];
+        const scheme_ids = [...new Set(occupations.map(o => o.scheme_id))];
+        const schemes = scheme_ids.length ? await db.select().from(schemeTable).where(eq(schemeTable.id, scheme_ids[0])) : [];
         const schemeById = new Map(schemes.map(s => [s.id, s]));
 
         const workbook = new ExcelJS.Workbook();
@@ -109,7 +109,7 @@ export class OccupationService {
 
         occupations.forEach(occ => {
             const row = worksheet.addRow([
-                schemeById.get(occ.schemeId)?.code || '',
+                schemeById.get(occ.scheme_id)?.code || '',
                 occ.name
             ]);
             row.eachCell((cell: any) => {

@@ -23,27 +23,27 @@ export class ScheduleService {
             throw new NotFoundError('Assessment');
         }
 
-        const assessorIds = data.schedule_details.map(detail => Number(detail.assessor_id));
-        const existingAssessors = assessorIds.length ? await db.select().from(userTable).where(eq(userTable.id, assessorIds[0])) : [];
-        if (existingAssessors.length !== assessorIds.length) {
+        const assessor_ids = data.schedule_details.map(detail => Number(detail.assessor_id));
+        const existingAssessors = assessor_ids.length ? await db.select().from(userTable).where(eq(userTable.id, assessor_ids[0])) : [];
+        if (existingAssessors.length !== assessor_ids.length) {
             throw new NotFoundError('Assessor');
         }
 
         const [created] = await db.insert(scheduleTable).values({
-            assessmentId: data.assessment_id,
-            startDate: data.start_date as any,
-            endDate: data.end_date as any,
+            assessment_id: data.assessment_id,
+            start_date: data.start_date as any,
+            end_date: data.end_date as any,
         });
 
         for (const detail of data.schedule_details) {
             await db.insert(scheduleDetailTable).values({
-                scheduleId: (created as any).insertId ?? undefined,
-                assessorId: Number(detail.assessor_id),
+                schedule_id: (created as any).insertId ?? undefined,
+                assessor_id: Number(detail.assessor_id),
                 location: detail.location,
             });
         }
 
-        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.assessmentId, data.assessment_id) });
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.assessment_id, data.assessment_id) });
         if (!schedule) throw new NotFoundError('Schedule');
         return await buildScheduleResponse(schedule);
     }
@@ -54,7 +54,7 @@ export class ScheduleService {
     }
 
     static async getScheduleById(id: number, user: JwtPayload): Promise<ScheduleResponse> {
-        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.userId, user.id as any));
+        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.user_id, user.id as any));
         if (!assessee) {
             throw new NotFoundError('Assessee');
         }
@@ -68,35 +68,35 @@ export class ScheduleService {
     }
 
     static async getActiveSchedules(user: JwtPayload): Promise<ScheduleResponse[]> {
-        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.userId, user.id as any));
+        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.user_id, user.id as any));
         if (!assessee) {
             throw new NotFoundError('Assessee');
         }
 
         const now = new Date();
-        const schedules = await db.select().from(scheduleTable).where(and(lte(scheduleTable.startDate, now as any), gte(scheduleTable.endDate, now as any)));
+        const schedules = await db.select().from(scheduleTable).where(and(lte(scheduleTable.start_date, now as any), gte(scheduleTable.end_date, now as any)));
         return Promise.all(schedules.map(s => buildScheduleResponse(s, assessee as any)));
     }
 
     static async getCompletedSchedules(): Promise<ScheduleResponse[]> {
         const now = new Date();
-        const schedules = await db.select().from(scheduleTable).where(lte(scheduleTable.endDate, now as any));
+        const schedules = await db.select().from(scheduleTable).where(lte(scheduleTable.end_date, now as any));
         return Promise.all(schedules.map(s => buildScheduleResponse(s)));
     }
 
-    static async getCompletedSchedulesByAssesseeId(assesseeId: number): Promise<ScheduleResponse[]> {
-        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assesseeId) });
+    static async getCompletedSchedulesByassessee_id(assessee_id: number): Promise<ScheduleResponse[]> {
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assessee_id) });
         if (!assessee) {
             throw new NotFoundError('Assessee');
         }
 
-        const results = await db.select().from(resultTable).where(eq(resultTable.assesseeId, assesseeId));
-        const scheduleIds = new Set<number>();
+        const results = await db.select().from(resultTable).where(eq(resultTable.assessee_id, assessee_id));
+        const schedule_ids = new Set<number>();
         for (const r of results) {
-            const schedules = await db.select().from(scheduleTable).where(eq(scheduleTable.assessmentId, r.assessmentId));
-            for (const s of schedules) scheduleIds.add(s.id);
+            const schedules = await db.select().from(scheduleTable).where(eq(scheduleTable.assessment_id, r.assessment_id));
+            for (const s of schedules) schedule_ids.add(s.id);
         }
-        const schedules = await db.select().from(scheduleTable).where(eq(scheduleTable.id, Array.from(scheduleIds)[0] || 0));
+        const schedules = await db.select().from(scheduleTable).where(eq(scheduleTable.id, Array.from(schedule_ids)[0] || 0));
         return Promise.all(schedules.map(s => buildScheduleResponse(s)));
     }
 
@@ -104,15 +104,15 @@ export class ScheduleService {
         const schedules = await db.select().from(scheduleTable);
 
         return Promise.all(schedules.map(async (schedule) => {
-            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessmentId) });
-            const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupationId) }) : null;
-            const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) }) : null;
+            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
+            const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+            const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
             return {
-                assessment_id: schedule.assessmentId,
+                assessment_id: schedule.assessment_id,
                 scheme_code: scheme?.code,
                 occupation_name: occupation?.name,
-                start_date: schedule.startDate,
-                end_date: schedule.endDate,
+                start_date: schedule.start_date,
+                end_date: schedule.end_date,
             };
         }));
     }
@@ -122,7 +122,7 @@ export class ScheduleService {
         if (!existing) {
             throw new NotFoundError('Schedule');
         }
-        await db.delete(scheduleDetailTable).where(eq(scheduleDetailTable.scheduleId, id));
+        await db.delete(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, id));
         await db.delete(scheduleTable).where(eq(scheduleTable.id, id));
     }
 }
@@ -133,24 +133,24 @@ interface Assessee {
 }
 
 async function buildScheduleResponse(schedule: any, user: Assessee[] | null = null): Promise<ScheduleResponse> {
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessmentId) });
-    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupationId) }) : null;
-    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) }) : null;
-    const details = await db.select().from(scheduleDetailTable).where(eq(scheduleDetailTable.scheduleId, schedule.id));
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
+    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
+    const details = await db.select().from(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, schedule.id));
     const detailed = await Promise.all(details.map(async (detail) => {
-        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, detail.assessorId) });
-        const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.userId) }) : null;
-        const results = await db.select().from(resultTable).where(and(eq(resultTable.assessmentId, schedule.assessmentId), eq(resultTable.assessorId, detail.assessorId)));
-        const onGoing = user ? results.find(r => user.find(a => a.id === r.assesseeId)) : null;
+        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, detail.assessor_id) });
+        const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
+        const results = await db.select().from(resultTable).where(and(eq(resultTable.assessment_id, schedule.assessment_id), eq(resultTable.assessor_id, detail.assessor_id)));
+        const onGoing = user ? results.find(r => user.find(a => a.id === r.assessee_id)) : null;
         return {
             id: detail.id,
             assessor: assessor && assessorUser ? {
                 id: assessor.id,
-                full_name: assessorUser.fullName,
-                phone_no: assessor.phoneNo,
+                full_name: assessorUser.full_name,
+                phone_no: assessor.phone_no,
             } : null,
             location: detail.location,
-            on_going: onGoing ? { result_id: onGoing.id, assessee_id: onGoing.assesseeId } : null,
+            on_going: onGoing ? { result_id: onGoing.id, assessee_id: onGoing.assessee_id } : null,
         };
     }));
 
@@ -169,8 +169,8 @@ async function buildScheduleResponse(schedule: any, user: Assessee[] | null = nu
                 },
             },
         },
-        start_date: schedule.startDate,
-        end_date: schedule.endDate,
+        start_date: schedule.start_date,
+        end_date: schedule.end_date,
         schedule_details: detailed,
     } as any;
 }

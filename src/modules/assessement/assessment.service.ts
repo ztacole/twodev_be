@@ -49,14 +49,14 @@ export class AssessmentService {
         let existingOccupation = await db.query.occupation.findFirst({
             where: and(
                 eq(occupationTable.name, data.occupation_name),
-                eq(occupationTable.schemeId, data.scheme_id)
+                eq(occupationTable.scheme_id, data.scheme_id)
             )
         });
 
         if (!existingOccupation) {
             const [createdOccupation] = await db.insert(occupationTable).values({
                 name: data.occupation_name,
-                schemeId: data.scheme_id
+                scheme_id: data.scheme_id
             }).$returningId();
             existingOccupation = await db.query.occupation.findFirst({
                 where: eq(occupationTable.id, createdOccupation.id)
@@ -66,35 +66,35 @@ export class AssessmentService {
         return await db.transaction(async (tx) => {
             // Create occupation
             const [occupation] = await tx.insert(occupationTable).values({
-                schemeId: data.scheme_id,
+                scheme_id: data.scheme_id,
                 name: data.occupation_name,
             });
 
             // Create assessment
             const [assessment] = await tx.insert(assessmentTable).values({
-                occupationId: (occupation as any).insertId,
+                occupation_id: (occupation as any).insertId,
                 code: data.code,
             });
 
-            const assessmentId = (assessment as any).insertId;
+            const assessment_id = (assessment as any).insertId;
 
             // Create UC APL02
             for (const uc of data.uc_apl02s) {
                 const [ucApl02] = await tx.insert(ucApl02Table).values({
-                    assessmentId,
-                    unitCode: uc.unit_code,
+                    assessment_id,
+                    unit_code: uc.unit_code,
                     title: uc.title,
                 });
 
                 for (const element of uc.elements) {
                     const [elementApl02] = await tx.insert(elementApl02Table).values({
-                        ucId: (ucApl02 as any).insertId,
+                        uc_id: (ucApl02 as any).insertId,
                         title: element.title,
                     });
 
                     for (const detail of element.details) {
                         await tx.insert(elementDetailsApl02Table).values({
-                            elementId: (elementApl02 as any).insertId,
+                            element_id: (elementApl02 as any).insertId,
                             description: detail.description,
                         });
                     }
@@ -104,26 +104,26 @@ export class AssessmentService {
             // Create Group IA01
             for (const group of data.groups_ia01) {
                 const [groupIa01] = await tx.insert(groupIa01Table).values({
-                    assessmentId,
+                    assessment_id,
                     name: group.name,
                 });
 
                 for (const unit of group.units) {
                     const [ucIa01] = await tx.insert(ucIa01Table).values({
-                        groupId: (groupIa01 as any).insertId,
-                        unitCode: unit.unit_code,
+                        group_id: (groupIa01 as any).insertId,
+                        unit_code: unit.unit_code,
                         title: unit.title,
                     });
 
                     for (const element of unit.elements) {
                         const [elementIa] = await tx.insert(elementIaTable).values({
-                            ucId: (ucIa01 as any).insertId,
+                            uc_id: (ucIa01 as any).insertId,
                                 title: element.title,
                         });
 
                         for (const detail of element.details) {
                             await tx.insert(elementDetailsIaTable).values({
-                                elementId: (elementIa as any).insertId,
+                                element_id: (elementIa as any).insertId,
                                 description: detail.description,
                                 benchmark: detail.benchmark,
                             });
@@ -135,7 +135,7 @@ export class AssessmentService {
             // Create Group IA02
             for (const group of data.groups_ia02) {
                 const [groupIa02] = await tx.insert(groupIa02Table).values({
-                    assessmentId,
+                    assessment_id,
                         name: group.name,
                         scenario: group.scenario,
                         duration: group.duration,
@@ -143,15 +143,15 @@ export class AssessmentService {
 
                 for (const unit of group.units) {
                     await tx.insert(ucIa02Table).values({
-                        groupId: (groupIa02 as any).insertId,
-                        unitCode: unit.unit_code,
+                        group_id: (groupIa02 as any).insertId,
+                        unit_code: unit.unit_code,
                                 title: unit.title,
                     });
                 }
 
                 for (const tool of group.tools) {
                     await tx.insert(ia02ToolTable).values({
-                        groupId: (groupIa02 as any).insertId,
+                        group_id: (groupIa02 as any).insertId,
                         name: tool.name,
                     });
                 }
@@ -160,21 +160,21 @@ export class AssessmentService {
             // Create Group IA03
             for (const group of data.groups_ia03) {
                 const [groupIa03] = await tx.insert(groupIa03Table).values({
-                    assessmentId,
+                    assessment_id,
                         name: group.name,
                 });
 
                 for (const unit of group.units) {
                     await tx.insert(ucIa03Table).values({
-                        groupId: (groupIa03 as any).insertId,
-                        unitCode: unit.unit_code,
+                        group_id: (groupIa03 as any).insertId,
+                        unit_code: unit.unit_code,
                                 title: unit.title,
                     });
                 }
 
                 for (const question of group.qa_ia03) {
                     await tx.insert(ia03QuestionTable).values({
-                        groupId: (groupIa03 as any).insertId,
+                        group_id: (groupIa03 as any).insertId,
                         question: question.question,
                     });
                 }
@@ -183,16 +183,16 @@ export class AssessmentService {
             // Create IA05 Questions
             for (const question of data.ia05_questions) {
                 const [ia05Question] = await tx.insert(ia05QuestionTable).values({
-                    assessmentId,
+                    assessment_id,
                     order: question.order,
                     question: question.question,
                 });
 
                 for (const option of question.options) {
                     await tx.insert(questionOptionTable).values({
-                        questionId: (ia05Question as any).insertId,
+                        question_id: (ia05Question as any).insertId,
                         option: option.option,
-                        isAnswer: option.is_answer,
+                        is_answer: option.is_answer,
                     });
                 }
             }
@@ -200,13 +200,13 @@ export class AssessmentService {
             // Create IA07 Questions
             for (const question of data.ia07_questions) {
                 await tx.insert(ia07QuestionTable).values({
-                    assessmentId,
+                    assessment_id,
                     question: question.question,
-                    answerKey: question.answer_key,
+                    answer_key: question.answer_key,
                 });
             }
 
-            return { id: assessmentId };
+            return { id: assessment_id };
         });
     }
 
@@ -214,7 +214,7 @@ export class AssessmentService {
         const assessments = await db.select({
             id: assessmentTable.id,
             code: assessmentTable.code,
-            occupationId: assessmentTable.occupationId,
+            occupation_id: assessmentTable.occupation_id,
         }).from(assessmentTable);
 
         const result = [];
@@ -222,14 +222,14 @@ export class AssessmentService {
             const [occupation] = await db
                 .select()
                 .from(occupationTable)
-                .where(eq(occupationTable.id, assessment.occupationId));
+                .where(eq(occupationTable.id, assessment.occupation_id));
 
             if (!occupation) continue;
 
             const [scheme] = await db
                 .select()
                 .from(schemeTable)
-                .where(eq(schemeTable.id, (occupation as any).schemeId));
+                .where(eq(schemeTable.id, (occupation as any).scheme_id));
 
             result.push({
                 id: assessment.id,
@@ -264,24 +264,24 @@ export class AssessmentService {
         const [occupation] = await db
             .select()
             .from(occupationTable)
-            .where(eq(occupationTable.id, assessment.occupationId));
+            .where(eq(occupationTable.id, assessment.occupation_id));
 
         let scheme: any = null;
         if (occupation) {
             const [sc] = await db
                 .select()
                 .from(schemeTable)
-                .where(eq(schemeTable.id, (occupation as any).schemeId));
+                .where(eq(schemeTable.id, (occupation as any).scheme_id));
             scheme = sc ?? null;
         }
 
         // Get all related data without complex relations
-        const ucApl02s = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessmentId, id));
-        const groupsIa01 = await db.select().from(groupIa01Table).where(eq(groupIa01Table.assessmentId, id));
-        const groupsIa02 = await db.select().from(groupIa02Table).where(eq(groupIa02Table.assessmentId, id));
-        const groupsIa03 = await db.select().from(groupIa03Table).where(eq(groupIa03Table.assessmentId, id));
-        const ia05Questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessmentId, id));
-        const ia07Questions = await db.select().from(ia07QuestionTable).where(eq(ia07QuestionTable.assessmentId, id));
+        const ucApl02s = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, id));
+        const groupsIa01 = await db.select().from(groupIa01Table).where(eq(groupIa01Table.assessment_id, id));
+        const groupsIa02 = await db.select().from(groupIa02Table).where(eq(groupIa02Table.assessment_id, id));
+        const groupsIa03 = await db.select().from(groupIa03Table).where(eq(groupIa03Table.assessment_id, id));
+        const ia05Questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, id));
+        const ia07Questions = await db.select().from(ia07QuestionTable).where(eq(ia07QuestionTable.assessment_id, id));
 
         return {
             id: assessment.id,
@@ -311,12 +311,12 @@ export class AssessmentService {
         return { message: 'Assessment deleted successfully' };
     }
 
-    static async getAssessmentResultDetails(assessmentId: number, assessorId: number, assesseeId: number) {
+    static async getAssessmentResultDetails(assessment_id: number, assessor_id: number, assessee_id: number) {
         const result = await db.query.result.findFirst({
             where: and(
-                eq(resultTable.assessmentId, assessmentId),
-                eq(resultTable.assessorId, assessorId),
-                eq(resultTable.assesseeId, assesseeId)
+                eq(resultTable.assessment_id, assessment_id),
+                eq(resultTable.assessor_id, assessor_id),
+                eq(resultTable.assessee_id, assessee_id)
             )
         });
 

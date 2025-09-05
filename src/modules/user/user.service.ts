@@ -10,16 +10,16 @@ export class UserService {
         const hashedPassword = await bcrypt.hash(data.password, 10);
 
         await db.insert(userTable).values({
-            fullName: data.full_name,
+            full_name: data.full_name,
             email: data.email,
             password: hashedPassword,
-            roleId: data.role_id,
+            role_id: data.role_id,
         });
 
         const user = await db.query.user.findFirst({ where: eq(userTable.email, data.email) });
         if (!user) throw new NotFoundError('User');
 
-        const role = await db.query.role.findFirst({ where: eq(roleTable.id, user.roleId) });
+        const role = await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) });
         return formatUserResponse({ ...user, role });
     }
 
@@ -27,13 +27,13 @@ export class UserService {
         const users = await db.select().from(userTable);
         const roles = await db.select().from(roleTable);
         const roleById = new Map(roles.map(r => [r.id, r]));
-        return users.map(u => formatUserResponse({ ...u, role: roleById.get(u.roleId) }));
+        return users.map(u => formatUserResponse({ ...u, role: roleById.get(u.role_id) }));
     }
 
     static async getUserById(id: number): Promise<UserResponse> {
         const user = await db.query.user.findFirst({ where: eq(userTable.id, id) });
         if (!user) throw new NotFoundError('User');
-        const role = await db.query.role.findFirst({ where: eq(roleTable.id, user.roleId) });
+        const role = await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) });
         return formatUserResponse({ ...user, role });
     }
 
@@ -48,16 +48,16 @@ export class UserService {
 
         await db.update(userTable)
             .set({
-                fullName: data.full_name ?? existing.fullName,
+                full_name: data.full_name ?? existing.full_name,
                 email: data.email ?? existing.email,
                 password: hashedPassword ?? existing.password,
-                roleId: data.role_id ?? existing.roleId,
+                role_id: data.role_id ?? existing.role_id,
             })
             .where(eq(userTable.id, id));
 
         const updated = await db.query.user.findFirst({ where: eq(userTable.id, id) });
         if (!updated) throw new NotFoundError('User');
-        const role = await db.query.role.findFirst({ where: eq(roleTable.id, updated.roleId) });
+        const role = await db.query.role.findFirst({ where: eq(roleTable.id, updated.role_id) });
         return formatUserResponse({ ...updated, role });
     }
 
@@ -71,7 +71,7 @@ export class UserService {
 function formatUserResponse(user: any): UserResponse {
     return {
         id: user.id,
-        full_name: user.fullName,
+        full_name: user.full_name,
         email: user.email,
         role: {
             id: user.role.id,

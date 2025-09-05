@@ -6,11 +6,11 @@ import { and, desc, eq } from 'drizzle-orm';
 export const getPendingVerifications = async () => {
 	const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.approved, false)).orderBy(desc(resultDocTable.id));
 	return Promise.all(docs.map(async (doc) => {
-		const result = await db.query.result.findFirst({ where: eq(resultTable.id, doc.resultId) });
-		const assessee = result ? await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assesseeId) }) : null;
-		const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) }) : null;
-		const assessor = result ? await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessorId) }) : null;
-		const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.userId) }) : null;
+		const result = await db.query.result.findFirst({ where: eq(resultTable.id, doc.result_id) });
+		const assessee = result ? await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) }) : null;
+		const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+		const assessor = result ? await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) }) : null;
+		const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
 		return {
 			...doc,
 			result: result ? {
@@ -25,11 +25,11 @@ export const getPendingVerifications = async () => {
 export const getApprovedVerifications = async () => {
 	const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.approved, true)).orderBy(desc(resultDocTable.id));
 	return Promise.all(docs.map(async (doc) => {
-		const result = await db.query.result.findFirst({ where: eq(resultTable.id, doc.resultId) });
-		const assessee = result ? await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assesseeId) }) : null;
-		const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) }) : null;
-		const assessor = result ? await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessorId) }) : null;
-		const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.userId) }) : null;
+		const result = await db.query.result.findFirst({ where: eq(resultTable.id, doc.result_id) });
+		const assessee = result ? await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) }) : null;
+		const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+		const assessor = result ? await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) }) : null;
+		const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
 		return {
 			...doc,
 			result: result ? {
@@ -41,18 +41,18 @@ export const getApprovedVerifications = async () => {
 	}));
 };
 
-export const getVerificationDetail = async (resultId: number) => {
+export const getVerificationDetail = async (result_id: number) => {
 	const result = await db.query.result.findFirst({
-		where: eq(resultTable.id, resultId),
+		where: eq(resultTable.id, result_id),
 	});
 
 	if (!result) throw new NotFoundError('Result');
 
-	const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assesseeId) });
-	const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) }) : null;
-	const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessorId) });
-	const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.userId) }) : null;
-	const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.resultId, result.id));
+	const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
+	const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+	const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
+	const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
+	const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.result_id, result.id));
 
 	return {
 		...result,
@@ -62,12 +62,12 @@ export const getVerificationDetail = async (resultId: number) => {
 	};
 };
 
-export const approveVerification = async (resultId: number) => {
-	const existing = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+export const approveVerification = async (result_id: number) => {
+	const existing = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
 	if (!existing) throw new NotFoundError('Result');
 
-	await db.update(resultTable).set({ isCompetent: true }).where(eq(resultTable.id, resultId));
-	await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.resultId, resultId));
+	await db.update(resultTable).set({ is_competent: true }).where(eq(resultTable.id, result_id));
+	await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.result_id, result_id));
 
 	return { success: true };
 };

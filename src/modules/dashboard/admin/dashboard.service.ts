@@ -28,16 +28,16 @@ export class DashboardService {
   static async getSchedules(): Promise<DashboardSchedule[]> {
     const schedules = await db.select().from(scheduleTable);
     return Promise.all(schedules.map(async (s) => {
-      const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, s.assessmentId) });
-      const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupationId) }) : null;
-      const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) }) : null;
+      const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, s.assessment_id) });
+      const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+      const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
       return {
         id: s.id,
-        assessment_id: s.assessmentId,
+        assessment_id: s.assessment_id,
         schema_name: scheme?.code as any,
         occupation_name: occupation?.name as any,
-        start_date: s.startDate as any,
-        end_date: s.endDate as any,
+        start_date: s.start_date as any,
+        end_date: s.start_date as any,
       };
     }));
   }
@@ -47,13 +47,13 @@ export class DashboardService {
 
     return docs.map((d) => ({
       id: d.id,
-      result_id: d.resultId,
+      result_id: d.result_id,
       purpose: d.purpose,
-      school_report_card: d.schoolReportCard,
-      field_work_practice_certificate: d.fieldWorkPracticeCertificate,
-      student_card: d.studentCard,
-      family_card: d.familyCard,
-      id_card: d.idCard,
+      school_report_card: d.school_report_card,
+      field_work_practice_certificate: d.field_work_practice_certificate,
+      student_card: d.student_card,
+      family_card: d.family_card,
+      id_card: d.id_card,
       approved: d.approved,
     }));
   }
