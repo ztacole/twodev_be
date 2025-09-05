@@ -5,17 +5,17 @@ import { result as resultTable, resultApl02Header as apl02HeaderTable, resultApl
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 
 export class APL02Service {
-  static async getUnitsAPL02(resultId: number): Promise<any[]> {
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+  static async getUnitsAPL02(result_id: number): Promise<any[]> {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
 
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessmentId, existingResult.assessmentId));
+    const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, existingResult.assessment_id));
     const elementsByUc = await Promise.all(unitCompetencies.map(async (uc) => {
-      const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.ucId, uc.id));
-      const results = await db.select().from(apl02RowTable).where(eq(apl02RowTable.resultApl02Id, resultId));
+      const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
+      const results = await db.select().from(apl02RowTable).where(eq(apl02RowTable.result_apl02_id, result_id));
       return { uc, elements, results };
     }));
 
@@ -23,13 +23,13 @@ export class APL02Service {
       const totalElements = elements.length;
       let completedElements = 0;
       for (const el of elements) {
-        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.resultApl02Id, resultId), eq(apl02RowTable.elementId, el.id)) });
+        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, result_id), eq(apl02RowTable.element_id, el.id)) });
         if (row) completedElements += 1;
       }
       const finished = totalElements > 0 && completedElements === totalElements;
       return {
         id: uc.id,
-        unit_code: uc.unitCode,
+        unit_code: uc.unit_code,
         title: uc.title,
         finished,
         progress: totalElements > 0 ? Math.round((completedElements / totalElements) * 100) : 0,
@@ -39,33 +39,33 @@ export class APL02Service {
     }));
   }
 
-  static async getElementsByUnitId(resultId: number, unitId: number): Promise<any[]> {
+  static async getElementsByUnitId(result_id: number, unitId: number): Promise<any[]> {
     const existingUc = await db.query.ucApl02.findFirst({ where: eq(ucApl02Table.id, unitId) });
     if (!existingUc) {
       throw new NotFoundError('Unit competency');
     }
 
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.ucId, unitId));
+    const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, unitId));
 
     return Promise.all(elements.map(async (element) => {
-      const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.resultApl02Id, resultId), eq(apl02RowTable.elementId, element.id)) });
-      const evidences = row ? await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.resultApl02Id, row.id)) : [];
-      const details = await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.elementId, element.id));
+      const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, result_id), eq(apl02RowTable.element_id, element.id)) });
+      const evidences = row ? await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id)) : [];
+      const details = await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, element.id));
       return {
         id: element.id,
-        uc_id: element.ucId,
+        uc_id: element.uc_id,
         title: element.title,
         details: details.map(d => ({ id: d.id, description: d.description })),
         result: row ? {
           id: row.id,
-          header_id: row.resultApl02Id,
-          element_id: row.elementId,
-          is_competent: row.isCompetent,
+          header_id: row.result_apl02_id,
+          element_id: row.element_id,
+          is_competent: row.is_competent,
           evidences: evidences.map(e => ({ id: e.id, evidence: e.evidence }))
         } : null
       }
@@ -77,7 +77,7 @@ export class APL02Service {
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
-    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.resultId, Number(data.result_id)) });
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, Number(data.result_id)) });
     if (!header) {
       throw new NotFoundError('APL02 header');
     }
@@ -92,23 +92,23 @@ export class APL02Service {
     const results = await Promise.all(
       data.elements.map(async (element) => {
         // upsert row
-        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.resultApl02Id, header.id), eq(apl02RowTable.elementId, Number(element.element_id))) });
+        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, header.id), eq(apl02RowTable.element_id, Number(element.element_id))) });
         if (row) {
-          await db.update(apl02RowTable).set({ isCompetent: element.is_competent }).where(eq(apl02RowTable.id, row.id));
-          await db.delete(apl02EvidenceTable).where(eq(apl02EvidenceTable.resultApl02Id, row.id));
+          await db.update(apl02RowTable).set({ is_competent: element.is_competent }).where(eq(apl02RowTable.id, row.id));
+          await db.delete(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id));
           for (const ev of element.evidences) {
-            await db.insert(apl02EvidenceTable).values({ resultApl02Id: row.id, evidence: ev.evidence });
+            await db.insert(apl02EvidenceTable).values({ result_apl02_id: row.id, evidence: ev.evidence });
           }
-          const evidences = await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.resultApl02Id, row.id));
+          const evidences = await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id));
           return { ...row, evidences } as any;
         } else {
-          const [created] = await db.insert(apl02RowTable).values({ resultApl02Id: header.id, elementId: Number(element.element_id), isCompetent: element.is_competent });
-          const createdRow = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.resultApl02Id, header.id), eq(apl02RowTable.elementId, Number(element.element_id))) });
+          const [created] = await db.insert(apl02RowTable).values({ result_apl02_id: header.id, element_id: Number(element.element_id), is_competent: element.is_competent });
+          const createdRow = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, header.id), eq(apl02RowTable.element_id, Number(element.element_id))) });
           if (createdRow) {
             for (const ev of element.evidences) {
-              await db.insert(apl02EvidenceTable).values({ resultApl02Id: createdRow.id, evidence: ev.evidence });
+              await db.insert(apl02EvidenceTable).values({ result_apl02_id: createdRow.id, evidence: ev.evidence });
             }
-            const evidences = await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.resultApl02Id, createdRow.id));
+            const evidences = await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, createdRow.id));
             return { ...createdRow, evidences } as any;
           }
           return null;
@@ -124,7 +124,7 @@ export class APL02Service {
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
-    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.resultId, data.result_id) });
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, data.result_id) });
     if (!header) {
       throw new NotFoundError('APL02 header');
     }
@@ -150,22 +150,22 @@ export class APL02Service {
     }
   }
 
-  static async getUnitsResult(resultId: number) {
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+  static async getUnitsResult(result_id: number) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.resultId, resultId) });
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
     if (!header) {
       throw new NotFoundError('Units result');
     }
 
-    const units = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessmentId, existingResult.assessmentId));
+    const units = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, existingResult.assessment_id));
 
     return {
       id: header.id,
-      result_id: header.resultId,
+      result_id: header.result_id,
       assessee: {
         id: existingResult.assesseeId,
         name: (await db.query.user.findFirst({ where: eq(userTable.id, (await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assesseeId) }))!.userId) }))!.fullName,
@@ -174,43 +174,43 @@ export class APL02Service {
       approved_assessee: header.approvedAssessee,
       approved_assessor: header.approvedAssessor,
       is_continue: header.isContinue,
-      units: units.map(unit => ({ id: unit.id, unit_code: unit.unitCode, title: unit.title }))
+      units: units.map(unit => ({ id: unit.id, unit_code: unit.unit_code, title: unit.title }))
     };
   }
 
-  static async getElementsResult(resultId: number, unitId: number) {
+  static async getElementsResult(result_id: number, unitId: number) {
     const existingUnit = await db.query.ucApl02.findFirst({ where: eq(ucApl02Table.id, unitId) });
     if (!existingUnit) {
       throw new NotFoundError('Unit competency');
     }
 
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.resultId, resultId) });
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
     if (!header) {
       throw new NotFoundError('Elements result');
     }
 
-    const rows = await db.query.resultApl02.findMany({ where: eq(apl02RowTable.resultApl02Id, header.id) });
+    const rows = await db.query.resultApl02.findMany({ where: eq(apl02RowTable.result_apl02_id, header.id) });
 
     const results = await Promise.all(rows.filter(r => r).map(async (row) => {
-      const element = await db.query.elementApl02.findFirst({ where: eq(elementApl02Table.id, row.elementId) });
-      const details = element ? await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.elementId, element.id)) : [];
-      const evidences = await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.resultApl02Id, row.id));
+      const element = await db.query.elementApl02.findFirst({ where: eq(elementApl02Table.id, row.element_id) });
+      const details = element ? await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, element.id)) : [];
+      const evidences = await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id));
       return {
         id: row.id,
         element: { ...element, details },
-        is_competent: row.isCompetent,
+        is_competent: row.is_competent,
         evidences,
       };
     }));
 
     return {
       id: header.id,
-      result_id: header.resultId,
+      result_id: header.result_id,
       assessee: {
         id: existingResult.assesseeId,
         name: (await db.query.user.findFirst({ where: eq(userTable.id, (await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assesseeId) }))!.userId) }))!.fullName,
@@ -223,13 +223,13 @@ export class APL02Service {
     };
   }
 
-  static async approvedByAssessor(resultId: number, data: GenerateAsssessorRequest) {
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+  static async approvedByAssessor(result_id: number, data: GenerateAsssessorRequest) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.resultId, resultId) });
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
     if (!header) {
       throw new NotFoundError('APL02 header');
     }
@@ -243,7 +243,7 @@ export class APL02Service {
 
     return {
       id: updated.id,
-      result_id: updated.resultId,
+      result_id: updated.result_id,
       assessee: {
         id: assessee?.id,
         name: assesseeUser?.fullName,
@@ -255,13 +255,13 @@ export class APL02Service {
     }
   }
 
-  static async approvedByAssessee(resultId: number) {
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+  static async approvedByAssessee(result_id: number) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.resultId, resultId) });
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
     if (!header) {
       throw new NotFoundError('Result header');
     }
@@ -275,7 +275,7 @@ export class APL02Service {
 
     return {
       id: updated.id,
-      result_id: updated.resultId,
+      result_id: updated.result_id,
       assessee: {
         id: assessee?.id,
         name: assesseeUser?.fullName,
@@ -287,25 +287,25 @@ export class APL02Service {
     }
   }
 
-  static async getResultDetails(resultId: number) {
-    const result = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+  static async getResultDetails(result_id: number) {
+    const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!result) {
       throw new NotFoundError('Result');
     }
 
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessmentId) });
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
     const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupationId) }) : null;
     const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) }) : null;
 
     const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assesseeId) });
     const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) }) : null;
 
-    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.resultId, resultId) });
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
     if (!header) {
       throw new NotFoundError('Result header');
     }
 
-    const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.resultId, result.id));
+    const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.result_id, result.id));
     if (!docs.length) {
       throw new NotFoundError('Result docs');
     }
@@ -316,7 +316,7 @@ export class APL02Service {
       assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.fullName, email: assesseeUser.email } : null,
       assessor: null,
       tuk: result.tuk,
-      is_competent: result.isCompetent,
+      is_competent: result.is_competent,
       created_at: result.createdAt,
       apl02_header: header,
       approved_admin: docs[docs.length - 1].approved

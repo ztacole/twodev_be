@@ -27,6 +27,42 @@ import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from
 
 export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
+        // Check if scheme exists
+        const existingScheme = await db.query.scheme.findFirst({
+            where: eq(schemeTable.id, data.scheme_id)
+        });
+        
+        if (!existingScheme) {
+            throw new NotFoundError("Scheme");
+        }
+
+        // Check for duplicate assessment code
+        const existingAssessment = await db.query.assessment.findFirst({
+            where: eq(assessmentTable.code, data.code)
+        });
+        
+        if (existingAssessment) {
+            throw new DuplicateEntryError("Assessment code", data.code);
+        }
+
+        // Find or create occupation
+        let existingOccupation = await db.query.occupation.findFirst({
+            where: and(
+                eq(occupationTable.name, data.occupation_name),
+                eq(occupationTable.schemeId, data.scheme_id)
+            )
+        });
+
+        if (!existingOccupation) {
+            const [createdOccupation] = await db.insert(occupationTable).values({
+                name: data.occupation_name,
+                schemeId: data.scheme_id
+            }).$returningId();
+            existingOccupation = await db.query.occupation.findFirst({
+                where: eq(occupationTable.id, createdOccupation.id)
+            });
+        }
+
         return await db.transaction(async (tx) => {
             // Create occupation
             const [occupation] = await tx.insert(occupationTable).values({

@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 export const ApprovalService = {
   async approveApl01Document(docId: number, user: JwtPayload): Promise<any> {
     const admin = await db.query.admin.findFirst({
-      where: eq(adminTable.userId, user.userId),
+      where: eq(adminTable.user_id, user.userId),
     });
 
     if (!admin) {
@@ -24,6 +24,6 @@ export const ApprovalService = {
       throw new Error("Hanya admin yang dapat melakukan approval kompetensi");
     }
 
-    await db.update(resultTable).set({ isCompetent: true }).where(eq(resultTable.id, resultId));
+    await db.update(resultTable).set({ is_competent: true }).where(eq(resultTable.id, resultId));
   },
 };

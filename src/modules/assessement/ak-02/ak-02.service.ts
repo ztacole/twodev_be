@@ -26,150 +26,150 @@ export class AK02Service {
     if (!result) {
       throw new NotFoundError('Result');
     }
-    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.resultId, data.result_id) });
+    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.result_id, data.result_id) });
     if (!header) {
       throw new NotFoundError('Header AK02');
     }
 
-    const ucIds = data.rows.map(row => row.uc_id);
-    const existingUCs = ucIds.length ? await db.select().from(ucApl02Table).where(inArray(ucApl02Table.id, ucIds)) : [];
-    if (existingUCs.length !== ucIds.length) {
+    const uc_ids = data.rows.map(row => row.uc_id);
+    const existingUCs = uc_ids.length ? await db.select().from(ucApl02Table).where(inArray(ucApl02Table.id, uc_ids)) : [];
+    if (existingUCs.length !== uc_ids.length) {
       throw new NotFoundError('Satu atau lebih Unit Kompetensi');
     }
 
-    await db.delete(ak02RowTable).where(eq(ak02RowTable.headerId, header.id));
+    await db.delete(ak02RowTable).where(eq(ak02RowTable.header_id, header.id));
     for (const row of data.rows) {
-      const [created] = await db.insert(ak02RowTable).values({ headerId: header.id, ucId: row.uc_id });
+      const [created] = await db.insert(ak02RowTable).values({ header_id: header.id, uc_id: row.uc_id });
       for (const e of row.evidences) {
-        await db.insert(ak02EvidenceTable).values({ resultAk02Id: (created as any).insertId ?? undefined, evidence: e });
+        await db.insert(ak02EvidenceTable).values({ result_ak02_id: (created as any).insertId ?? undefined, evidence: e });
       }
     }
 
     await db.update(ak02HeaderTable).set({
-      isCompetent: data.is_competent,
-      followUp: data.follow_up as any,
+      is_competent: data.is_competent,
+      follow_up: data.follow_up as any,
       comment: data.comment as any,
     }).where(eq(ak02HeaderTable.id, header.id));
 
-    const rows = await db.query.resultAk02.findMany({ where: eq(ak02RowTable.headerId, header.id) });
+    const rows = await db.query.resultAk02.findMany({ where: eq(ak02RowTable.header_id, header.id) });
 
     return formatAK02Response({ ...header, rows });
   }
 
-  static async getUnits(resultId: number) {
-    const result = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+  static async getUnits(result_id: number) {
+    const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!result) {
       throw new NotFoundError('Result');
     }
-    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.resultId, resultId) });
+    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.result_id, result_id) });
     if (!header) {
       throw new NotFoundError('Result header');
     }
 
-    const units = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessmentId, result.assessmentId));
-    const rows = await db.query.resultAk02.findMany({ where: eq(ak02RowTable.headerId, header.id) });
+    const units = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, result.assessment_id));
+    const rows = await db.query.resultAk02.findMany({ where: eq(ak02RowTable.header_id, header.id) });
     return {
       id: result.id,
       units: await Promise.all(units.map(async (unit) => {
-        const check = rows.find(row => row.ucId === unit.id) || null;
+        const check = rows.find(row => row.uc_id === unit.id) || null;
         return {
           id: unit.id,
-          code: unit.unitCode,
+          code: unit.unit_code,
           title: unit.title,
-          evidences: check ? (await db.select().from(ak02EvidenceTable).where(eq(ak02EvidenceTable.resultAk02Id, check.id))).map(e => e.evidence) : null
+          evidences: check ? (await db.select().from(ak02EvidenceTable).where(eq(ak02EvidenceTable.result_ak02_id, check.id))).map(e => e.evidence) : null
         };
       }))
 
     };
   }
 
-  static async getResultDetails(resultId: number) {
-    const result = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+  static async getResultDetails(result_id: number) {
+    const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!result) {
       throw new NotFoundError('Result');
     }
-    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.resultId, resultId) });
+    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.result_id, result_id) });
     if (!header) {
       throw new NotFoundError('Result header');
     }
 
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessmentId) });
-    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupationId) }) : null;
-    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.schemeId) }) : null;
-    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assesseeId) });
-    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) }) : null;
-    const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessorId) });
-    const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.userId) }) : null;
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+    const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
+    const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
 
-    const rows = await db.query.resultAk02.findMany({ where: eq(ak02RowTable.headerId, header.id) });
+    const rows = await db.query.resultAk02.findMany({ where: eq(ak02RowTable.header_id, header.id) });
 
     return {
       id: result.id,
       assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
-      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.fullName, email: assesseeUser.email } : null,
-      assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.fullName, email: assessorUser.email, no_reg_met: assessor.noRegMet } : null,
+      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
+      assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,
       tuk: result.tuk,
-      is_competent: result.isCompetent,
-      created_at: result.createdAt,
+      is_competent: result.is_competent,
+      created_at: result.created_at,
       ak02_headers: {
         id: header.id,
-        is_competent: header.isCompetent,
-        follow_up: header.followUp,
+        is_competent: header.is_competent,
+        follow_up: header.follow_up,
         comment: header.comment,
         rows: await Promise.all(rows.map(async row => ({
           id: row.id,
-          unit_id: row.ucId,
-          unit_title: (await db.query.ucApl02.findFirst({ where: eq(ucApl02Table.id, row.ucId) }))?.title,
-          unit_code: (await db.query.ucApl02.findFirst({ where: eq(ucApl02Table.id, row.ucId) }))?.unitCode,
-          evidences: (await db.select().from(ak02EvidenceTable).where(eq(ak02EvidenceTable.resultAk02Id, row.id))).map(e => ({ id: e.id, evidence: e.evidence }))
+          unit_id: row.uc_id,
+          unit_title: (await db.query.ucApl02.findFirst({ where: eq(ucApl02Table.id, row.uc_id) }))?.title,
+          unit_code: (await db.query.ucApl02.findFirst({ where: eq(ucApl02Table.id, row.uc_id) }))?.unit_code,
+          evidences: (await db.select().from(ak02EvidenceTable).where(eq(ak02EvidenceTable.result_ak02_id, row.id))).map(e => ({ id: e.id, evidence: e.evidence }))
         })))
       }
     };
   }
 
   // AK-02 Approval
-  static async approvedByAssessor(resultId: number) {
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+  static async approvedByAssessor(result_id: number) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
 
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.resultId, resultId) });
+    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.result_id, result_id) });
     if (!header) {
       throw new NotFoundError('AK02 header');
     }
 
-    await db.update(ak02HeaderTable).set({ approvedAssessor: true }).where(eq(ak02HeaderTable.id, header.id));
+    await db.update(ak02HeaderTable).set({ approved_assessor: true }).where(eq(ak02HeaderTable.id, header.id));
     const updated = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.id, header.id) });
     if (!updated) throw new NotFoundError('AK02 header');
 
-    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assesseeId) });
-    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) }) : null;
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
 
-    return formatApproval({ ...updated, assessee: { id: assessee?.id, user: { full_name: assesseeUser?.fullName, email: assesseeUser?.email } } } as any);
+    return formatApproval({ ...updated, assessee: { id: assessee?.id, user: { full_name: assesseeUser?.full_name, email: assesseeUser?.email } } } as any);
   }
 
-  static async approvedByAssessee(resultId: number) {
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+  static async approvedByAssessee(result_id: number) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
 
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.resultId, resultId) });
+    const header = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.result_id, result_id) });
     if (!header) {
       throw new NotFoundError('AK02 header');
     }
 
-    await db.update(ak02HeaderTable).set({ approvedAssessee: true }).where(eq(ak02HeaderTable.id, header.id));
+    await db.update(ak02HeaderTable).set({ approved_assessee: true }).where(eq(ak02HeaderTable.id, header.id));
     const updated = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.id, header.id) });
     if (!updated) throw new NotFoundError('AK02 header');
 
-    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assesseeId) });
-    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.userId) }) : null;
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
 
-    return formatApproval({ ...updated, assessee: { id: assessee?.id, user: { full_name: assesseeUser?.fullName, email: assesseeUser?.email } } } as any);
+    return formatApproval({ ...updated, assessee: { id: assessee?.id, user: { full_name: assesseeUser?.full_name, email: assesseeUser?.email } } } as any);
   }
 }
 
@@ -178,20 +178,20 @@ export class AK02Service {
 function formatAK02Response(ak02Header: any): AK02Response {
   return {
     id: ak02Header.id,
-    result_id: ak02Header.resultId,
-    approved_assessee: ak02Header.approvedAssessee,
+    result_id: ak02Header.result_id,
+    approved_assessee: ak02Header.approved_assessee,
     approved_assessor: ak02Header.approvedAssessor,
-    is_competent: ak02Header.isCompetent,
-    follow_up: ak02Header.followUp,
+    is_competent: ak02Header.is_competent,
+    follow_up: ak02Header.follow_up,
     comment: ak02Header.comment,
     rows: ak02Header.rows.map((row: any) => ({
       id: row.id,
-      header_id: row.headerId,
-      uc_id: row.ucId,
+      header_id: row.header_id,
+      uc_id: row.uc_id,
       evidence: row.evidence,
       uc: {
         id: row.uc?.id,
-        unit_code: row.uc?.unitCode,
+        unit_code: row.uc?.unit_code,
         title: row.uc?.title
       }
     }))
@@ -207,7 +207,7 @@ function formatApproval(result: any) {
       name: result.assessee.user.full_name,
       email: result.assessee.user.email,
     },
-    approved_assessee: result.approvedAssessee,
+    approved_assessee: result.approved_assessee,
     approved_assessor: result.approvedAssessor,
   };
 }

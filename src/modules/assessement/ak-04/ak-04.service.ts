@@ -10,17 +10,17 @@ export class AK04Service {
     if (!result) throw new NotFoundError('Result');
 
     const existing = await db.query.resultAk04.findFirst({
-      where: eq(resultAk04.resultId, data.result_id)
+      where: eq(resultAk04.result_id, data.result_id)
     });
 
     if (existing) {
       await db
         .update(resultAk04)
         .set({
-          approvedAssessee: data.approved_assessee ?? false,
-          q1Yes: data.q1_yes,
-          q2Yes: data.q2_yes,
-          q3Yes: data.q3_yes,
+          approved_assessee: data.approved_assessee ?? false,
+          q1_yes: data.q1_yes,
+          q2_yes: data.q2_yes,
+          q3_yes: data.q3_yes,
           reason: data.reason ?? ''
         })
         .where(eq(resultAk04.id, existing.id));
@@ -31,39 +31,39 @@ export class AK04Service {
     await db
       .insert(resultAk04)
       .values({
-        resultId: data.result_id,
-        approvedAssessee: data.approved_assessee ?? false,
-        q1Yes: data.q1_yes,
-        q2Yes: data.q2_yes,
-        q3Yes: data.q3_yes,
+        result_id: data.result_id,
+        approved_assessee: data.approved_assessee ?? false,
+        q1_yes: data.q1_yes,
+        q2_yes: data.q2_yes,
+        q3_yes: data.q3_yes,
         reason: data.reason ?? ''
       });
     const created = await db.query.resultAk04.findFirst({
-      where: eq(resultAk04.resultId, data.result_id)
+      where: eq(resultAk04.result_id, data.result_id)
     });
     return created as unknown as AK04Response;
   }
 
-  static async getAK04ByResultId(resultId: number): Promise<AK04Response> {
+  static async getAK04ByResult_id(result_id: number): Promise<AK04Response> {
     const record = await db.query.resultAk04.findFirst({
-      where: eq(resultAk04.resultId, resultId)
+      where: eq(resultAk04.result_id, result_id)
     });
     if (!record) throw new NotFoundError('AK04');
     return record as unknown as AK04Response;
   }
 
-  static async getResultDetails(resultId: number): Promise<AK04Response> {
+  static async getResultDetails(result_id: number): Promise<AK04Response> {
     const record = await db.query.resultAk04.findFirst({
-      where: eq(resultAk04.resultId, resultId)
+      where: eq(resultAk04.result_id, result_id)
     });
     if (!record) throw new NotFoundError('AK04');
     return record as unknown as AK04Response;
   }
 
-  static async approvedByAssessee(resultId: number): Promise<AK04Response> {
-    const existing = await db.query.resultAk04.findFirst({ where: eq(resultAk04.resultId, resultId) });
+  static async approvedByAssessee(result_id: number): Promise<AK04Response> {
+    const existing = await db.query.resultAk04.findFirst({ where: eq(resultAk04.result_id, result_id) });
     if (!existing) throw new NotFoundError('AK04');
-    await db.update(resultAk04).set({ approvedAssessee: true }).where(eq(resultAk04.id, existing.id));
+    await db.update(resultAk04).set({ approved_assessee: true }).where(eq(resultAk04.id, existing.id));
     const updated = await db.query.resultAk04.findFirst({ where: eq(resultAk04.id, existing.id) });
     return updated as unknown as AK04Response;
   }

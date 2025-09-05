@@ -25,7 +25,7 @@ export class IAO2Service {
         return Promise.all(groups.map(async (g) => {
             const units = await db.select().from(ucIa02Table).where(eq(ucIa02Table.groupId, g.id));
             const tools = await db.select().from(ia02ToolTable).where(eq(ia02ToolTable.groupId, g.id));
-            const pdf = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.groupId, g.id) });
+            const pdf = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessmentId, g.id) });
             return {
                 id: g.id,
                 assessment_id: g.assessmentId,
@@ -105,23 +105,23 @@ export class IAO2Service {
         };
     }
     
-    static async uploadPdf(groupId: number, _filePath: string, fileName: string) {
+    static async uploadPdf(assessmentId: number, _filePath: string, fileName: string) {
         try {
-            const existing = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.groupId, groupId) });
+            const existing = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessmentId, assessmentId) });
             if (existing) {
-                await db.update(ia02PdfTable).set({ name: fileName }).where(eq(ia02PdfTable.groupId, groupId));
-                return await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.groupId, groupId) });
+                await db.update(ia02PdfTable).set({ fileName: fileName }).where(eq(ia02PdfTable.assessmentId, assessmentId));
+                return await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessmentId, assessmentId) });
             }
-            await db.insert(ia02PdfTable).values({ groupId, name: fileName });
-            return await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.groupId, groupId) });
+            await db.insert(ia02PdfTable).values({ assessmentId: assessmentId, fileName: fileName });
+            return await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessmentId, assessmentId) });
         } catch (error: any) {
             throw new AppError(`Gagal mengunggah file PDF: ${error.message}`, 500);
         }
     }
 
-    static async getPdf(groupId: number) {
+    static async getPdf(assessmentId: number) {
         try {
-            const pdf = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.groupId, groupId) });
+            const pdf = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessmentId, assessmentId) });
             return pdf;
         } catch (error: any) {
             if (error instanceof AppError) throw error;

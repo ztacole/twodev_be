@@ -4,58 +4,66 @@ import { asyncHandler } from '../../../common/async.handler';
 
 export class APL1Controller {
     static createAssesseeAPL1 = asyncHandler(async (req: Request, res: Response) => {
-        const requiredFields = [
-            'user_id', 'full_name', 'identity_number', 'birth_date', 
-            'birth_location', 'gender', 'nationality', 'phone_no', 
-            'address', 'postal_code', 'educational_qualifications'
-        ];
-        
-        for (const field of requiredFields) {
-            if (!req.body[field]) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Field ${field} harus diisi`
-                });
+        try {
+            const requiredFields = [
+                'user_id', 'full_name', 'identity_number', 'birth_date',
+                'birth_location', 'gender', 'nationality', 'phone_no',
+                'address', 'postal_code', 'educational_qualifications'
+            ];
+
+            for (const field of requiredFields) {
+                if (!req.body[field]) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Field ${field} harus diisi`
+                    });
+                }
             }
+
+            const assessee = await APL1Service.createOrUpdateAssessee(req.body);
+
+            res.status(201).json({
+                success: true,
+                message: 'Data assessee berhasil disimpan',
+                data: assessee
+            });
+        } catch (error: any) {
+            res.status(500).json({
+                success: false,
+                message: 'Terjadi kesalahan dalam membuat assessee',
+                error: error.message
+            });
         }
-
-        const assessee = await APL1Service.createOrUpdateAssessee(req.body);
-
-        res.status(201).json({
-            success: true,
-            message: 'Data assessee berhasil disimpan',
-            data: assessee
-        });
     });
 
     static createOrUploadCertificateDocs = asyncHandler(async (req: Request, res: Response) => {
         const assesseeId = parseInt(req.body.assessee_id);
         const assessorId = parseInt(req.body.assessor_id);
         const assessmentId = parseInt(req.body.assessment_id);
-    
+
         if (isNaN(assesseeId) || isNaN(assessorId) || isNaN(assessmentId)) {
             return res.status(400).json({
                 success: false,
                 message: 'assessee_id, assessor_id, assessment_id harus valid'
             });
         }
-    
+
         const files = Array.isArray(req.files) ? req.files : [];
-    
+
         const result = await APL1Service.createOrUploadCertificate({
-            assesseeId,
-            assessorId,
-            assessmentId,
+            assessee_id: assesseeId,
+            assessor_id: assessorId,
+            assessment_id: assessmentId,
             bodyData: req.body,
             files
         });
-    
+
         res.status(201).json({
             success: true,
             message: 'Data sertifikat dan file berhasil disimpan',
             data: result
         });
-    });    
+    });
 
     static getAllResult = asyncHandler(async (req: Request, res: Response) => {
         const results = await APL1Service.getAllResultDoc();

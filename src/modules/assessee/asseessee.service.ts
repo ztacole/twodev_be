@@ -41,24 +41,24 @@ export class AssesseeService {
     }
 
     static async createAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
-        const existing = await db.query.assessee.findFirst({ where: eq(assesseeTable.userId, data.user_id) });
+        const existing = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, data.user_id) });
         if (existing) throw new DuplicateEntryError('Assessee untuk user_id', data.user_id.toString());
 
         await db.insert(assesseeTable).values({
-            userId: data.user_id,
-            identityNumber: data.identity_number,
-            birthDate: new Date(data.birth_date) as any,
-            birthLocation: data.birth_location,
+            user_id: data.user_id,
+            identity_number: data.identity_number,
+            birth_date: new Date(data.birth_date) as any,
+            birth_location: data.birth_location,
             gender: translateGenderToEn(data.gender) as any,
             nationality: data.nationality,
-            phoneNo: data.phone_no,
-            housePhoneNo: data.house_phone_no ?? null as any,
-            officePhoneNo: data.office_phone_no ?? null as any,
+            phone_no: data.phone_no,
+            house_phone_no: data.house_phone_no ?? null as any,
+            office_phone_no: data.office_phone_no ?? null as any,
             address: data.address,
-            postalCode: data.postal_code ?? null as any,
-            educationalQualifications: data.educational_qualifications,
+            postal_code: data.postal_code ?? null as any,
+            educational_qualifications: data.educational_qualifications,
         });
-        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.userId, data.user_id) });
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, data.user_id) });
         if (!assessee) throw new NotFoundError('Assessee');
         return this.formatAssesseeResponse(assessee);
     }
@@ -68,18 +68,18 @@ export class AssesseeService {
         if (!existing) throw new NotFoundError('Assessee');
 
         await db.update(assesseeTable).set({
-            userId: data.user_id,
-            identityNumber: data.identity_number,
-            birthDate: new Date(data.birth_date) as any,
-            birthLocation: data.birth_location,
+            user_id: data.user_id,
+            identity_number: data.identity_number,
+            birth_date: new Date(data.birth_date) as any,
+            birth_location: data.birth_location,
             gender: translateGenderToEn(data.gender) as any,
             nationality: data.nationality,
-            phoneNo: data.phone_no,
-            housePhoneNo: data.house_phone_no ?? null as any,
-            officePhoneNo: data.office_phone_no ?? null as any,
+            phone_no: data.phone_no,
+            house_phone_no: data.house_phone_no ?? null as any,
+            office_phone_no: data.office_phone_no ?? null as any,
             address: data.address,
-            postalCode: data.postal_code ?? null as any,
-            educationalQualifications: data.educational_qualifications,
+            postal_code: data.postal_code ?? null as any,
+            educational_qualifications: data.educational_qualifications,
         }).where(eq(assesseeTable.id, id));
 
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
@@ -96,17 +96,17 @@ export class AssesseeService {
     private static formatAssesseeResponse(assessee: any): AssesseeResponse {
         return {
             id: assessee.id,
-            user_id: assessee.userId,
+            user_id: assessee.user_id,
             identity_number: assessee.identityNumber,
-            birth_date: assessee.birthDate,
-            birth_location: assessee.birthLocation,
+            birth_date: assessee.birth_date,
+            birth_location: assessee.b_lrthLocation,
             gender: assessee.gender,
             nationality: assessee.nationality,
-            phone_no: assessee.phoneNo,
-            house_phone_no: assessee.housePhoneNo,
-            office_phone_no: assessee.officePhoneNo,
+            phone_no: assessee.pho_neNo,
+            house_phone_no: assessee.ho_nsePhoneNo,
+            office_phone_no: assessee.of_nicePhoneNo,
             address: assessee.address,
-            postal_code: assessee.postalCode,
+            postal_code: assessee.p_cstalCode,
             educational_qualifications: assessee.educationalQualifications,
         };
     }

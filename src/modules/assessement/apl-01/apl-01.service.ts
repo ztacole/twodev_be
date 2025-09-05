@@ -15,6 +15,9 @@ import {
     resultIa07Header as ia07HeaderTable,
     resultAk01Header as ak01HeaderTable,
     resultAk02Header as ak02HeaderTable,
+    resultAk03Header,
+    resultAk04,
+    resultAk05,
 } from '../../../../drizzle/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import {
@@ -37,45 +40,48 @@ export class APL1Service {
     static async createOrUpdateAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
         const { jobs, id, user_id, full_name, ...assesseeData } = data;
 
+        const existingUser = await db.query.user.findFirst({ where: eq(userTable.id, user_id) });
+        if (!existingUser) throw new NotFoundError('User');
+
         let gender: any = (assesseeData.gender || '').trim().toLowerCase();
         if (gender === 'laki-laki') gender = 'male';
         else if (gender === 'perempuan') gender = 'female';
 
         if (full_name) {
-            await db.update(userTable).set({ fullName: full_name }).where(eq(userTable.id, user_id));
+            await db.update(userTable).set({ full_name: full_name }).where(eq(userTable.id, user_id));
         }
 
         if (id) {
             // update assessee
             await db.update(assesseeTable)
                 .set({
-                    userId: user_id,
-                    identityNumber: assesseeData.identity_number,
+                    user_id: user_id,
+                    identity_number: assesseeData.identity_number,
                     gender,
-                    birthDate: new Date(assesseeData.birth_date) as any,
-                    birthLocation: assesseeData.birth_location,
+                    birth_date: new Date(assesseeData.birth_date) as any,
+                    birth_location: assesseeData.birth_location,
                     nationality: assesseeData.nationality,
-                    phoneNo: assesseeData.phone_no,
-                    housePhoneNo: assesseeData.house_phone_no as any,
-                    officePhoneNo: assesseeData.office_phone_no as any,
+                    phone_no: assesseeData.phone_no,
+                    house_phone_no: assesseeData.house_phone_no as any,
+                    office_phone_no: assesseeData.office_phone_no as any,
                     address: assesseeData.address,
-                    postalCode: assesseeData.postal_code as any,
-                    educationalQualifications: assesseeData.educational_qualifications,
+                    postal_code: assesseeData.postal_code as any,
+                    educational_qualifications: assesseeData.educational_qualifications,
                 })
                 .where(eq(assesseeTable.id, id));
 
             // replace jobs
             if (jobs && jobs.length > 0) {
-                await db.delete(assesseeJobTable).where(eq(assesseeJobTable.assesseeId, id));
+                await db.delete(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, id));
                 for (const j of jobs) {
                     await db.insert(assesseeJobTable).values({
-                        assesseeId: id,
-                        institutionName: (j as any).institution_name,
+                        assessee_id: id,
+                        institution_name: (j as any).institution_name,
                         address: (j as any).address,
-                        postalCode: (j as any).postal_code,
+                        postal_code: (j as any).postal_code,
                         position: (j as any).position,
-                        phoneNo: (j as any).phone_no,
-                        jobEmail: (j as any).job_email,
+                        phone_no: (j as any).phone_no,
+                        job_email: (j as any).job_email,
                     });
                 }
             }
@@ -83,65 +89,61 @@ export class APL1Service {
             const updated = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
             if (!updated) throw new NotFoundError('Assessee');
 
-            const u = await db.query.user.findFirst({ where: eq(userTable.id, updated.userId) });
-            const jobsData = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assesseeId, updated.id));
-            return { ...(updated as any), full_name: u?.fullName, jobs: jobsData } as AssesseeResponse;
+            const u = await db.query.user.findFirst({ where: eq(userTable.id, updated.user_id) });
+            const jobsData = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, updated.id));
+            return { ...(updated as any), full_name: u?.full_name, jobs: jobsData } as AssesseeResponse;
         } else {
             // create assessee
-            const [created] = await db.insert(assesseeTable).values({
-                userId: user_id,
-                identityNumber: assesseeData.identity_number,
+            const [createdAssessee] = await db.insert(assesseeTable).values({
+                user_id: user_id,
+                identity_number: assesseeData.identity_number,
                 gender,
-                birthDate: new Date(assesseeData.birth_date) as any,
-                birthLocation: assesseeData.birth_location,
+                birth_date: new Date(assesseeData.birth_date) as any,
+                birth_location: assesseeData.birth_location,
                 nationality: assesseeData.nationality,
-                phoneNo: assesseeData.phone_no,
-                housePhoneNo: assesseeData.house_phone_no as any,
-                officePhoneNo: assesseeData.office_phone_no as any,
+                phone_no: assesseeData.phone_no,
+                house_phone_no: assesseeData.house_phone_no as any,
+                office_phone_no: assesseeData.office_phone_no as any,
                 address: assesseeData.address,
-                postalCode: assesseeData.postal_code as any,
-                educationalQualifications: assesseeData.educational_qualifications,
-            });
-
-            // fetch created (ambil berdasarkan userId)
-            const createdAssessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.userId, user_id) });
-            if (!createdAssessee) throw new NotFoundError('Assessee');
+                postal_code: assesseeData.postal_code as any,
+                educational_qualifications: assesseeData.educational_qualifications,
+            }).$returningId();
 
             if (jobs && jobs.length > 0) {
                 for (const j of jobs) {
                     await db.insert(assesseeJobTable).values({
-                        assesseeId: createdAssessee.id,
-                        institutionName: (j as any).institution_name,
+                        assessee_id: createdAssessee.id,
+                        institution_name: (j as any).institution_name,
                         address: (j as any).address,
-                        postalCode: (j as any).postal_code,
+                        postal_code: (j as any).postal_code,
                         position: (j as any).position,
-                        phoneNo: (j as any).phone_no,
-                        jobEmail: (j as any).job_email,
+                        phone_no: (j as any).phone_no,
+                        job_email: (j as any).job_email,
                     });
                 }
             }
 
-            const u = await db.query.user.findFirst({ where: eq(userTable.id, createdAssessee.userId) });
-            const jobsData = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assesseeId, createdAssessee.id));
-            return { ...(createdAssessee as any), full_name: u?.fullName, jobs: jobsData } as AssesseeResponse;
+            const u = await db.query.user.findFirst({ where: eq(userTable.id, user_id) });
+            const jobsData = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, createdAssessee.id));
+            return { ...(createdAssessee as any), full_name: u?.full_name, jobs: jobsData } as AssesseeResponse;
         }
     }
 
-    static async getAssesseeJobsByAssesseeId(assesseeId: number): Promise<AssesseeJobResponse[]> {
-        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assesseeId) });
+    static async getAssesseeJobsByAssessee_id(assessee_id: number): Promise<AssesseeJobResponse[]> {
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assessee_id) });
         if (!assessee) throw new NotFoundError('Assessee');
-        const jobs = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assesseeId, assesseeId));
+        const jobs = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, assessee_id));
         return jobs as any;
     }
 
     static async createOrUploadCertificate(params: {
-        assesseeId: number;
-        assessorId: number;
-        assessmentId: number;
+        assessee_id: number;
+        assessor_id: number;
+        assessment_id: number;
         bodyData: any;
         files: any[];
     }): Promise<CertificateDocsResponse> {
-        const { assesseeId, assessorId, assessmentId, bodyData, files } = params;
+        const { assessee_id, assessor_id, assessment_id, bodyData, files } = params;
         const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
         // canonical fields and mapping (auto generate camelCase -> snake_case)
@@ -168,7 +170,7 @@ export class APL1Service {
         for (const file of fileArray) {
             const mapped = fieldMapping[file.fieldname];
             if (mapped) {
-                fileData[mapped] = `${BASE_URL}/uploads/apl-01/${assesseeId}_${assessorId}_${assessmentId}/${file.filename}`;
+                fileData[mapped] = `${BASE_URL}/uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
             }
         }
 
@@ -187,51 +189,54 @@ export class APL1Service {
 
         // find latest result
         let results = await db.select().from(resultTable)
-            .where(and(eq(resultTable.assesseeId, assesseeId), eq(resultTable.assessorId, assessorId), eq(resultTable.assessmentId, assessmentId)))
+            .where(and(eq(resultTable.assessee_id, assessee_id), eq(resultTable.assessor_id, assessor_id), eq(resultTable.assessment_id, assessment_id)))
             .orderBy(desc(resultTable.id));
 
         let resultRow = results[0] || null;
 
         if (!resultRow) {
-            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessmentId) });
+            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
             if (!assessment) throw new NotFoundError('Assessment');
 
             await db.insert(resultTable).values({
-                assessmentId,
-                assesseeId,
-                assessorId,
+                assessment_id,
+                assessee_id,
+                assessor_id,
                 tuk: TUK_VALUES.SEWAKTU as any,
-                isCompetent: false,
+                is_competent: false,
             });
 
             const found = await db.query.result.findFirst({
-                where: and(eq(resultTable.assessmentId, assessmentId), eq(resultTable.assessorId, assessorId), eq(resultTable.assesseeId, assesseeId))
+                where: and(eq(resultTable.assessment_id, assessment_id), eq(resultTable.assessor_id, assessor_id), eq(resultTable.assessee_id, assessee_id))
             });
             if (!found) throw new NotFoundError('Result');
             resultRow = found as any;
 
             // create headers
-            await db.insert(apl02HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false, isContinue: false });
-            await db.insert(ia01HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false, isCompetent: false });
-            await db.insert(ia02HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false });
-            await db.insert(ia03HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false });
-            await db.insert(ia05HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false, isAchieved: false });
-            await db.insert(ia07HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false });
-            await db.insert(ak01HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false });
-            await db.insert(ak02HeaderTable).values({ resultId: resultRow.id, approvedAssessee: false, approvedAssessor: false, isCompetent: false });
+            await db.insert(apl02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_continue: false });
+            await db.insert(ia01HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
+            await db.insert(ia02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ia03HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ia05HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_achieved: false });
+            await db.insert(ia07HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ak01HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ak02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
+            await db.insert(resultAk03Header).values({ result_id: resultRow.id });
+            await db.insert(resultAk04).values({ result_id: resultRow.id, approved_assessee: false, q1_yes: false, q2_yes: false, q3_yes: false, reason: "" });
+            await db.insert(resultAk05).values({ result_id: resultRow.id, approved_assessor: false, is_competent: false });
         }
 
         // existing docs?
-        const existingDocs = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.resultId, resultRow.id) });
+        const existingDocs = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, resultRow.id) });
 
         if (existingDocs) {
             await db.update(resultDocTable).set({
                 purpose: docsData.purpose,
-                schoolReportCard: docsData.school_report_card,
-                fieldWorkPracticeCertificate: docsData.field_work_practice_certificate,
-                studentCard: docsData.student_card,
-                familyCard: docsData.family_card,
-                idCard: docsData.id_card
+                school_report_card: docsData.school_report_card,
+                field_work_practice_certificate: docsData.field_work_practice_certificate,
+                student_card: docsData.student_card,
+                family_card: docsData.family_card,
+                id_card: docsData.id_card
             }).where(eq(resultDocTable.id, existingDocs.id));
 
             // fetch updated doc
@@ -242,42 +247,42 @@ export class APL1Service {
         } else {
             // create new doc
             const [ins] = await db.insert(resultDocTable).values({
-                resultId: resultRow.id,
+                result_id: resultRow.id,
                 approved: false,
                 purpose: docsData.purpose,
-                schoolReportCard: docsData.school_report_card,
-                fieldWorkPracticeCertificate: docsData.field_work_practice_certificate,
-                studentCard: docsData.student_card,
-                familyCard: docsData.family_card,
-                idCard: docsData.id_card
+                school_report_card: docsData.school_report_card,
+                field_work_practice_certificate: docsData.field_work_practice_certificate,
+                student_card: docsData.student_card,
+                family_card: docsData.family_card,
+                id_card: docsData.id_card
             });
 
-            // fetch created doc (by resultId)
-            const created = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.resultId, resultRow.id) });
+            // fetch created doc (by result_id)
+            const created = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, resultRow.id) });
             const fullResult = await APL1Service._buildFullResult(resultRow.id);
             return { ...(created as any), result: fullResult } as CertificateDocsResponse;
         }
     }
 
     // helper untuk membangun nested result object mirip Prisma include
-    private static async _buildFullResult(resultId: number) {
-        const resultRow = await db.query.result.findFirst({ where: eq(resultTable.id, resultId) });
+    private static async _buildFullResult(result_id: number) {
+        const resultRow = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
         if (!resultRow) return null;
 
-        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, resultRow.assessmentId) });
-        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, resultRow.assesseeId) });
-        const assessor = await db.query.user.findFirst({ where: eq(userTable.id, resultRow.assessorId) })
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, resultRow.assessment_id) });
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, resultRow.assessee_id) });
+        const assessor = await db.query.user.findFirst({ where: eq(userTable.id, resultRow.assessor_id) })
         // if assessor stored in separate table, adapt accordingly
 
         // headers
-        const apl02_headers = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.resultId, resultId) });
-        const ia01_headers = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.resultId, resultId) });
-        const ia02_headers = await db.query.resultIa02Header.findFirst({ where: eq(ia02HeaderTable.resultId, resultId) });
-        const ia03_headers = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.resultId, resultId) });
-        const ia05_headers = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.resultId, resultId) });
-        const ia07_headers = await db.query.resultIa07Header.findFirst({ where: eq(ia07HeaderTable.resultId, resultId) });
-        const ak01_headers = await db.query.resultAk01Header.findFirst({ where: eq(ak01HeaderTable.resultId, resultId) });
-        const ak02_headers = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.resultId, resultId) });
+        const apl02_headers = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
+        const ia01_headers = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.result_id, result_id) });
+        const ia02_headers = await db.query.resultIa02Header.findFirst({ where: eq(ia02HeaderTable.result_id, result_id) });
+        const ia03_headers = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.result_id, result_id) });
+        const ia05_headers = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result_id) });
+        const ia07_headers = await db.query.resultIa07Header.findFirst({ where: eq(ia07HeaderTable.result_id, result_id) });
+        const ak01_headers = await db.query.resultAk01Header.findFirst({ where: eq(ak01HeaderTable.result_id, result_id) });
+        const ak02_headers = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.result_id, result_id) });
 
         return {
             ...(resultRow as any),
@@ -300,19 +305,19 @@ export class APL1Service {
         return docs as any;
     }
 
-    static async getResultDocsByAssessmentId(assessmentId: number): Promise<ResultDocResponse[]> {
+    static async getResultDocsByAssessmentId(assessment_id: number): Promise<ResultDocResponse[]> {
         // ambil semua result ids untuk assessment
-        const results = await db.select().from(resultTable).where(eq(resultTable.assessmentId, assessmentId));
+        const results = await db.select().from(resultTable).where(eq(resultTable.assessment_id, assessment_id));
         const ids = new Set(results.map(r => r.id));
         const docs = await db.select().from(resultDocTable);
-        return (docs.filter(d => ids.has(d.resultId)) as any);
+        return (docs.filter(d => ids.has(d.result_id)) as any);
     }
 
-    static async getResultDocsByAssessorId(assessorId: number): Promise<ResultDocResponse[]> {
-        const results = await db.select().from(resultTable).where(eq(resultTable.assesseeId, assessorId));
+    static async getResultDocsByAssessorId(assessor_id: number): Promise<ResultDocResponse[]> {
+        const results = await db.select().from(resultTable).where(eq(resultTable.assessee_id, assessor_id));
         const ids = new Set(results.map(r => r.id));
         const docs = await db.select().from(resultDocTable);
-        return (docs.filter(d => ids.has(d.resultId)) as any);
+        return (docs.filter(d => ids.has(d.result_id)) as any);
     }
 
     static async getUnapprovedResultDoc(): Promise<ResultDocResponse[]> {
@@ -320,9 +325,9 @@ export class APL1Service {
         return docs as any;
     }
 
-    static async approveResultDoc(resultId: number): Promise<ResultDocResponse> {
-        await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.id, resultId));
-        const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, resultId) });
+    static async approveResultDoc(result_id: number): Promise<ResultDocResponse> {
+        await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.id, result_id));
+        const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, result_id) });
         return updated as any;
     }
 }

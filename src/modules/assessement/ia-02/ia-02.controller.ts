@@ -57,9 +57,9 @@ export class IA02Controller {
 
     static async uploadPdf(req: Request, res: Response) {
         try {
-            const groupId = Number(req.params.groupId);
+            const assessmentId = Number(req.params.assessmentId);
 
-            if (!groupId) {
+            if (!assessmentId) {
                 return res.status(400).json({
                 success: false,
                 message: "Group ID dibutuhkan",
@@ -76,7 +76,7 @@ export class IA02Controller {
             const fileName = req.file.filename;
             const filePath = req.file.path;
 
-            const pdf = await IAO2Service.uploadPdf(groupId, filePath, fileName);
+            const pdf = await IAO2Service.uploadPdf(assessmentId, filePath, fileName);
 
             return res.status(201).json({
                 success: true,
@@ -94,16 +94,16 @@ export class IA02Controller {
 
     static async getPdf(req: Request, res: Response) {
         try {
-            const groupId = Number(req.params.groupId);
+            const assessmentId = Number(req.params.assessmentId);
 
-            if (!groupId) {
+            if (!assessmentId) {
                 return res.status(400).json({
                 success: false,
                 message: "Group ID dibutuhkan",
                 });
             }
 
-            const pdf = await IAO2Service.getPdf(groupId);
+            const pdf = await IAO2Service.getPdf(assessmentId);
 
             if (!pdf) {
                 return res.status(404).json({

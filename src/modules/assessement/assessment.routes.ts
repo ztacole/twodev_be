@@ -60,11 +60,11 @@ router.put('/ia-02/result/assessor/:resultId/approve', IA02Controller.approvedBy
 router.put('/ia-02/result/assessee/:resultId/approve', IA02Controller.approvedByAssessee);
 router.get('/ia-02/result/:resultId', IA02Controller.getResultDetails);
 router.post(
-    '/ia-02/upload-pdf/:groupId', 
+    '/ia-02/upload-pdf/:assessmentId', 
     uploadIA02.single('pdf'), 
     IA02Controller.uploadPdf
 );
-router.get('/ia-02/groups/:groupId/pdf', IA02Controller.getPdf);
+router.get('/ia-02/groups/:assessmentId/pdf', IA02Controller.getPdf);
 
 router.get('/ia-03/units/:resultId', IA03Controller.getIA03Groups);
 router.post('/ia-03/result/send', IA03Controller.sendResult);
