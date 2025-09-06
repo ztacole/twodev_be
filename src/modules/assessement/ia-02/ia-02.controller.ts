@@ -1,6 +1,8 @@
 import { IAO2Service } from "./ia-02.service";
 import { asyncHandler } from "../../../common/async.handler";
 import { Request, Response } from "express";
+import path from 'path';
+import fs from 'fs';
 
 export class IA02Controller {
     static getIA02Groups = asyncHandler(async (req: Request, res: Response) => {
@@ -97,31 +99,41 @@ export class IA02Controller {
             const assessmentId = Number(req.params.assessmentId);
 
             if (!assessmentId) {
-                return res.status(400).json({
+            return res.status(400).json({
                 success: false,
-                message: "Group ID dibutuhkan",
-                });
+                message: "Assessment ID dibutuhkan",
+            });
             }
 
             const pdf = await IAO2Service.getPdf(assessmentId);
 
             if (!pdf) {
-                return res.status(404).json({
+            return res.status(404).json({
                 success: false,
                 message: "PDF tidak ditemukan",
-                });
+            });
             }
 
-            return res.status(200).json({
-                success: true,
-                message: "PDF berhasil diambil",
-                data: pdf,
+            const filePath = path.join(
+                __dirname,
+                "../../../../public/uploads/ia-02",
+                `assessment-${assessmentId}`,
+                pdf.file_name
+            );
+
+            if (!fs.existsSync(filePath)) {
+            return res.status(404).json({
+                success: false,
+                message: "File PDF tidak ditemukan di server",
             });
+            }
+
+            return res.download(filePath, pdf.file_name);
         } catch (error: any) {
             return res.status(500).json({
-                success: false,
-                message: "Gagal mengambil PDF",
-                error: error.message,
+            success: false,
+            message: "Gagal mengambil PDF",
+            error: error.message,
             });
         }
     }
