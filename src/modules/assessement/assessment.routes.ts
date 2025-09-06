@@ -64,7 +64,7 @@ router.post(
     uploadIA02.single('pdf'), 
     IA02Controller.uploadPdf
 );
-router.get('/ia-02/groups/:assessmentId/pdf', IA02Controller.getPdf);
+router.get('/ia-02/pdf/:assessmentId', IA02Controller.getPdf);
 
 router.get('/ia-03/units/:resultId', IA03Controller.getIA03Groups);
 router.post('/ia-03/result/send', IA03Controller.sendResult);

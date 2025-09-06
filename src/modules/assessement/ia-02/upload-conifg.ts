@@ -4,11 +4,15 @@ import fs from 'fs';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const group = 'group-ia-02';
-    const groupId = req.params.groupId || 'unknown-group';
-    const uploadPath = path.join(__dirname, '../../../../public/uploads/ia-02', `${group}_${groupId}`);
+    const assessmentId = req.params.assessmentId || 'unknown-assessment';
+    const uploadPath = path.join(__dirname, '../../../../public/uploads/ia-02', `assessment-${assessmentId}`);
     
-    if (!fs.existsSync(uploadPath)) {
+    if (fs.existsSync(uploadPath)) {
+      fs.readdirSync(uploadPath).forEach((file) => {
+        const filePath = path.join(uploadPath, file);
+        fs.unlinkSync(filePath);
+      });
+    } else {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
     cb(null, uploadPath);

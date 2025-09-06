@@ -62,7 +62,7 @@ export class IA02Controller {
             if (!assessmentId) {
                 return res.status(400).json({
                 success: false,
-                message: "Group ID dibutuhkan",
+                message: "Assessment ID dibutuhkan",
                 });
             }
 
