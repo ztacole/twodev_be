@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterRequest, LoginRequest } from './auth.type';
-import { prisma } from '../../config/db';
 import { asyncHandler } from '../../common/async.handler';
 
 export class AuthController {

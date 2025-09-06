@@ -1,0 +1,132 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AssesseeService = void 0;
+const drizzle_1 = require("../../config/drizzle");
+const error_1 = require("../../common/error");
+const schema_1 = require("../../../drizzle/schema");
+const drizzle_orm_1 = require("drizzle-orm");
+const translateGenderToEn = (gender) => {
+    const lowerGender = gender.toLowerCase().trim();
+    switch (lowerGender) {
+        case 'laki-laki':
+            return 'male';
+        case 'perempuan':
+            return 'female';
+        default:
+            throw new Error(`Gender ${gender} tidak diketahui`);
+    }
+};
+const translateGenderToId = (gender) => {
+    const lowerGender = gender.toLowerCase().trim();
+    switch (lowerGender) {
+        case 'male':
+            return 'LAKI-LAKI';
+        case 'female':
+            return 'PEREMPUAN';
+        default:
+            throw new Error(`Gender ${gender} tidak diketahui`);
+    }
+};
+class AssesseeService {
+    static getAssessees() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const assessees = yield drizzle_1.db.select().from(schema_1.assessee);
+            return assessees.map(this.formatAssesseeResponse);
+        });
+    }
+    static getAssesseeById(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, id) });
+            if (!assessee)
+                throw new error_1.NotFoundError('Assessee');
+            return this.formatAssesseeResponse(assessee);
+        });
+    }
+    static createAssessee(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
+            const existing = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.userId, data.user_id) });
+            if (existing)
+                throw new error_1.DuplicateEntryError('Assessee untuk user_id', data.user_id.toString());
+            yield drizzle_1.db.insert(schema_1.assessee).values({
+                userId: data.user_id,
+                identityNumber: data.identity_number,
+                birthDate: new Date(data.birth_date),
+                birthLocation: data.birth_location,
+                gender: translateGenderToEn(data.gender),
+                nationality: data.nationality,
+                phoneNo: data.phone_no,
+                housePhoneNo: (_a = data.house_phone_no) !== null && _a !== void 0 ? _a : null,
+                officePhoneNo: (_b = data.office_phone_no) !== null && _b !== void 0 ? _b : null,
+                address: data.address,
+                postalCode: (_c = data.postal_code) !== null && _c !== void 0 ? _c : null,
+                educationalQualifications: data.educational_qualifications,
+            });
+            const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.userId, data.user_id) });
+            if (!assessee)
+                throw new error_1.NotFoundError('Assessee');
+            return this.formatAssesseeResponse(assessee);
+        });
+    }
+    static updateAssessee(id, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
+            const existing = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, id) });
+            if (!existing)
+                throw new error_1.NotFoundError('Assessee');
+            yield drizzle_1.db.update(schema_1.assessee).set({
+                userId: data.user_id,
+                identityNumber: data.identity_number,
+                birthDate: new Date(data.birth_date),
+                birthLocation: data.birth_location,
+                gender: translateGenderToEn(data.gender),
+                nationality: data.nationality,
+                phoneNo: data.phone_no,
+                housePhoneNo: (_a = data.house_phone_no) !== null && _a !== void 0 ? _a : null,
+                officePhoneNo: (_b = data.office_phone_no) !== null && _b !== void 0 ? _b : null,
+                address: data.address,
+                postalCode: (_c = data.postal_code) !== null && _c !== void 0 ? _c : null,
+                educationalQualifications: data.educational_qualifications,
+            }).where((0, drizzle_orm_1.eq)(schema_1.assessee.id, id));
+            const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, id) });
+            if (!assessee)
+                throw new error_1.NotFoundError('Assessee');
+            return this.formatAssesseeResponse(assessee);
+        });
+    }
+    static deleteAssessee(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existing = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, id) });
+            if (!existing)
+                throw new error_1.NotFoundError('Assessee');
+            yield drizzle_1.db.delete(schema_1.assessee).where((0, drizzle_orm_1.eq)(schema_1.assessee.id, id));
+        });
+    }
+    static formatAssesseeResponse(assessee) {
+        return {
+            id: assessee.id,
+            user_id: assessee.userId,
+            identity_number: assessee.identityNumber,
+            birth_date: assessee.birthDate,
+            birth_location: assessee.birthLocation,
+            gender: assessee.gender,
+            nationality: assessee.nationality,
+            phone_no: assessee.phoneNo,
+            house_phone_no: assessee.housePhoneNo,
+            office_phone_no: assessee.officePhoneNo,
+            address: assessee.address,
+            postal_code: assessee.postalCode,
+            educational_qualifications: assessee.educationalQualifications,
+        };
+    }
+}
+exports.AssesseeService = AssesseeService;

@@ -1,262 +1,121 @@
-import { prisma } from "../../../config/db";
 import { NotFoundError } from "../../../common/error";
 import { GroupIA03Response, SendResultRequest } from "./ia-03.type";
+import { db } from "../../../config/drizzle";
+import {
+    assessor as assessorTable,
+    result as resultTable,
+    assessment as assessmentTable,
+    groupIa03 as groupIa03Table,
+    ucIa03 as ucIa03Table,
+    ia03Question as ia03QuestionTable,
+    resultIa03Header as ia03HeaderTable,
+    resultIa03 as ia03RowTable,
+    assessee as assesseeTable,
+    user as userTable,
+    occupation as occupationTable,
+    scheme as schemeTable,
+} from "../../../../drizzle/schema";
+import { and, eq, inArray } from "drizzle-orm";
 
 export class IA03Service {
-    static async getIA03Groups(resultId: number): Promise<any[]> {
-        const existingResult = await prisma.result.findUnique({
-            where: { id: resultId },
-            include: {
-                assessment: true
-            }
-        });
-        if (!existingResult) {
-            throw new NotFoundError('Result');
-        }
-        if (!existingResult.assessment) {
-            throw new NotFoundError('Assessment');
-        }
+    static async getIA03Groups(result_id: number): Promise<any[]> {
+        const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id), });
+        if (!existingResult) throw new NotFoundError('Result');
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, existingResult.assessment_id) });
+        if (!assessment) throw new NotFoundError('Assessment');
 
-        const groups = await prisma.group_ia03.findMany({
-            where: {
-                assessment_id: existingResult.assessment_id
-            },
-            include: {
-                units: true,
-                qa_ia03: {
-                    include: {
-                        rows: {
-                            include: {
-                                header: true
-                            },
-                            where: {
-                                header: {
-                                    result_id: resultId
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        return groups.map((group: any) => ({
-            id: group.id,
-            assessment_id: group.assessment_id,
-            name: group.name,
-            units: group.units,
-            questions: group.qa_ia03.map((question: any) => ({
-                id: question.id,
-                question: question.question,
-                result: question.rows[0] ? {
-                    id: question.rows[0].id,
-                    header_id: question.rows[0].header_id,
-                    answer: question.rows[0].answer,
-                    approved: question.rows[0].approved
-                } : null
-            }))
+        const groups = await db.select().from(groupIa03Table).where(eq(groupIa03Table.assessment_id, assessment.id));
+        return Promise.all(groups.map(async (g) => {
+            const units = await db.select().from(ucIa03Table).where(eq(ucIa03Table.group_id, g.id));
+            const questions = await db.select().from(ia03QuestionTable).where(eq(ia03QuestionTable.group_id, g.id));
+            const header = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.result_id, result_id) });
+            const rows = header ? await db.select().from(ia03RowTable).where(eq(ia03RowTable.header_id, header.id)) : [];
+            return {
+                id: g.id,
+                assessment_id: g.assessment_id,
+                name: g.name,
+                units,
+                questions: questions.map(q => ({
+                    id: q.id,
+                    question: q.question,
+                    result: rows.find(r => r.question_id === q.id) ? {
+                        id: rows.find(r => r.question_id === q.id)!.id,
+                        header_id: header?.id,
+                        answer: rows.find(r => r.question_id === q.id)!.answer,
+                        approved: rows.find(r => r.question_id === q.id)!.approved,
+                    } : null
+                }))
+            };
         }));
     }
 
     static async sendResult(data: SendResultRequest) {
-        const existingResult = await prisma.result.findUnique({
-            where: { id: data.result_id },
-            include: {
-                ia03_headers: true
+        const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, data.result_id) });
+        if (!existingResult) throw new NotFoundError('Result');
+        const header = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.result_id, data.result_id) });
+        if (!header) throw new NotFoundError('IA03 header');
+
+        const question_ids = data.questions.map(q => Number(q.question_id));
+        const existingQuestions = question_ids.length ? await db.select().from(ia03QuestionTable).where(inArray(ia03QuestionTable.id, question_ids)) : [];
+        if (existingQuestions.length !== question_ids.length) throw new NotFoundError('Question');
+
+        const results: any[] = [];
+        for (const q of data.questions) {
+            const existing = await db.query.resultIa03.findFirst({ where: and(eq(ia03RowTable.header_id, header.id), eq(ia03RowTable.question_id, Number(q.question_id))) });
+            if (existing) {
+                await db.update(ia03RowTable).set({ answer: q.answer as any, approved: q.approved }).where(eq(ia03RowTable.id, existing.id));
+                const updated = await db.query.resultIa03.findFirst({ where: eq(ia03RowTable.id, existing.id) });
+                if (updated) results.push(updated);
+            } else {
+                await db.insert(ia03RowTable).values({ header_id: header.id, question_id: Number(q.question_id), answer: q.answer as any, approved: q.approved });
+                const created = await db.query.resultIa03.findFirst({ where: and(eq(ia03RowTable.header_id, header.id), eq(ia03RowTable.question_id, Number(q.question_id))) });
+                if (created) results.push(created);
             }
-        });
-        if (!existingResult) {
-            throw new NotFoundError('Result');
         }
-        if (!existingResult.ia03_headers) {
-            throw new NotFoundError('IA03 header');
-        }
-
-        const headerId = existingResult.ia03_headers.id;
-
-        const questions = data.questions.map(question => Number(question.question_id));
-        const existingQuestions = await prisma.ia03_question.findMany({
-            where: { id: { in: questions } }
-        });
-
-        if (existingQuestions.length !== questions.length) {
-            throw new NotFoundError('Question');
-        }
-
-        const results = await Promise.all(
-            data.questions.map(async (question) => {
-                return await prisma.$transaction(async (tx) => {
-                    const resultRecord = await tx.result_ia03.upsert({
-                        where: {
-                            header_id_question_id: {
-                                header_id: headerId,
-                                question_id: question.question_id
-                            }
-                        },
-                        update: {
-                            answer: question.answer,
-                            approved: question.approved
-                        },
-                        create: {
-                            header_id: headerId,
-                            question_id: question.question_id,
-                            answer: question.answer,
-                            approved: question.approved
-                        }
-                    });
-                    return resultRecord;
-                });
-            })
-        );
-
         return results;
     }
 
-    static async approvedByAssessor(resultId: number) {
-        const existingResult = await prisma.result.findUnique({
-            where: { id: resultId },
-            include: {
-                ia03_headers: true
-            }
-        })
-        if (!existingResult) {
-            throw new NotFoundError('Result');
-        }
-        if (!existingResult.ia03_headers) {
-            throw new NotFoundError('IA03 header');
-        }
+    static async approvedByAssessor(result_id: number) {
+        const header = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.result_id, result_id) });
+        if (!header) throw new NotFoundError('IA03 header');
+        await db.update(ia03HeaderTable).set({ approved_assessor: true }).where(eq(ia03HeaderTable.id, header.id));
+        const updated = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.id, header.id) });
+        if (!updated) throw new NotFoundError('IA03 header');
+        return updated;
+    }
 
-        const headerId = existingResult.ia03_headers.id;
+    static async approvedByAssessee(result_id: number) {
+        const header = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.result_id, result_id) });
+        if (!header) throw new NotFoundError('IA03 header');
+        await db.update(ia03HeaderTable).set({ approved_assessee: true }).where(eq(ia03HeaderTable.id, header.id));
+        const updated = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.id, header.id) });
+        if (!updated) throw new NotFoundError('IA03 header');
+        return updated;
+    }
 
-        const update = await prisma.result_ia03_header.update({
-            where: { id: headerId },
-            data: {
-                approved_assessor: true,
-            },
-            include: {
-                result: {
-                    include: {
-                        assessee: {
-                            include: {
-                                user: true
-                            }
-                        }
-                    }
-                }
-            }
-        });
+    static async getResultDetails(result_id: number) {
+        const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
+        if (!result) throw new NotFoundError('Result');
+
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+        const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+        const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
+        const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
+        const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
+        const header = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.result_id, result.id) });
+        if (!header) throw new NotFoundError('Result header');
 
         return {
-            id: update.id,
-            result_id: update.result_id,
-            assessee: {
-                id: update.result.assessee.id,
-                name: update.result.assessee.user.full_name,
-                email: update.result.assessee.user.email
-            },
-            approved_assessee: update.approved_assessee,
-            approved_assessor: update.approved_assessor
+            id: result.id,
+            assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
+            assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
+            assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,
+            tuk: result.tuk,
+            is_competent: result.is_competent,
+            created_at: result.created_at,
+            ia03_header: header,
         };
     }
-
-    static async approvedByAssessee(resultId: number) {
-        const existingResult = await prisma.result.findUnique({
-            where: { id: resultId },
-            include: {
-                ia03_headers: true
-            }
-        })
-        if (!existingResult) {
-            throw new NotFoundError('Result');
-        }
-        if (!existingResult.ia03_headers) {
-            throw new NotFoundError('IA03 header');
-        }
-
-        const headerId = existingResult.ia03_headers.id;
-
-        const update = await prisma.result_ia03_header.update({
-            where: { id: headerId },
-            data: {
-                approved_assessee: true,
-            },
-            include: {
-                result: {
-                    include: {
-                        assessee: {
-                            include: {
-                                user: true
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        return {
-            id: update.id,
-            result_id: update.result_id,
-            assessee: {
-                id: update.result.assessee.id,
-                name: update.result.assessee.user.full_name,
-                email: update.result.assessee.user.email
-            },
-            approved_assessee: update.approved_assessee,
-            approved_assessor: update.approved_assessor
-        };
-    }
-
-    static async getResultDetails(resultId: number) {
-    const result = await prisma.result.findUnique({
-      where: { id: resultId },
-      include: {
-        assessment: {
-          include: {
-            occupation: {
-              include: {
-                scheme: true
-              }
-            }
-          }
-        },
-        assessee: {
-          include: {
-            user: true
-          }
-        },
-        assessor: {
-          include: {
-            user: true
-          }
-        },
-        ia03_headers: true
-      }
-    });
-    if (!result) {
-      throw new NotFoundError('Result');
-    }
-    if (!result.ia03_headers) {
-      throw new NotFoundError('Result header');
-    }
-
-    return {
-      id: result.id,
-      assessment: result.assessment,
-      assessee: {
-        id: result.assessee.id,
-        name: result.assessee.user.full_name,
-        email: result.assessee.user.email
-      },
-      assessor: {
-        id: result.assessor.id,
-        name: result.assessor.user.full_name,
-        email: result.assessor.user.email,
-        no_reg_met: result.assessor.no_reg_met
-      },
-      tuk: result.tuk,
-      is_competent: result.is_competent,
-      created_at: result.created_at,
-      ia03_header: result.ia03_headers
-    };
-  }
 }

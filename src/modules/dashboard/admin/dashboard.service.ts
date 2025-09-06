@@ -1,16 +1,21 @@
-import { prisma } from '../../../config/db';
+import { db } from '../../../config/drizzle';
 import { DashboardSummary, DashboardSchedule, DashboardVerification } from './dashboard.type';
 import { NotFoundError } from '../../../common/error';
+import { assessment as assessmentTable, assessmentSchedule as scheduleTable, occupation as occupationTable, scheme as schemeTable, resultDoc as resultDocTable, assessee as assesseeTable } from '../../../../drizzle/schema';
+import { eq } from 'drizzle-orm';
 
 export class DashboardService {
   static async getSummary(): Promise<DashboardSummary> {
-    const [totalSchemes, totalAssessments, totalAssessors, totalAssessees] =
-      await Promise.all([
-        prisma.scheme.count(),
-        prisma.assessment.count(),
-        prisma.assessor.count(),
-        prisma.assessee.count(),
-      ]);
+    const [schemes, assessments, assessors, assessees] = await Promise.all([
+      db.select().from(schemeTable),
+      db.select().from(assessmentTable),
+      db.select().from(occupationTable),
+      db.select().from(assesseeTable),
+    ]);
+    const totalSchemes = schemes.length;
+    const totalAssessments = assessments.length;
+    const totalAssessors = assessors.length;
+    const totalAssessees = assessees.length;
 
     return {
       totalSchemes,
@@ -21,57 +26,24 @@ export class DashboardService {
   }
 
   static async getSchedules(): Promise<DashboardSchedule[]> {
-    const schedules = await prisma.assessment_schedule.findMany({
-      select: {
-        id: true,
-        assessment_id: true,
-        start_date: true,
-        end_date: true,
-        assessment: {
-          select: {
-            occupation: {
-              select: {
-                name: true,
-                scheme: {
-                  select: {
-                    code: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    // if (!schedules || schedules.length === 0) {
-    //   throw new NotFoundError('Tidak ada jadwal assessment ditemukan');
-    // }
-
-    return schedules.map((s) => ({
-      id: s.id,
-      assessment_id: s.assessment_id,
-      schema_name: s.assessment.occupation.scheme.code,
-      occupation_name: s.assessment.occupation.name,
-      start_date: s.start_date,
-      end_date: s.end_date,
+    const schedules = await db.select().from(scheduleTable);
+    return Promise.all(schedules.map(async (s) => {
+      const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, s.assessment_id) });
+      const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+      const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
+      return {
+        id: s.id,
+        assessment_id: s.assessment_id,
+        schema_name: scheme?.code as any,
+        occupation_name: occupation?.name as any,
+        start_date: s.start_date as any,
+        end_date: s.start_date as any,
+      };
     }));
   }
 
   static async getVerificationDocs(): Promise<DashboardVerification[]> {
-    const docs = await prisma.result_doc.findMany({
-      include: {
-        result: {
-          include: {
-            assessee: true,
-          },
-        },
-      },
-    });
-
-    // if (!docs || docs.length === 0) {
-    //   throw new NotFoundError('Tidak ada dokumen verifikasi ditemukan');
-    // }
+    const docs = await db.select().from(resultDocTable);
 
     return docs.map((d) => ({
       id: d.id,

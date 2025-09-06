@@ -1,36 +1,37 @@
-import { prisma } from '../../config/db';
+import { db } from '../../config/drizzle';
 import { NotFoundError } from '../../common/error';
+import { assessorDetail as assessorDetailTable } from '../../../drizzle/schema';
+import { eq } from 'drizzle-orm';
 
 export class AssessorDetailService {
-    static async getByAssessorId(assessorId: number) {
-        const detail = await prisma.assessor_detail.findUnique({ where: { assessor_id: assessorId } });
+    static async getByAssessorId(assessor_id: number) {
+        const detail = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, assessor_id) });
         return detail;
     }
 
-    static async upsertByAssessorId(assessorId: number, data: { tax_id_number?: string; bank_book_cover?: string; certificate?: string; national_id?: string }) {
-        const existing = await prisma.assessor_detail.findUnique({ where: { assessor_id: assessorId } });
+    static async upsertByAssessorId(assessor_id: number, data: { tax_id_number?: string; bank_book_cover?: string; certificate?: string; national_id?: string }) {
+        const existing = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, assessor_id) });
         if (existing) {
-            const updated = await prisma.assessor_detail.update({
-                where: { assessor_id: assessorId },
-                data: {
+            await db.update(assessorDetailTable)
+                .set({
                     tax_id_number: data.tax_id_number ?? existing.tax_id_number,
                     bank_book_cover: data.bank_book_cover ?? existing.bank_book_cover,
                     certificate: data.certificate ?? existing.certificate,
                     national_id: data.national_id ?? existing.national_id,
-                },
-            });
+                })
+                .where(eq(assessorDetailTable.assessor_id, assessor_id));
+            const updated = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, assessor_id) });
             return updated;
         }
 
-        const created = await prisma.assessor_detail.create({
-            data: {
-                assessor_id: assessorId,
-                tax_id_number: data.tax_id_number ?? '',
-                bank_book_cover: data.bank_book_cover ?? '',
-                certificate: data.certificate ?? '',
-                national_id: data.national_id ?? '',
-            },
+        await db.insert(assessorDetailTable).values({
+            assessor_id,
+            tax_id_number: data.tax_id_number ?? '',
+            bank_book_cover: data.bank_book_cover ?? '',
+            certificate: data.certificate ?? '',
+            national_id: data.national_id ?? '',
         });
+        const created = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, assessor_id) });
         return created;
     }
 }

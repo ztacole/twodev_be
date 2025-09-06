@@ -1,147 +1,89 @@
 import { DuplicateEntryError, NotFoundError } from '../../../common/error';
-import { prisma } from '../../../config/db';
+import { db } from '../../../config/drizzle';
 import { ElementResponse, GenerateAsssessorRequest, ElementRequest, ResultRequest } from './apl-02.type';
+import { result as resultTable, resultApl02Header as apl02HeaderTable, resultApl02 as apl02RowTable, apl02Evidence as apl02EvidenceTable, ucApl02 as ucApl02Table, elementApl02 as elementApl02Table, elementDetailsApl02 as elementDetailsApl02Table, assessment as assessmentTable, assessee as assesseeTable, user as userTable, occupation as occupationTable, scheme as schemeTable, resultDoc as resultDocTable } from '../../../../drizzle/schema';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 
 export class APL02Service {
-  static async getUnitsAPL02(resultId: number): Promise<any[]> {
-    const existingResult = await prisma.result.findUnique({
-      where: { id: resultId },
-      include: {
-        assessment: true
-      }
-    });
+  static async getUnitsAPL02(result_id: number): Promise<any[]> {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
 
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    if (!existingResult.assessment) {
-      throw new NotFoundError('Assessment');
-    }
+    const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, existingResult.assessment_id));
+    const elementsByUc = await Promise.all(unitCompetencies.map(async (uc) => {
+      const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
+      const results = await db.select().from(apl02RowTable).where(eq(apl02RowTable.result_apl02_id, result_id));
+      return { uc, elements, results };
+    }));
 
-    const unitCompetencies = await prisma.uc_apl02.findMany({
-      where: {
-        assessment_id: existingResult.assessment.id
-      },
-      include: {
-        elements: {
-          include: {
-            results: {
-              include: {
-                header: true
-              },
-              where: {
-                header: {
-                  result_id: resultId
-                }
-              }
-            }
-          }
-        }
+    return Promise.all(elementsByUc.map(async ({ uc, elements, results }) => {
+      const totalElements = elements.length;
+      let completedElements = 0;
+      for (const el of elements) {
+        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, result_id), eq(apl02RowTable.element_id, el.id)) });
+        if (row) completedElements += 1;
       }
-    });
-
-    return unitCompetencies.map(unit => {
-      const totalElements = unit.elements.length;
-      const completedElements = unit.elements.filter(element =>
-        element.results.some(result =>
-          result.header.result_id === resultId
-        )
-      ).length;
-
       const finished = totalElements > 0 && completedElements === totalElements;
-
       return {
-        id: unit.id,
-        unit_code: unit.unit_code,
-        title: unit.title,
-        finished: finished,
+        id: uc.id,
+        unit_code: uc.unit_code,
+        title: uc.title,
+        finished,
         progress: totalElements > 0 ? Math.round((completedElements / totalElements) * 100) : 0,
         total_elements: totalElements,
         completed_elements: completedElements
       };
-    });
+    }));
   }
 
-  static async getElementsByUnitId(resultId: number, unitId: number): Promise<any[]> {
-    const existingUc = await prisma.uc_apl02.findUnique({
-      where: { id: unitId }
-    });
+  static async getElementsByUnitId(result_id: number, unitId: number): Promise<any[]> {
+    const existingUc = await db.query.ucApl02.findFirst({ where: eq(ucApl02Table.id, unitId) });
     if (!existingUc) {
       throw new NotFoundError('Unit competency');
     }
 
-    const existingResult = await prisma.result.findUnique({
-      where: { id: resultId }
-    });
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const elements = await prisma.element_apl02.findMany({
-      where: { uc_id: unitId },
-      include: {
-        details: true,
-        results: {
-          include: {
-            header: true,
-            evidences: true
-          },
-          where: {
-            header: {
-              result_id: resultId
-            }
-          }
-        }
-      }
-    });
+    const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, unitId));
 
-    return elements.map((element) => {
-      const result = element.results[0];
+    return Promise.all(elements.map(async (element) => {
+      const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, result_id), eq(apl02RowTable.element_id, element.id)) });
+      const evidences = row ? await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id)) : [];
+      const details = await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, element.id));
       return {
         id: element.id,
         uc_id: element.uc_id,
         title: element.title,
-        details: element.details.map((detail) => {
-          return {
-            id: detail.id,
-            description: detail.description
-          };
-        }),
-        result: result ? {
-          id: result.id,
-          header_id: result.result_apl02_id,
-          element_id: result.element_id,
-          is_competent: result.is_competent,
-          evidences: result.evidences.map(evidence => ({
-            id: evidence.id,
-            evidence: evidence.evidence
-          }))
+        details: details.map(d => ({ id: d.id, description: d.description })),
+        result: row ? {
+          id: row.id,
+          header_id: row.result_apl02_id,
+          element_id: row.element_id,
+          is_competent: row.is_competent,
+          evidences: evidences.map(e => ({ id: e.id, evidence: e.evidence }))
         } : null
       }
-    });
+    }));
   }
 
   static async sendResult(data: ElementRequest) {
-    const existingResult = await prisma.result.findUnique({
-      where: { id: Number(data.result_id) },
-      include: {
-        apl02_headers: true
-      }
-    });
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, Number(data.result_id)) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
-    if (!existingResult.apl02_headers) {
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, Number(data.result_id)) });
+    if (!header) {
       throw new NotFoundError('APL02 header');
     }
 
-    const headerId = existingResult.apl02_headers.id;
-
     const elements = data.elements.map(element => Number(element.element_id));
-    const existingElements = await prisma.element_apl02.findMany({
-      where: { id: { in: elements } }
-    });
+    const existingElements = elements.length ? await db.select().from(elementApl02Table).where(inArray(elementApl02Table.id, elements)) : [];
 
     if (existingElements.length !== elements.length) {
       throw new NotFoundError('Element');
@@ -149,45 +91,28 @@ export class APL02Service {
 
     const results = await Promise.all(
       data.elements.map(async (element) => {
-        return await prisma.$transaction(async (tx) => {
-          const resultRecord = await tx.result_apl02.upsert({
-            where: {
-              result_apl02_id_element_id: {
-                result_apl02_id: Number(headerId),
-                element_id: Number(element.element_id)
-              }
-            },
-            update: {
-              is_competent: element.is_competent,
-              updated_at: new Date(),
-              evidences: {
-                deleteMany: {},
-                createMany: {
-                  data: element.evidences.map(evidence => ({
-                    evidence: evidence.evidence
-                  }))
-                }
-              }
-            },
-            create: {
-              result_apl02_id: Number(data.result_id),
-              element_id: Number(element.element_id),
-              is_competent: element.is_competent,
-              evidences: {
-                createMany: {
-                  data: element.evidences.map(evidence => ({
-                    evidence: evidence.evidence
-                  }))
-                }
-              }
+        // upsert row
+        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, header.id), eq(apl02RowTable.element_id, Number(element.element_id))) });
+        if (row) {
+          await db.update(apl02RowTable).set({ is_competent: element.is_competent }).where(eq(apl02RowTable.id, row.id));
+          await db.delete(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id));
+          for (const ev of element.evidences) {
+            await db.insert(apl02EvidenceTable).values({ result_apl02_id: row.id, evidence: ev.evidence });
+          }
+          const evidences = await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id));
+          return { ...row, evidences } as any;
+        } else {
+          const [created] = await db.insert(apl02RowTable).values({ result_apl02_id: header.id, element_id: Number(element.element_id), is_competent: element.is_competent });
+          const createdRow = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, header.id), eq(apl02RowTable.element_id, Number(element.element_id))) });
+          if (createdRow) {
+            for (const ev of element.evidences) {
+              await db.insert(apl02EvidenceTable).values({ result_apl02_id: createdRow.id, evidence: ev.evidence });
             }
-          });
-
-          return await tx.result_apl02.findUnique({
-            where: { id: resultRecord.id },
-            include: { evidences: true }
-          });
-        });
+            const evidences = await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, createdRow.id));
+            return { ...createdRow, evidences } as any;
+          }
+          return null;
+        }
       })
     );
 
@@ -195,333 +120,206 @@ export class APL02Service {
   }
 
   static async sendResultHeader(data: ResultRequest) {
-    const existingResult = await prisma.result.findUnique({
-      where: { id: data.result_id },
-      include: {
-        apl02_headers: true
-      }
-    });
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, data.result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
-    if (!existingResult.apl02_headers) {
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, data.result_id) });
+    if (!header) {
       throw new NotFoundError('APL02 header');
     }
 
-    const headerId = existingResult.apl02_headers.id;
+    await db.update(apl02HeaderTable).set({ is_continue: data.is_continue }).where(eq(apl02HeaderTable.id, header.id));
+    const updated = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.id, header.id) });
+    if (!updated) throw new NotFoundError('APL02 header');
 
-    const update = await prisma.result_apl02_header.update({
-      where: { id: headerId },
-      data: {
-        is_continue: data.is_continue,
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+
+    return {
+      id: updated.id,
+      result_id: existingResult.id,
+      assessee: {
+        id: assessee?.id,
+        name: assesseeUser?.full_name,
+        email: assesseeUser?.email
       },
-      include: {
-        result: {
-          include: {
-            assessee: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    return update;
+      approved_assessee: updated.approved_assessee,
+      approved_assessor: updated.approved_assessor,
+      is_continue: updated.is_continue
+    }
   }
 
-  static async getUnitsResult(resultId: number) {
-    const existingResult = await prisma.result.findFirst({
-      where: {
-        id: resultId
-      }
-    });
+  static async getUnitsResult(result_id: number) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const unitsResult = await prisma.result_apl02_header.findMany({
-      where: {
-        result_id: resultId
-      },
-      include: {
-        result: {
-          include: {
-            assessee: {
-              include: {
-                user: true
-              }
-            },
-            assessment: {
-              include: {
-                uc_apl02s: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { id: 'desc' },
-      take: 1
-    });
-
-    if (!unitsResult) {
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
+    if (!header) {
       throw new NotFoundError('Units result');
     }
 
-    const unitResult = unitsResult[0];
+    const units = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, existingResult.assessment_id));
 
     return {
-      id: unitResult.id,
-      result_id: unitResult.result_id,
+      id: header.id,
+      result_id: header.result_id,
       assessee: {
-        id: unitResult.result.assessee_id,
-        name: unitResult.result.assessee.user.full_name,
-        email: unitResult.result.assessee.user.email
+        id: existingResult.assessee_id,
+        name: (await db.query.user.findFirst({ where: eq(userTable.id, (await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) }))!.user_id) }))!.full_name,
+        email: (await db.query.user.findFirst({ where: eq(userTable.id, (await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) }))!.user_id) }))!.email
       },
-      approved_assessee: unitResult.approved_assessee,
-      approved_assessor: unitResult.approved_assessor,
-      is_continue: unitResult.is_continue,
-      units: unitResult.result.assessment.uc_apl02s.map(unit => ({
-        id: unit.id,
-        unit_code: unit.unit_code,
-        title: unit.title
-      }))
+      approved_assessee: header.approved_assessee,
+      approved_assessor: header.approved_assessor,
+      is_continue: header.is_continue,
+      units: units.map(unit => ({ id: unit.id, unit_code: unit.unit_code, title: unit.title }))
     };
   }
 
-  static async getElementsResult(resultId: number, unitId: number) {
-    const existingUnit = await prisma.uc_apl02.findUnique({
-      where: { id: unitId }
-    });
+  static async getElementsResult(result_id: number, unitId: number) {
+    const existingUnit = await db.query.ucApl02.findFirst({ where: eq(ucApl02Table.id, unitId) });
     if (!existingUnit) {
       throw new NotFoundError('Unit competency');
     }
 
-    const existingResult = await prisma.result.findFirst({
-      where: {
-        id: resultId
-      }
-    });
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
 
-    const elementsResult = await prisma.result_apl02_header.findMany({
-      where: {
-        result_id: resultId,
-        rows: {
-          some: {
-            element: {
-              uc_id: unitId
-            }
-          }
-        }
-      },
-      include: {
-        result: {
-          include: {
-            assessee: {
-              include: {
-                user: true
-              }
-            }
-          }
-        },
-        rows: {
-          include: {
-            element: {
-              include: {
-                details: true
-              }
-            },
-            evidences: true
-          }
-        }
-      },
-      orderBy: { id: 'desc' },
-      take: 1
-    });
-
-    if (!elementsResult) {
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
+    if (!header) {
       throw new NotFoundError('Elements result');
     }
 
-    const elementResult = elementsResult[0];
+    const rows = await db.query.resultApl02.findMany({ where: eq(apl02RowTable.result_apl02_id, header.id) });
+
+    const results = await Promise.all(rows.filter(r => r).map(async (row) => {
+      const element = await db.query.elementApl02.findFirst({ where: eq(elementApl02Table.id, row.element_id) });
+      const details = element ? await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, element.id)) : [];
+      const evidences = await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id));
+      return {
+        id: row.id,
+        element: { ...element, details },
+        is_competent: row.is_competent,
+        evidences,
+      };
+    }));
 
     return {
-      id: elementResult.id,
-      result_id: elementResult.result_id,
+      id: header.id,
+      result_id: header.result_id,
       assessee: {
-        id: elementResult.result.assessee_id,
-        name: elementResult.result.assessee.user.full_name,
-        email: elementResult.result.assessee.user.email
+        id: existingResult.assessee_id,
+        name: (await db.query.user.findFirst({ where: eq(userTable.id, (await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) }))!.user_id) }))!.full_name,
+        email: (await db.query.user.findFirst({ where: eq(userTable.id, (await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) }))!.user_id) }))!.email
       },
-      approved_assessee: elementResult.approved_assessee,
-      approved_assessor: elementResult.approved_assessor,
-      is_continue: elementResult.is_continue,
-      results: elementResult.rows.map(element => ({
-        id: element.id,
-        element: element.element,
-        is_competent: element.is_competent,
-        evidences: element.evidences
-      }))
+      approved_assessee: header.approved_assessee,
+      approved_assessor: header.approved_assessor,
+      is_continue: header.is_continue,
+      results,
     };
   }
 
-  static async approvedByAssessor(resultId: number, data: GenerateAsssessorRequest) {
-    const existingResult = await prisma.result.findUnique({
-      where: { id: resultId },
-      include: {
-        apl02_headers: true
-      }
-    });
+  static async approvedByAssessor(result_id: number, data: GenerateAsssessorRequest) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
-    if (!existingResult.apl02_headers) {
+
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
+    if (!header) {
       throw new NotFoundError('APL02 header');
     }
 
-    const headerId = existingResult.apl02_headers.id;
+    await db.update(apl02HeaderTable).set({ approved_assessor: true, is_continue: data.reccomendation }).where(eq(apl02HeaderTable.id, header.id));
+    const updated = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.id, header.id) });
+    if (!updated) throw new NotFoundError('APL02 header');
 
-    const update = await prisma.result_apl02_header.update({
-      where: { id: headerId },
-      data: {
-        approved_assessor: true,
-        is_continue: data.reccomendation
-      },
-      include: {
-        result: {
-          include: {
-            assessee: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
-      }
-    });
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
 
     return {
-      id: update.id,
-      result_id: update.result_id,
+      id: updated.id,
+      result_id: updated.result_id,
       assessee: {
-        id: update.result.assessee_id,
-        name: update.result.assessee.user.full_name,
-        email: update.result.assessee.user.email
+        id: assessee?.id,
+        name: assesseeUser?.full_name,
+        email: assesseeUser?.email
       },
-      approved_assessee: update.approved_assessee,
-      approved_assessor: update.approved_assessor,
-      is_continue: update.is_continue
+      approved_assessee: updated.approved_assessee,
+      approved_assessor: updated.approved_assessor,
+      is_continue: updated.is_continue
     }
   }
 
-  static async approvedByAssessee(resultId: number) {
-    const existingResult = await prisma.result.findUnique({
-      where: { id: resultId },
-      include: {
-        apl02_headers: true
-      }
-    });
+  static async approvedByAssessee(result_id: number) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
     }
-    if (!existingResult.apl02_headers) {
+
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
+    if (!header) {
       throw new NotFoundError('Result header');
     }
 
-    const headerId = existingResult.apl02_headers.id;
+    await db.update(apl02HeaderTable).set({ approved_assessee: true }).where(eq(apl02HeaderTable.id, header.id));
+    const updated = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.id, header.id) });
+    if (!updated) throw new NotFoundError('APL02 header');
 
-    const update = await prisma.result_apl02_header.update({
-      where: { id: headerId },
-      data: {
-        approved_assessee: true,
-      },
-      include: {
-        result: {
-          include: {
-            assessee: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
-      }
-    });
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
 
     return {
-      id: update.id,
-      result_id: update.result_id,
+      id: updated.id,
+      result_id: updated.result_id,
       assessee: {
-        id: update.result.assessee_id,
-        name: update.result.assessee.user.full_name,
-        email: update.result.assessee.user.email
+        id: assessee?.id,
+        name: assesseeUser?.full_name,
+        email: assesseeUser?.email
       },
-      approved_assessee: update.approved_assessee,
-      approved_assessor: update.approved_assessor,
-      is_continue: update.is_continue
+      approved_assessee: updated.approved_assessee,
+      approved_assessor: updated.approved_assessor,
+      is_continue: updated.is_continue
     }
   }
 
-  static async getResultDetails(resultId: number) {
-    const result = await prisma.result.findUnique({
-      where: { id: resultId },
-      include: {
-        assessment: {
-          include: {
-            occupation: {
-              include: {
-                scheme: true
-              }
-            }
-          }
-        },
-        assessee: {
-          include: {
-            user: true
-          }
-        },
-        assessor: {
-          include: {
-            user: true
-          }
-        },
-        apl02_headers: true,
-        docs: true
-      }
-    });
+  static async getResultDetails(result_id: number) {
+    const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!result) {
       throw new NotFoundError('Result');
     }
-    if (!result.apl02_headers) {
+
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
+
+    const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
+    const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
+    if (!header) {
       throw new NotFoundError('Result header');
     }
-    if (result.docs.length < 1) {
+
+    const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.result_id, result.id));
+    if (!docs.length) {
       throw new NotFoundError('Result docs');
     }
 
     return {
       id: result.id,
-      assessment: result.assessment,
-      assessee: {
-        id: result.assessee.id,
-        name: result.assessee.user.full_name,
-        email: result.assessee.user.email
-      },
-      assessor: {
-        id: result.assessor.id,
-        name: result.assessor.user.full_name,
-        email: result.assessor.user.email,
-        no_reg_met: result.assessor.no_reg_met
-      },
+      assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
+      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
+      assessor: null,
       tuk: result.tuk,
       is_competent: result.is_competent,
       created_at: result.created_at,
-      apl02_header: result.apl02_headers,
-      approved_admin: result.docs[result.docs.length - 1].approved
+      apl02_header: header,
+      approved_admin: docs[docs.length - 1].approved
     };
   }
 }

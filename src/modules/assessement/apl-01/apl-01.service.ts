@@ -1,5 +1,28 @@
 import { DuplicateEntryError, NotFoundError } from '../../../common/error';
-import { prisma } from '../../../config/db';
+import { db } from '../../../config/drizzle';
+import {
+    user as userTable,
+    assessee as assesseeTable,
+    assesseeJob as assesseeJobTable,
+    result as resultTable,
+    assessment as assessmentTable,
+    resultDoc as resultDocTable,
+    resultApl02Header as apl02HeaderTable,
+    resultIa01Header as ia01HeaderTable,
+    resultIa02Header as ia02HeaderTable,
+    resultIa03Header as ia03HeaderTable,
+    resultIa05Header as ia05HeaderTable,
+    resultIa07Header as ia07HeaderTable,
+    resultAk01Header as ak01HeaderTable,
+    resultAk02Header as ak02HeaderTable,
+    resultAk03Header,
+    resultAk04,
+    resultAk05,
+    result,
+    assessment,
+    assessee,
+} from '../../../../drizzle/schema';
+import { and, desc, eq } from 'drizzle-orm';
 import {
     AssesseeResponse,
     AssesseeJobResponse,
@@ -7,7 +30,6 @@ import {
     AssesseeRequest,
     AssesseeJobRequest,
     CertificateDocsRequest,
-    ResultDocResponse
 } from './apl-01.type';
 
 const TUK_VALUES = {
@@ -20,411 +42,313 @@ export class APL1Service {
     static async createOrUpdateAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
         const { jobs, id, user_id, full_name, ...assesseeData } = data;
 
-        let gender: any = assesseeData.gender.trim().toLowerCase();
-        if (gender === 'laki-laki') {
-            gender = 'male';
-        } else if (gender === 'perempuan') {
-            gender = 'female';
-        }
+        const existingUser = await db.query.user.findFirst({ where: eq(userTable.id, user_id) });
+        if (!existingUser) throw new NotFoundError('User');
+
+        let gender: any = (assesseeData.gender || '').trim().toLowerCase();
+        if (gender === 'laki-laki') gender = 'male';
+        else if (gender === 'perempuan') gender = 'female';
 
         if (full_name) {
-            await prisma.user.update({
-                where: { id: user_id },
-                data: { full_name }
-            });
+            await db.update(userTable).set({ full_name: full_name }).where(eq(userTable.id, user_id));
         }
 
         if (id) {
-            const updatedAssessee = await prisma.assessee.update({
-                where: { id },
-                data: {
-                    ...assesseeData,
+            // update assessee
+            await db.update(assesseeTable)
+                .set({
+                    user_id: user_id,
+                    identity_number: assesseeData.identity_number,
                     gender,
-                    birth_date: new Date(assesseeData.birth_date).toISOString(),
-                    jobs: jobs && jobs.length > 0 ? {
-                        deleteMany: {},
-                        create: jobs
-                    } : undefined
-                },
-                include: {
-                    user: true,
-                    jobs: true
-                }
-            });
+                    birth_date: new Date(assesseeData.birth_date) as any,
+                    birth_location: assesseeData.birth_location,
+                    nationality: assesseeData.nationality,
+                    phone_no: assesseeData.phone_no,
+                    house_phone_no: assesseeData.house_phone_no as any,
+                    office_phone_no: assesseeData.office_phone_no as any,
+                    address: assesseeData.address,
+                    postal_code: assesseeData.postal_code as any,
+                    educational_qualifications: assesseeData.educational_qualifications,
+                })
+                .where(eq(assesseeTable.id, id));
 
-            return {
-                ...updatedAssessee,
-                full_name: updatedAssessee.user.full_name,
-                jobs: updatedAssessee.jobs
-            } as AssesseeResponse;
+            // replace jobs
+            if (jobs && jobs.length > 0) {
+                await db.delete(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, id));
+                for (const j of jobs) {
+                    await db.insert(assesseeJobTable).values({
+                        assessee_id: id,
+                        institution_name: (j as any).institution_name,
+                        address: (j as any).address,
+                        postal_code: (j as any).postal_code,
+                        position: (j as any).position,
+                        phone_no: (j as any).phone_no,
+                        job_email: (j as any).job_email,
+                    });
+                }
+            }
+
+            const updated = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
+            if (!updated) throw new NotFoundError('Assessee');
+
+            const u = await db.query.user.findFirst({ where: eq(userTable.id, updated.user_id) });
+            const jobsData = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, updated.id));
+            return { ...(updated as any), full_name: u?.full_name, jobs: jobsData } as AssesseeResponse;
         } else {
-            const newAssessee = await prisma.assessee.create({
-                data: {
-                    user_id,
-                    ...assesseeData,
-                    gender,
-                    birth_date: new Date(assesseeData.birth_date).toISOString(),
-                    jobs: jobs && jobs.length > 0 ? {
-                        create: jobs
-                    } : undefined
-                },
-                include: {
-                    user: true,
-                    jobs: true
-                }
-            });
+            // create assessee
+            const [createdAssessee] = await db.insert(assesseeTable).values({
+                user_id: user_id,
+                identity_number: assesseeData.identity_number,
+                gender,
+                birth_date: new Date(assesseeData.birth_date) as any,
+                birth_location: assesseeData.birth_location,
+                nationality: assesseeData.nationality,
+                phone_no: assesseeData.phone_no,
+                house_phone_no: assesseeData.house_phone_no as any,
+                office_phone_no: assesseeData.office_phone_no as any,
+                address: assesseeData.address,
+                postal_code: assesseeData.postal_code as any,
+                educational_qualifications: assesseeData.educational_qualifications,
+            }).$returningId();
 
-            return {
-                ...newAssessee,
-                full_name: newAssessee.user.full_name,
-                jobs: newAssessee.jobs
-            } as AssesseeResponse;
+            if (jobs && jobs.length > 0) {
+                for (const j of jobs) {
+                    await db.insert(assesseeJobTable).values({
+                        assessee_id: createdAssessee.id,
+                        institution_name: (j as any).institution_name,
+                        address: (j as any).address,
+                        postal_code: (j as any).postal_code,
+                        position: (j as any).position,
+                        phone_no: (j as any).phone_no,
+                        job_email: (j as any).job_email,
+                    });
+                }
+            }
+
+            const u = await db.query.user.findFirst({ where: eq(userTable.id, user_id) });
+            const jobsData = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, createdAssessee.id));
+            return { ...(createdAssessee as any), full_name: u?.full_name, jobs: jobsData } as AssesseeResponse;
         }
     }
 
-    static async getAssesseeJobsByAssesseeId(assesseeId: number): Promise<AssesseeJobResponse[]> {
-        const assessee = await prisma.assessee.findUnique({
-            where: { id: assesseeId },
-            include: { jobs: true }
-        });
-
-        if (!assessee) {
-            throw new NotFoundError('Assessee');
-        }
-
-        return assessee.jobs;
+    static async getAssesseeJobsByAssessee_id(assessee_id: number): Promise<AssesseeJobResponse[]> {
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assessee_id) });
+        if (!assessee) throw new NotFoundError('Assessee');
+        const jobs = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, assessee_id));
+        return jobs as any;
     }
 
     static async createOrUploadCertificate(params: {
-        assesseeId: number;
-        assessorId: number;
-        assessmentId: number;
+        assessee_id: number;
+        assessor_id: number;
+        assessment_id: number;
         bodyData: any;
         files: any[];
     }): Promise<CertificateDocsResponse> {
-        const { assesseeId, assessorId, assessmentId, bodyData, files } = params;
-
+        const { assessee_id, assessor_id, assessment_id, bodyData, files } = params;
         const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
-        const fieldMapping: { [key: string]: string } = {
-            school_report_card: 'school_report_card',
-            field_work_practice_certificate: 'field_work_practice_certificate',
-            student_card: 'student_card',
-            family_card: 'family_card',
-            id_card: 'id_card'
-        };
+        // canonical fields and mapping (auto generate camelCase -> snake_case)
+        const canonicalFields = [
+            'school_report_card',
+            'field_work_practice_certificate',
+            'student_card',
+            'family_card',
+            'id_card',
+        ];
+        const fieldMapping: Record<string, string> = {};
+        for (const f of canonicalFields) {
+            fieldMapping[f] = f;
+            const camel = f.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+            fieldMapping[camel] = f;
+        }
 
-        const fileData: any = {};
-        for (const file of files) {
-            if (fieldMapping[file.fieldname]) {
-                fileData[fieldMapping[file.fieldname]] = `${BASE_URL}/uploads/apl-01/${assesseeId}_${assessorId}_${assessmentId}/${file.filename}`;
+        // initialize fileData with empty string fallback (DB may be NOT NULL)
+        const fileData: Record<string, string> = {};
+        for (const canonical of canonicalFields) fileData[canonical] = '';
+
+        // fill fileData from uploaded files
+        const fileArray = Array.isArray(files) ? files : [];
+        for (const file of fileArray) {
+            const mapped = fieldMapping[file.fieldname];
+            if (mapped) {
+                fileData[mapped] = `${BASE_URL}/uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
+            }
+        }
+
+        // fallback: accept text URL in body too
+        for (const key of Object.keys(bodyData || {})) {
+            const mapped = fieldMapping[key];
+            if (mapped && bodyData[key]) {
+                fileData[mapped] = bodyData[key];
             }
         }
 
         const docsData: any = {
-            purpose: bodyData.purpose || 'APL1 Certificate Documents',
+            purpose: bodyData?.purpose || 'APL1 Certificate Documents',
             ...fileData
         };
 
-        let results = await prisma.result.findMany({
-            where: {
-                assessee_id: assesseeId,
-                assessor_id: assessorId,
-                assessment_id: assessmentId
-            },
-            take: 1,
-            orderBy: { id: 'desc' },
-            include: {
-                assessment: true,
-                assessee: true,
-                assessor: true,
-                apl02_headers: true,
-                ia01_headers: true,
-                ia02_headers: true,
-                ia03_headers: true,
-                ia05_headers: true,
-                ia07_headers: true,
-                ak01_headers: true,
-                ak02_headers: true
-            }
-        });
+        // find latest result
+        let results = await db.select().from(resultTable)
+            .where(and(eq(resultTable.assessee_id, assessee_id), eq(resultTable.assessor_id, assessor_id), eq(resultTable.assessment_id, assessment_id)))
+            .orderBy(desc(resultTable.id));
 
-        let result = results[0] || null;
+        let resultRow = results[0] || null;
 
-        if (!result) {
-            const assessment = await prisma.assessment.findUnique({
-                where: { id: assessmentId }
+        if (!resultRow) {
+            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+            if (!assessment) throw new NotFoundError('Assessment');
+
+            await db.insert(resultTable).values({
+                assessment_id,
+                assessee_id,
+                assessor_id,
+                tuk: TUK_VALUES.SEWAKTU as any,
+                is_competent: false,
             });
-            if (!assessment) {
-                throw new NotFoundError('Assessment');
-            }
 
-            result = await prisma.result.create({
-                data: {
-                    assessment_id: assessmentId,
-                    assessee_id: assesseeId,
-                    assessor_id: assessorId,
-                    tuk: TUK_VALUES.SEWAKTU,
-                    is_competent: false,
-                    apl02_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                            is_continue: false
-                        }
-                    },
-                    ia01_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                            is_competent: false
-                        }
-                    },
-                    ia02_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                        }
-                    },
-                    ia03_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                        }
-                    },
-                    ia05_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                            is_achieved: false
-                        }
-                    },
-                    ia07_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                        }
-                    },
-                    ak01_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                        }
-                    },
-                    ak02_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                            is_competent: false
-                        }
-                    }
-                },
-                include: {
-                    assessment: true,
-                    assessee: true,
-                    assessor: true,
-                    apl02_headers: true,
-                    ia01_headers: true,
-                    ia02_headers: true,
-                    ia03_headers: true,
-                    ia05_headers: true,
-                    ia07_headers: true,
-                    ak01_headers: true,
-                    ak02_headers: true
-                }
+            const found = await db.query.result.findFirst({
+                where: and(eq(resultTable.assessment_id, assessment_id), eq(resultTable.assessor_id, assessor_id), eq(resultTable.assessee_id, assessee_id))
             });
+            if (!found) throw new NotFoundError('result');
+            resultRow = found as any;
+
+            // create headers
+            await db.insert(apl02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_continue: false });
+            await db.insert(ia01HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
+            await db.insert(ia02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ia03HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ia05HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_achieved: false });
+            await db.insert(ia07HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ak01HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ak02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
+            await db.insert(resultAk03Header).values({ result_id: resultRow.id });
+            await db.insert(resultAk04).values({ result_id: resultRow.id, approved_assessee: false, q1_yes: false, q2_yes: false, q3_yes: false, reason: "" });
+            await db.insert(resultAk05).values({ result_id: resultRow.id, approved_assessor: false, is_competent: false });
         }
 
-        if (!result.apl02_headers) {
-            result = await prisma.result.update({
-                where: { id: result.id },
-                data: {
-                    apl02_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                            is_continue: false
-                        }
-                    },
-                    ia01_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                            is_competent: false
-                        }
-                    },
-                    ia02_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                        }
-                    },
-                    ia03_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                        }
-                    },
-                    ia05_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                            is_achieved: false
-                        }
-                    },
-                    ia07_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                        }
-                    },
-                    ak01_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                        }
-                    },
-                    ak02_headers: {
-                        create: {
-                            approved_assessee: false,
-                            approved_assessor: false,
-                            is_competent: false
-                        }
-                    }
-                },
-                include: {
-                    assessment: true,
-                    assessee: true,
-                    assessor: true,
-                    apl02_headers: true,
-                    ia01_headers: true,
-                    ia02_headers: true,
-                    ia03_headers: true,
-                    ia05_headers: true,
-                    ia07_headers: true,
-                    ak01_headers: true,
-                    ak02_headers: true
-                }
-            });
-        }
-
-        const existingDocs = await prisma.result_doc.findFirst({
-            where: { result_id: result.id }
-        });
+        // existing docs?
+        const existingDocs = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, resultRow.id) });
 
         if (existingDocs) {
-            return await prisma.result_doc.update({
-                where: { id: existingDocs.id },
-                data: { ...docsData },
-                include: {
-                    result: {
-                        include: {
-                            assessment: true,
-                            assessee: true,
-                            assessor: true,
-                            apl02_headers: true,
-                            ia01_headers: true,
-                            ia02_headers: true,
-                            ia03_headers: true,
-                            ia05_headers: true,
-                            ia07_headers: true,
-                            ak01_headers: true,
-                            ak02_headers: true
-                        }
-                    }
-                }
-            }) as CertificateDocsResponse;
+            await db.update(resultDocTable).set({
+                purpose: docsData.purpose,
+                school_report_card: docsData.school_report_card,
+                field_work_practice_certificate: docsData.field_work_practice_certificate,
+                student_card: docsData.student_card,
+                family_card: docsData.family_card,
+                id_card: docsData.id_card
+            }).where(eq(resultDocTable.id, existingDocs.id));
+
+            // fetch updated doc
+            const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, existingDocs.id) });
+            // build full result nested
+            const fullresult = await APL1Service._buildFullresult(resultRow.id);
+            return { ...(updated as any), result: fullresult } as CertificateDocsResponse;
         } else {
-            return await prisma.result_doc.create({
-                data: {
-                    result_id: result.id,
-                    approved: false,
-                    ...docsData
-                },
-                include: {
-                    result: {
-                        include: {
-                            assessment: true,
-                            assessee: true,
-                            assessor: true,
-                            apl02_headers: true,
-                            ia01_headers: true,
-                            ia02_headers: true,
-                            ia03_headers: true,
-                            ia05_headers: true,
-                            ia07_headers: true,
-                            ak01_headers: true,
-                            ak02_headers: true
-                        }
-                    }
-                }
+            // create new doc
+            const [ins] = await db.insert(resultDocTable).values({
+                result_id: resultRow.id,
+                approved: false,
+                purpose: docsData.purpose,
+                school_report_card: docsData.school_report_card,
+                field_work_practice_certificate: docsData.field_work_practice_certificate,
+                student_card: docsData.student_card,
+                family_card: docsData.family_card,
+                id_card: docsData.id_card
             });
+
+            // fetch created doc (by result_id)
+            const created = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, resultRow.id) });
+            const fullresult = await APL1Service._buildFullresult(resultRow.id);
+            return { ...(created as any), result: fullresult } as CertificateDocsResponse;
         }
     }
 
-    static async getAllResultDoc(): Promise<ResultDocResponse[]> {
-        const result_doc = await prisma.result_doc.findMany({
-            include: {
-                result: {
-                    include: {
-                        assessment: true,
-                        assessee: true
-                    }
-                }
-            }
-        });
-        return result_doc;
+    // helper untuk membangun nested result object mirip Prisma include
+    private static async _buildFullresult(result_id: number) {
+        const resultRow = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
+        if (!resultRow) return null;
+
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, resultRow.assessment_id) });
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, resultRow.assessee_id) });
+        const assessor = await db.query.user.findFirst({ where: eq(userTable.id, resultRow.assessor_id) })
+        // if assessor stored in separate table, adapt accordingly
+
+        // headers
+        const apl02_headers = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
+        const ia01_headers = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.result_id, result_id) });
+        const ia02_headers = await db.query.resultIa02Header.findFirst({ where: eq(ia02HeaderTable.result_id, result_id) });
+        const ia03_headers = await db.query.resultIa03Header.findFirst({ where: eq(ia03HeaderTable.result_id, result_id) });
+        const ia05_headers = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result_id) });
+        const ia07_headers = await db.query.resultIa07Header.findFirst({ where: eq(ia07HeaderTable.result_id, result_id) });
+        const ak01_headers = await db.query.resultAk01Header.findFirst({ where: eq(ak01HeaderTable.result_id, result_id) });
+        const ak02_headers = await db.query.resultAk02Header.findFirst({ where: eq(ak02HeaderTable.result_id, result_id) });
+
+        return {
+            ...(resultRow as any),
+            assessment: assessment || null,
+            assessee: assessee || null,
+            assessor: assessor || null,
+            apl02_headers: apl02_headers || null,
+            ia01_headers: ia01_headers || null,
+            ia02_headers: ia02_headers || null,
+            ia03_headers: ia03_headers || null,
+            ia05_headers: ia05_headers || null,
+            ia07_headers: ia07_headers || null,
+            ak01_headers: ak01_headers || null,
+            ak02_headers: ak02_headers || null,
+        };
     }
 
-    static async getResultDocsByAssessmentId(assessmentId: number): Promise<ResultDocResponse[]> {
-        const result_doc = await prisma.result_doc.findMany({
-            where: { result: { assessment_id: assessmentId } },
-            include: {
-                result: {
-                    include: {
-                        assessment: true,
-                        assessee: true
-                    }
-                }
-            }
-        });
-        return result_doc;
+    static async getAllResultDoc(): Promise<any[]> {
+        const docs = await db.select().from(resultDocTable);
+        return docs as any;
     }
 
-    static async getResultDocsByAssessorId(assessorId: number): Promise<ResultDocResponse[]> {
-        const result_doc = await prisma.result_doc.findMany({
-            where: { result: { assessee_id: assessorId } },
-            include: {
-                result: {
-                    include: {
-                        assessment: true,
-                        assessee: true
-                    }
-                }
-            }
-        });
-        return result_doc;
+    static async getResultDocsByAssessmentId(assessmentId: number) {
+        const rows = await db
+            .select({
+                id: resultDocTable.id,
+                result_id: resultDocTable.result_id,
+                approved: resultDocTable.approved,
+                purpose: resultDocTable.purpose,
+                school_report_card: resultDocTable.school_report_card,
+                field_work_practice_certificate: resultDocTable.field_work_practice_certificate,
+                student_card: resultDocTable.student_card,
+                family_card: resultDocTable.family_card,
+                id_card: resultDocTable.id_card,
+                created_at: resultDocTable.created_at,
+                updated_at: resultDocTable.updated_at,
+                result: result,
+                assessment: assessment,
+                assessee: assessee
+            })
+            .from(resultDocTable)
+            .innerJoin(result, eq(resultDocTable.result_id, result.id))
+            .innerJoin(assessment, eq(result.assessment_id, assessment.id))
+            .innerJoin(assessee, eq(result.assessee_id, assessee.id))
+            .where(eq(result.assessment_id, assessmentId));
+
+        return rows;
     }
 
-    static async getUnapprovedResultDoc(): Promise<ResultDocResponse[]> {
-        const result_doc = await prisma.result_doc.findMany({
-            where: { approved: false },
-            include: {
-                result: {
-                    include: {
-                        assessment: true,
-                        assessee: true
-                    }
-                }
-            }
-        });
-        return result_doc;
+    static async getResultDocsByAssessorId(assessor_id: number): Promise<any[]> {
+        const results = await db.select().from(resultTable).where(eq(resultTable.assessee_id, assessor_id));
+        const ids = new Set(results.map(r => r.id));
+        const docs = await db.select().from(resultDocTable);
+        return (docs.filter(d => ids.has(d.result_id)) as any);
     }
-    static async approveResultDoc(resultId: number): Promise<ResultDocResponse> {
-        const result_doc = await prisma.result_doc.update({
-            where: { id: resultId },
-            data: { approved: true }
-        });
-        return result_doc;
+
+    static async getUnapprovedResultDoc(): Promise<any[]> {
+        const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.approved, false));
+        return docs as any;
+    }
+
+    static async approveResultDoc(result_id: number): Promise<any> {
+        await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.id, result_id));
+        const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, result_id) });
+        return updated as any;
     }
 }

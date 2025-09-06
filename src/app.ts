@@ -6,17 +6,12 @@ import { errorHandler } from './middleware/error.middleware';
 const cors = require('cors');
 const dotenv = require('dotenv');
 
-const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
-const swaggerDocument = YAML.load(__dirname + '/../api-contract/openapi.yaml');
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 import userRoutes from './modules/user/user.route';
 import authRoutes from './modules/auth/auth.routes';

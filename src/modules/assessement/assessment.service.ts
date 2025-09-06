@@ -1,320 +1,345 @@
 import { DuplicateEntryError, NotFoundError } from "../../common/error";
-import { prisma } from "../../config/db";
+import { db } from "../../config/drizzle";
+import {
+    assessment as assessmentTable,
+    occupation as occupationTable,
+    scheme as schemeTable,
+    ucApl02 as ucApl02Table,
+    elementApl02 as elementApl02Table,
+    elementDetailsApl02 as elementDetailsApl02Table,
+    groupIa01 as groupIa01Table,
+    groupIa02 as groupIa02Table,
+    groupIa03 as groupIa03Table,
+    ucIa01 as ucIa01Table,
+    ucIa02 as ucIa02Table,
+    ucIa03 as ucIa03Table,
+    elementIa as elementIaTable,
+    elementDetailsIa as elementDetailsIaTable,
+    ia02Tool as ia02ToolTable,
+    ia03Question as ia03QuestionTable,
+    ia05Question as ia05QuestionTable,
+    ia07Question as ia07QuestionTable,
+    questionOption as questionOptionTable,
+    result as resultTable,
+    assessor,
+    assessee,
+} from "../../../drizzle/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
 
 export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
-        const scheme = await prisma.scheme.findUnique({
-            where: {
-                id: data.scheme_id
-            }
+        // Check if scheme exists
+        const existingScheme = await db.query.scheme.findFirst({
+            where: eq(schemeTable.id, data.scheme_id)
         });
-        if (!scheme) {
+        
+        if (!existingScheme) {
             throw new NotFoundError("Scheme");
         }
 
-        const existingAssessment = await prisma.assessment.findFirst({
-            where: {
-                code: data.code
-            }
+        // Check for duplicate assessment code
+        const existingAssessment = await db.query.assessment.findFirst({
+            where: eq(assessmentTable.code, data.code)
         });
+        
         if (existingAssessment) {
             throw new DuplicateEntryError("Assessment code", data.code);
         }
 
-        let occupation = await prisma.occupation.findFirst({
-            where: {
-                name: data.occupation_name,
-                scheme_id: data.scheme_id
-            }
+        // Find or create occupation
+        let existingOccupation = await db.query.occupation.findFirst({
+            where: and(
+                eq(occupationTable.name, data.occupation_name),
+                eq(occupationTable.scheme_id, data.scheme_id)
+            )
         });
 
-        if (!occupation) {
-            occupation = await prisma.occupation.create({
-                data: {
-                    name: data.occupation_name,
-                    scheme_id: data.scheme_id
-                }
-            })
+        if (!existingOccupation) {
+            const [createdOccupation] = await db.insert(occupationTable).values({
+                name: data.occupation_name,
+                scheme_id: data.scheme_id
+            }).$returningId();
+            existingOccupation = await db.query.occupation.findFirst({
+                where: eq(occupationTable.id, createdOccupation.id)
+            });
         }
 
-        // Create assessment
-        const assessment = await prisma.assessment.create({
-            data: {
-                occupation_id: Number(occupation.id),
+        return await db.transaction(async (tx) => {
+            // Create occupation
+            const [occupation] = await tx.insert(occupationTable).values({
+                scheme_id: data.scheme_id,
+                name: data.occupation_name,
+            });
+
+            // Create assessment
+            const [assessment] = await tx.insert(assessmentTable).values({
+                occupation_id: (occupation as any).insertId,
                 code: data.code,
-                uc_apl02s: {
-                    create: (data.uc_apl02s ?? []).map(unit => ({
+            });
+
+            const assessment_id = (assessment as any).insertId;
+
+            // Create UC APL02
+            for (const uc of data.uc_apl02s) {
+                const [ucApl02] = await tx.insert(ucApl02Table).values({
+                    assessment_id,
+                    unit_code: uc.unit_code,
+                    title: uc.title,
+                });
+
+                for (const element of uc.elements) {
+                    const [elementApl02] = await tx.insert(elementApl02Table).values({
+                        uc_id: (ucApl02 as any).insertId,
+                        title: element.title,
+                    });
+
+                    for (const detail of element.details) {
+                        await tx.insert(elementDetailsApl02Table).values({
+                            element_id: (elementApl02 as any).insertId,
+                            description: detail.description,
+                        });
+                    }
+                }
+            }
+
+            // Create Group IA01
+            for (const group of data.groups_ia01) {
+                const [groupIa01] = await tx.insert(groupIa01Table).values({
+                    assessment_id,
+                    name: group.name,
+                });
+
+                for (const unit of group.units) {
+                    const [ucIa01] = await tx.insert(ucIa01Table).values({
+                        group_id: (groupIa01 as any).insertId,
                         unit_code: unit.unit_code,
                         title: unit.title,
-                        elements: {
-                            create: (unit.elements ?? []).map(element => ({
+                    });
+
+                    for (const element of unit.elements) {
+                        const [elementIa] = await tx.insert(elementIaTable).values({
+                            uc_id: (ucIa01 as any).insertId,
                                 title: element.title,
-                                details: {
-                                    create: (element.details ?? []).map(detail => ({
-                                        description: detail.description
-                                    }))
-                                }
-                            }))
+                        });
+
+                        for (const detail of element.details) {
+                            await tx.insert(elementDetailsIaTable).values({
+                                element_id: (elementIa as any).insertId,
+                                description: detail.description,
+                                benchmark: detail.benchmark,
+                            });
                         }
-                    }))
-                },
-                groups_ia01: {
-                    create: (data.groups_ia01 ?? []).map(group => ({
-                        name: group.name,
-                        units: {
-                            create: (group.units ?? []).map(unit => ({
-                                unit_code: unit.unit_code,
-                                title: unit.title,
-                                elements: {
-                                    create: (unit.elements ?? []).map(element => ({
-                                        title: element.title,
-                                        details: {
-                                            create: (element.details ?? []).map(detail => ({
-                                                description: detail.description,
-                                                benchmark: detail.benchmark
-                                            }))
-                                        }
-                                    }))
-                                }
-                            }))
-                        }
-                    }))
-                },
-                groups_ia02: {
-                    create: (data.groups_ia02 ?? []).map(group => ({
+                    }
+                }
+            }
+
+            // Create Group IA02
+            for (const group of data.groups_ia02) {
+                const [groupIa02] = await tx.insert(groupIa02Table).values({
+                    assessment_id,
                         name: group.name,
                         scenario: group.scenario,
                         duration: group.duration,
-                        units: {
-                            create: (group.units ?? []).map(unit => ({
-                                unit_code: unit.unit_code,
-                                title: unit.title,
-                            }))
-                        },
-                        tools: {
-                            create: (group.tools ?? []).map(tool => ({
-                                name: tool.name
-                            }))
-                        }
-                    }))
-                },
-                groups_ia03: {
-                    create: (data.groups_ia03 ?? []).map(group => ({
-                        name: group.name,
-                        units: {
-                            create: (group.units ?? []).map(unit => ({
-                                unit_code: unit.unit_code,
-                                title: unit.title,
-                            }))
-                        },
-                        qa_ia03: {
-                            create: (group.qa_ia03 ?? []).map(question => ({
-                                question: question.question,
-                            }))
-                        }
-                    }))
-                },
-                ia05_questions: {
-                    create: (data.ia05_questions ?? []).map(question => ({
-                        order: question.order,
-                        question: question.question,
-                        options: {
-                            create: (question.options ?? []).map(option => ({
-                                option: option.option,
-                                is_answer: option.is_answer
-                            }))
-                        }
-                    }))
-                },
-                ia07_questions: {
-                    create: (data.ia07_questions ?? []).map(question => ({
-                        question: question.question,
-                        answer_key: question.answer_key
-                    }))
-                }
-            },
-            include: {
-                occupation: true,
-                uc_apl02s: {
-                    include: {
-                        elements: {
-                            include: {
-                                details: true
-                            }
-                        }
-                    }
-                },
-                groups_ia01: {
-                    include: {
-                        units: {
-                            include: {
-                                elements: {
-                                    include: {
-                                        details: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                groups_ia02: {
-                    include: {
-                        units: true,
-                        tools: true
-                    }
-                },
-                groups_ia03: {
-                    include: {
-                        units: true,
-                        qa_ia03: true
-                    }
-                },
-                ia05_questions: {
-                    include: {
-                        options: true
-                    }
-                },
-                ia07_questions: true
-            }
-        });
+                });
 
-        return assessment;
+                for (const unit of group.units) {
+                    await tx.insert(ucIa02Table).values({
+                        group_id: (groupIa02 as any).insertId,
+                        unit_code: unit.unit_code,
+                                title: unit.title,
+                    });
+                }
+
+                for (const tool of group.tools) {
+                    await tx.insert(ia02ToolTable).values({
+                        group_id: (groupIa02 as any).insertId,
+                        name: tool.name,
+                    });
+                }
+            }
+
+            // Create Group IA03
+            for (const group of data.groups_ia03) {
+                const [groupIa03] = await tx.insert(groupIa03Table).values({
+                    assessment_id,
+                        name: group.name,
+                });
+
+                for (const unit of group.units) {
+                    await tx.insert(ucIa03Table).values({
+                        group_id: (groupIa03 as any).insertId,
+                        unit_code: unit.unit_code,
+                                title: unit.title,
+                    });
+                }
+
+                for (const question of group.qa_ia03) {
+                    await tx.insert(ia03QuestionTable).values({
+                        group_id: (groupIa03 as any).insertId,
+                        question: question.question,
+                    });
+                }
+            }
+
+            // Create IA05 Questions
+            for (const question of data.ia05_questions) {
+                const [ia05Question] = await tx.insert(ia05QuestionTable).values({
+                    assessment_id,
+                    order: question.order,
+                    question: question.question,
+                });
+
+                for (const option of question.options) {
+                    await tx.insert(questionOptionTable).values({
+                        question_id: (ia05Question as any).insertId,
+                        option: option.option,
+                        is_answer: option.is_answer,
+                    });
+                }
+            }
+
+            // Create IA07 Questions
+            for (const question of data.ia07_questions) {
+                await tx.insert(ia07QuestionTable).values({
+                    assessment_id,
+                    question: question.question,
+                    answer_key: question.answer_key,
+                });
+            }
+
+            return { id: assessment_id };
+        });
     }
 
     static async getAssessments(): Promise<AssessmentResponse[]> {
-        const assessments: AssessmentResponse[] = await prisma.assessment.findMany({
-            include: {
-                occupation: {
-                    include: {
-                        scheme: true
-                    }
-                }
-            }
-        });
+        const assessments = await db.select({
+            id: assessmentTable.id,
+            code: assessmentTable.code,
+            occupation_id: assessmentTable.occupation_id,
+        }).from(assessmentTable);
 
-        return assessments;
+        const result = [];
+        for (const assessment of assessments) {
+            const [occupation] = await db
+                .select()
+                .from(occupationTable)
+                .where(eq(occupationTable.id, assessment.occupation_id));
+
+            if (!occupation) continue;
+
+            const [scheme] = await db
+                .select()
+                .from(schemeTable)
+                .where(eq(schemeTable.id, (occupation as any).scheme_id));
+
+            result.push({
+                id: assessment.id,
+                code: assessment.code,
+                occupation: {
+                    id: (occupation as any).id,
+                    name: (occupation as any).name,
+                    scheme: scheme
+                        ? {
+                              id: (scheme as any).id,
+                              code: (scheme as any).code,
+                              name: (scheme as any).name,
+                          }
+                        : null,
+                },
+            });
+        }
+
+        return result as any;
     }
 
     static async getAssessmentById(id: number): Promise<AssessmentDetailsResponse> {
-        const assessment: AssessmentDetailsResponse | null = await prisma.assessment.findUnique({
-            where: { id },
-            include: {
-                occupation: {
-                    include: {
-                        scheme: true
-                    }
-                },
-                uc_apl02s: {
-                    include: {
-                        elements: {
-                            include: {
-                                details: true
-                            }
-                        }
-                    }
-                },
-                groups_ia01: {
-                    include: {
-                        units: {
-                            include: {
-                                elements: {
-                                    include: {
-                                        details: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                groups_ia02: {
-                    include: {
-                        units: true,
-                        tools: true
-                    }
-                },
-                groups_ia03: {
-                    include: {
-                        units: true,
-                        qa_ia03: true
-                    }
-                },
-                ia05_questions: {
-                    include: {
-                        options: true
-                    }
-                },
-                ia07_questions: true
-            }
+        const assessment = await db.query.assessment.findFirst({
+            where: eq(assessmentTable.id, id)
         });
 
         if (!assessment) {
             throw new NotFoundError('Assessment');
         }
 
-        return assessment;
+        // Get occupation and scheme manually (tanpa relations API)
+        const [occupation] = await db
+            .select()
+            .from(occupationTable)
+            .where(eq(occupationTable.id, assessment.occupation_id));
+
+        let scheme: any = null;
+        if (occupation) {
+            const [sc] = await db
+                .select()
+                .from(schemeTable)
+                .where(eq(schemeTable.id, (occupation as any).scheme_id));
+            scheme = sc ?? null;
+        }
+
+        // Get all related data without complex relations
+        const ucApl02s = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, id));
+        const groupsIa01 = await db.select().from(groupIa01Table).where(eq(groupIa01Table.assessment_id, id));
+        const groupsIa02 = await db.select().from(groupIa02Table).where(eq(groupIa02Table.assessment_id, id));
+        const groupsIa03 = await db.select().from(groupIa03Table).where(eq(groupIa03Table.assessment_id, id));
+        const ia05Questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, id));
+        const ia07Questions = await db.select().from(ia07QuestionTable).where(eq(ia07QuestionTable.assessment_id, id));
+
+        return {
+            id: assessment.id,
+            code: assessment.code,
+            occupation: occupation
+                ? {
+                      ...(occupation as any),
+                      scheme,
+                  }
+                : null,
+            uc_apl02s: ucApl02s as any,
+            groups_ia01: groupsIa01 as any,
+            groups_ia02: groupsIa02 as any,
+            groups_ia03: groupsIa03 as any,
+            ia05_questions: ia05Questions as any,
+            ia07_questions: ia07Questions as any,
+        };
     }
 
     static async deleteAssessment(id: number): Promise<any> {
-        const existingAssessment = await prisma.assessment.findUnique({
-            where: { id }
-        });
-
-        if (!existingAssessment) {
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, id) });
+        if (!assessment) {
             throw new NotFoundError('Assessment not found');
         }
 
-        return prisma.assessment.delete({
-            where: { id }
-        });
+        await db.delete(assessmentTable).where(eq(assessmentTable.id, id));
+        return { message: 'Assessment deleted successfully' };
     }
 
-    static async getAssessmentResultDetails(assessmentId: number, assessorId: number, assesseeId: number) {
-        const results = await prisma.result.findMany({
-            where: { assessment_id: assessmentId, assessor_id: assessorId, assessee_id: assesseeId },
-            include: {
-                assessment: {
-                    include: {
-                        occupation: {
-                            include: {
-                                scheme: true
-                            }
-                        }
-                    }
-                },
-                assessee: {
-                    include: {
-                        user: true
-                    }
-                },
-                assessor: {
-                    include: {
-                        user: true
-                    }
-                }
-            }
-        });
-        if (results.length === 0) {
+    static async getAssessmentResultDetails(assessment_id: number, assessor_id: number, assessee_id: number) {
+        const result = await db
+        .select({
+            id: resultTable.id,
+            assessment: assessmentTable,
+            assessee: assessee,
+            assessor: assessor,
+            tuk: resultTable.tuk,
+            is_competent: resultTable.is_competent,
+            created_at: resultTable.created_at,
+        })
+        .from(resultTable)
+        .innerJoin(assessmentTable, eq(resultTable.assessment_id, assessmentTable.id))
+        .innerJoin(assessee, eq(resultTable.assessee_id, assessee.id))
+        .innerJoin(assessor, eq(resultTable.assessor_id, assessor.id))
+        .where(and(
+            eq(assessmentTable.id, assessment_id),
+            eq(assessor.id, assessor_id),
+            eq(assessee.id, assessee_id)
+        ))
+        .orderBy(desc(resultTable.created_at))
+        .limit(1);
+
+        if (!result) {
             throw new NotFoundError('Result');
         }
 
-        return results.map(result => ({
-            id: result.id,
-            assessment: result.assessment,
-            assessee: {
-                id: result.assessee.id,
-                name: result.assessee.user.full_name,
-                email: result.assessee.user.email
-            },
-            assessor: {
-                id: result.assessor.id,
-                name: result.assessor.user.full_name,
-                email: result.assessor.user.email,
-                no_reg_met: result.assessor.no_reg_met
-            },
-            tuk: result.tuk,
-            is_competent: result.is_competent,
-            created_at: result.created_at
-        }));
+        return result;
     }
 }

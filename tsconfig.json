@@ -3,8 +3,21 @@
     "target": "ES6",
     "module": "CommonJS",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "strict": true,
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src",
+    "drizzle"
+  ],
+  "exclude": [
+    "drizzle.config.ts",
+    "prisma/**",
+    "src/modules/assessement/ia-01/**",
+    "src/modules/assessement/ia-02/**",
+    "src/modules/assessement/ia-03/**",
+    "src/modules/assessement/ia-05/**"
+  ]
 }
