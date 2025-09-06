@@ -90,4 +90,21 @@ export class AssessmentController {
             data: result,
         });
     });
+
+    static getNavigationAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const assessmentId = Number(req.params.assessmentId);
+        if (!assessmentId) {
+            return res.status(400).json({
+                success: false,
+                message: "Assessment ID harus diisi",
+            });
+        }
+
+        const result = await AssessmentService.assessorNavigation(assessmentId);
+        res.status(200).json({
+            success: true,
+            message: "Navigasi berhasil diambil",
+            data: result,
+        });
+    });
 }

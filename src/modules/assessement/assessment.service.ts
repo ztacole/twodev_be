@@ -25,6 +25,7 @@ import {
     assessee,
     resultDoc as resultDocTable,
     resultApl02Header as resultApl02HeaderTable,
+    ia02Pdf as ia02PdfTable,
 } from "../../../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
@@ -340,17 +341,61 @@ export class AssessmentService {
         const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result[0].id) });
         if (!apl02Header) throw new NotFoundError('Result APL02 Header');
 
+        const tabs = ['APL-01', 'Data Sertifikasi', 'APL-02', 'AK-04', 'AK-01']
+        
+        const isAnyIa01 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessment_id, assessment_id) });
+        const isAnyIa02 = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
+        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
+        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
+        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
+
+        if (isAnyIa01) tabs.push('IA-01');
+        if (isAnyIa02) tabs.push('IA-02');
+        if (isAnyIa03) tabs.push('IA-03');
+        if (isAnyIa05) tabs.push('IA-05');
+        if (isAnyIa07) tabs.push('IA-07');
+
+        tabs.push('AK-02', 'AK-03', 'AK-05');
+
         const enableOtherRoute = (doc.approved && (apl02Header.approved_assessor && apl02Header.is_continue))
 
         return {
-            id: result[0].id,
+            result_id: result[0].id,
             assessment_id: result[0].assessment_id,
             assessor_id: result[0].assessor_id,
             assessee_id: result[0].assessee_id,
             tuk: result[0].tuk,
             is_competent: result[0].is_competent,
             created_at: result[0].created_at,
+            tabs: tabs,
             enable_other_route: enableOtherRoute,
+        }
+    }
+
+    static async assessorNavigation(assessment_id: number) {
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+        if (!assessment) throw new NotFoundError('Assessment');
+
+        const tabs = ['APL-01', 'Data Sertifikasi', 'APL-02', 'AK-04', 'AK-01']
+        
+        const isAnyIa01 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessment_id, assessment_id) });
+        const isAnyIa02 = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
+        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
+        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
+        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
+
+        if (isAnyIa01) tabs.push('IA-01');
+        if (isAnyIa02) tabs.push('IA-02');
+        if (isAnyIa03) tabs.push('IA-03');
+        if (isAnyIa05) tabs.push('IA-05');
+        if (isAnyIa07) tabs.push('IA-07');
+
+        tabs.push('AK-02', 'AK-03', 'AK-05');
+
+        return {
+            assessment_id: assessment.id,
+            assessment_code: assessment.code,
+            tabs: tabs,
         }
     }
 }
