@@ -4,10 +4,10 @@ export interface AssessmentRequest {
     code: string;
     uc_apl02s: UCAPL02Request[];
     groups_ia01: GroupIA01Request[];
-    groups_ia02: GroupIA02Request[];
+    groups_ia02?: GroupIA02Request[];
     groups_ia03: GroupIA03Request[];
-    ia05_questions: IA05QuestionRequest[];
-    ia07_questions: IA07QuestionRequest[];
+    ia05_questions?: IA05QuestionRequest[];
+    ia07_questions?: IA07QuestionRequest[];
 }
 
 interface UCAPL02Request {

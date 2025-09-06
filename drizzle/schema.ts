@@ -110,8 +110,8 @@ export const assessment = mysqlTable('assessment', {
 export const assessmentSchedule = mysqlTable('assessment_schedule', {
     id: int('id').primaryKey().autoincrement(),
     assessment_id: int('assessment_id').notNull().references(() => assessment.id),
-    start_date: timestamp('start_date').notNull(),
-    end_date: timestamp('end_date').notNull(),
+    start_date: timestamp('start_date').notNull().defaultNow(),
+    end_date: timestamp('end_date').notNull().defaultNow(),
     ...timestamps
 });
 

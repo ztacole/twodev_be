@@ -33,7 +33,7 @@ export class AssessmentService {
         const existingScheme = await db.query.scheme.findFirst({
             where: eq(schemeTable.id, data.scheme_id)
         });
-        
+
         if (!existingScheme) {
             throw new NotFoundError("Scheme");
         }
@@ -42,7 +42,7 @@ export class AssessmentService {
         const existingAssessment = await db.query.assessment.findFirst({
             where: eq(assessmentTable.code, data.code)
         });
-        
+
         if (existingAssessment) {
             throw new DuplicateEntryError("Assessment code", data.code);
         }
@@ -120,7 +120,7 @@ export class AssessmentService {
                     for (const element of unit.elements) {
                         const [elementIa] = await tx.insert(elementIaTable).values({
                             uc_id: (ucIa01 as any).insertId,
-                                title: element.title,
+                            title: element.title,
                         });
 
                         for (const detail of element.details) {
@@ -134,43 +134,43 @@ export class AssessmentService {
                 }
             }
 
-            // Create Group IA02
-            for (const group of data.groups_ia02) {
-                const [groupIa02] = await tx.insert(groupIa02Table).values({
-                    assessment_id,
-                        name: group.name,
-                        scenario: group.scenario,
-                        duration: group.duration,
-                });
+            // // Create Group IA02
+            // for (const group of data.groups_ia02) {
+            //     const [groupIa02] = await tx.insert(groupIa02Table).values({
+            //         assessment_id,
+            //         name: group.name,
+            //         scenario: group.scenario,
+            //         duration: group.duration,
+            //     });
 
-                for (const unit of group.units) {
-                    await tx.insert(ucIa02Table).values({
-                        group_id: (groupIa02 as any).insertId,
-                        unit_code: unit.unit_code,
-                                title: unit.title,
-                    });
-                }
+            //     for (const unit of group.units) {
+            //         await tx.insert(ucIa02Table).values({
+            //             group_id: (groupIa02 as any).insertId,
+            //             unit_code: unit.unit_code,
+            //             title: unit.title,
+            //         });
+            //     }
 
-                for (const tool of group.tools) {
-                    await tx.insert(ia02ToolTable).values({
-                        group_id: (groupIa02 as any).insertId,
-                        name: tool.name,
-                    });
-                }
-            }
+            //     for (const tool of group.tools) {
+            //         await tx.insert(ia02ToolTable).values({
+            //             group_id: (groupIa02 as any).insertId,
+            //             name: tool.name,
+            //         });
+            //     }
+            // }
 
             // Create Group IA03
             for (const group of data.groups_ia03) {
                 const [groupIa03] = await tx.insert(groupIa03Table).values({
                     assessment_id,
-                        name: group.name,
+                    name: group.name,
                 });
 
                 for (const unit of group.units) {
                     await tx.insert(ucIa03Table).values({
                         group_id: (groupIa03 as any).insertId,
                         unit_code: unit.unit_code,
-                                title: unit.title,
+                        title: unit.title,
                     });
                 }
 
@@ -183,29 +183,33 @@ export class AssessmentService {
             }
 
             // Create IA05 Questions
-            for (const question of data.ia05_questions) {
-                const [ia05Question] = await tx.insert(ia05QuestionTable).values({
-                    assessment_id,
-                    order: question.order,
-                    question: question.question,
-                });
-
-                for (const option of question.options) {
-                    await tx.insert(questionOptionTable).values({
-                        question_id: (ia05Question as any).insertId,
-                        option: option.option,
-                        is_answer: option.is_answer,
+            if (data.ia05_questions && data.ia05_questions.length > 0) {
+                for (const question of data.ia05_questions) {
+                    const [ia05Question] = await tx.insert(ia05QuestionTable).values({
+                        assessment_id,
+                        order: question.order,
+                        question: question.question,
                     });
+
+                    for (const option of question.options) {
+                        await tx.insert(questionOptionTable).values({
+                            question_id: (ia05Question as any).insertId,
+                            option: option.option,
+                            is_answer: option.is_answer,
+                        });
+                    }
                 }
             }
 
             // Create IA07 Questions
-            for (const question of data.ia07_questions) {
-                await tx.insert(ia07QuestionTable).values({
-                    assessment_id,
-                    question: question.question,
-                    answer_key: question.answer_key,
-                });
+            if (data.ia07_questions && data.ia07_questions.length > 0) {
+                for (const question of data.ia07_questions) {
+                    await tx.insert(ia07QuestionTable).values({
+                        assessment_id,
+                        question: question.question,
+                        answer_key: question.answer_key,
+                    });
+                }
             }
 
             return { id: assessment_id };
@@ -241,10 +245,10 @@ export class AssessmentService {
                     name: (occupation as any).name,
                     scheme: scheme
                         ? {
-                              id: (scheme as any).id,
-                              code: (scheme as any).code,
-                              name: (scheme as any).name,
-                          }
+                            id: (scheme as any).id,
+                            code: (scheme as any).code,
+                            name: (scheme as any).name,
+                        }
                         : null,
                 },
             });
@@ -290,9 +294,9 @@ export class AssessmentService {
             code: assessment.code,
             occupation: occupation
                 ? {
-                      ...(occupation as any),
-                      scheme,
-                  }
+                    ...(occupation as any),
+                    scheme,
+                }
                 : null,
             uc_apl02s: ucApl02s as any,
             groups_ia01: groupsIa01 as any,
@@ -315,26 +319,26 @@ export class AssessmentService {
 
     static async getAssessmentResultDetails(assessment_id: number, assessor_id: number, assessee_id: number) {
         const result = await db
-        .select({
-            id: resultTable.id,
-            assessment: assessmentTable,
-            assessee: assessee,
-            assessor: assessor,
-            tuk: resultTable.tuk,
-            is_competent: resultTable.is_competent,
-            created_at: resultTable.created_at,
-        })
-        .from(resultTable)
-        .innerJoin(assessmentTable, eq(resultTable.assessment_id, assessmentTable.id))
-        .innerJoin(assessee, eq(resultTable.assessee_id, assessee.id))
-        .innerJoin(assessor, eq(resultTable.assessor_id, assessor.id))
-        .where(and(
-            eq(assessmentTable.id, assessment_id),
-            eq(assessor.id, assessor_id),
-            eq(assessee.id, assessee_id)
-        ))
-        .orderBy(desc(resultTable.created_at))
-        .limit(1);
+            .select({
+                id: resultTable.id,
+                assessment: assessmentTable,
+                assessee: assessee,
+                assessor: assessor,
+                tuk: resultTable.tuk,
+                is_competent: resultTable.is_competent,
+                created_at: resultTable.created_at,
+            })
+            .from(resultTable)
+            .innerJoin(assessmentTable, eq(resultTable.assessment_id, assessmentTable.id))
+            .innerJoin(assessee, eq(resultTable.assessee_id, assessee.id))
+            .innerJoin(assessor, eq(resultTable.assessor_id, assessor.id))
+            .where(and(
+                eq(assessmentTable.id, assessment_id),
+                eq(assessor.id, assessor_id),
+                eq(assessee.id, assessee_id)
+            ))
+            .orderBy(desc(resultTable.created_at))
+            .limit(1);
 
         if (!result) {
             throw new NotFoundError('Result');
