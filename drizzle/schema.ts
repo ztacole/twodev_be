@@ -21,13 +21,13 @@ export const user = mysqlTable('user', {
     full_name: varchar('full_name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).notNull().unique(),
     password: varchar('password', { length: 255 }).notNull(),
-    role_id: int('role_id').notNull(),
+    role_id: int('role_id').notNull().references(() => role.id),
     ...timestamps
 });
 
 export const admin = mysqlTable('admin', {
     id: int('id').primaryKey().autoincrement(),
-    user_id: int('user_id').notNull().unique(),
+    user_id: int('user_id').notNull().unique().references(() => user.id),
     address: varchar('address', { length: 255 }).notNull(),
     phone_no: varchar('phone_no', { length: 255 }).notNull(),
     birth_date: date('birth_date').notNull(),
@@ -44,15 +44,15 @@ export const scheme = mysqlTable('scheme', {
 
 export const occupation = mysqlTable('occupation', {
     id: int('id').primaryKey().autoincrement(),
-    scheme_id: int('scheme_id').notNull(),
+    scheme_id: int('scheme_id').notNull().references(() => scheme.id),
     name: varchar('name', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const assessor = mysqlTable('assessor', {
     id: int('id').primaryKey().autoincrement(),
-    user_id: int('user_id').notNull().unique(),
-    scheme_id: int('scheme_id').notNull(),
+    user_id: int('user_id').notNull().unique().references(() => user.id),
+    scheme_id: int('scheme_id').notNull().references(() => scheme.id),
     no_reg_met: varchar('no_reg_met', { length: 255 }).notNull(),
     address: varchar('address', { length: 255 }).notNull(),
     phone_no: varchar('phone_no', { length: 255 }).notNull(),
@@ -62,7 +62,7 @@ export const assessor = mysqlTable('assessor', {
 
 export const assessorDetail = mysqlTable('assessor_detail', {
     id: int('id').primaryKey().autoincrement(),
-    assessor_id: int('assessor_id').notNull().unique(),
+    assessor_id: int('assessor_id').notNull().unique().references(() => assessor.id),
     tax_id_number: varchar('tax_id_number', { length: 255 }).notNull(),
     bank_book_cover: varchar('bank_book_cover', { length: 255 }).notNull(),
     certificate: varchar('certificate', { length: 255 }).notNull(),
@@ -72,7 +72,7 @@ export const assessorDetail = mysqlTable('assessor_detail', {
 
 export const assessee = mysqlTable('assessee', {
     id: int('id').primaryKey().autoincrement(),
-    user_id: int('user_id').notNull(),
+    user_id: int('user_id').notNull().references(() => user.id),
     identity_number: varchar('identity_number', { length: 255 }).notNull(),
     birth_date: date('birth_date').notNull(),
     birth_location: varchar('birth_location', { length: 255 }).notNull(),
@@ -89,7 +89,7 @@ export const assessee = mysqlTable('assessee', {
 
 export const assesseeJob = mysqlTable('assessee_job', {
     id: int('id').primaryKey().autoincrement(),
-    assessee_id: int('assessee_id').notNull().unique(),
+    assessee_id: int('assessee_id').notNull().unique().references(() => assessee.id),
     institution_name: varchar('institution_name', { length: 255 }).notNull(),
     address: varchar('address', { length: 255 }).notNull(),
     postal_code: varchar('postal_code', { length: 255 }).notNull(),
@@ -101,14 +101,14 @@ export const assesseeJob = mysqlTable('assessee_job', {
 
 export const assessment = mysqlTable('assessment', {
     id: int('id').primaryKey().autoincrement(),
-    occupation_id: int('occupation_id').notNull(),
+    occupation_id: int('occupation_id').notNull().references(() => occupation.id),
     code: varchar('code', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const assessmentSchedule = mysqlTable('assessment_schedule', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull(),
+    assessment_id: int('assessment_id').notNull().references(() => assessment.id),
     start_date: date('start_date').notNull(),
     end_date: date('end_date').notNull(),
     ...timestamps
@@ -116,17 +116,17 @@ export const assessmentSchedule = mysqlTable('assessment_schedule', {
 
 export const scheduleDetail = mysqlTable('schedule_detail', {
     id: int('id').primaryKey().autoincrement(),
-    schedule_id: int('schedule_id').notNull(),
-    assessor_id: int('assessor_id').notNull(),
+    schedule_id: int('schedule_id').notNull().references(() => assessmentSchedule.id),
+    assessor_id: int('assessor_id').notNull().references(() => assessor.id),
     location: varchar('location', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const result = mysqlTable('result', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull(),
-    assessor_id: int('assessor_id').notNull(),
-    assessee_id: int('assessee_id').notNull(),
+    assessment_id: int('assessment_id').notNull().references(() => assessment.id),
+    assessor_id: int('assessor_id').notNull().references(() => assessor.id),
+    assessee_id: int('assessee_id').notNull().references(() => assessee.id),
     is_competent: boolean('is_competent').notNull(),
     tuk: tukEnum.notNull(),
     ...timestamps
@@ -134,7 +134,7 @@ export const result = mysqlTable('result', {
 
 export const resultDoc = mysqlTable('result_doc', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull(),
+    result_id: int('result_id').notNull().references(() => result.id),
     purpose: varchar('purpose', { length: 255 }).notNull(),
     school_report_card: varchar('school_report_card', { length: 255 }).notNull(),
     field_work_practice_certificate: varchar('field_work_practice_certificate', { length: 255 }).notNull(),
@@ -147,7 +147,7 @@ export const resultDoc = mysqlTable('result_doc', {
 
 export const ucApl02 = mysqlTable('uc_apl02', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull(),
+    assessment_id: int('assessment_id').notNull().references(() => assessment.id),
     unit_code: varchar('unit_code', { length: 255 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
     ...timestamps
@@ -155,21 +155,21 @@ export const ucApl02 = mysqlTable('uc_apl02', {
 
 export const elementApl02 = mysqlTable('element_apl02', {
     id: int('id').primaryKey().autoincrement(),
-    uc_id: int('uc_id').notNull(),
+    uc_id: int('uc_id').notNull().references(() => ucApl02.id),
     title: varchar('title', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const elementDetailsApl02 = mysqlTable('element_details_apl02', {
     id: int('id').primaryKey().autoincrement(),
-    element_id: int('element_id').notNull(),
+    element_id: int('element_id').notNull().references(() => elementApl02.id),
     description: text('description').notNull(),
     ...timestamps
 });
 
 export const resultApl02Header = mysqlTable('result_apl02_header', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessee: boolean('approved_assessee').notNull(),
     approved_assessor: boolean('approved_assessor').notNull(),
     is_continue: boolean('is_continue').notNull(),
@@ -178,8 +178,8 @@ export const resultApl02Header = mysqlTable('result_apl02_header', {
 
 export const resultApl02 = mysqlTable('result_apl02', {
     id: int('id').primaryKey().autoincrement(),
-    result_apl02_id: int('result_apl02_id').notNull(),
-    element_id: int('element_id').notNull(),
+    result_apl02_id: int('result_apl02_id').notNull().references(() => resultApl02Header.id),
+    element_id: int('element_id').notNull().references(() => elementApl02.id),
     is_competent: boolean('is_competent').notNull(),
     ...timestamps
 }, (table) => ({
@@ -188,14 +188,14 @@ export const resultApl02 = mysqlTable('result_apl02', {
 
 export const apl02Evidence = mysqlTable('apl02_evidence', {
     id: int('id').primaryKey().autoincrement(),
-    result_apl02_id: int('result_apl02_id').notNull(),
+    result_apl02_id: int('result_apl02_id').notNull().references(() => resultApl02.id),
     evidence: varchar('evidence', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const resultAk01Header = mysqlTable('result_ak01_header', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessee: boolean('approved_assessee').notNull(),
     approved_assessor: boolean('approved_assessor').notNull(),
     ...timestamps
@@ -203,14 +203,14 @@ export const resultAk01Header = mysqlTable('result_ak01_header', {
 
 export const resultAk01 = mysqlTable('result_ak01', {
     id: int('id').primaryKey().autoincrement(),
-    header_id: int('header_id').notNull(),
+    header_id: int('header_id').notNull().references(() => resultAk01Header.id),
     evidence: varchar('evidence', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const resultAk02Header = mysqlTable('result_ak02_header', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessee: boolean('approved_assessee').notNull(),
     approved_assessor: boolean('approved_assessor').notNull(),
     is_competent: boolean('is_competent').notNull(),
@@ -221,28 +221,28 @@ export const resultAk02Header = mysqlTable('result_ak02_header', {
 
 export const resultAk02 = mysqlTable('result_ak02', {
     id: int('id').primaryKey().autoincrement(),
-    header_id: int('header_id').notNull(),
-    uc_id: int('uc_id').notNull(),
+    header_id: int('header_id').notNull().references(() => resultAk02Header.id),
+    uc_id: int('uc_id').notNull().references(() => ucApl02.id),
     ...timestamps
 });
 
 export const ak02Evidence = mysqlTable('ak02_evidence', {
     id: int('id').primaryKey().autoincrement(),
-    result_ak02_id: int('result_ak02_id').notNull(),
+    result_ak02_id: int('result_ak02_id').notNull().references(() => resultAk02.id),
     evidence: varchar('evidence', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const resultAk03Header = mysqlTable('result_ak03_header', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     comment: varchar('comment', { length: 255 }),
     ...timestamps
 });
 
 export const resultAk03 = mysqlTable('result_ak03', {
     id: int('id').primaryKey().autoincrement(),
-    header_id: int('header_id').notNull(),
+    header_id: int('header_id').notNull().references(() => resultAk03Header.id),
     question: varchar('question', { length: 255 }).notNull(),
     answer: boolean('answer').notNull(),
     comment: varchar('comment', { length: 255 }),
@@ -251,7 +251,7 @@ export const resultAk03 = mysqlTable('result_ak03', {
 
 export const resultAk04 = mysqlTable('result_ak04', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessee: boolean('approved_assessee').notNull(),
     q1_yes: boolean('q1_yes').notNull(),
     q2_yes: boolean('q2_yes').notNull(),
@@ -262,7 +262,7 @@ export const resultAk04 = mysqlTable('result_ak04', {
 
 export const resultAk05 = mysqlTable('result_ak05', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessor: boolean('approved_assessor').notNull(),
     is_competent: boolean('is_competent').notNull(),
     description: varchar('description', { length: 255 }),
@@ -275,14 +275,14 @@ export const resultAk05 = mysqlTable('result_ak05', {
 
 export const groupIa01 = mysqlTable('group_ia01', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull(),
+    assessment_id: int('assessment_id').notNull().references(() => assessment.id),
     name: varchar('name', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const ucIa01 = mysqlTable('uc_ia01', {
     id: int('id').primaryKey().autoincrement(),
-    group_id: int('group_id').notNull(),
+    group_id: int('group_id').notNull().references(() => groupIa01.id),
     unit_code: varchar('unit_code', { length: 255 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
     ...timestamps
@@ -290,14 +290,14 @@ export const ucIa01 = mysqlTable('uc_ia01', {
 
 export const elementIa = mysqlTable('element_ia', {
     id: int('id').primaryKey().autoincrement(),
-    uc_id: int('uc_id').notNull(),
+    uc_id: int('uc_id').notNull().references(() => ucIa01.id),
     title: varchar('title', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const elementDetailsIa = mysqlTable('element_details_ia', {
     id: int('id').primaryKey().autoincrement(),
-    element_id: int('element_id').notNull(),
+    element_id: int('element_id').notNull().references(() => elementIa.id),
     description: text('description').notNull(),
     benchmark: varchar('benchmark', { length: 255 }).notNull(),
     ...timestamps
@@ -305,7 +305,7 @@ export const elementDetailsIa = mysqlTable('element_details_ia', {
 
 export const groupIa02 = mysqlTable('group_ia02', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull(),
+    assessment_id: int('assessment_id').notNull().references(() => assessment.id),
     name: varchar('name', { length: 255 }).notNull(),
     scenario: text('scenario').notNull(),
     duration: int('duration').notNull(),
@@ -314,7 +314,7 @@ export const groupIa02 = mysqlTable('group_ia02', {
 
 export const ucIa02 = mysqlTable('uc_ia02', {
     id: int('id').primaryKey().autoincrement(),
-    group_id: int('group_id').notNull(),
+    group_id: int('group_id').notNull().references(() => groupIa02.id),
     unit_code: varchar('unit_code', { length: 255 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
     ...timestamps
@@ -322,28 +322,28 @@ export const ucIa02 = mysqlTable('uc_ia02', {
 
 export const ia02Tool = mysqlTable('ia02_tool', {
     id: int('id').primaryKey().autoincrement(),
-    group_id: int('group_id').notNull(),
+    group_id: int('group_id').notNull().references(() => groupIa02.id),
     name: varchar('name', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const ia02Pdf = mysqlTable('ia02_pdf', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull().unique(),
+    assessment_id: int('assessment_id').notNull().unique().references(() => assessment.id),
     file_name: varchar('file_name', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const groupIa03 = mysqlTable('group_ia03', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull(),
+    assessment_id: int('assessment_id').notNull().references(() => assessment.id),
     name: varchar('name', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const ucIa03 = mysqlTable('uc_ia03', {
     id: int('id').primaryKey().autoincrement(),
-    group_id: int('group_id').notNull(),
+    group_id: int('group_id').notNull().references(() => groupIa03.id),
     unit_code: varchar('unit_code', { length: 255 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
     ...timestamps
@@ -351,7 +351,7 @@ export const ucIa03 = mysqlTable('uc_ia03', {
 
 export const resultIa01Header = mysqlTable('result_ia01_header', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessee: boolean('approved_assessee').notNull(),
     approved_assessor: boolean('approved_assessor').notNull(),
     is_competent: boolean('is_competent').notNull(),
@@ -364,8 +364,8 @@ export const resultIa01Header = mysqlTable('result_ia01_header', {
 
 export const resultIa01 = mysqlTable('result_ia01', {
     id: int('id').primaryKey().autoincrement(),
-    header_id: int('header_id').notNull(),
-    element_detail_id: int('element_detail_id').notNull(),
+    header_id: int('header_id').notNull().references(() => resultIa01Header.id),
+    element_detail_id: int('element_detail_id').notNull().references(() => elementDetailsIa.id),
     is_competent: boolean('is_competent').notNull(),
     evaluation: text('evaluation').notNull(),
     ...timestamps
@@ -375,7 +375,7 @@ export const resultIa01 = mysqlTable('result_ia01', {
 
 export const resultIa02Header = mysqlTable('result_ia02_header', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessee: boolean('approved_assessee').notNull(),
     approved_assessor: boolean('approved_assessor').notNull(),
     ...timestamps
@@ -383,14 +383,14 @@ export const resultIa02Header = mysqlTable('result_ia02_header', {
 
 export const ia03Question = mysqlTable('ia03_question', {
     id: int('id').primaryKey().autoincrement(),
-    group_id: int('group_id').notNull(),
+    group_id: int('group_id').notNull().references(() => groupIa03.id),
     question: varchar('question', { length: 255 }).notNull(),
     ...timestamps
 });
 
 export const resultIa03Header = mysqlTable('result_ia03_header', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessee: boolean('approved_assessee').notNull(),
     approved_assessor: boolean('approved_assessor').notNull(),
     ...timestamps
@@ -398,8 +398,8 @@ export const resultIa03Header = mysqlTable('result_ia03_header', {
 
 export const resultIa03 = mysqlTable('result_ia03', {
     id: int('id').primaryKey().autoincrement(),
-    header_id: int('header_id').notNull(),
-    question_id: int('question_id').notNull(),
+    header_id: int('header_id').notNull().references(() => resultIa03Header.id),
+    question_id: int('question_id').notNull().references(() => ia03Question.id),
     answer: varchar('answer', { length: 255 }).notNull(),
     approved: boolean('approved').notNull(),
     ...timestamps
@@ -409,7 +409,7 @@ export const resultIa03 = mysqlTable('result_ia03', {
 
 export const ia05Question = mysqlTable('ia05_question', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull(),
+    assessment_id: int('assessment_id').notNull().references(() => assessment.id),
     order: int('order').notNull(),
     question: varchar('question', { length: 255 }).notNull(),
     ...timestamps
@@ -417,7 +417,7 @@ export const ia05Question = mysqlTable('ia05_question', {
 
 export const questionOption = mysqlTable('question_option', {
     id: int('id').primaryKey().autoincrement(),
-    question_id: int('question_id').notNull(),
+    question_id: int('question_id').notNull().references(() => ia05Question.id),
     option: text('option').notNull(),
     is_answer: boolean('is_answer').notNull(),
     ...timestamps
@@ -425,7 +425,7 @@ export const questionOption = mysqlTable('question_option', {
 
 export const resultIa05Header = mysqlTable('result_ia05_header', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessee: boolean('approved_assessee').notNull(),
     approved_assessor: boolean('approved_assessor').notNull(),
     is_achieved: boolean('is_achieved').notNull(),
@@ -437,8 +437,8 @@ export const resultIa05Header = mysqlTable('result_ia05_header', {
 
 export const resultIa05 = mysqlTable('result_ia05', {
     id: int('id').primaryKey().autoincrement(),
-    header_id: int('header_id').notNull(),
-    option_id: int('option_id').notNull(),
+    header_id: int('header_id').notNull().references(() => resultIa05Header.id),
+    option_id: int('option_id').notNull().references(() => questionOption.id),
     approved: boolean('approved').notNull(),
     ...timestamps
 }, (table) => ({
@@ -447,7 +447,7 @@ export const resultIa05 = mysqlTable('result_ia05', {
 
 export const ia07Question = mysqlTable('ia07_question', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull(),
+    assessment_id: int('assessment_id').notNull().references(() => assessment.id),
     question: text('question').notNull(),
     answer_key: text('answer_key').notNull(),
     ...timestamps
@@ -455,7 +455,7 @@ export const ia07Question = mysqlTable('ia07_question', {
 
 export const resultIa07Header = mysqlTable('result_ia07_header', {
     id: int('id').primaryKey().autoincrement(),
-    result_id: int('result_id').notNull().unique(),
+    result_id: int('result_id').notNull().unique().references(() => result.id),
     approved_assessee: boolean('approved_assessee').notNull(),
     approved_assessor: boolean('approved_assessor').notNull(),
     ...timestamps
@@ -463,8 +463,8 @@ export const resultIa07Header = mysqlTable('result_ia07_header', {
 
 export const resultIa07 = mysqlTable('result_ia07', {
     id: int('id').primaryKey().autoincrement(),
-    header_id: int('header_id').notNull(),
-    question_id: int('question_id').notNull(),
+    header_id: int('header_id').notNull().references(() => resultIa07Header.id),
+    question_id: int('question_id').notNull().references(() => ia07Question.id),
     approved: boolean('approved').notNull(),
     ...timestamps
 });
