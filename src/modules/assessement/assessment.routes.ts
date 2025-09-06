@@ -1,4 +1,7 @@
 import { Router } from "express";
+import { authUpload } from '../../middleware/auth.middleware';
+import path from 'path';
+import fs from 'fs';
 import { upload as uploadCertificate } from "./apl-01/upload-config";
 import { uploadIA02 } from "./ia-02/upload-conifg";
 import { APL02Controller } from "./apl-02/apl-02.controller";
@@ -31,6 +34,14 @@ router.post('/apl-01/create-certificate-docs',
     uploadCertificate.any(), 
     APL1Controller.createOrUploadCertificateDocs
 );
+router.get('/uploads/apl-01/:folder/:filename', authUpload, (req, res) => {
+    const { folder, filename } = req.params;
+    const filePath = path.join(__dirname, '../public/uploads/apl-01', folder, filename);
+
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'File not found' });
+
+    res.sendFile(filePath);
+});
 router.get('/apl-01/results', APL1Controller.getAllResult);
 router.get('/apl-01/results/assessor/:assessorId', APL1Controller.getResultDocsByAssessorId);
 router.get('/apl-01/results/unapproved', APL1Controller.getUnapprovedResult);
