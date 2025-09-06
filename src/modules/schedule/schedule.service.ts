@@ -31,8 +31,8 @@ export class ScheduleService {
 
         const [created] = await db.insert(scheduleTable).values({
             assessment_id: data.assessment_id,
-            start_date: data.start_date as any,
-            end_date: data.end_date as any,
+            start_date: new Date(data.start_date),
+            end_date: new Date(data.start_date),
         });
 
         for (const detail of data.schedule_details) {

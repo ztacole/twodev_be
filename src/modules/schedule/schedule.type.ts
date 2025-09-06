@@ -3,8 +3,8 @@
 export interface ScheduleResponse {
     id: number;
     assessment: AssessmentResponse;
-    start_date: Date;
-    end_date: Date;
+    start_date: string;
+    end_date: string;
     schedule_details: ScheduleDetailResponse[];
 }
 
@@ -42,8 +42,8 @@ export interface SchemeResponse {
 
 export interface ScheduleRequest {
     assessment_id: number;
-    start_date: Date;
-    end_date: Date;
+    start_date: string;
+    end_date: string;
     schedule_details: ScheduleDetailRequest[]
 }
 

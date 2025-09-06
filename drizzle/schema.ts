@@ -1,5 +1,6 @@
 import { mysqlTable, int, varchar, date, boolean, text, mysqlEnum, unique, timestamp } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
+import { time } from 'console';
 
 // ========= Enums =========
 export const genderEnum = mysqlEnum('gender', ['male', 'female']);
@@ -109,8 +110,8 @@ export const assessment = mysqlTable('assessment', {
 export const assessmentSchedule = mysqlTable('assessment_schedule', {
     id: int('id').primaryKey().autoincrement(),
     assessment_id: int('assessment_id').notNull().references(() => assessment.id),
-    start_date: date('start_date').notNull(),
-    end_date: date('end_date').notNull(),
+    start_date: timestamp('start_date').notNull(),
+    end_date: timestamp('end_date').notNull(),
     ...timestamps
 });
 
