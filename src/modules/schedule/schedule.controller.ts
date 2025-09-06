@@ -54,6 +54,17 @@ export class ScheduleController {
         });
     });
 
+    static getActiveSchedulesAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const user = req.user as JwtPayload;
+        const schedules = await ScheduleService.getActiveSchedulesAssessor(user);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Jadwal aktif berhasil diambil',
+            data: schedules
+        });
+    });
+
     static getCompletedSchedules = asyncHandler(async (req: Request, res: Response) => {
         const schedules = await ScheduleService.getCompletedSchedules();
         

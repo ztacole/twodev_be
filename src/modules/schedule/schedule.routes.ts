@@ -6,6 +6,7 @@ const router = Router();
 
 router.get('/', ScheduleController.getSchedules);
 router.get('/active', authenticateToken, assesseeMiddleware, ScheduleController.getActiveSchedules);
+router.get('/active-assessor', authenticateToken, ScheduleController.getActiveSchedulesAssessor);
 router.get('/completed', ScheduleController.getCompletedSchedules);
 router.get('/completed/:assesseeId', ScheduleController.getCompletedSchedulesByAssesseeId);
 router.get('/:id', authenticateToken, assesseeMiddleware, ScheduleController.getScheduleById);

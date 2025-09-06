@@ -23,6 +23,8 @@ import {
     result as resultTable,
     assessor,
     assessee,
+    resultDoc as resultDocTable,
+    resultApl02Header as resultApl02HeaderTable,
 } from "../../../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
@@ -133,31 +135,6 @@ export class AssessmentService {
                     }
                 }
             }
-
-            // // Create Group IA02
-            // for (const group of data.groups_ia02) {
-            //     const [groupIa02] = await tx.insert(groupIa02Table).values({
-            //         assessment_id,
-            //         name: group.name,
-            //         scenario: group.scenario,
-            //         duration: group.duration,
-            //     });
-
-            //     for (const unit of group.units) {
-            //         await tx.insert(ucIa02Table).values({
-            //             group_id: (groupIa02 as any).insertId,
-            //             unit_code: unit.unit_code,
-            //             title: unit.title,
-            //         });
-            //     }
-
-            //     for (const tool of group.tools) {
-            //         await tx.insert(ia02ToolTable).values({
-            //             group_id: (groupIa02 as any).insertId,
-            //             name: tool.name,
-            //         });
-            //     }
-            // }
 
             // Create Group IA03
             for (const group of data.groups_ia03) {
@@ -345,5 +322,35 @@ export class AssessmentService {
         }
 
         return result;
+    }
+
+    static async assesseeNavigation(assessment_id: number, assessor_id: number, assessee_id: number) {
+        const result = await db.select().from(resultTable)
+            .where(and(
+                eq(resultTable.assessment_id, assessment_id),
+                eq(resultTable.assessor_id, assessor_id),
+                eq(resultTable.assessee_id, assessee_id)
+            ))
+            .orderBy(desc(resultTable.created_at))
+            .limit(1);
+        if (result.length === 0 || !result[0]) throw new NotFoundError('Result');
+
+        const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result[0].id) });
+        if (!doc) throw new NotFoundError('Result Document');
+        const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result[0].id) });
+        if (!apl02Header) throw new NotFoundError('Result APL02 Header');
+
+        const enableOtherRoute = (doc.approved && (apl02Header.approved_assessor && apl02Header.is_continue))
+
+        return {
+            id: result[0].id,
+            assessment_id: result[0].assessment_id,
+            assessor_id: result[0].assessor_id,
+            assessee_id: result[0].assessee_id,
+            tuk: result[0].tuk,
+            is_competent: result[0].is_competent,
+            created_at: result[0].created_at,
+            enable_other_route: enableOtherRoute,
+        }
     }
 }

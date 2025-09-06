@@ -78,6 +78,17 @@ export class ScheduleService {
         return Promise.all(schedules.map(s => buildScheduleResponse(s, assessee as any)));
     }
 
+    static async getActiveSchedulesAssessor(user: JwtPayload): Promise<ScheduleResponse[]> {
+        const assessor = await db.select().from(assessorTable).where(eq(assessorTable.user_id, user.id as any));
+        if (!assessor) {
+            throw new NotFoundError('Assessor');
+        }
+
+        const now = new Date();
+        const schedules = await db.select().from(scheduleTable).where(and(lte(scheduleTable.start_date, now as any), gte(scheduleTable.end_date, now as any)));
+        return Promise.all(schedules.map(s => buildScheduleResponse(s)));
+    }
+
     static async getCompletedSchedules(): Promise<ScheduleResponse[]> {
         const now = new Date();
         const schedules = await db.select().from(scheduleTable).where(lte(scheduleTable.end_date, now as any));
