@@ -101,7 +101,7 @@ export class AssessorService {
             id: assessor.id,
             user_id: assessor.user_id,
             scheme_id: assessor.scheme_id,
-            name: assessor.user.fullName,
+            name: assessor.user.full_name,
             address: assessor.address,
             phone_no: assessor.phone_no,
             birth_date: assessor.birth_date,
