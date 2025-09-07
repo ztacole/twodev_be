@@ -7,3 +7,5 @@ node_modules
 # Uploaded files
 /uploads/*
 !/uploads/temp/
+
+/public/uploads
