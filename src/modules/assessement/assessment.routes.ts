@@ -111,6 +111,7 @@ router.put('/ak-02/result/assessor/:resultId/approve', AK02Controller.approvedBy
 router.put('/ak-02/result/assessee/:resultId/approve', AK02Controller.approvedByAssessee);
 
 router.post('/ak-03', AK03Controller.createAK03);
+router.post('/ak-03/answer', AK03Controller.createAnswerAK03);
 router.get('/ak-03/:result_id', AK03Controller.getAK03ByResultId);
 
 router.post('/ak-04', AK04Controller.createAK04);

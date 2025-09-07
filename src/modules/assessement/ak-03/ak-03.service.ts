@@ -35,6 +35,51 @@ export class AK03Service {
     return formatAK03Response({ ...header, answers });
   }
 
+  static async createAnswerAK03(data: AK03Request): Promise<AK03Response> {
+    const result = await db.query.result.findFirst({
+      where: eq(resultTable.id, data.result_id),
+    });
+    if (!result) throw new NotFoundError("Result");
+  
+    let header = await db.query.resultAk03Header.findFirst({
+      where: eq(ak03HeaderTable.result_id, data.result_id),
+    });
+  
+    if (!header) {
+      const [created] = await db.insert(ak03HeaderTable).values({
+        result_id: data.result_id,
+        comment: data.comment ?? null,
+      });
+  
+      header = await db.query.resultAk03Header.findFirst({
+        where: eq(ak03HeaderTable.result_id, data.result_id),
+      });
+      if (!header) throw new NotFoundError("AK03 Header");
+    } else {
+      await db
+        .update(ak03HeaderTable)
+        .set({ comment: data.comment ?? null })
+        .where(eq(ak03HeaderTable.id, header.id));
+  
+      await db.delete(ak03RowTable).where(eq(ak03RowTable.header_id, header.id));
+    }
+  
+    for (const item of data.items) {
+      await db.insert(ak03RowTable).values({
+        header_id: header.id,
+        question: item.question,
+        answer: item.answer,
+        comment: item.comment ?? null,
+      });
+    }
+  
+    const answers = await db.query.resultAk03.findMany({
+      where: eq(ak03RowTable.header_id, header.id),
+    });
+  
+    return formatAK03Response({ ...header, answers });
+  }  
+
   static async getResultDetails(result_id: number) {
     const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!result) {

@@ -20,6 +20,23 @@ export class AK03Controller {
     }
   });
 
+  static createAnswerAK03 = asyncHandler(async function (req: Request, res: Response) {
+    try {
+      const data = await AK03Service.createAnswerAK03(req.body);
+      res.status(201).json({
+        success: true,
+        message: 'Jawaban AK-03 berhasil dibuat',
+        data: data,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Gagal membuat jawaban AK-03',
+        error: error.message,
+      });
+    }
+  });
+
   static getAK03ByResultId = asyncHandler(async function (req: Request, res: Response) {
     try {
       const { result_id } = req.params;
