@@ -68,7 +68,7 @@ export class AuthController {
 
         const decoded = await AuthService.verifyToken(token);
 
-        const user = await AuthService.getMe(decoded.userId);
+        const user = await AuthService.getMe(decoded.id);
 
         res.status(200).json({
             success: true,

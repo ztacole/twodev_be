@@ -22,13 +22,15 @@ import {
     questionOption as questionOptionTable,
     result as resultTable,
     assessor,
-    assessee,
+    assessee as assesseeTable,
     resultDoc as resultDocTable,
     resultApl02Header as resultApl02HeaderTable,
     ia02Pdf as ia02PdfTable,
+    assessee,
 } from "../../../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
+import { Result } from "drizzle-orm/sqlite-core";
 
 export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
@@ -300,7 +302,7 @@ export class AssessmentService {
             .select({
                 id: resultTable.id,
                 assessment: assessmentTable,
-                assessee: assessee,
+                assessee: assesseeTable,
                 assessor: assessor,
                 tuk: resultTable.tuk,
                 is_competent: resultTable.is_competent,
@@ -308,12 +310,12 @@ export class AssessmentService {
             })
             .from(resultTable)
             .innerJoin(assessmentTable, eq(resultTable.assessment_id, assessmentTable.id))
-            .innerJoin(assessee, eq(resultTable.assessee_id, assessee.id))
+            .innerJoin(assesseeTable, eq(resultTable.assessee_id, assesseeTable.id))
             .innerJoin(assessor, eq(resultTable.assessor_id, assessor.id))
             .where(and(
                 eq(assessmentTable.id, assessment_id),
                 eq(assessor.id, assessor_id),
-                eq(assessee.id, assessee_id)
+                eq(assesseeTable.id, assessee_id)
             ))
             .orderBy(desc(resultTable.created_at))
             .limit(1);
@@ -323,6 +325,31 @@ export class AssessmentService {
         }
 
         return result;
+    }
+
+    static async findAssesseeByUserId(assessment_id: number, assessor_id: number, user_id: number): Promise<number> {
+        const assessees = await db.query.assessee.findMany({ where: eq(assesseeTable.user_id, user_id), orderBy: desc(assesseeTable.created_at) });
+
+        let result: any;
+        for (const assesseeItem of assessees) {
+            const results = await db.query.result.findMany({
+                where: and(
+                    eq(resultTable.assessment_id, assessment_id),
+                    eq(resultTable.assessor_id, assessor_id),
+                    eq(resultTable.assessee_id, assesseeItem.id)
+                ),
+                limit: 1,
+                orderBy: desc(resultTable.created_at)
+            });
+
+            if (results.length > 0) {
+                result = results[0];
+                break;
+            }
+        }
+
+        if (!result) return 0;
+        return result.assessee_id;
     }
 
     static async assesseeNavigation(assessment_id: number, assessor_id: number, assessee_id: number) {
@@ -342,7 +369,7 @@ export class AssessmentService {
         if (!apl02Header) throw new NotFoundError('Result APL02 Header');
 
         const tabs = ['APL-01', 'Data Sertifikasi', 'APL-02', 'AK-04', 'AK-01']
-        
+
         const isAnyIa01 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessment_id, assessment_id) });
         const isAnyIa02 = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
@@ -377,7 +404,7 @@ export class AssessmentService {
         if (!assessment) throw new NotFoundError('Assessment');
 
         const tabs = ['APL-01', 'Data-Sertifikasi', 'APL-02', 'AK-04', 'AK-01']
-        
+
         const isAnyIa01 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessment_id, assessment_id) });
         const isAnyIa02 = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });

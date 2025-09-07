@@ -2,6 +2,7 @@ import { AssessmentService } from "./assessment.service";
 import { asyncHandler } from "../../common/async.handler";
 import { Request, Response } from "express";
 import { AssessmentRequest } from "./assessment.type";
+import { JwtPayload } from "jsonwebtoken";
 
 export class AssessmentController {
     static createAssessment = asyncHandler(async (req: Request, res: Response) => {
@@ -57,13 +58,18 @@ export class AssessmentController {
     static getAssessmentResultDetails = asyncHandler(async (req: Request, res: Response) => {
         const assessmentId = Number(req.params.assessmentId);
         const assessorId = Number(req.params.assessorId);
-        const assesseeId = Number(req.params.assesseeId);
-        if (!assessmentId || !assessorId || !assesseeId) {
+        let assesseeId = Number(req.params.assesseeId);
+        if (!assessmentId || !assessorId) {
             return res.status(400).json({
                 success: false,
                 message: "Assessment ID, Assessor ID, dan Assessee ID harus diisi",
             });
         }
+        if (!assesseeId) {
+            const user = req.user as JwtPayload;
+            assesseeId = await AssessmentService.findAssesseeByUserId(assessmentId, assessorId, user.id);
+        }
+        
         const result = await AssessmentService.getAssessmentResultDetails(assessmentId, assessorId, assesseeId);
         res.status(200).json({
             success: true,

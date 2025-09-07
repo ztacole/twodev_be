@@ -106,9 +106,9 @@ export class AuthService {
         }
     }
 
-    private static generateToken(userId: number, email: string, role_id: number): string {
+    private static generateToken(id: number, email: string, role_id: number): string {
         const payload: JwtPayload = {
-            userId,
+            id,
             email,
             role_id
         };

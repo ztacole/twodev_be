@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 export const ApprovalService = {
   async approveApl01Document(docId: number, user: JwtPayload): Promise<any> {
     const admin = await db.query.admin.findFirst({
-      where: eq(adminTable.user_id, user.userId),
+      where: eq(adminTable.user_id, user.id),
     });
 
     if (!admin) {
