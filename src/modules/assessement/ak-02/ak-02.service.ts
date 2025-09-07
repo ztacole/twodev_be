@@ -116,6 +116,8 @@ export class AK02Service {
         is_competent: header.is_competent,
         follow_up: header.follow_up,
         comment: header.comment,
+        approved_assessee: header.approved_assessee,
+        approved_assessor: header.approved_assessor,
         rows: await Promise.all(rows.map(async row => ({
           id: row.id,
           unit_id: row.uc_id,
