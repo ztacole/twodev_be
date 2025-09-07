@@ -73,7 +73,7 @@ export class AK04Service {
     const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
     const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
     const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
-    const header = await db.query.resultAk03Header.findFirst({ where: eq(resultAk04.result_id, result.id) });
+    const header = await db.query.resultAk04.findFirst({ where: eq(resultAk04.result_id, result.id) });
     if (!header) throw new NotFoundError('Result header');
     
     return {
