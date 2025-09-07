@@ -223,7 +223,7 @@ export class APL02Service {
     };
   }
 
-  static async approvedByAssessor(result_id: number, data: GenerateAsssessorRequest) {
+  static async approvedByAssessor(result_id: number) {
     const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!existingResult) {
       throw new NotFoundError('Result');
@@ -234,7 +234,7 @@ export class APL02Service {
       throw new NotFoundError('APL02 header');
     }
 
-    await db.update(apl02HeaderTable).set({ approved_assessor: true, is_continue: data.reccomendation }).where(eq(apl02HeaderTable.id, header.id));
+    await db.update(apl02HeaderTable).set({ approved_assessor: true }).where(eq(apl02HeaderTable.id, header.id));
     const updated = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.id, header.id) });
     if (!updated) throw new NotFoundError('APL02 header');
 

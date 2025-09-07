@@ -92,16 +92,7 @@ export class APL02Controller {
             });
         }
 
-        const data: GenerateAsssessorRequest = req.body;
-
-        if (!data) {
-            return res.status(400).json({
-                success: false,
-                message: 'Data harus diisi',
-            });
-        }
-
-        const result = await APL02Service.approvedByAssessor(resultId, data);
+        const result = await APL02Service.approvedByAssessor(resultId);
         
         res.status(200).json({
             success: true,

@@ -1,7 +1,7 @@
 import { db } from '../../../config/drizzle';
 import { DashboardAssessorResponse } from './assessor.type';
 import { NotFoundError, ValidationError } from '../../../common/error';
-import { result as resultTable, user as userTable, assessee as assesseeTable, resultApl02Header as apl02HeaderTable, resultIa02Header as ia02HeaderTable, resultIa05Header as ia05HeaderTable, resultAk01Header as ak01HeaderTable } from '../../../../drizzle/schema';
+import { result as resultTable, user as userTable, assessee as assesseeTable, resultApl02Header as apl02HeaderTable, resultIa02Header as ia02HeaderTable, resultIa05Header as ia05HeaderTable, resultAk01Header as ak01HeaderTable, resultDoc as resultDocTable, resultIa03Header as resultIa03HeaderTable, resultIa01Header as resultIa01HeaderTable, resultIa07Header as resultIa07HeaderTable, resultAk02Header as resultAk02HeaderTable, resultAk03Header, resultAk04, resultAk05 } from '../../../../drizzle/schema';
 import { and, eq } from 'drizzle-orm';
 
 export class DashboardAssessorService {
@@ -11,35 +11,47 @@ export class DashboardAssessorService {
         return Promise.all(results.map(async (result) => {
             const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
             const user = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
+            const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, result.id) });
             const apl02 = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result.id) });
+            const ia01 = await db.query.resultIa02Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, result.id) });
             const ia02 = await db.query.resultIa02Header.findFirst({ where: eq(ia02HeaderTable.result_id, result.id) });
+            const ia03 = await db.query.resultIa03Header.findFirst({ where: eq(resultIa03HeaderTable.result_id, result.id) });
             const ia05 = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result.id) });
+            const ia07 = await db.query.resultIa07Header.findFirst({ where: eq(resultIa07HeaderTable.result_id, result.id) });
             const ak01 = await db.query.resultAk01Header.findFirst({ where: eq(ak01HeaderTable.result_id, result.id) });
+            const ak02 = await db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, result.id) });
+            const ak03 = await db.query.resultAk03Header.findFirst({ where: eq(resultAk03Header.result_id, result.id) });
+            const ak04 = await db.query.resultAk04.findFirst({ where: eq(resultAk04.id, result.id) });
+            const ak05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05.result_id, result.id) });
 
             const getHeaderStatus = (type: string) => {
                 switch (type) {
+                    case "apl-01":
+                        return true;
+                    case "data-sertifikasi":
+                        return doc?.approved ? true : false;
                     case "apl-02":
-                        return apl02?.approved_assessee ? true : false;
+                        return (apl02?.approved_assessor && apl02?.approved_assessee) ? true : false;
                     case "ia-01":
-                        return true;
+                        return (ia01?.approved_assessee && ia01?.approved_assessor) ? true : false;
                     case "ia-02":
-                        return ia02?.approved_assessee ? true : false;
+                        return (ia02?.approved_assessee && ia02?.approved_assessor) ? true : false;
                     case "ia-03":
-                        return true;
+                        return (ia03?.approved_assessee && ia03?.approved_assessor) ? true : false;
                     case "ia-05":
-                        return ia05?.approved_assessee ? true : false;
-                    case "ia-05-c":
-                        return ia05?.approved_assessee ? true : false;
+                        return (ia05?.approved_assessee && ia05?.approved_assessor) ? true : false;
+                    case "ia-07":
+                        return (ia07?.approved_assessee && ia07?.approved_assessor) ? true : false;
                     case "ak-01":
-                        return ak01?.approved_assessee ? true : false;
+                        return (ak01?.approved_assessee && ak01?.approved_assessor) ? true : false;
                     case "ak-02":
-                        return true;
+                        return (ak02?.approved_assessee && ak02?.approved_assessor) ? true : false;
                     case "ak-03":
-                        return true;
+                        return false;
                     case "ak-04":
-                        return true;
+                        return false;
                     case "ak-05":
-                        return true;
+                        return (ak05?.approved_assessor) ? true : false;
                     default:
                         throw new ValidationError('Result Type tidak valid');
                 }

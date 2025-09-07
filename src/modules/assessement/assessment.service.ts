@@ -23,6 +23,9 @@ import {
     result as resultTable,
     assessor,
     assessee,
+    resultDoc as resultDocTable,
+    resultApl02Header as resultApl02HeaderTable,
+    ia02Pdf as ia02PdfTable,
 } from "../../../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
@@ -133,31 +136,6 @@ export class AssessmentService {
                     }
                 }
             }
-
-            // // Create Group IA02
-            // for (const group of data.groups_ia02) {
-            //     const [groupIa02] = await tx.insert(groupIa02Table).values({
-            //         assessment_id,
-            //         name: group.name,
-            //         scenario: group.scenario,
-            //         duration: group.duration,
-            //     });
-
-            //     for (const unit of group.units) {
-            //         await tx.insert(ucIa02Table).values({
-            //             group_id: (groupIa02 as any).insertId,
-            //             unit_code: unit.unit_code,
-            //             title: unit.title,
-            //         });
-            //     }
-
-            //     for (const tool of group.tools) {
-            //         await tx.insert(ia02ToolTable).values({
-            //             group_id: (groupIa02 as any).insertId,
-            //             name: tool.name,
-            //         });
-            //     }
-            // }
 
             // Create Group IA03
             for (const group of data.groups_ia03) {
@@ -345,5 +323,79 @@ export class AssessmentService {
         }
 
         return result;
+    }
+
+    static async assesseeNavigation(assessment_id: number, assessor_id: number, assessee_id: number) {
+        const result = await db.select().from(resultTable)
+            .where(and(
+                eq(resultTable.assessment_id, assessment_id),
+                eq(resultTable.assessor_id, assessor_id),
+                eq(resultTable.assessee_id, assessee_id)
+            ))
+            .orderBy(desc(resultTable.created_at))
+            .limit(1);
+        if (result.length === 0 || !result[0]) throw new NotFoundError('Result');
+
+        const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result[0].id) });
+        if (!doc) throw new NotFoundError('Result Document');
+        const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result[0].id) });
+        if (!apl02Header) throw new NotFoundError('Result APL02 Header');
+
+        const tabs = ['APL-01', 'Data Sertifikasi', 'APL-02', 'AK-04', 'AK-01']
+        
+        const isAnyIa01 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessment_id, assessment_id) });
+        const isAnyIa02 = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
+        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
+        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
+        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
+
+        if (isAnyIa01) tabs.push('IA-01');
+        if (isAnyIa02) tabs.push('IA-02');
+        if (isAnyIa03) tabs.push('IA-03');
+        if (isAnyIa05) tabs.push('IA-05');
+        if (isAnyIa07) tabs.push('IA-07');
+
+        tabs.push('AK-02', 'AK-03', 'AK-05');
+
+        const enableOtherRoute = (doc.approved && (apl02Header.approved_assessor && apl02Header.is_continue))
+
+        return {
+            result_id: result[0].id,
+            assessment_id: result[0].assessment_id,
+            assessor_id: result[0].assessor_id,
+            assessee_id: result[0].assessee_id,
+            tuk: result[0].tuk,
+            is_competent: result[0].is_competent,
+            created_at: result[0].created_at,
+            tabs: tabs,
+            enable_other_route: enableOtherRoute,
+        }
+    }
+
+    static async assessorNavigation(assessment_id: number) {
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+        if (!assessment) throw new NotFoundError('Assessment');
+
+        const tabs = ['APL-01', 'Data-Sertifikasi', 'APL-02', 'AK-04', 'AK-01']
+        
+        const isAnyIa01 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessment_id, assessment_id) });
+        const isAnyIa02 = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
+        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
+        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
+        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
+
+        if (isAnyIa01) tabs.push('IA-01');
+        if (isAnyIa02) tabs.push('IA-02');
+        if (isAnyIa03) tabs.push('IA-03');
+        if (isAnyIa05) tabs.push('IA-05');
+        if (isAnyIa07) tabs.push('IA-07');
+
+        tabs.push('AK-02', 'AK-03', 'AK-05');
+
+        return {
+            assessment_id: assessment.id,
+            assessment_code: assessment.code,
+            tabs: tabs,
+        }
     }
 }

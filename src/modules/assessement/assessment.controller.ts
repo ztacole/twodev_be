@@ -26,7 +26,10 @@ export class AssessmentController {
     static deleteAssessment = asyncHandler(async (req: Request, res: Response) => {
         const id = Number(req.params.id);
         if (!id) {
-            throw new Error("ID is required");
+            return res.status(400).json({
+                success: false,
+                message: "ID assessment harus diisi",
+            });
         }
         const result = await AssessmentService.deleteAssessment(id);
         res.status(200).json({
@@ -38,7 +41,10 @@ export class AssessmentController {
     static getAssessmentById = asyncHandler(async (req: Request, res: Response) => {
         const id = Number(req.params.id);
         if (!id) {
-            throw new Error("ID is required");
+            return res.status(400).json({
+                success: false,
+                message: "ID assessment harus diisi",
+            });
         }
         const result = await AssessmentService.getAssessmentById(id);
         res.status(200).json({
@@ -53,12 +59,51 @@ export class AssessmentController {
         const assessorId = Number(req.params.assessorId);
         const assesseeId = Number(req.params.assesseeId);
         if (!assessmentId || !assessorId || !assesseeId) {
-            throw new Error("Assessment ID, Assessor ID, dan Assessee ID harus diisi");
+            return res.status(400).json({
+                success: false,
+                message: "Assessment ID, Assessor ID, dan Assessee ID harus diisi",
+            });
         }
         const result = await AssessmentService.getAssessmentResultDetails(assessmentId, assessorId, assesseeId);
         res.status(200).json({
             success: true,
             message: "Detail hasil assessment berhasil diambil",
+            data: result,
+        });
+    });
+
+    static getNavigationAssessee = asyncHandler(async (req: Request, res: Response) => {
+        const assessmentId = Number(req.params.assessmentId);
+        const assessorId = Number(req.params.assessorId);
+        const assesseeId = Number(req.params.assesseeId);
+        if (!assessmentId || !assessorId || !assesseeId) {
+            return res.status(400).json({
+                success: false,
+                message: "Assessment ID, Assessor ID, dan Assessee ID harus diisi",
+            });
+        }
+
+        const result = await AssessmentService.assesseeNavigation(assessmentId, assessorId, assesseeId);
+        res.status(200).json({
+            success: true,
+            message: "Navigasi berhasil diambil",
+            data: result,
+        });
+    });
+
+    static getNavigationAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const assessmentId = Number(req.params.assessmentId);
+        if (!assessmentId) {
+            return res.status(400).json({
+                success: false,
+                message: "Assessment ID harus diisi",
+            });
+        }
+
+        const result = await AssessmentService.assessorNavigation(assessmentId);
+        res.status(200).json({
+            success: true,
+            message: "Navigasi berhasil diambil",
             data: result,
         });
     });
