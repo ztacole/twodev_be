@@ -1,7 +1,7 @@
 import { db } from '../../../config/drizzle';
 import { AK03Request, AK03Response } from './ak-03.type';
 import { NotFoundError } from '../../../common/error';
-import { result as resultTable, resultAk03Header as ak03HeaderTable, resultAk03 as ak03RowTable, assessment as assessmentTable, occupation as occupationTable, scheme as schemeTable, assessee as assesseeTable, assessor as assessorTable, user as userTable } from '../../../../drizzle/schema';
+import { result as resultTable, resultAk03Header as ak03HeaderTable, resultAk03 as ak03RowTable, assessment as assessmentTable, occupation as occupationTable, scheme as schemeTable, assessee as assesseeTable, assessor as assessorTable, user as userTable, assessmentSchedule } from '../../../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 export class AK03Service {
@@ -47,6 +47,7 @@ export class AK03Service {
     const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
     const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
     const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.assessment_id, result.assessment_id) });    
     const header = await db.query.resultAk03Header.findFirst({ where: eq(ak03HeaderTable.result_id, result.id) });
     if (!header) throw new NotFoundError('Result header');
     const answers = await db.query.resultAk03.findMany({ where: eq(ak03RowTable.header_id, header.id) });
@@ -54,6 +55,7 @@ export class AK03Service {
     return {
       id: result.id,
       assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
+      schedule: schedule || null,
       assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
       assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,
       tuk: result.tuk,
