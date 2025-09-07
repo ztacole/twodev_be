@@ -5,12 +5,12 @@ import { asyncHandler } from '../../common/async.handler';
 
 export class AuthController {
     static register = asyncHandler(async (req: Request, res: Response) => {
-        const { full_name, email, password, confirm_password, role_id }: RegisterRequest = req.body;
+        const { full_name, email, password, confirm_password }: RegisterRequest = req.body;
 
-        if (!full_name || !email || !password || !confirm_password || !role_id) {
+        if (!full_name || !email || !password || !confirm_password) {
             return res.status(400).json({
                 success: false,
-                message: 'Full name, email, password, confirm_password, dan role_id wajib diisi'
+                message: 'Semua field harus diisi'
             });
         }
 
@@ -28,7 +28,7 @@ export class AuthController {
             });
         }
 
-        const result = await AuthService.register({ full_name, email, password, confirm_password, role_id });
+        const result = await AuthService.register({ full_name, email, password, confirm_password, role_id: 3 });
 
         res.status(201).json({
             success: true,
