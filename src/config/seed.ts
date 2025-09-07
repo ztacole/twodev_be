@@ -35,6 +35,8 @@ import {
   resultAk03Header,
   resultAk04,
   resultAk05,
+  elementApl02,
+  elementDetailsApl02,
 } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
@@ -174,6 +176,71 @@ async function main() {
 
       // IA07 question
       await db.insert(ia07QuestionTable).values({ assessment_id: assessment.id, question: 'Jelaskan apa yang dimaksud dengan Box Model dalam CSS dan sebutkan komponen-komponennya!', answer_key: 'Box Model = content,padding,border,margin' });
+    }
+
+    // UC APL02
+    const ucApl02Data = {
+        unit_code: "I.55HDR00.037.13",
+        title: "Melakukan Reservasi Tamu",
+        elements: [
+            {
+                title: "Menerima Permintaan Reservasi Tamu",
+                code: "E.55HDR00.037.13.1",
+                details: [
+                    { description: "Mampu mencatat detail reservasi dengan lengkap" },
+                    { description: "Mampu memverifikasi ketersediaan kamar" }
+                ]
+            },
+            {
+                title: "Memproses Reservasi Tamu", 
+                code: "E.55HDR00.037.13.2",
+                details: [
+                    { description: "Mampu menjelaskan metode pembayaran yang tersedia" },
+                    { description: "Mampu memproses pembayaran sesuai prosedur" }
+                ]
+            },
+            {
+                title: "Memberikan Konfirmasi",
+                code: "E.55HDR00.037.13.3",
+                details: [
+                    { description: "Mampu mengirimkan konfirmasi reservasi" },
+                    { description: "Mampu memberikan informasi tambahan yang diperlukan" }
+                ]
+            }
+        ]
+    };
+    
+    // Insert UC APL02
+    await db.insert(ucApl02Table).values({ 
+      assessment_id: assessment.id, 
+      unit_code: ucApl02Data.unit_code, 
+      title: ucApl02Data.title 
+    });
+    
+    const ucApl02Row = await db.query.ucApl02.findFirst({ 
+      where: eq(ucApl02Table.unit_code, ucApl02Data.unit_code) 
+    });
+    
+    if (ucApl02Row) {
+      for (const elem of ucApl02Data.elements) {
+        await db.insert(elementApl02).values({ 
+          uc_id: ucApl02Row.id, 
+          title: elem.title,
+        });
+    
+        const elemRow = await db.query.elementApl02.findFirst({ 
+          where: eq(elementApl02.title, elem.title) && eq(elementApl02.uc_id, ucApl02Row.id)
+        });
+    
+        if (elemRow) {
+          for (const det of elem.details) {
+            await db.insert(elementDetailsApl02).values({ 
+              element_id: elemRow.id, 
+              description: det.description 
+            });
+          }
+        }
+      }
     }
   }
 
