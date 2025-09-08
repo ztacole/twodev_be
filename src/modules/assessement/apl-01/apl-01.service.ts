@@ -351,4 +351,22 @@ export class APL1Service {
         const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, result_id) });
         return updated as any;
     }
+
+    static async getResultDetails(result_id: number): Promise<AssesseeResponse> {
+        const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
+        if (!result) throw new NotFoundError('Result');
+
+        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
+        if (!assessee) throw new NotFoundError('Assessee');
+        const user = await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) });
+        const assesseeJobs = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, assessee.id));
+        if (assesseeJobs.length === 0) throw new NotFoundError('Assessee Jobs');
+        const assesseeJob = assesseeJobs[0];
+
+        return {
+            ...(assessee as any),
+            full_name: user?.full_name,
+            jobs: assesseeJob,
+        } as AssesseeResponse;
+    }
 }

@@ -50,6 +50,7 @@ router.get('/apl-01/results/assessor/:assessorId', APL1Controller.getResultDocsB
 router.get('/apl-01/results/unapproved', APL1Controller.getUnapprovedResult);
 router.put('/apl-01/results/:resultId/approve', APL1Controller.approveResult)
 router.get('/apl-01/results/:assessmentId', APL1Controller.getResultDocsByAssessmentId);;
+router.get('/apl-01/result/:resultId', APL1Controller.getResultDetails);
 
 router.get('/apl-02/units/:resultId', APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/:resultId/elements/:unitId', APL02Controller.getElementsByUnitId);
