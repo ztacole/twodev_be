@@ -369,4 +369,10 @@ export class APL1Service {
             jobs: assesseeJob,
         } as AssesseeResponse;
     }
+
+    static async getResultDocsByResultId(result_id: number): Promise<CertificateDocsResponse> {
+        const docs = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result_id) });
+        if (!docs) throw new NotFoundError('Certificate Docs');
+        return docs as CertificateDocsResponse;
+    }
 }

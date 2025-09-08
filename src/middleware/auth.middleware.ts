@@ -60,20 +60,50 @@ export const assessorMiddleware = (
     req.user?.role_id === 2 ? next() : res.status(403).json({ message: 'Akses hanya untuk assessor' })
 )
 
+export const adminOrAssessorMiddleware = (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) => (
+    req.user?.role_id === 1 || req.user?.role_id === 2 ? next() : res.status(403).json({ message: 'Akses hanya untuk admin atau assessor' })    
+)
+
+export const adminOrAssesseeMiddleware = (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) => (
+    req.user?.role_id === 1 || req.user?.role_id === 3 ? next() : res.status(403).json({ message: 'Akses hanya untuk admin atau assessee' })
+)
+
+export const assessorOrAssesseeMiddleware = (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) => (
+    req.user?.role_id === 2 || req.user?.role_id === 3 ? next() : res.status(403).json({ message: 'Akses hanya untuk assessor atau assessee' })
+)
+
 export const authUpload = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
     try {
-        await adminMiddleware(req, res, next);
-        const token = req.headers['authorization'];
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(' ')[1];
 
         if (!token) {
-        return res.status(401).json({ message: 'Unauthorized' });
+            return res.status(401).json({
+                success: false,
+                message: 'Token akses diperlukan'
+            });
         }
 
-        next();
+        const decoded = await AuthService.verifyToken(token);
+        req.user = decoded;
+
+        await adminOrAssesseeMiddleware(req, res, next);
     } catch (error: any) {
         return res.status(403).json({ message: error.message });
     }

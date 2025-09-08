@@ -125,4 +125,17 @@ export class APL1Controller {
             data: result
         });
     });
+
+    static getResultDocsByResultId = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
+        }
+        const results = await APL1Service.getResultDocsByResultId(resultId);
+        res.status(200).json({
+            success: true,
+            message: 'Hasil berhasil diambil',
+            data: results
+        });
+    });
 }
