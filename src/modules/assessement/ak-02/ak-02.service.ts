@@ -182,7 +182,7 @@ function formatAK02Response(ak02Header: any): AK02Response {
     id: ak02Header.id,
     result_id: ak02Header.result_id,
     approved_assessee: ak02Header.approved_assessee,
-    approved_assessor: ak02Header.approvedAssessor,
+    approved_assessor: ak02Header.approved_assessor,
     is_competent: ak02Header.is_competent,
     follow_up: ak02Header.follow_up,
     comment: ak02Header.comment,
@@ -210,6 +210,6 @@ function formatApproval(result: any) {
       email: result.assessee.user.email,
     },
     approved_assessee: result.approved_assessee,
-    approved_assessor: result.approvedAssessor,
+    approved_assessor: result.approved_assessor,
   };
 }

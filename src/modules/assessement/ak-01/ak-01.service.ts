@@ -186,7 +186,7 @@ function formatAK01Response(ak01Header: any): AK01Response {
   return {
     id: ak01Header.id,
     result_id: ak01Header.result_id,
-    approved_assessee: ak01Header.approvedAssessee,
+    approved_assessee: ak01Header.approved_assessee,
     approved_assessor: ak01Header.approved_assessor,
     rows: ak01Header.rows.map((row: any) => ({
       id: row.id,
@@ -205,7 +205,7 @@ function formatApproval(result: any) {
       name: result.result.assessee.user.full_name,
       email: result.result.assessee.user.email,
     },
-    approved_assessee: result.approvedAssessee,
+    approved_assessee: result.approved_assessee,
     approved_assessor: result.approved_assessor,
   };
 }

@@ -66,17 +66,8 @@ export class ScheduleController {
     });
 
     static getCompletedSchedules = asyncHandler(async (req: Request, res: Response) => {
-        const schedules = await ScheduleService.getCompletedSchedules();
-        
-        res.status(200).json({
-            success: true,
-            message: 'Jadwal yang selesai berhasil diambil',
-            data: schedules
-        });
-    });
-
-    static getCompletedSchedulesByAssesseeId = asyncHandler(async (req: Request, res: Response) => {
-        const schedules = await ScheduleService.getCompletedSchedulesByAssesseeId(Number(req.params.assesseeId));
+        const user = req.user as JwtPayload;
+        const schedules = await ScheduleService.getCompletedSchedules(user);
         
         res.status(200).json({
             success: true,

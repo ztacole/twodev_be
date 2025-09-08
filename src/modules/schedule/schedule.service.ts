@@ -11,9 +11,18 @@ import {
   assessor as assessorTable,
   assessee as assesseeTable,
   result as resultTable,
+  resultApl02Header as resultApl02HeaderTable,
+  resultIa01Header as resultIa01HeaderTable,
+  resultIa02Header as resultIa02HeaderTable,
+  resultIa03Header as resultIa03HeaderTable,
+  resultIa05Header as resultIa05HeaderTable,
+  resultAk01Header as resultAk01HeaderTable,
+  resultAk02Header as resultAk02HeaderTable,
+  resultAk03Header as resultAk03HeaderTable,
+  resultAk05 as resultAk05Table,
 } from '../../../drizzle/schema';
 import { and, between, eq, gte, lte } from 'drizzle-orm';
-import { ScheduleRequest, ScheduleResponse } from './schedule.type';
+import { ActiveScheduleResponse, DetailResponse, ScheduleRequest, ScheduleResponse } from './schedule.type';
 
 export class ScheduleService {
     static async createSchedule(data: ScheduleRequest): Promise<ScheduleResponse> {
@@ -54,7 +63,7 @@ export class ScheduleService {
     }
 
     static async getScheduleById(id: number, user: JwtPayload): Promise<ScheduleResponse> {
-        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.user_id, user.id as any));
+        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.user_id, user.id));
         if (!assessee) {
             throw new NotFoundError('Assessee');
         }
@@ -68,7 +77,7 @@ export class ScheduleService {
     }
 
     static async getActiveSchedules(user: JwtPayload): Promise<ScheduleResponse[]> {
-        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.user_id, user.id as any));
+        const assessee = await db.select().from(assesseeTable).where(eq(assesseeTable.user_id, user.id));
         if (!assessee) {
             throw new NotFoundError('Assessee');
         }
@@ -79,7 +88,7 @@ export class ScheduleService {
     }
 
     static async getActiveSchedulesAssessor(user: JwtPayload): Promise<ScheduleResponse[]> {
-        const assessor = await db.select().from(assessorTable).where(eq(assessorTable.user_id, user.id as any));
+        const assessor = await db.select().from(assessorTable).where(eq(assessorTable.user_id, user.id));
         if (!assessor) {
             throw new NotFoundError('Assessor');
         }
@@ -89,26 +98,58 @@ export class ScheduleService {
         return Promise.all(schedules.map(s => buildScheduleResponse(s)));
     }
 
-    static async getCompletedSchedules(): Promise<ScheduleResponse[]> {
-        const now = new Date();
-        const schedules = await db.select().from(scheduleTable).where(lte(scheduleTable.end_date, now as any));
-        return Promise.all(schedules.map(s => buildScheduleResponse(s)));
-    }
+    static async getCompletedSchedules(user: JwtPayload): Promise<ActiveScheduleResponse[]> {
+        const assessees = await db.select().from(assesseeTable).where(eq(assesseeTable.user_id, user.id));
+        if (!assessees) return [];
 
-    static async getCompletedSchedulesByAssesseeId(assessee_id: number): Promise<ScheduleResponse[]> {
-        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assessee_id) });
-        if (!assessee) {
-            throw new NotFoundError('Assessee');
+        let results: ActiveScheduleResponse[] = [];
+        
+        for (const assessee of assessees) {
+            const rawResults = await db.select().from(resultTable).where(eq(resultTable.assessee_id, assessee.id));
+            if (rawResults.length === 0) continue;
+
+            for (const r of rawResults) {
+                console.log(r);
+                const resultAPL02 = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, r.id) });
+                const resultIA01 = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, r.id) });
+                const resultIA02 = await db.query.resultIa02Header.findFirst({ where: eq(resultIa02HeaderTable.result_id, r.id) });
+                const resultIA03 = await db.query.resultIa03Header.findFirst({ where: eq(resultIa03HeaderTable.result_id, r.id) });
+                const resultIA05 = await db.query.resultIa05Header.findFirst({ where: eq(resultIa05HeaderTable.result_id, r.id) });
+                const resultAK01 = await db.query.resultAk01Header.findFirst({ where: eq(resultAk01HeaderTable.result_id, r.id) });
+                const resultAK02 = await db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, r.id) });
+                const resultAK05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, r.id) });
+
+                if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) results.push({ status: "Not Competent", detail: await buildActiveScheduleResponse(r) });
+                if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) results.push({ status: "Not Competent", detail: await buildActiveScheduleResponse(r) });
+                if (
+                    (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                    (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                    (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                    (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                    resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true &&
+                    (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                    (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                    (resultAK05 && resultAK05.approved_assessor) && 
+                    !resultAK05.is_competent && !r.is_competent
+                ) results.push({ status: "Not Competent", detail: await buildActiveScheduleResponse(r) });
+
+                if (
+                    (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                    (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                    (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                    (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                    resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true &&
+                    (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                    (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                    (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) && 
+                    r.is_competent
+                ) results.push({ status: "Competent", detail: await buildActiveScheduleResponse(r) });
+
+                console.log(results)
+            }
         }
 
-        const results = await db.select().from(resultTable).where(eq(resultTable.assessee_id, assessee_id));
-        const schedule_ids = new Set<number>();
-        for (const r of results) {
-            const schedules = await db.select().from(scheduleTable).where(eq(scheduleTable.assessment_id, r.assessment_id));
-            for (const s of schedules) schedule_ids.add(s.id);
-        }
-        const schedules = await db.select().from(scheduleTable).where(eq(scheduleTable.id, Array.from(schedule_ids)[0] || 0));
-        return Promise.all(schedules.map(s => buildScheduleResponse(s)));
+        return results;
     }
 
     static async getScheduleDataForExcel() {
@@ -184,4 +225,41 @@ async function buildScheduleResponse(schedule: any, user: Assessee[] | null = nu
         end_date: schedule.end_date,
         schedule_details: detailed,
     } as any;
+}
+
+async function buildActiveScheduleResponse(result: any): Promise<DetailResponse> {
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
+    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.assessment_id, result.assessment_id) });
+    const detail = await db.query.scheduleDetail.findFirst({ where: and(eq(scheduleDetailTable.schedule_id, schedule!.id), eq(scheduleDetailTable.assessor_id, result.assessor_id)) });
+    const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, detail!.assessor_id) });
+    const assessorUser = await db.query.user.findFirst({ where: eq(userTable.id, assessor!.user_id) });
+    return {
+        id: schedule!.id,
+        assessment: {
+            id: assessment!.id,
+            code: assessment!.code,
+            occupation: {
+                id: occupation!.id,
+                name: occupation!.name,
+                scheme: {
+                    id: scheme!.id,
+                    code: scheme!.code,
+                    name: scheme!.name,
+                },
+            },
+        },
+        start_date: schedule!.start_date.toISOString(),
+        end_date: schedule!.end_date.toISOString(),
+        schedule_details: {
+            id: detail!.id,
+            assessor: {
+                id: assessor!.id,
+                full_name: assessorUser!.full_name,
+                phone_no: assessor!.phone_no,
+            },
+            location: detail!.location,
+        },
+    }
 }

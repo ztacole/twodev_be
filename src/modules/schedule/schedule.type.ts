@@ -38,6 +38,19 @@ export interface SchemeResponse {
     name: string;
 }
 
+export interface ActiveScheduleResponse {
+    status: string;
+    detail: DetailResponse;
+}
+
+export interface DetailResponse {
+    id: number;
+    assessment: AssessmentResponse;
+    start_date: string;
+    end_date: string;
+    schedule_details: ScheduleDetailResponse;
+}
+
 // Request
 
 export interface ScheduleRequest {

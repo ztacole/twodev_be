@@ -27,6 +27,15 @@ import {
     resultApl02Header as resultApl02HeaderTable,
     ia02Pdf as ia02PdfTable,
     assessee,
+    resultIa01Header,
+    resultIa02Header,
+    resultIa03Header,
+    resultIa05Header,
+    resultAk01Header,
+    resultAk02Header,
+    resultAk03Header,
+    resultAk04,
+    resultAk05,
 } from "../../../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
@@ -298,7 +307,7 @@ export class AssessmentService {
     }
 
     static async getAssessmentResultDetails(assessment_id: number, assessor_id: number, assessee_id: number) {
-        const result = await db
+        const results = await db
             .select({
                 id: resultTable.id,
                 assessment: assessmentTable,
@@ -320,11 +329,45 @@ export class AssessmentService {
             .orderBy(desc(resultTable.created_at))
             .limit(1);
 
-        if (!result) {
+        if (results.length === 0) {
             throw new NotFoundError('Result');
         }
 
-        return result;
+        const result = results[0];
+        const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result.id) });
+        const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result.id) });
+        const ia01Header = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01Header.result_id, result.id) });
+        const ia02Header = await db.query.resultIa02Header.findFirst({ where: eq(resultIa02Header.result_id, result.id) });
+        const ia03Header = await db.query.resultIa03Header.findFirst({ where: eq(resultIa03Header.result_id, result.id) });
+        const ia05Header = await db.query.resultIa05Header.findFirst({ where: eq(resultIa05Header.result_id, result.id) });
+        const ak01Header = await db.query.resultAk01Header.findFirst({ where: eq(resultAk01Header.result_id, result.id) });
+        const ak02Header = await db.query.resultAk02Header.findFirst({ where: eq(resultAk02Header.result_id, result.id) });
+        const ak03Header = await db.query.resultAk03Header.findFirst({ where: eq(resultAk03Header.id, result.id) });
+        const ak04 = await db.query.resultAk04.findFirst({ where: eq(resultAk04.id, result.id) });
+        const ak05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05.id, result.id) });
+
+        return [
+            {
+                id: result.id,
+                assessment: result.assessment,
+                assessee: result.assessee,
+                assessor: result.assessor,
+                tuk: result.tuk,
+                is_competent: result.is_competent,
+                created_at: result.created_at,
+                doc: doc,
+                apl02_header: apl02Header,
+                ia01_header: ia01Header,
+                ia02_header: ia02Header,
+                ia03_header: ia03Header,
+                ia05_header: ia05Header,
+                ak01_header: ak01Header,
+                ak02_header: ak02Header,
+                ak03_header: ak03Header,
+                ak04: ak04,
+                ak05: ak05
+            }
+        ];
     }
 
     static async findAssesseeByUserId(assessment_id: number, assessor_id: number, user_id: number): Promise<number> {
