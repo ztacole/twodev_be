@@ -36,7 +36,7 @@ app.use('/api/schedules', scheduleRoutes);
 // Uploads (generic) API
 app.use('/api/uploads', uploadsRoutes);
 // Serve uploaded files (secured by auth for now)
-app.use('/uploads', authUpload, express.static(path.join(__dirname, '../public/uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Modules
 app.use('/api/users', userRoutes);

@@ -342,8 +342,31 @@ export class APL1Service {
     }
 
     static async getUnapprovedResultDoc(): Promise<any[]> {
-        const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.approved, false));
-        return docs as any;
+        const results = await db.select({
+            id: resultDocTable.id,
+            result_id: resultDocTable.result_id,
+            approved: resultDocTable.approved,
+            purpose: resultDocTable.purpose,
+            school_report_card: resultDocTable.school_report_card,
+            field_work_practice_certificate: resultDocTable.field_work_practice_certificate,
+            student_card: resultDocTable.student_card,
+            family_card: resultDocTable.family_card,
+            id_card: resultDocTable.id_card,
+            created_at: resultDocTable.created_at,
+            updated_at: resultDocTable.updated_at,
+            assessee: {
+                id: assessee.id,
+                user_id: assessee.user_id,
+                name: userTable.full_name,
+                email: userTable.email,
+            }
+        })
+            .from(resultDocTable)
+            .innerJoin(result, eq(resultDocTable.result_id, result.id))
+            .innerJoin(assessee, eq(result.assessee_id, assessee.id))
+            .innerJoin(userTable, eq(assessee.user_id, userTable.id))
+            .where(eq(resultDocTable.approved, false));
+        return results as any;
     }
 
     static async approveResultDoc(result_id: number): Promise<any> {
