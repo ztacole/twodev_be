@@ -110,13 +110,33 @@ function main() {
         }
         // Assessees
         console.log('Creating assessees...');
-        yield drizzle_1.db.insert(schema_1.user).values({ full_name: 'Asesi Pertama', email: 'asesi1@example.com', password: hashedPassword, role_id: (assesseeRole === null || assesseeRole === void 0 ? void 0 : assesseeRole.id) || 3 });
+        const assesseeUsers = yield Promise.all([
+            drizzle_1.db.insert(schema_1.user).values({ full_name: 'Asesi Pertama', email: 'asesi1@example.com', password: hashedPassword, role_id: (assesseeRole === null || assesseeRole === void 0 ? void 0 : assesseeRole.id) || 3 }),
+            drizzle_1.db.insert(schema_1.user).values({ full_name: 'Asesi Dua', email: 'asesi2@example.com', password: hashedPassword, role_id: (assesseeRole === null || assesseeRole === void 0 ? void 0 : assesseeRole.id) || 3 }),
+            drizzle_1.db.insert(schema_1.user).values({ full_name: 'Asesi Tiga', email: 'asesi3@example.com', password: hashedPassword, role_id: (assesseeRole === null || assesseeRole === void 0 ? void 0 : assesseeRole.id) || 3 }),
+        ]);
         const assesseeUser1 = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.email, 'asesi1@example.com') });
+        const assesseeUser2 = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.email, 'asesi2@example.com') });
+        const assesseeUser3 = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.email, 'asesi3@example.com') });
         if (assesseeUser1) {
             yield drizzle_1.db.insert(schema_1.assessee).values({ user_id: assesseeUser1.id, identity_number: '1234567890', birth_date: new Date('1990-03-10'), birth_location: 'Jakarta', gender: 'male', nationality: 'Indonesia', phone_no: '084567890123', address: 'Jalan Asesi No. 101', educational_qualifications: 'Sarjana' });
-            const assesseeRow = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, assesseeUser1.id) });
-            if (assesseeRow) {
-                yield drizzle_1.db.insert(schema_1.assesseeJob).values({ assessee_id: assesseeRow.id, institution_name: 'Perusahaan Teknologi Inc.', address: 'Gedung Perkantoran Tower 200', postal_code: '12345', position: 'Pengembang Software', phone_no: '0211234567', job_email: 'asesi1@perusahaan.com' });
+            const assesseeRow1 = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, assesseeUser1.id) });
+            if (assesseeRow1) {
+                yield drizzle_1.db.insert(schema_1.assesseeJob).values({ assessee_id: assesseeRow1.id, institution_name: 'Perusahaan Teknologi Inc.', address: 'Gedung Perkantoran Tower 200', postal_code: '12345', position: 'Pengembang Software', phone_no: '0211234567', job_email: 'asesi1@perusahaan.com' });
+            }
+        }
+        if (assesseeUser2) {
+            yield drizzle_1.db.insert(schema_1.assessee).values({ user_id: assesseeUser2.id, identity_number: '9876543210', birth_date: new Date('1991-01-01'), birth_location: 'Bandung', gender: 'female', nationality: 'Indonesia', phone_no: '081234567890', address: 'Jalan Asesi No. 201', educational_qualifications: 'Diploma' });
+            const assesseeRow2 = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, assesseeUser2.id) });
+            if (assesseeRow2) {
+                yield drizzle_1.db.insert(schema_1.assesseeJob).values({ assessee_id: assesseeRow2.id, institution_name: 'PT. Asesi Teknologi', address: 'Komplek Perkantoran Asesi', postal_code: '67890', position: 'Pengembang Hardware', phone_no: '0219876543', job_email: 'asesi2@asasi.com' });
+            }
+        }
+        if (assesseeUser3) {
+            yield drizzle_1.db.insert(schema_1.assessee).values({ user_id: assesseeUser3.id, identity_number: '7418529630', birth_date: new Date('1992-05-15'), birth_location: 'Surabaya', gender: 'male', nationality: 'Indonesia', phone_no: '085623741852', address: 'Jalan Asesi No. 301', educational_qualifications: 'Sarjana' });
+            const assesseeRow3 = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, assesseeUser3.id) });
+            if (assesseeRow3) {
+                yield drizzle_1.db.insert(schema_1.assesseeJob).values({ assessee_id: assesseeRow3.id, institution_name: 'Universitas Asesi', address: 'Kampus Universitas Asesi', postal_code: '12345', position: 'Dosen', phone_no: '0214567890', job_email: 'asesi3@universitasasasi.com' });
             }
         }
         // Create assessment minimal + groups/units/elements/details + ia05/ia07
@@ -214,28 +234,121 @@ function main() {
             }
         }
         // create a simple result + docs + headers
-        console.log('Creating a sample result + docs + headers...');
-        if (assessment && assessorUser1 && assesseeUser1) {
+        const assessees = [
+            { user: assesseeUser1, is_competent: true, allHeadersFilled: true }, // Competent
+            { user: assesseeUser2, is_competent: false, allHeadersFilled: true }, // Not Competent
+            { user: assesseeUser3, is_competent: false, allHeadersFilled: false }, // On Going
+        ];
+        for (const a of assessees) {
+            if (!assessment)
+                throw new Error('Assessment is undefined');
+            if (!assessorUser1)
+                throw new Error('Assessor user is undefined');
+            if (!a.user)
+                continue;
+            const assesseeRow = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, a.user.id) });
             const assessorRow = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, assessorUser1.id) });
-            const assesseeRow = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, assesseeUser1.id) });
-            if (assessorRow && assesseeRow) {
-                yield drizzle_1.db.insert(schema_1.result).values({ assessment_id: assessment.id, assessor_id: assessorRow.id, assessee_id: assesseeRow.id, is_competent: false, tuk: 'sewaktu' });
-                const resultRow = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment.id) });
-                if (resultRow) {
-                    yield drizzle_1.db.insert(schema_1.resultDoc).values({ result_id: resultRow.id, purpose: 'Sertifikasi Profesi', school_report_card: 'ijazah.pdf', field_work_practice_certificate: 'sertifikat_pkl.pdf', student_card: 'kartu_mahasiswa.pdf', family_card: 'kartu_keluarga.pdf', id_card: 'ktp.pdf', approved: true });
-                    // headers
-                    yield drizzle_1.db.insert(schema_1.resultApl02Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_continue: false });
-                    yield drizzle_1.db.insert(schema_1.resultIa01Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
-                    yield drizzle_1.db.insert(schema_1.resultIa02Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-                    yield drizzle_1.db.insert(schema_1.resultIa03Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-                    yield drizzle_1.db.insert(schema_1.resultIa05Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_achieved: false });
-                    yield drizzle_1.db.insert(schema_1.resultIa07Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-                    yield drizzle_1.db.insert(schema_1.resultAk01Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-                    yield drizzle_1.db.insert(schema_1.resultAk02Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
-                    yield drizzle_1.db.insert(schema_1.resultAk03Header).values({ result_id: resultRow.id });
-                    yield drizzle_1.db.insert(schema_1.resultAk04).values({ result_id: resultRow.id, approved_assessee: false, q1_yes: false, q2_yes: false, q3_yes: false, reason: "" });
-                    yield drizzle_1.db.insert(schema_1.resultAk05).values({ result_id: resultRow.id, approved_assessor: false, is_competent: false });
-                }
+            if (!assesseeRow || !assessorRow)
+                continue;
+            const resultRows = yield drizzle_1.db.insert(schema_1.result).values({
+                assessment_id: assessment.id,
+                assessor_id: assessorRow.id,
+                assessee_id: assesseeRow.id,
+                is_competent: a.is_competent,
+                tuk: 'sewaktu',
+            }).$returningId();
+            const resultRow = resultRows[0];
+            if (!resultRow)
+                continue;
+            if (a.allHeadersFilled) {
+                yield Promise.all([
+                    drizzle_1.db.insert(schema_1.resultApl02Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true,
+                        is_continue: true
+                    }),
+                    drizzle_1.db.insert(schema_1.resultIa01Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true,
+                        is_competent: a.is_competent
+                    }),
+                    drizzle_1.db.insert(schema_1.resultIa02Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true
+                    }),
+                    drizzle_1.db.insert(schema_1.resultIa03Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true
+                    }),
+                    drizzle_1.db.insert(schema_1.resultIa05Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true,
+                        is_achieved: a.is_competent
+                    }),
+                    drizzle_1.db.insert(schema_1.resultIa07Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true
+                    }),
+                    drizzle_1.db.insert(schema_1.resultAk01Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true
+                    }),
+                    drizzle_1.db.insert(schema_1.resultAk02Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true,
+                        is_competent: a.is_competent
+                    }),
+                    drizzle_1.db.insert(schema_1.resultAk03Header).values({
+                        result_id: resultRow.id
+                    }),
+                    drizzle_1.db.insert(schema_1.resultAk04).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        q1_yes: a.is_competent,
+                        q2_yes: a.is_competent,
+                        q3_yes: a.is_competent,
+                        reason: ''
+                    }),
+                    drizzle_1.db.insert(schema_1.resultAk05).values({
+                        result_id: resultRow.id,
+                        approved_assessor: true,
+                        is_competent: a.is_competent
+                    })
+                ]);
+            }
+            else {
+                yield Promise.all([
+                    drizzle_1.db.insert(schema_1.resultAk02Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true,
+                        is_competent: a.is_competent
+                    }),
+                    drizzle_1.db.insert(schema_1.resultIa01Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true,
+                        is_competent: a.is_competent
+                    }),
+                    drizzle_1.db.insert(schema_1.resultIa02Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true
+                    }),
+                    drizzle_1.db.insert(schema_1.resultIa07Header).values({
+                        result_id: resultRow.id,
+                        approved_assessee: true,
+                        approved_assessor: true
+                    }),
+                ]);
             }
         }
         console.log('Drizzle seeding finished.');

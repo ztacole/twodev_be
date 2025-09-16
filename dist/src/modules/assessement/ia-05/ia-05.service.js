@@ -110,7 +110,7 @@ class IA05Service {
                         results.push(updated);
                 }
                 else {
-                    yield drizzle_1.db.insert(schema_1.resultIa05).values({ header_id: header.id, option_id: answer.option_id, approved: false });
+                    yield drizzle_1.db.insert(schema_1.resultIa05).values({ header_id: header.id, option_id: answer.option_id, approved: selected.is_answer });
                     const created = yield drizzle_1.db.query.resultIa05.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.resultIa05.header_id, header.id), (0, drizzle_orm_1.eq)(schema_1.resultIa05.option_id, answer.option_id)) });
                     if (created)
                         results.push(created);

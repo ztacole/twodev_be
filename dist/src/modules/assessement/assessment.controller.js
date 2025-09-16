@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssessmentController = void 0;
 const assessment_service_1 = require("./assessment.service");
 const async_handler_1 = require("../../common/async.handler");
+const assessor_service_1 = require("../assessor/assessor.service");
 class AssessmentController {
 }
 exports.AssessmentController = AssessmentController;
@@ -108,6 +109,8 @@ AssessmentController.getNavigationAssessee = (0, async_handler_1.asyncHandler)((
     });
 }));
 AssessmentController.getNavigationAssessor = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.user;
+    const assessor = yield assessor_service_1.AssessorService.getAssessorByUserId(user.id);
     const assessmentId = Number(req.params.assessmentId);
     if (!assessmentId) {
         return res.status(400).json({
@@ -115,7 +118,22 @@ AssessmentController.getNavigationAssessor = (0, async_handler_1.asyncHandler)((
             message: "Assessment ID harus diisi",
         });
     }
-    const result = yield assessment_service_1.AssessmentService.assessorNavigation(assessmentId);
+    const result = yield assessment_service_1.AssessmentService.assessorNavigation(assessmentId, assessor.id);
+    res.status(200).json({
+        success: true,
+        message: "Navigasi berhasil diambil",
+        data: result,
+    });
+}));
+AssessmentController.getAssessmentRecapt = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const scheduleId = Number(req.params.scheduleId);
+    if (!scheduleId) {
+        return res.status(400).json({
+            success: false,
+            message: "Schedule ID harus diisi",
+        });
+    }
+    const result = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleId);
     res.status(200).json({
         success: true,
         message: "Navigasi berhasil diambil",
