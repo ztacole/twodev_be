@@ -7,7 +7,7 @@ const express_1 = require("express");
 const auth_middleware_1 = require("../../middleware/auth.middleware");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-const multerUpload_1 = require("../../config/multerUpload");
+const upload_config_1 = require("./apl-01/upload-config");
 const upload_conifg_1 = require("./ia-02/upload-conifg");
 const apl_02_controller_1 = require("./apl-02/apl-02.controller");
 const apl_01_controller_1 = require("./apl-01/apl-01.controller");
@@ -33,7 +33,7 @@ router.get('/result/:assessmentId/:assessorId/:assesseeId', assessment_controlle
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', assessment_controller_1.AssessmentController.getNavigationAssessee);
 router.get('/navigation/assessor/:assessmentId', assessment_controller_1.AssessmentController.getNavigationAssessor);
 router.post('/apl-01/create-self-data', apl_01_controller_1.APL1Controller.createAssesseeAPL1);
-router.post('/apl-01/create-certificate-docs', multerUpload_1.upload.any(), apl_01_controller_1.APL1Controller.createOrUploadCertificateDocs);
+router.post('/apl-01/create-certificate-docs', upload_config_1.upload.any(), apl_01_controller_1.APL1Controller.createOrUploadCertificateDocs);
 router.get('/uploads/apl-01/:folder/:filename', auth_middleware_1.authUpload, (req, res) => {
     const { folder, filename } = req.params;
     const filePath = path_1.default.join(__dirname, '../public/uploads/apl-01', folder, filename);
