@@ -46,8 +46,42 @@ ScheduleController.getScheduleById = (0, async_handler_1.asyncHandler)((req, res
         data: schedule
     });
 }));
+ScheduleController.updateSchedule = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = Number(req.params.id);
+    if (!id) {
+        return res.status(400).json({
+            success: false,
+            message: 'ID jadwal harus diisi',
+        });
+    }
+    const body = req.body;
+    if (!body.start_date) {
+        return res.status(400).json({
+            success: false,
+            message: 'Tanggal mulai harus diisi',
+        });
+    }
+    if (!body.end_date) {
+        return res.status(400).json({
+            success: false,
+            message: 'Tanggal selesai harus diisi',
+        });
+    }
+    const schedule = yield schedule_service_1.ScheduleService.updateSchedule(id, body);
+    res.status(200).json({
+        success: true,
+        message: 'Jadwal berhasil diupdate',
+        data: schedule
+    });
+}));
 ScheduleController.deleteSchedule = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const id = Number(req.params.id);
+    if (!id) {
+        return res.status(400).json({
+            success: false,
+            message: 'ID jadwal harus diisi',
+        });
+    }
     yield schedule_service_1.ScheduleService.deleteSchedule(id);
     res.status(200).json({
         success: true,

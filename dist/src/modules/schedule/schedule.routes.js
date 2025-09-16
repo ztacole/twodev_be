@@ -10,6 +10,7 @@ router.get('/active-assessor', auth_middleware_1.authenticateToken, schedule_con
 router.get('/completed', auth_middleware_1.authenticateToken, auth_middleware_1.assesseeMiddleware, schedule_controller_1.ScheduleController.getCompletedSchedules);
 router.get('/:id', auth_middleware_1.authenticateToken, auth_middleware_1.assesseeMiddleware, schedule_controller_1.ScheduleController.getScheduleById);
 router.post('/', schedule_controller_1.ScheduleController.createSchedule);
+router.put('/:id', schedule_controller_1.ScheduleController.updateSchedule);
 router.delete('/:id', schedule_controller_1.ScheduleController.deleteSchedule);
 router.get('/export/excel', schedule_controller_1.ScheduleController.exportScheduleToExcel);
 exports.default = router;

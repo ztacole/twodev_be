@@ -45,6 +45,32 @@ class ScheduleService {
             return yield buildScheduleResponse(schedule);
         });
     }
+    static updateSchedule(id, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existing = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id) });
+            if (!existing) {
+                throw new error_1.NotFoundError('Schedule');
+            }
+            yield drizzle_1.db.update(schema_1.assessmentSchedule).set({
+                start_date: new Date(data.start_date),
+                end_date: new Date(data.end_date),
+            }).where((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id));
+            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id) });
+            if (!schedule)
+                throw new error_1.NotFoundError('Schedule');
+            return yield buildScheduleResponse(schedule);
+        });
+    }
+    static deleteSchedule(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existing = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id) });
+            if (!existing) {
+                throw new error_1.NotFoundError('Schedule');
+            }
+            yield drizzle_1.db.delete(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, id));
+            yield drizzle_1.db.delete(schema_1.assessmentSchedule).where((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id));
+        });
+    }
     static getSchedules() {
         return __awaiter(this, void 0, void 0, function* () {
             const schedules = yield drizzle_1.db.select().from(schema_1.assessmentSchedule);
@@ -151,16 +177,6 @@ class ScheduleService {
                     end_date: schedule.end_date,
                 };
             })));
-        });
-    }
-    static deleteSchedule(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const existing = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id) });
-            if (!existing) {
-                throw new error_1.NotFoundError('Schedule');
-            }
-            yield drizzle_1.db.delete(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, id));
-            yield drizzle_1.db.delete(schema_1.assessmentSchedule).where((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id));
         });
     }
 }
