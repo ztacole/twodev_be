@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "seed": "ts-node src/config/seed.ts",
     "drizzle:gen": "drizzle-kit generate",
     "drizzle:push": "drizzle-kit push",
