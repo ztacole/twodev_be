@@ -31,6 +31,7 @@ import {
     AssesseeJobRequest,
     CertificateDocsRequest,
 } from './apl-01.type';
+import { w } from '@faker-js/faker/dist/airline-CLphikKp';
 
 const TUK_VALUES = {
     SEWAKTU: 'sewaktu',
@@ -172,7 +173,7 @@ export class APL1Service {
         for (const file of fileArray) {
             const mapped = fieldMapping[file.fieldname];
             if (mapped) {
-                fileData[mapped] = `${BASE_URL}/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
+                fileData[mapped] = `${BASE_URL}/uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
             }
         }
 
