@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authUpload } from '../../middleware/auth.middleware';
 import path from 'path';
 import fs from 'fs';
-import { upload as uploadCertificate } from "./apl-01/upload-config";
+import { upload as uploadCertificate } from "../../config/multerUpload";
 import { uploadIA02 } from "./ia-02/upload-conifg";
 import { APL02Controller } from "./apl-02/apl-02.controller";
 import { APL1Controller } from "./apl-01/apl-01.controller";
