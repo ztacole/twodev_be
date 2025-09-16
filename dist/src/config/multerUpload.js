@@ -7,7 +7,7 @@ exports.upload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-const ROOT_DIR = path_1.default.resolve(__dirname, '../../../');
+const ROOT_DIR = path_1.default.resolve(__dirname, '../../../../');
 const PUBLIC_DIR = path_1.default.join(ROOT_DIR, 'public');
 const fileFilter = (req, file, cb) => {
     if (['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp'].includes(file.mimetype)) {

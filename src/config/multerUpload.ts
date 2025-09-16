@@ -2,7 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-const ROOT_DIR = path.resolve(__dirname, '../../../'); 
+const ROOT_DIR = path.resolve(__dirname, '../../../../'); 
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 
 const fileFilter = (req: any, file: any, cb: any) => {
