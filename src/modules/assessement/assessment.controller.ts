@@ -68,6 +68,13 @@ export class AssessmentController {
         if (!assesseeId) {
             const user = req.user as JwtPayload;
             assesseeId = await AssessmentService.findAssesseeByUserId(assessmentId, assessorId, user.id);
+
+            if (assesseeId === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Assessee tidak ditemukan untuk user ini",
+                });
+            }
         }
         
         const result = await AssessmentService.getAssessmentResultDetails(assessmentId, assessorId, assesseeId);
