@@ -64,3 +64,8 @@ export interface ScheduleDetailRequest {
     assessor_id: number;
     location: string;
 }
+
+export interface updateScheduleRequest {
+    start_date: string;
+    end_date: string;
+}

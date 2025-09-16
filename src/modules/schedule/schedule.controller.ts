@@ -3,6 +3,7 @@ import { ScheduleService } from "./schedule.service";
 import ExcelJS from 'exceljs';
 import { asyncHandler } from "../../common/async.handler";
 import { JwtPayload } from "jsonwebtoken";
+import { updateScheduleRequest } from "./schedule.type";
 export class ScheduleController {
     static createSchedule = asyncHandler(async (req: Request, res: Response) => {
         const schedule = await ScheduleService.createSchedule(req.body);
@@ -34,8 +35,43 @@ export class ScheduleController {
         });
     });
 
+    static updateSchedule = asyncHandler(async (req: Request, res: Response) => {
+        const id = Number(req.params.id);
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID jadwal harus diisi',
+            });
+        }
+        const body: updateScheduleRequest = req.body;
+        if (!body.start_date) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tanggal mulai harus diisi',
+            });
+        }
+        if (!body.end_date) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tanggal selesai harus diisi',
+            });
+        }
+        const schedule = await ScheduleService.updateSchedule(id, body);
+        res.status(200).json({
+            success: true,
+            message: 'Jadwal berhasil diupdate',
+            data: schedule
+        });
+    });
+
     static deleteSchedule = asyncHandler(async (req: Request, res: Response) => {
         const id = Number(req.params.id);
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID jadwal harus diisi',
+            });
+        }
         await ScheduleService.deleteSchedule(id);
         res.status(200).json({
             success: true,

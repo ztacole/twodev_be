@@ -22,7 +22,7 @@ import {
   resultAk05 as resultAk05Table,
 } from '../../../drizzle/schema';
 import { and, between, eq, gte, lte } from 'drizzle-orm';
-import { ActiveScheduleResponse, DetailResponse, ScheduleRequest, ScheduleResponse } from './schedule.type';
+import { ActiveScheduleResponse, DetailResponse, ScheduleRequest, ScheduleResponse, updateScheduleRequest } from './schedule.type';
 
 export class ScheduleService {
     static async createSchedule(data: ScheduleRequest): Promise<ScheduleResponse> {
@@ -55,6 +55,32 @@ export class ScheduleService {
         const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.assessment_id, data.assessment_id) });
         if (!schedule) throw new NotFoundError('Schedule');
         return await buildScheduleResponse(schedule);
+    }
+
+    static async updateSchedule(id: number, data: updateScheduleRequest): Promise<ScheduleResponse> {
+        const existing = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, id) });
+        if (!existing) {
+            throw new NotFoundError('Schedule');
+        }
+
+        await db.update(scheduleTable).set({
+            start_date: new Date(data.start_date),
+            end_date: new Date(data.end_date),
+        }).where(eq(scheduleTable.id, id));
+
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, id) });
+        if (!schedule) throw new NotFoundError('Schedule');
+        return await buildScheduleResponse(schedule);
+    }
+
+    static async deleteSchedule(id: number) {
+        const existing = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, id) });
+        if (!existing) {
+            throw new NotFoundError('Schedule');
+        }
+        
+        await db.delete(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, id));
+        await db.delete(scheduleTable).where(eq(scheduleTable.id, id));
     }
 
     static async getSchedules(): Promise<ScheduleResponse[]> {
@@ -167,15 +193,6 @@ export class ScheduleService {
                 end_date: schedule.end_date,
             };
         }));
-    }
-
-    static async deleteSchedule(id: number): Promise<void> {
-        const existing = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, id) });
-        if (!existing) {
-            throw new NotFoundError('Schedule');
-        }
-        await db.delete(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, id));
-        await db.delete(scheduleTable).where(eq(scheduleTable.id, id));
     }
 }
 
