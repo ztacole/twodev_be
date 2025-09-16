@@ -146,8 +146,8 @@ export class ScheduleService {
                 const resultAK05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, r.id) });
 
                 if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) results.push({ status: "Not Competent", detail: await buildActiveScheduleResponse(r) });
-                if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) results.push({ status: "Not Competent", detail: await buildActiveScheduleResponse(r) });
-                if (
+                else if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) results.push({ status: "Not Competent", detail: await buildActiveScheduleResponse(r) });
+                else if (
                     (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
                     (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
                     (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
@@ -158,20 +158,18 @@ export class ScheduleService {
                     (resultAK05 && resultAK05.approved_assessor) && 
                     !resultAK05.is_competent && !r.is_competent
                 ) results.push({ status: "Not Competent", detail: await buildActiveScheduleResponse(r) });
-
-                if (
+                else if (
                     (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
                     (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
                     (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
                     (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
-                    resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true &&
+                    resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true &&
                     (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
                     (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
                     (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) && 
                     r.is_competent
                 ) results.push({ status: "Competent", detail: await buildActiveScheduleResponse(r) });
-
-                console.log(results)
+                else results.push({ status: "On Going", detail: await buildActiveScheduleResponse(r) });
             }
         }
 
