@@ -32,6 +32,8 @@ router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', AssessmentController.getNavigationAssessee);
 router.get('/navigation/assessor/:assessmentId', AssessmentController.getNavigationAssessor);
 
+router.get('/assessment-recapt/:scheduleId', AssessmentController.getAssessmentRecapt);
+
 router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', 
     uploadCertificate.any(), 

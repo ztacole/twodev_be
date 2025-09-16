@@ -120,4 +120,21 @@ export class AssessmentController {
             data: result,
         });
     });
+
+    static getAssessmentRecapt = asyncHandler(async (req: Request, res: Response) => {
+        const scheduleId = Number(req.params.scheduleId);
+        if (!scheduleId) {
+            return res.status(400).json({
+                success: false,
+                message: "Schedule ID harus diisi",
+            });
+        }
+
+        const result = await AssessmentService.getAssessmentRecapt(scheduleId);
+        res.status(200).json({
+            success: true,
+            message: "Navigasi berhasil diambil",
+            data: result,
+        });
+    });
 }

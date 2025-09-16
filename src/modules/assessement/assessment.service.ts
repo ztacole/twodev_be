@@ -1,9 +1,12 @@
 import { DuplicateEntryError, NotFoundError } from "../../common/error";
 import { db } from "../../config/drizzle";
 import {
+    user as userTable,
     assessment as assessmentTable,
     occupation as occupationTable,
     scheme as schemeTable,
+    assessmentSchedule as assessmentScheduleTable,
+    scheduleDetail as scheduleDetailTable,
     ucApl02 as ucApl02Table,
     elementApl02 as elementApl02Table,
     elementDetailsApl02 as elementDetailsApl02Table,
@@ -21,10 +24,20 @@ import {
     ia07Question as ia07QuestionTable,
     questionOption as questionOptionTable,
     result as resultTable,
-    assessor,
+    assessor as assessorTable,
     assessee as assesseeTable,
     resultDoc as resultDocTable,
     resultApl02Header as resultApl02HeaderTable,
+    resultIa01Header as resultIa01HeaderTable,
+    resultIa02Header as resultIa02HeaderTable,
+    resultIa03Header as resultIa03HeaderTable,
+    resultIa05Header as resultIa05HeaderTable,
+    resultIa07Header as resultIa07HeaderTable,
+    resultAk01Header as resultAk01HeaderTable,
+    resultAk02Header as resultAk02HeaderTable,
+    resultAk03Header as resultAk03HeaderTable,
+    resultAk04 as resultAk04Table,
+    resultAk05 as resultAk05Table,
     ia02Pdf as ia02PdfTable,
     assessee,
     resultIa01Header,
@@ -36,6 +49,7 @@ import {
     resultAk03Header,
     resultAk04,
     resultAk05,
+    assessor,
 } from "../../../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
@@ -466,6 +480,107 @@ export class AssessmentService {
             assessment_id: assessment.id,
             assessment_code: assessment.code,
             tabs: tabs,
+        }
+    }
+
+    static async getAssessmentRecapt(schedule_id: number) {
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, schedule_id) });
+        if (!schedule) throw new NotFoundError('Assessment Schedule');
+        
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
+        if (!assessment) throw new NotFoundError('Assessment');
+    
+        const occupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) });
+        if (!occupation) throw new NotFoundError('Occupation');
+        
+        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) });
+        if (!scheme) throw new NotFoundError('Scheme');
+    
+        const scheduleDetail = await db.query.scheduleDetail.findFirst({ where: eq(scheduleDetailTable.schedule_id, schedule_id) });
+        if (!scheduleDetail) throw new NotFoundError('Schedule Detail');
+    
+        let assessor: any = null;
+        if(scheduleDetail) {
+            assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, scheduleDetail.assessor_id) });
+            if (!assessor) throw new NotFoundError('Assessor');
+        }
+    
+        const results = await db.select({
+            id: resultTable.id,
+            assessment_id: resultTable.assessment_id,
+            assessor_id: resultTable.assessor_id,
+            assessee_id: resultTable.assessee_id,
+            tuk: resultTable.tuk,
+            is_competent: resultTable.is_competent,
+        }).from(resultTable).where(eq(resultTable.assessment_id, schedule.assessment_id));
+    
+        let assessees: any[] = [];
+        let tuk: string | null = results[0].tuk ?? null;
+        let summary = {
+            total_assessees: 0,
+            total_competent: 0,
+            total_incompetent: 0,
+            total_ongoing: 0,
+        }
+    
+        for (const res of results) {
+            const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, res.assessee_id) });
+            if (!assessee) continue;
+    
+            const user = await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) });
+    
+            // Ambil semua header terkait
+            const [apl02, ia01, ia02, ia03, ia05, ia07, ak01, ak02, ak03, ak04, ak05] = await Promise.all([
+                db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, res.id) }),
+                db.query.resultIa01Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, res.id) }),
+                db.query.resultIa02Header.findFirst({ where: eq(resultIa02HeaderTable.result_id, res.id) }),
+                db.query.resultIa03Header.findFirst({ where: eq(resultIa03HeaderTable.result_id, res.id) }),
+                db.query.resultIa05Header.findFirst({ where: eq(resultIa05HeaderTable.result_id, res.id) }),
+                db.query.resultIa07Header.findFirst({ where: eq(resultIa07HeaderTable.result_id, res.id) }),
+                db.query.resultAk01Header.findFirst({ where: eq(resultAk01HeaderTable.result_id, res.id) }),
+                db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, res.id) }),
+                db.query.resultAk03Header.findFirst({ where: eq(resultAk03HeaderTable.result_id, res.id) }),
+                db.query.resultAk04.findFirst({ where: eq(resultAk04Table.result_id, res.id) }),
+                db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, res.id) }),
+            ]);
+    
+            // Tentukan status
+            const headers = [apl02, ia01, ia02, ia03, ia05, ia07, ak01, ak02, ak03, ak04, ak05];
+            const anyHeaderMissing = headers.some(header => header === null || header === undefined);
+    
+            let status: string;
+            if (anyHeaderMissing) {
+                status = "On Going";
+            } else {
+                status = res.is_competent ? "Competent" : "Not Competent";
+            }
+    
+            assessees.push({ id: assessee.id, name: user?.full_name, status });
+    
+            summary.total_assessees++;
+            if (status === 'Competent') summary.total_competent++;
+            if (status === 'Not Competent') summary.total_incompetent++;
+            if (status === 'On Going') summary.total_ongoing++;
+        }
+    
+        return {
+            assessment: {
+                id: assessment.id,
+                code: assessment.code,
+                tuk: tuk,
+                schedule: {
+                    id: schedule.id,
+                    start_date: schedule.start_date,
+                    end_date: schedule.end_date,
+                    location: scheduleDetail.location,
+                    assessor: {
+                        id: assessor.id,
+                        full_name: assessor.full_name
+                    }
+                },
+                assessees: assessees,
+                summary: summary
+            }
         }
     }
 }
