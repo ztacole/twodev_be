@@ -36,7 +36,7 @@ app.use('/twodev/api/schedules', scheduleRoutes);
 // Uploads (generic) API
 app.use('/twodev/api/uploads', uploadsRoutes);
 // Serve uploaded files (secured by auth for now)
-app.use('/twodev/uploads', express.static(path.join(__dirname, '../public/uploads')));
+app.use('/twodev/uploads', express.static(path.join(__dirname, '../../../public/uploads')));
 
 // Modules
 app.use('/twodev/api/users', userRoutes);
