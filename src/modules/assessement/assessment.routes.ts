@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authUpload } from '../../middleware/auth.middleware';
+import { assessorMiddleware, authUpload } from '../../middleware/auth.middleware';
 import path from 'path';
 import fs from 'fs';
 import { upload as uploadCertificate } from "./apl-01/upload-config";
@@ -30,7 +30,7 @@ router.delete('/:id', AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
 
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', AssessmentController.getNavigationAssessee);
-router.get('/navigation/assessor/:assessmentId', AssessmentController.getNavigationAssessor);
+router.get('/navigation/assessor/:assessmentId', authenticateToken, assessorMiddleware, AssessmentController.getNavigationAssessor);
 
 router.get('/assessment-recapt/:scheduleId', AssessmentController.getAssessmentRecapt);
 

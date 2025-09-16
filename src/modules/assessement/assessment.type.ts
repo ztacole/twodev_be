@@ -214,3 +214,8 @@ interface IA07QuestionResponse {
     question: string;
     answer_key: string;
 }
+
+export interface AssessorTab{
+    name: string;
+    status: "Not Started" | "Waiting" | "Completed";
+}

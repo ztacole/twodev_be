@@ -3,6 +3,7 @@ import { asyncHandler } from "../../common/async.handler";
 import { Request, Response } from "express";
 import { AssessmentRequest } from "./assessment.type";
 import { JwtPayload } from "jsonwebtoken";
+import { AssessorService } from "../assessor/assessor.service";
 
 export class AssessmentController {
     static createAssessment = asyncHandler(async (req: Request, res: Response) => {
@@ -105,6 +106,9 @@ export class AssessmentController {
     });
 
     static getNavigationAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const user = req.user as JwtPayload;
+        const assessor = await AssessorService.getAssessorByUserId(user.id);
+
         const assessmentId = Number(req.params.assessmentId);
         if (!assessmentId) {
             return res.status(400).json({
@@ -113,7 +117,7 @@ export class AssessmentController {
             });
         }
 
-        const result = await AssessmentService.assessorNavigation(assessmentId);
+        const result = await AssessmentService.assessorNavigation(assessmentId, assessor.id);
         res.status(200).json({
             success: true,
             message: "Navigasi berhasil diambil",

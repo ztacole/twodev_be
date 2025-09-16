@@ -50,9 +50,10 @@ import {
     resultAk04,
     resultAk05,
     assessor,
+    resultIa07Header,
 } from "../../../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse } from "./assessment.type";
+import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
 import { Result } from "drizzle-orm/sqlite-core";
 
 export class AssessmentService {
@@ -456,31 +457,146 @@ export class AssessmentService {
         }
     }
 
-    static async assessorNavigation(assessment_id: number) {
+    static async assessorNavigation(assessment_id: number, assessor_id: number) {
         const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
         if (!assessment) throw new NotFoundError('Assessment');
 
-        const tabs = ['APL-02', 'AK-01']
+        const tabs: AssessorTab[] = [
+            { name: 'APL-02', status: "Not Started" },
+            { name: 'AK-01', status: "Not Started" },
+            { name: 'IA-01', status: "Not Started" },
+            { name: 'IA-02', status: "Not Started" }
+        ]
 
-        const isAnyIa01 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessment_id, assessment_id) });
-        const isAnyIa02 = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
         const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
         const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
 
-        if (isAnyIa01) tabs.push('IA-01');
-        if (isAnyIa02) tabs.push('IA-02');
-        if (isAnyIa03) tabs.push('IA-03');
-        if (isAnyIa05) tabs.push('IA-05');
-        if (isAnyIa07) tabs.push('IA-07');
+        if (isAnyIa03) tabs.push({ name: 'IA-03', status: "Not Started" });
+        if (isAnyIa05) tabs.push({ name: 'IA-05', status: "Not Started" });
+        if (isAnyIa07) tabs.push({ name: 'IA-07', status: "Not Started" });
 
-        tabs.push('AK-02', 'AK-03', 'AK-05');
+        tabs.push(
+            { name: 'AK-02', status: "Not Started" },
+            { name: 'AK-03', status: "Not Started" },
+            { name: 'AK-05', status: "Not Started" }
+        );
+
+        const results = await db.select().from(resultTable)
+            .where(and(
+                eq(resultTable.assessment_id, assessment_id),
+                eq(resultTable.assessor_id, assessor_id)
+            ));
+        if (results.length === 0) {
+            return {
+                assessment_id: assessment.id,
+                assessment_code: assessment.code,
+                tabs: tabs,
+            };
+        }
+
+        let apl02NotYetCount = 0;
+        let ia01NotYetCount = 0;
+        let ia02NotYetCount = 0;
+        let ia03NotYetCount = 0;
+        let ia05NotYetCount = 0;
+        let ia07NotYetCount = 0;
+        let ak01NotYetCount = 0;
+        let ak02NotYetCount = 0;
+        let ak03NotYetCount = 0;
+        let ak05NotYetCount = 0;
+
+        let apl02WaitingCount = 0;
+        let ia01WaitingCount = 0;
+        let ia02WaitingCount = 0;
+        let ia03WaitingCount = 0;
+        let ia05WaitingCount = 0;
+        let ia07WaitingCount = 0;
+        let ak01WaitingCount = 0;
+        let ak02WaitingCount = 0;
+        let ak03WaitingCount = 0;
+        let ak05WaitingCount = 0;
+
+        for (const result of results) {
+            const apl02 = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result.id) });
+            const ia01 = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01Header.result_id, result.id) });
+            const ia02 = await db.query.resultIa02Header.findFirst({ where: eq(resultIa02Header.result_id, result.id) });
+            const ia03 = await db.query.resultIa03Header.findFirst({ where: eq(resultIa03Header.result_id, result.id) });
+            const ia05 = await db.query.resultIa05Header.findFirst({ where: eq(resultIa05Header.result_id, result.id) });
+            const ia07 = await db.query.resultIa07Header.findFirst({ where: eq(resultIa07Header.result_id, result.id) });
+            const ak01 = await db.query.resultAk01Header.findFirst({ where: eq(resultAk01Header.result_id, result.id) });
+            const ak02 = await db.query.resultAk02Header.findFirst({ where: eq(resultAk02Header.result_id, result.id) });
+            const ak03 = await db.query.resultAk03Header.findFirst({ where: eq(resultAk03Header.result_id, result.id) });
+            const ak05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05.result_id, result.id) });
+
+            if (apl02) {
+                if (!apl02.approved_assessor) apl02NotYetCount++;
+                if (apl02.approved_assessor && !apl02.approved_assessee) apl02WaitingCount++;
+            }
+            if (ia01) {
+                if (!ia01.approved_assessor) ia01NotYetCount++;
+                if (ia01.approved_assessor && !ia01.approved_assessee) ia01WaitingCount++;
+            }
+            if (ia02) {
+                if (!ia02.approved_assessor) ia02NotYetCount++;
+                if (ia02.approved_assessor && !ia02.approved_assessee) ia02WaitingCount++;
+            }
+            if (ia03) {
+                if (!ia03.approved_assessor) ia03NotYetCount++;
+                if (ia03.approved_assessor && !ia03.approved_assessee) ia03WaitingCount++;
+            }
+            if (ia05) {
+                if (!ia05.approved_assessor) ia05NotYetCount++;
+                if (ia05.approved_assessor && !ia05.approved_assessee) ia05WaitingCount++;
+            }
+            if (ia07) {
+                if (!ia07.approved_assessor) ia07NotYetCount++;
+                if (ia07.approved_assessor && !ia07.approved_assessee) ia07WaitingCount++;
+            }
+            if (ak01) {
+                if (!ak01.approved_assessor) ak01NotYetCount++;
+                if (ak01.approved_assessor && !ak01.approved_assessee) ak01WaitingCount++;
+            }
+            if (ak02) {
+                if (!ak02.approved_assessor) ak02NotYetCount++;
+                if (ak02.approved_assessor && !ak02.approved_assessee) ak02WaitingCount++;
+            }
+            if (ak03) {
+                if (!ak03) ak03NotYetCount++;
+            }
+            if (ak05) {
+                if (!ak05.approved_assessor) ak05NotYetCount++;
+            }
+        };
+
+        const apl02Tab = tabs.find((tab) => tab.name === 'APL-02');
+        if (apl02Tab) apl02Tab.status = (apl02NotYetCount > 0) ? 'Not Started' : (apl02NotYetCount === 0 && apl02WaitingCount > 0) ? 'Waiting' : 'Completed';
+        const ia01Tab = tabs.find((tab) => tab.name === 'IA-01');
+        if (ia01Tab) ia01Tab.status = (ia01NotYetCount > 0) ? 'Not Started' : (ia01NotYetCount === 0 && ia01WaitingCount > 0) ? 'Waiting' : 'Completed';
+        const ia02Tab = tabs.find((tab) => tab.name === 'IA-02');
+        if (ia02Tab) ia02Tab.status = (ia02NotYetCount > 0) ? 'Not Started' : (ia02NotYetCount === 0 && ia02WaitingCount > 0) ? 'Waiting' : 'Completed';
+        const ia03Tab = tabs.find((tab) => tab.name === 'IA-03');
+        if (ia03Tab) ia03Tab.status = (ia03NotYetCount > 0) ? 'Not Started' : (ia03NotYetCount === 0 && ia03WaitingCount > 0) ? 'Waiting' : 'Completed';
+        const ia05Tab = tabs.find((tab) => tab.name === 'IA-05');
+        if (ia05Tab) ia05Tab.status = (ia05NotYetCount > 0) ? 'Not Started' : (ia05NotYetCount === 0 && ia05WaitingCount > 0) ? 'Waiting' : 'Completed';
+        const ia07Tab = tabs.find((tab) => tab.name === 'IA-07');
+        if (ia07Tab) ia07Tab.status = (ia07NotYetCount > 0) ? 'Not Started' : (ia07NotYetCount === 0 && ia07WaitingCount > 0) ? 'Waiting' : 'Completed';
+        const ak01Tab = tabs.find((tab) => tab.name === 'AK-01');
+        if (ak01Tab) ak01Tab.status = (ak01NotYetCount > 0) ? 'Not Started' : (ak01NotYetCount === 0 && ak01WaitingCount > 0) ? 'Waiting' : 'Completed';
+        const ak02Tab = tabs.find((tab) => tab.name === 'AK-02');
+        if (ak02Tab) ak02Tab.status = (ak02NotYetCount > 0) ? 'Not Started' : (ak02NotYetCount === 0 && ak02WaitingCount > 0) ? 'Waiting' : 'Completed';
+        const ak03Tab = tabs.find((tab) => tab.name === 'AK-03');
+        if (ak03Tab) ak03Tab.status = (ak03NotYetCount > 0) ? 'Not Started' : (ak03NotYetCount === 0 && ak03WaitingCount > 0) ? 'Waiting' : 'Completed';
+        const ak05Tab = tabs.find((tab) => tab.name === 'AK-05');
+        if (ak05Tab) ak05Tab.status = (ak05NotYetCount > 0) ? 'Not Started' : (ak05NotYetCount === 0 && ak05WaitingCount > 0) ? 'Waiting' : 'Completed';
+
+        
 
         return {
             assessment_id: assessment.id,
             assessment_code: assessment.code,
             tabs: tabs,
-        }
+        };
     }
 
     static async getAssessmentRecapt(schedule_id: number) {
