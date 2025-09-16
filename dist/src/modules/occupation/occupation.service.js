@@ -22,10 +22,10 @@ class OccupationService {
     static getOccupations() {
         return __awaiter(this, void 0, void 0, function* () {
             const occupations = yield drizzle_1.db.select().from(schema_1.occupation);
-            const schemeIds = [...new Set(occupations.map(o => o.schemeId))];
+            const schemeIds = [...new Set(occupations.map(o => o.scheme_id))];
             const schemes = schemeIds.length ? yield drizzle_1.db.select().from(schema_1.scheme).where((0, drizzle_orm_1.eq)(schema_1.scheme.id, schemeIds[0])) : [];
             const schemeById = new Map(schemes.map(s => [s.id, s]));
-            return occupations.map(o => (Object.assign(Object.assign({}, o), { scheme: schemeById.get(o.schemeId) || null })));
+            return occupations.map(o => (Object.assign(Object.assign({}, o), { scheme: schemeById.get(o.scheme_id) || null })));
         });
     }
     static getOccupationById(id) {
@@ -34,7 +34,7 @@ class OccupationService {
             if (!occupation) {
                 throw new error_1.NotFoundError('Occupation');
             }
-            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.schemeId) });
+            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id) });
             return Object.assign(Object.assign({}, occupation), { scheme });
         });
     }
@@ -45,13 +45,13 @@ class OccupationService {
                 throw new error_1.NotFoundError('Scheme');
             }
             const existingOccupation = yield drizzle_1.db.query.occupation.findFirst({
-                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.occupation.schemeId, data.scheme_id), (0, drizzle_orm_1.eq)(schema_1.occupation.name, data.name)),
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, data.scheme_id), (0, drizzle_orm_1.eq)(schema_1.occupation.name, data.name)),
             });
             if (existingOccupation) {
                 throw new error_1.DuplicateEntryError('Occupation name', data.name);
             }
-            yield drizzle_1.db.insert(schema_1.occupation).values({ schemeId: data.scheme_id, name: data.name });
-            return yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.occupation.schemeId, data.scheme_id), (0, drizzle_orm_1.eq)(schema_1.occupation.name, data.name)) });
+            yield drizzle_1.db.insert(schema_1.occupation).values({ scheme_id: data.scheme_id, name: data.name });
+            return yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, data.scheme_id), (0, drizzle_orm_1.eq)(schema_1.occupation.name, data.name)) });
         });
     }
     static updateOccupation(id, data) {
@@ -69,7 +69,7 @@ class OccupationService {
                 throw new error_1.DuplicateEntryError('Occupation name', data.name);
             }
             yield drizzle_1.db.update(schema_1.occupation)
-                .set({ schemeId: data.scheme_id, name: data.name })
+                .set({ scheme_id: data.scheme_id, name: data.name })
                 .where((0, drizzle_orm_1.eq)(schema_1.occupation.id, id));
             const occupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, id) });
             if (!occupation) {
@@ -93,8 +93,8 @@ class OccupationService {
             if (!occupations.length) {
                 throw new error_1.NotFoundError('Occupations');
             }
-            const schemeIds = [...new Set(occupations.map(o => o.schemeId))];
-            const schemes = schemeIds.length ? yield drizzle_1.db.select().from(schema_1.scheme).where((0, drizzle_orm_1.eq)(schema_1.scheme.id, schemeIds[0])) : [];
+            const scheme_ids = [...new Set(occupations.map(o => o.scheme_id))];
+            const schemes = scheme_ids.length ? yield drizzle_1.db.select().from(schema_1.scheme).where((0, drizzle_orm_1.eq)(schema_1.scheme.id, scheme_ids[0])) : [];
             const schemeById = new Map(schemes.map(s => [s.id, s]));
             const workbook = new exceljs_1.default.Workbook();
             const worksheet = workbook.addWorksheet('Occupations');
@@ -117,7 +117,7 @@ class OccupationService {
             occupations.forEach(occ => {
                 var _a;
                 const row = worksheet.addRow([
-                    ((_a = schemeById.get(occ.schemeId)) === null || _a === void 0 ? void 0 : _a.code) || '',
+                    ((_a = schemeById.get(occ.scheme_id)) === null || _a === void 0 ? void 0 : _a.code) || '',
                     occ.name
                 ]);
                 row.eachCell((cell) => {

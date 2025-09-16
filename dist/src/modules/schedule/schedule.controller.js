@@ -63,16 +63,18 @@ ScheduleController.getActiveSchedules = (0, async_handler_1.asyncHandler)((req, 
         data: schedules
     });
 }));
-ScheduleController.getCompletedSchedules = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const schedules = yield schedule_service_1.ScheduleService.getCompletedSchedules();
+ScheduleController.getActiveSchedulesAssessor = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.user;
+    const schedules = yield schedule_service_1.ScheduleService.getActiveSchedulesAssessor(user);
     res.status(200).json({
         success: true,
-        message: 'Jadwal yang selesai berhasil diambil',
+        message: 'Jadwal aktif berhasil diambil',
         data: schedules
     });
 }));
-ScheduleController.getCompletedSchedulesByAssesseeId = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const schedules = yield schedule_service_1.ScheduleService.getCompletedSchedulesByAssesseeId(Number(req.params.assesseeId));
+ScheduleController.getCompletedSchedules = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.user;
+    const schedules = yield schedule_service_1.ScheduleService.getCompletedSchedules(user);
     res.status(200).json({
         success: true,
         message: 'Jadwal yang selesai berhasil diambil',

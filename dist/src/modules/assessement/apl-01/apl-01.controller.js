@@ -18,25 +18,34 @@ class APL1Controller {
 exports.APL1Controller = APL1Controller;
 _a = APL1Controller;
 APL1Controller.createAssesseeAPL1 = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const requiredFields = [
-        'user_id', 'full_name', 'identity_number', 'birth_date',
-        'birth_location', 'gender', 'nationality', 'phone_no',
-        'address', 'postal_code', 'educational_qualifications'
-    ];
-    for (const field of requiredFields) {
-        if (!req.body[field]) {
-            return res.status(400).json({
-                success: false,
-                message: `Field ${field} harus diisi`
-            });
+    try {
+        const requiredFields = [
+            'user_id', 'full_name', 'identity_number', 'birth_date',
+            'birth_location', 'gender', 'nationality', 'phone_no',
+            'address', 'postal_code', 'educational_qualifications'
+        ];
+        for (const field of requiredFields) {
+            if (!req.body[field]) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Field ${field} harus diisi`
+                });
+            }
         }
+        const assessee = yield apl_01_service_1.APL1Service.createOrUpdateAssessee(req.body);
+        res.status(201).json({
+            success: true,
+            message: 'Data assessee berhasil disimpan',
+            data: assessee
+        });
     }
-    const assessee = yield apl_01_service_1.APL1Service.createOrUpdateAssessee(req.body);
-    res.status(201).json({
-        success: true,
-        message: 'Data assessee berhasil disimpan',
-        data: assessee
-    });
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan dalam membuat assessee',
+            error: error.message
+        });
+    }
 }));
 APL1Controller.createOrUploadCertificateDocs = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const assesseeId = parseInt(req.body.assessee_id);
@@ -50,9 +59,9 @@ APL1Controller.createOrUploadCertificateDocs = (0, async_handler_1.asyncHandler)
     }
     const files = Array.isArray(req.files) ? req.files : [];
     const result = yield apl_01_service_1.APL1Service.createOrUploadCertificate({
-        assesseeId,
-        assessorId,
-        assessmentId,
+        assessee_id: assesseeId,
+        assessor_id: assessorId,
+        assessment_id: assessmentId,
         bodyData: req.body,
         files
     });
@@ -103,5 +112,29 @@ APL1Controller.approveResult = (0, async_handler_1.asyncHandler)((req, res) => _
         success: true,
         message: 'Hasil berhasil disetujui',
         data: result
+    });
+}));
+APL1Controller.getResultDetails = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const resultId = parseInt(req.params.resultId);
+    if (!resultId) {
+        return res.status(400).json({ success: false, message: 'Result ID is required' });
+    }
+    const result = yield apl_01_service_1.APL1Service.getResultDetails(resultId);
+    res.status(200).json({
+        success: true,
+        message: 'Detail hasil berhasil diambil',
+        data: result
+    });
+}));
+APL1Controller.getResultDocsByResultId = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const resultId = Number(req.params.resultId);
+    if (!resultId) {
+        return res.status(400).json({ success: false, message: 'Result ID is required' });
+    }
+    const results = yield apl_01_service_1.APL1Service.getResultDocsByResultId(resultId);
+    res.status(200).json({
+        success: true,
+        message: 'Hasil berhasil diambil',
+        data: results
     });
 }));

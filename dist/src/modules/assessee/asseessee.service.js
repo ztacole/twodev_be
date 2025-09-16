@@ -54,24 +54,24 @@ class AssesseeService {
     static createAssessee(data) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b, _c;
-            const existing = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.userId, data.user_id) });
+            const existing = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, data.user_id) });
             if (existing)
                 throw new error_1.DuplicateEntryError('Assessee untuk user_id', data.user_id.toString());
             yield drizzle_1.db.insert(schema_1.assessee).values({
-                userId: data.user_id,
-                identityNumber: data.identity_number,
-                birthDate: new Date(data.birth_date),
-                birthLocation: data.birth_location,
+                user_id: data.user_id,
+                identity_number: data.identity_number,
+                birth_date: new Date(data.birth_date),
+                birth_location: data.birth_location,
                 gender: translateGenderToEn(data.gender),
                 nationality: data.nationality,
-                phoneNo: data.phone_no,
-                housePhoneNo: (_a = data.house_phone_no) !== null && _a !== void 0 ? _a : null,
-                officePhoneNo: (_b = data.office_phone_no) !== null && _b !== void 0 ? _b : null,
+                phone_no: data.phone_no,
+                house_phone_no: (_a = data.house_phone_no) !== null && _a !== void 0 ? _a : null,
+                office_phone_no: (_b = data.office_phone_no) !== null && _b !== void 0 ? _b : null,
                 address: data.address,
-                postalCode: (_c = data.postal_code) !== null && _c !== void 0 ? _c : null,
-                educationalQualifications: data.educational_qualifications,
+                postal_code: (_c = data.postal_code) !== null && _c !== void 0 ? _c : null,
+                educational_qualifications: data.educational_qualifications,
             });
-            const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.userId, data.user_id) });
+            const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, data.user_id) });
             if (!assessee)
                 throw new error_1.NotFoundError('Assessee');
             return this.formatAssesseeResponse(assessee);
@@ -84,18 +84,18 @@ class AssesseeService {
             if (!existing)
                 throw new error_1.NotFoundError('Assessee');
             yield drizzle_1.db.update(schema_1.assessee).set({
-                userId: data.user_id,
-                identityNumber: data.identity_number,
-                birthDate: new Date(data.birth_date),
-                birthLocation: data.birth_location,
+                user_id: data.user_id,
+                identity_number: data.identity_number,
+                birth_date: new Date(data.birth_date),
+                birth_location: data.birth_location,
                 gender: translateGenderToEn(data.gender),
                 nationality: data.nationality,
-                phoneNo: data.phone_no,
-                housePhoneNo: (_a = data.house_phone_no) !== null && _a !== void 0 ? _a : null,
-                officePhoneNo: (_b = data.office_phone_no) !== null && _b !== void 0 ? _b : null,
+                phone_no: data.phone_no,
+                house_phone_no: (_a = data.house_phone_no) !== null && _a !== void 0 ? _a : null,
+                office_phone_no: (_b = data.office_phone_no) !== null && _b !== void 0 ? _b : null,
                 address: data.address,
-                postalCode: (_c = data.postal_code) !== null && _c !== void 0 ? _c : null,
-                educationalQualifications: data.educational_qualifications,
+                postal_code: (_c = data.postal_code) !== null && _c !== void 0 ? _c : null,
+                educational_qualifications: data.educational_qualifications,
             }).where((0, drizzle_orm_1.eq)(schema_1.assessee.id, id));
             const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, id) });
             if (!assessee)
@@ -114,17 +114,17 @@ class AssesseeService {
     static formatAssesseeResponse(assessee) {
         return {
             id: assessee.id,
-            user_id: assessee.userId,
+            user_id: assessee.user_id,
             identity_number: assessee.identityNumber,
-            birth_date: assessee.birthDate,
-            birth_location: assessee.birthLocation,
+            birth_date: assessee.birth_date,
+            birth_location: assessee.b_lrthLocation,
             gender: assessee.gender,
             nationality: assessee.nationality,
-            phone_no: assessee.phoneNo,
-            house_phone_no: assessee.housePhoneNo,
-            office_phone_no: assessee.officePhoneNo,
+            phone_no: assessee.pho_neNo,
+            house_phone_no: assessee.ho_nsePhoneNo,
+            office_phone_no: assessee.of_nicePhoneNo,
             address: assessee.address,
-            postal_code: assessee.postalCode,
+            postal_code: assessee.p_cstalCode,
             educational_qualifications: assessee.educationalQualifications,
         };
     }

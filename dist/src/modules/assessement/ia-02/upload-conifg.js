@@ -9,10 +9,15 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        const group = 'group-ia-02';
-        const groupId = req.params.groupId || 'unknown-group';
-        const uploadPath = path_1.default.join(__dirname, '../../../../public/uploads/ia-02', `${group}_${groupId}`);
-        if (!fs_1.default.existsSync(uploadPath)) {
+        const assessmentId = req.params.assessmentId || 'unknown-assessment';
+        const uploadPath = path_1.default.join(__dirname, '../../../../public/uploads/ia-02', `assessment-${assessmentId}`);
+        if (fs_1.default.existsSync(uploadPath)) {
+            fs_1.default.readdirSync(uploadPath).forEach((file) => {
+                const filePath = path_1.default.join(uploadPath, file);
+                fs_1.default.unlinkSync(filePath);
+            });
+        }
+        else {
             fs_1.default.mkdirSync(uploadPath, { recursive: true });
         }
         cb(null, uploadPath);

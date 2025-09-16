@@ -39,21 +39,21 @@ class AuthService {
             const saltRounds = 10;
             const hashedPassword = yield bcryptjs_1.default.hash(data.password, saltRounds);
             yield drizzle_1.db.insert(schema_1.user).values({
-                fullName: data.full_name,
+                full_name: data.full_name,
                 email: data.email,
                 password: hashedPassword,
-                roleId: data.role_id
+                role_id: data.role_id
             });
             const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.email, data.email) });
             if (!user)
                 throw new error_1.NotFoundError('Pengguna');
-            const token = this.generateToken(user.id, user.email, user.roleId);
+            const token = this.generateToken(user.id, user.email, user.role_id);
             return {
                 user: {
                     id: user.id,
-                    full_name: user.fullName,
+                    full_name: user.full_name,
                     email: user.email,
-                    role_id: user.roleId
+                    role_id: user.role_id
                 },
                 token
             };
@@ -71,13 +71,13 @@ class AuthService {
             if (!isPasswordValid) {
                 throw new error_1.ValidationError('Email atau password tidak valid');
             }
-            const token = this.generateToken(user.id, user.email, user.roleId);
+            const token = this.generateToken(user.id, user.email, user.role_id);
             return {
                 user: {
                     id: user.id,
-                    full_name: user.fullName,
+                    full_name: user.full_name,
                     email: user.email,
-                    role_id: user.roleId
+                    role_id: user.role_id
                 },
                 token
             };
@@ -91,7 +91,7 @@ class AuthService {
             if (!user) {
                 throw new error_1.NotFoundError('Pengguna');
             }
-            const role = yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.roleId) });
+            const role = yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) });
             // assessor / assessee / admin relations can be fetched where needed in their modules
             return Object.assign(Object.assign({}, user), { role });
         });
@@ -107,9 +107,9 @@ class AuthService {
             }
         });
     }
-    static generateToken(userId, email, role_id) {
+    static generateToken(id, email, role_id) {
         const payload = {
-            userId,
+            id,
             email,
             role_id
         };

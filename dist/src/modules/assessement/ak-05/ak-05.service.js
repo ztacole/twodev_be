@@ -21,37 +21,37 @@ class AK05Service {
             const result = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, data.result_id) });
             if (!result)
                 throw new error_1.NotFoundError('Result');
-            const existing = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.resultId, data.result_id) });
+            const existing = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, data.result_id) });
             if (existing) {
                 yield drizzle_1.db
                     .update(schema_1.resultAk05)
                     .set({
-                    isCompetent: (_b = (_a = data.items[0]) === null || _a === void 0 ? void 0 : _a.is_competent) !== null && _b !== void 0 ? _b : false,
+                    is_competent: (_b = (_a = data.items[0]) === null || _a === void 0 ? void 0 : _a.is_competent) !== null && _b !== void 0 ? _b : false,
                     description: (_d = (_c = data.items[0]) === null || _c === void 0 ? void 0 : _c.description) !== null && _d !== void 0 ? _d : null,
-                    negativePositiveAspects: (_f = (_e = data.items[0]) === null || _e === void 0 ? void 0 : _e.negative_positive_aspects) !== null && _f !== void 0 ? _f : null,
-                    rejectionNotes: (_h = (_g = data.items[0]) === null || _g === void 0 ? void 0 : _g.rejection_notes) !== null && _h !== void 0 ? _h : null,
-                    improvementSuggestions: (_k = (_j = data.items[0]) === null || _j === void 0 ? void 0 : _j.improvement_suggestions) !== null && _k !== void 0 ? _k : null,
+                    negative_positive_aspects: (_f = (_e = data.items[0]) === null || _e === void 0 ? void 0 : _e.negative_positive_aspects) !== null && _f !== void 0 ? _f : null,
+                    rejection_notes: (_h = (_g = data.items[0]) === null || _g === void 0 ? void 0 : _g.rejection_notes) !== null && _h !== void 0 ? _h : null,
+                    improvement_suggestions: (_k = (_j = data.items[0]) === null || _j === void 0 ? void 0 : _j.improvement_suggestions) !== null && _k !== void 0 ? _k : null,
                     notes: (_m = (_l = data.items[0]) === null || _l === void 0 ? void 0 : _l.notes) !== null && _m !== void 0 ? _m : null,
-                    approvedAssessor: (_p = (_o = data.items[0]) === null || _o === void 0 ? void 0 : _o.approved_assessor) !== null && _p !== void 0 ? _p : false,
+                    approved_assessor: (_p = (_o = data.items[0]) === null || _o === void 0 ? void 0 : _o.approved_assessor) !== null && _p !== void 0 ? _p : false,
                 })
-                    .where((0, drizzle_orm_1.eq)(schema_1.resultAk05.resultId, data.result_id));
+                    .where((0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, data.result_id));
             }
             else {
                 yield drizzle_1.db.insert(schema_1.resultAk05).values({
-                    resultId: data.result_id,
-                    isCompetent: (_r = (_q = data.items[0]) === null || _q === void 0 ? void 0 : _q.is_competent) !== null && _r !== void 0 ? _r : false,
+                    result_id: data.result_id,
+                    is_competent: (_r = (_q = data.items[0]) === null || _q === void 0 ? void 0 : _q.is_competent) !== null && _r !== void 0 ? _r : false,
                     description: (_t = (_s = data.items[0]) === null || _s === void 0 ? void 0 : _s.description) !== null && _t !== void 0 ? _t : null,
-                    negativePositiveAspects: (_v = (_u = data.items[0]) === null || _u === void 0 ? void 0 : _u.negative_positive_aspects) !== null && _v !== void 0 ? _v : null,
-                    rejectionNotes: (_x = (_w = data.items[0]) === null || _w === void 0 ? void 0 : _w.rejection_notes) !== null && _x !== void 0 ? _x : null,
-                    improvementSuggestions: (_z = (_y = data.items[0]) === null || _y === void 0 ? void 0 : _y.improvement_suggestions) !== null && _z !== void 0 ? _z : null,
+                    negative_positive_aspects: (_v = (_u = data.items[0]) === null || _u === void 0 ? void 0 : _u.negative_positive_aspects) !== null && _v !== void 0 ? _v : null,
+                    rejection_notes: (_x = (_w = data.items[0]) === null || _w === void 0 ? void 0 : _w.rejection_notes) !== null && _x !== void 0 ? _x : null,
+                    improvement_suggestions: (_z = (_y = data.items[0]) === null || _y === void 0 ? void 0 : _y.improvement_suggestions) !== null && _z !== void 0 ? _z : null,
                     notes: (_1 = (_0 = data.items[0]) === null || _0 === void 0 ? void 0 : _0.notes) !== null && _1 !== void 0 ? _1 : null,
-                    approvedAssessor: (_3 = (_2 = data.items[0]) === null || _2 === void 0 ? void 0 : _2.approved_assessor) !== null && _3 !== void 0 ? _3 : false,
+                    approved_assessor: (_3 = (_2 = data.items[0]) === null || _2 === void 0 ? void 0 : _2.approved_assessor) !== null && _3 !== void 0 ? _3 : false,
                 });
             }
             if ((_4 = data.items[0]) === null || _4 === void 0 ? void 0 : _4.is_competent) {
-                yield drizzle_1.db.update(schema_1.result).set({ isCompetent: true }).where((0, drizzle_orm_1.eq)(schema_1.result.id, data.result_id));
+                yield drizzle_1.db.update(schema_1.result).set({ is_competent: true }).where((0, drizzle_orm_1.eq)(schema_1.result.id, data.result_id));
             }
-            const ak05 = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.resultId, data.result_id) });
+            const ak05 = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, data.result_id) });
             if (!ak05)
                 throw new error_1.NotFoundError('AK05');
             const enriched = yield buildAK05Response(ak05);
@@ -60,17 +60,17 @@ class AK05Service {
     }
     static getAK05ByResultId(result_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const ak05 = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.resultId, result_id) });
+            const ak05 = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result_id) });
             if (!ak05)
                 return null;
             return yield buildAK05Response(ak05);
         });
     }
     // AK-05 Approval
-    static approvedByAssessor(resultId) {
+    static approvedByAssessor(result_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield drizzle_1.db.update(schema_1.resultAk05).set({ approvedAssessor: true }).where((0, drizzle_orm_1.eq)(schema_1.resultAk05.resultId, resultId));
-            const updated = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.resultId, resultId) });
+            yield drizzle_1.db.update(schema_1.resultAk05).set({ approved_assessor: true }).where((0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result_id));
+            const updated = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result_id) });
             if (!updated)
                 throw new error_1.NotFoundError('AK05');
             return yield buildAK05Response(updated);
@@ -80,34 +80,34 @@ class AK05Service {
 exports.AK05Service = AK05Service;
 function buildAK05Response(ak05) {
     return __awaiter(this, void 0, void 0, function* () {
-        const result = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, ak05.resultId) });
+        const result = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, ak05.result_id) });
         if (!result)
             throw new error_1.NotFoundError('Result');
-        const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.assessmentId) });
+        const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.assessment_id) });
         let occupation = null;
         let scheme = null;
         if (assessment) {
-            occupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupationId) });
+            occupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id) });
             if (occupation) {
                 scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.schemeId) });
             }
         }
-        const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, result.assesseeId) });
-        const assesseeUser = assessee ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.userId) }) : null;
-        const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, result.assessorId) });
-        const assessorUser = assessor ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.userId) }) : null;
+        const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, result.assessee_id) });
+        const assesseeUser = assessee ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.user_id) }) : null;
+        const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, result.assessor_id) });
+        const assessorUser = assessor ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) }) : null;
         return {
             id: ak05.id,
             result: {
                 id: result.id,
                 assessment: assessment ? Object.assign(Object.assign({}, assessment), { occupation: occupation ? Object.assign(Object.assign({}, occupation), { scheme }) : null }) : null,
-                assessee: assessee && assesseeUser ? { id: assessee.id, user: { full_name: assesseeUser.fullName, email: assesseeUser.email } } : null,
-                assessor: assessor && assessorUser ? { id: assessor.id, user: { full_name: assessorUser.fullName, email: assessorUser.email }, no_reg_met: assessor.noRegMet } : null,
+                assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
+                assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,
                 tuk: result.tuk,
-                created_at: result.createdAt,
+                created_at: result.created_at,
                 result_ak05: ak05,
             },
-            is_competent: ak05.isCompetent,
+            is_competent: ak05.is_competent,
         };
     });
 }

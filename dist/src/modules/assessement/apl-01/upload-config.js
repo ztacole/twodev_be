@@ -27,11 +27,11 @@ const storage = multer_1.default.diskStorage({
     }
 });
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+    if (['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp'].includes(file.mimetype)) {
         cb(null, true);
     }
     else {
-        cb(new Error('Hanya file gambar atau PDF yang diperbolehkan'), false);
+        cb(new Error('Hanya file gambar yang diperbolehkan'), false);
     }
 };
 exports.upload = (0, multer_1.default)({

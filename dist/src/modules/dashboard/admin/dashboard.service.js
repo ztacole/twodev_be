@@ -38,16 +38,16 @@ class DashboardService {
         return __awaiter(this, void 0, void 0, function* () {
             const schedules = yield drizzle_1.db.select().from(schema_1.assessmentSchedule);
             return Promise.all(schedules.map((s) => __awaiter(this, void 0, void 0, function* () {
-                const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, s.assessmentId) });
-                const occupation = assessment ? yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupationId) }) : null;
-                const scheme = occupation ? yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.schemeId) }) : null;
+                const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, s.assessment_id) });
+                const occupation = assessment ? yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id) }) : null;
+                const scheme = occupation ? yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id) }) : null;
                 return {
                     id: s.id,
-                    assessment_id: s.assessmentId,
+                    assessment_id: s.assessment_id,
                     schema_name: scheme === null || scheme === void 0 ? void 0 : scheme.code,
                     occupation_name: occupation === null || occupation === void 0 ? void 0 : occupation.name,
-                    start_date: s.startDate,
-                    end_date: s.endDate,
+                    start_date: s.start_date,
+                    end_date: s.start_date,
                 };
             })));
         });
@@ -57,13 +57,13 @@ class DashboardService {
             const docs = yield drizzle_1.db.select().from(schema_1.resultDoc);
             return docs.map((d) => ({
                 id: d.id,
-                result_id: d.resultId,
+                result_id: d.result_id,
                 purpose: d.purpose,
-                school_report_card: d.schoolReportCard,
-                field_work_practice_certificate: d.fieldWorkPracticeCertificate,
-                student_card: d.studentCard,
-                family_card: d.familyCard,
-                id_card: d.idCard,
+                school_report_card: d.school_report_card,
+                field_work_practice_certificate: d.field_work_practice_certificate,
+                student_card: d.student_card,
+                family_card: d.family_card,
+                id_card: d.id_card,
                 approved: d.approved,
             }));
         });

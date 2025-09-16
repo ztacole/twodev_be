@@ -8,20 +8,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IA02Controller = void 0;
 const ia_02_service_1 = require("./ia-02.service");
 const async_handler_1 = require("../../../common/async.handler");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 class IA02Controller {
     static uploadPdf(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const groupId = Number(req.params.groupId);
-                if (!groupId) {
+                const assessmentId = Number(req.params.assessmentId);
+                if (!assessmentId) {
                     return res.status(400).json({
                         success: false,
-                        message: "Group ID dibutuhkan",
+                        message: "Assessment ID dibutuhkan",
                     });
                 }
                 if (!req.file) {
@@ -32,7 +37,7 @@ class IA02Controller {
                 }
                 const fileName = req.file.filename;
                 const filePath = req.file.path;
-                const pdf = yield ia_02_service_1.IAO2Service.uploadPdf(groupId, filePath, fileName);
+                const pdf = yield ia_02_service_1.IAO2Service.uploadPdf(assessmentId, filePath, fileName);
                 return res.status(201).json({
                     success: true,
                     message: "PDF berhasil diupload",
@@ -51,25 +56,28 @@ class IA02Controller {
     static getPdf(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const groupId = Number(req.params.groupId);
-                if (!groupId) {
+                const assessmentId = Number(req.params.assessmentId);
+                if (!assessmentId) {
                     return res.status(400).json({
                         success: false,
-                        message: "Group ID dibutuhkan",
+                        message: "Assessment ID dibutuhkan",
                     });
                 }
-                const pdf = yield ia_02_service_1.IAO2Service.getPdf(groupId);
+                const pdf = yield ia_02_service_1.IAO2Service.getPdf(assessmentId);
                 if (!pdf) {
                     return res.status(404).json({
                         success: false,
                         message: "PDF tidak ditemukan",
                     });
                 }
-                return res.status(200).json({
-                    success: true,
-                    message: "PDF berhasil diambil",
-                    data: pdf,
-                });
+                const filePath = path_1.default.join(__dirname, "../../../../public/uploads/ia-02", `assessment-${assessmentId}`, pdf.file_name);
+                if (!fs_1.default.existsSync(filePath)) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "File PDF tidak ditemukan di server",
+                    });
+                }
+                return res.download(filePath, pdf.file_name);
             }
             catch (error) {
                 return res.status(500).json({

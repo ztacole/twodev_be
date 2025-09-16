@@ -34,6 +34,25 @@ AK03Controller.createAK03 = (0, async_handler_1.asyncHandler)(function (req, res
         }
     });
 });
+AK03Controller.createAnswerAK03 = (0, async_handler_1.asyncHandler)(function (req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const data = yield ak_03_service_1.AK03Service.createAnswerAK03(req.body);
+            res.status(201).json({
+                success: true,
+                message: 'Jawaban AK-03 berhasil dibuat',
+                data: data,
+            });
+        }
+        catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Gagal membuat jawaban AK-03',
+                error: error.message,
+            });
+        }
+    });
+});
 AK03Controller.getAK03ByResultId = (0, async_handler_1.asyncHandler)(function (req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {

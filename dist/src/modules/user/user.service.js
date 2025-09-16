@@ -23,15 +23,15 @@ class UserService {
         return __awaiter(this, void 0, void 0, function* () {
             const hashedPassword = yield bcryptjs_1.default.hash(data.password, 10);
             yield drizzle_1.db.insert(schema_1.user).values({
-                fullName: data.full_name,
+                full_name: data.full_name,
                 email: data.email,
                 password: hashedPassword,
-                roleId: data.role_id,
+                role_id: data.role_id,
             });
             const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.email, data.email) });
             if (!user)
                 throw new error_1.NotFoundError('User');
-            const role = yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.roleId) });
+            const role = yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) });
             return formatUserResponse(Object.assign(Object.assign({}, user), { role }));
         });
     }
@@ -40,7 +40,7 @@ class UserService {
             const users = yield drizzle_1.db.select().from(schema_1.user);
             const roles = yield drizzle_1.db.select().from(schema_1.role);
             const roleById = new Map(roles.map(r => [r.id, r]));
-            return users.map(u => formatUserResponse(Object.assign(Object.assign({}, u), { role: roleById.get(u.roleId) })));
+            return users.map(u => formatUserResponse(Object.assign(Object.assign({}, u), { role: roleById.get(u.role_id) })));
         });
     }
     static getUserById(id) {
@@ -48,7 +48,7 @@ class UserService {
             const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, id) });
             if (!user)
                 throw new error_1.NotFoundError('User');
-            const role = yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.roleId) });
+            const role = yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) });
             return formatUserResponse(Object.assign(Object.assign({}, user), { role }));
         });
     }
@@ -64,16 +64,16 @@ class UserService {
             }
             yield drizzle_1.db.update(schema_1.user)
                 .set({
-                fullName: (_a = data.full_name) !== null && _a !== void 0 ? _a : existing.fullName,
+                full_name: (_a = data.full_name) !== null && _a !== void 0 ? _a : existing.full_name,
                 email: (_b = data.email) !== null && _b !== void 0 ? _b : existing.email,
                 password: hashedPassword !== null && hashedPassword !== void 0 ? hashedPassword : existing.password,
-                roleId: (_c = data.role_id) !== null && _c !== void 0 ? _c : existing.roleId,
+                role_id: (_c = data.role_id) !== null && _c !== void 0 ? _c : existing.role_id,
             })
                 .where((0, drizzle_orm_1.eq)(schema_1.user.id, id));
             const updated = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, id) });
             if (!updated)
                 throw new error_1.NotFoundError('User');
-            const role = yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, updated.roleId) });
+            const role = yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, updated.role_id) });
             return formatUserResponse(Object.assign(Object.assign({}, updated), { role }));
         });
     }
@@ -90,7 +90,7 @@ exports.UserService = UserService;
 function formatUserResponse(user) {
     return {
         id: user.id,
-        full_name: user.fullName,
+        full_name: user.full_name,
         email: user.email,
         role: {
             id: user.role.id,

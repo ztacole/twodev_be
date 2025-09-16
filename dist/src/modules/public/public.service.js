@@ -21,22 +21,22 @@ class PublicService {
             if (!assessee) {
                 throw new error_1.NotFoundError("Assessee not found");
             }
-            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.userId) });
-            const jobs = yield drizzle_1.db.select().from(schema_1.assesseeJob).where((0, drizzle_orm_1.eq)(schema_1.assesseeJob.assesseeId, id));
+            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.user_id) });
+            const jobs = yield drizzle_1.db.select().from(schema_1.assesseeJob).where((0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, id));
             return {
                 id: assessee.id,
-                full_name: (user === null || user === void 0 ? void 0 : user.fullName) || "",
-                identity_number: assessee.identityNumber,
-                birth_date: assessee.birthDate,
-                birth_location: assessee.birthLocation,
+                full_name: (user === null || user === void 0 ? void 0 : user.full_name) || "",
+                identity_number: assessee.identity_number,
+                birth_date: assessee.birth_date,
+                birth_location: assessee.birth_location,
                 gender: assessee.gender,
                 nationality: assessee.nationality,
-                phone_no: assessee.phoneNo,
-                house_phone_no: assessee.housePhoneNo || "",
-                office_phone_no: assessee.officePhoneNo || "",
+                phone_no: assessee.phone_no,
+                house_phone_no: assessee.house_phone_no || "",
+                office_phone_no: assessee.office_phone_no || "",
                 address: assessee.address,
-                postal_code: assessee.postalCode || "",
-                educational_qualifications: assessee.educationalQualifications,
+                postal_code: assessee.postal_code || "",
+                educational_qualifications: assessee.educational_qualifications,
                 jobs: jobs
             };
         });
@@ -47,15 +47,15 @@ class PublicService {
             if (!assessor) {
                 throw new error_1.NotFoundError("Assessor not found");
             }
-            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.userId) });
-            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, assessor.schemeId) });
+            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) });
+            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, assessor.scheme_id) });
             return {
                 id: assessor.id,
-                full_name: (user === null || user === void 0 ? void 0 : user.fullName) || "",
+                full_name: (user === null || user === void 0 ? void 0 : user.full_name) || "",
                 scheme: scheme,
                 address: assessor.address,
-                phone_no: assessor.phoneNo,
-                birth_date: assessor.birthDate
+                phone_no: assessor.phone_no,
+                birth_date: assessor.birth_date
             };
         });
     }

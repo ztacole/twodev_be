@@ -18,8 +18,8 @@ class AssessorService {
     static getAssessors() {
         return __awaiter(this, void 0, void 0, function* () {
             const assessors = yield drizzle_1.db.select().from(schema_1.assessor);
-            const userIds = assessors.map(a => a.userId);
-            const schemeIds = assessors.map(a => a.schemeId);
+            const userIds = assessors.map(a => a.user_id);
+            const schemeIds = assessors.map(a => a.scheme_id);
             const users = userIds.length ? yield drizzle_1.db.select().from(schema_1.user) : [];
             const roles = yield drizzle_1.db.select().from(schema_1.role);
             const schemes = schemeIds.length ? yield drizzle_1.db.select().from(schema_1.scheme) : [];
@@ -28,7 +28,7 @@ class AssessorService {
             const schemeById = new Map(schemes.map(s => [s.id, s]));
             return assessors.map(a => {
                 var _a;
-                return this.formatAssessorResponse(Object.assign(Object.assign({}, a), { user: Object.assign(Object.assign({}, userById.get(a.userId)), { role: roleById.get((_a = userById.get(a.userId)) === null || _a === void 0 ? void 0 : _a.roleId) }), scheme: schemeById.get(a.schemeId) }));
+                return this.formatAssessorResponse(Object.assign(Object.assign({}, a), { user: Object.assign(Object.assign({}, userById.get(a.user_id)), { role: roleById.get((_a = userById.get(a.user_id)) === null || _a === void 0 ? void 0 : _a.role_id) }), scheme: schemeById.get(a.scheme_id) }));
             });
         });
     }
@@ -37,43 +37,43 @@ class AssessorService {
             const a = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, id) });
             if (!a)
                 throw new error_1.NotFoundError('Assessor');
-            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, a.userId) });
-            const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.roleId) }) : null;
-            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, a.schemeId) });
+            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, a.user_id) });
+            const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) }) : null;
+            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, a.scheme_id) });
             return this.formatAssessorResponse(Object.assign(Object.assign({}, a), { user: Object.assign(Object.assign({}, user), { role }), scheme }));
         });
     }
-    static getAssessorByUserId(userId) {
+    static getAssessorByUserId(user_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const a = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.userId, userId) });
+            const a = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, user_id) });
             if (!a)
                 throw new error_1.NotFoundError('Assessor');
-            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, a.userId) });
-            const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.roleId) }) : null;
-            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, a.schemeId) });
+            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, a.user_id) });
+            const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) }) : null;
+            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, a.scheme_id) });
             return this.formatAssessorResponse(Object.assign(Object.assign({}, a), { user: Object.assign(Object.assign({}, user), { role }), scheme }));
         });
     }
     static createAssessor(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            const existing = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.userId, data.user_id) });
+            const existing = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id) });
             if (existing) {
                 throw new error_1.DuplicateEntryError('Assessor untuk user_id', data.user_id.toString());
             }
             yield drizzle_1.db.insert(schema_1.assessor).values({
-                userId: data.user_id,
-                schemeId: data.scheme_id,
-                noRegMet: data.no_reg_met,
+                user_id: data.user_id,
+                scheme_id: data.scheme_id,
+                no_reg_met: data.no_reg_met,
                 address: data.address,
-                phoneNo: data.phone_no,
-                birthDate: new Date(data.birth_date),
+                phone_no: data.phone_no,
+                birth_date: new Date(data.birth_date),
             });
-            const created = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.assessor.userId, data.user_id), (0, drizzle_orm_1.eq)(schema_1.assessor.schemeId, data.scheme_id)) });
+            const created = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id), (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, data.scheme_id)) });
             if (!created)
                 throw new error_1.NotFoundError('Assessor');
-            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, created.userId) });
-            const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.roleId) }) : null;
-            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, created.schemeId) });
+            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, created.user_id) });
+            const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) }) : null;
+            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, created.scheme_id) });
             return this.formatAssessorResponse(Object.assign(Object.assign({}, created), { user: Object.assign(Object.assign({}, user), { role }), scheme }));
         });
     }
@@ -85,20 +85,20 @@ class AssessorService {
             }
             yield drizzle_1.db.update(schema_1.assessor)
                 .set({
-                userId: data.user_id,
-                schemeId: data.scheme_id,
-                noRegMet: data.no_reg_met,
+                user_id: data.user_id,
+                scheme_id: data.scheme_id,
+                no_reg_met: data.no_reg_met,
                 address: data.address,
-                phoneNo: data.phone_no,
-                birthDate: new Date(data.birth_date),
+                phone_no: data.phone_no,
+                birth_date: new Date(data.birth_date),
             })
                 .where((0, drizzle_orm_1.eq)(schema_1.assessor.id, id));
             const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, id) });
             if (!assessor)
                 throw new error_1.NotFoundError('Assessor');
-            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.userId) });
-            const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.roleId) }) : null;
-            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, assessor.schemeId) });
+            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) });
+            const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) }) : null;
+            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, assessor.scheme_id) });
             return this.formatAssessorResponse(Object.assign(Object.assign({}, assessor), { user: Object.assign(Object.assign({}, user), { role }), scheme }));
         });
     }
@@ -114,13 +114,13 @@ class AssessorService {
     static formatAssessorResponse(assessor) {
         return {
             id: assessor.id,
-            user_id: assessor.userId,
-            scheme_id: assessor.schemeId,
-            name: assessor.user.fullName,
+            user_id: assessor.user_id,
+            scheme_id: assessor.scheme_id,
+            name: assessor.user.full_name,
             address: assessor.address,
-            phone_no: assessor.phoneNo,
-            birth_date: assessor.birthDate,
-            no_reg_met: assessor.noRegMet
+            phone_no: assessor.phone_no,
+            birth_date: assessor.birth_date,
+            no_reg_met: assessor.no_reg_met
         };
     }
 }

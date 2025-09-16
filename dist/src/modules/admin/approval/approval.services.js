@@ -17,7 +17,7 @@ exports.ApprovalService = {
     approveApl01Document(docId, user) {
         return __awaiter(this, void 0, void 0, function* () {
             const admin = yield drizzle_1.db.query.admin.findFirst({
-                where: (0, drizzle_orm_1.eq)(schema_1.admin.userId, user.userId),
+                where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, user.id),
             });
             if (!admin) {
                 throw new Error("Hanya admin yang dapat melakukan approval dokumen APL-01");
@@ -32,7 +32,7 @@ exports.ApprovalService = {
             if (user.role_id !== 1) {
                 throw new Error("Hanya admin yang dapat melakukan approval kompetensi");
             }
-            yield drizzle_1.db.update(schema_1.result).set({ isCompetent: true }).where((0, drizzle_orm_1.eq)(schema_1.result.id, resultId));
+            yield drizzle_1.db.update(schema_1.result).set({ is_competent: true }).where((0, drizzle_orm_1.eq)(schema_1.result.id, resultId));
         });
     },
 };

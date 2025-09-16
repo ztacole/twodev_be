@@ -1,6 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const upload_config_1 = require("./apl-01/upload-config");
 const upload_conifg_1 = require("./ia-02/upload-conifg");
 const apl_02_controller_1 = require("./apl-02/apl-02.controller");
@@ -15,23 +21,34 @@ const ak_02_controller_1 = require("./ak-02/ak-02.controller");
 const ak_03_controller_1 = require("./ak-03/ak-03.controller");
 const ak_04_controller_1 = require("./ak-04/ak-04.controller");
 const ak_05_controller_1 = require("./ak-05/ak-05.controller");
-const auth_middleware_1 = require("../../middleware/auth.middleware");
+const auth_middleware_2 = require("../../middleware/auth.middleware");
 const router = (0, express_1.Router)();
 // Apply authentication middleware to all routes
-router.use(auth_middleware_1.authenticateToken);
+router.use(auth_middleware_2.authenticateToken);
 router.post('/create', assessment_controller_1.AssessmentController.createAssessment);
 router.get('/', assessment_controller_1.AssessmentController.getAssessments);
 router.get('/:id', assessment_controller_1.AssessmentController.getAssessmentById);
 router.delete('/:id', assessment_controller_1.AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', assessment_controller_1.AssessmentController.getAssessmentResultDetails);
+router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', assessment_controller_1.AssessmentController.getNavigationAssessee);
+router.get('/navigation/assessor/:assessmentId', assessment_controller_1.AssessmentController.getNavigationAssessor);
 router.post('/apl-01/create-self-data', apl_01_controller_1.APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', upload_config_1.upload.any(), apl_01_controller_1.APL1Controller.createOrUploadCertificateDocs);
+router.get('/uploads/apl-01/:folder/:filename', auth_middleware_1.authUpload, (req, res) => {
+    const { folder, filename } = req.params;
+    const filePath = path_1.default.join(__dirname, '../public/uploads/apl-01', folder, filename);
+    if (!fs_1.default.existsSync(filePath))
+        return res.status(404).json({ message: 'File not found' });
+    res.sendFile(filePath);
+});
 router.get('/apl-01/results', apl_01_controller_1.APL1Controller.getAllResult);
 router.get('/apl-01/results/assessor/:assessorId', apl_01_controller_1.APL1Controller.getResultDocsByAssessorId);
 router.get('/apl-01/results/unapproved', apl_01_controller_1.APL1Controller.getUnapprovedResult);
 router.put('/apl-01/results/:resultId/approve', apl_01_controller_1.APL1Controller.approveResult);
 router.get('/apl-01/results/:assessmentId', apl_01_controller_1.APL1Controller.getResultDocsByAssessmentId);
 ;
+router.get('/apl-01/result/:resultId', apl_01_controller_1.APL1Controller.getResultDetails);
+router.get('/apl-01/result/docs/:resultId', apl_01_controller_1.APL1Controller.getResultDocsByResultId);
 router.get('/apl-02/units/:resultId', apl_02_controller_1.APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/:resultId/elements/:unitId', apl_02_controller_1.APL02Controller.getElementsByUnitId);
 router.post('/apl-02/result/send', apl_02_controller_1.APL02Controller.sendResult);
@@ -52,8 +69,8 @@ router.get('/ia-02/units/:assessmentId', ia_02_controller_1.IA02Controller.getIA
 router.put('/ia-02/result/assessor/:resultId/approve', ia_02_controller_1.IA02Controller.approvedByAssessor);
 router.put('/ia-02/result/assessee/:resultId/approve', ia_02_controller_1.IA02Controller.approvedByAssessee);
 router.get('/ia-02/result/:resultId', ia_02_controller_1.IA02Controller.getResultDetails);
-router.post('/ia-02/upload-pdf/:groupId', upload_conifg_1.uploadIA02.single('pdf'), ia_02_controller_1.IA02Controller.uploadPdf);
-router.get('/ia-02/groups/:groupId/pdf', ia_02_controller_1.IA02Controller.getPdf);
+router.post('/ia-02/upload-pdf/:assessmentId', upload_conifg_1.uploadIA02.single('pdf'), ia_02_controller_1.IA02Controller.uploadPdf);
+router.get('/ia-02/pdf/:assessmentId', ia_02_controller_1.IA02Controller.getPdf);
 router.get('/ia-03/units/:resultId', ia_03_controller_1.IA03Controller.getIA03Groups);
 router.post('/ia-03/result/send', ia_03_controller_1.IA03Controller.sendResult);
 router.put('/ia-03/result/assessor/:resultId/approve', ia_03_controller_1.IA03Controller.approvedByAssessor);
@@ -81,6 +98,7 @@ router.get('/ak-02/result/:resultId', ak_02_controller_1.AK02Controller.getAK02B
 router.put('/ak-02/result/assessor/:resultId/approve', ak_02_controller_1.AK02Controller.approvedByAssessor);
 router.put('/ak-02/result/assessee/:resultId/approve', ak_02_controller_1.AK02Controller.approvedByAssessee);
 router.post('/ak-03', ak_03_controller_1.AK03Controller.createAK03);
+router.post('/ak-03/answer', ak_03_controller_1.AK03Controller.createAnswerAK03);
 router.get('/ak-03/:result_id', ak_03_controller_1.AK03Controller.getAK03ByResultId);
 router.post('/ak-04', ak_04_controller_1.AK04Controller.createAK04);
 router.get('/ak-04/:resultId', ak_04_controller_1.AK04Controller.getAK04ByResultId);

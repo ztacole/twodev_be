@@ -37,7 +37,10 @@ AssessmentController.getAssessments = (0, async_handler_1.asyncHandler)((req, re
 AssessmentController.deleteAssessment = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const id = Number(req.params.id);
     if (!id) {
-        throw new Error("ID is required");
+        return res.status(400).json({
+            success: false,
+            message: "ID assessment harus diisi",
+        });
     }
     const result = yield assessment_service_1.AssessmentService.deleteAssessment(id);
     res.status(200).json({
@@ -48,7 +51,10 @@ AssessmentController.deleteAssessment = (0, async_handler_1.asyncHandler)((req, 
 AssessmentController.getAssessmentById = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const id = Number(req.params.id);
     if (!id) {
-        throw new Error("ID is required");
+        return res.status(400).json({
+            success: false,
+            message: "ID assessment harus diisi",
+        });
     }
     const result = yield assessment_service_1.AssessmentService.getAssessmentById(id);
     res.status(200).json({
@@ -60,14 +66,53 @@ AssessmentController.getAssessmentById = (0, async_handler_1.asyncHandler)((req,
 AssessmentController.getAssessmentResultDetails = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const assessmentId = Number(req.params.assessmentId);
     const assessorId = Number(req.params.assessorId);
-    const assesseeId = Number(req.params.assesseeId);
-    if (!assessmentId || !assessorId || !assesseeId) {
-        throw new Error("Assessment ID, Assessor ID, dan Assessee ID harus diisi");
+    let assesseeId = Number(req.params.assesseeId);
+    if (!assessmentId || !assessorId) {
+        return res.status(400).json({
+            success: false,
+            message: "Assessment ID, Assessor ID, dan Assessee ID harus diisi",
+        });
+    }
+    if (!assesseeId) {
+        const user = req.user;
+        assesseeId = yield assessment_service_1.AssessmentService.findAssesseeByUserId(assessmentId, assessorId, user.id);
     }
     const result = yield assessment_service_1.AssessmentService.getAssessmentResultDetails(assessmentId, assessorId, assesseeId);
     res.status(200).json({
         success: true,
         message: "Detail hasil assessment berhasil diambil",
+        data: result,
+    });
+}));
+AssessmentController.getNavigationAssessee = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const assessmentId = Number(req.params.assessmentId);
+    const assessorId = Number(req.params.assessorId);
+    const assesseeId = Number(req.params.assesseeId);
+    if (!assessmentId || !assessorId || !assesseeId) {
+        return res.status(400).json({
+            success: false,
+            message: "Assessment ID, Assessor ID, dan Assessee ID harus diisi",
+        });
+    }
+    const result = yield assessment_service_1.AssessmentService.assesseeNavigation(assessmentId, assessorId, assesseeId);
+    res.status(200).json({
+        success: true,
+        message: "Navigasi berhasil diambil",
+        data: result,
+    });
+}));
+AssessmentController.getNavigationAssessor = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const assessmentId = Number(req.params.assessmentId);
+    if (!assessmentId) {
+        return res.status(400).json({
+            success: false,
+            message: "Assessment ID harus diisi",
+        });
+    }
+    const result = yield assessment_service_1.AssessmentService.assessorNavigation(assessmentId);
+    res.status(200).json({
+        success: true,
+        message: "Navigasi berhasil diambil",
         data: result,
     });
 }));

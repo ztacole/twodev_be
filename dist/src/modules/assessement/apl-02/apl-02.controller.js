@@ -90,14 +90,7 @@ APL02Controller.approvedByAssessor = (0, async_handler_1.asyncHandler)((req, res
             message: 'Result ID is required',
         });
     }
-    const data = req.body;
-    if (!data) {
-        return res.status(400).json({
-            success: false,
-            message: 'Data harus diisi',
-        });
-    }
-    const result = yield apl_02_service_1.APL02Service.approvedByAssessor(resultId, data);
+    const result = yield apl_02_service_1.APL02Service.approvedByAssessor(resultId);
     res.status(200).json({
         success: true,
         message: 'Assessor telah tanda tangan!',
