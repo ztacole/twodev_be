@@ -4,10 +4,8 @@ import fs from 'fs';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const assesseeId = req.params?.assessee_id || req.body?.assessee_id || 'unknown';
-    const assessorId = req.params?.assessor_id || req.body?.assessor_id || 'unknown';
-    const assessmentId = req.params?.assessment_id || req.body?.assessment_id || 'unknown';
-    const uploadPath = path.join(__dirname, '../../../../public/uploads/apl-01', `${assesseeId}_${assessorId}_${assessmentId}`);
+    const userId = req.params?.user_id || req.body?.user_id || 'unknown';
+    const uploadPath = path.join(__dirname, '../../../../public/uploads/assessor', `user-${userId}`);
     
     if (fs.existsSync(uploadPath)) {
       fs.readdirSync(uploadPath).forEach((file) => {

@@ -9,11 +9,9 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        var _a, _b, _c, _d, _e, _f;
-        const assesseeId = ((_a = req.params) === null || _a === void 0 ? void 0 : _a.assessee_id) || ((_b = req.body) === null || _b === void 0 ? void 0 : _b.assessee_id) || 'unknown';
-        const assessorId = ((_c = req.params) === null || _c === void 0 ? void 0 : _c.assessor_id) || ((_d = req.body) === null || _d === void 0 ? void 0 : _d.assessor_id) || 'unknown';
-        const assessmentId = ((_e = req.params) === null || _e === void 0 ? void 0 : _e.assessment_id) || ((_f = req.body) === null || _f === void 0 ? void 0 : _f.assessment_id) || 'unknown';
-        const uploadPath = path_1.default.join(__dirname, '../../../../public/uploads/apl-01', `${assesseeId}_${assessorId}_${assessmentId}`);
+        var _a, _b;
+        const userId = ((_a = req.params) === null || _a === void 0 ? void 0 : _a.user_id) || ((_b = req.body) === null || _b === void 0 ? void 0 : _b.user_id) || 'unknown';
+        const uploadPath = path_1.default.join(__dirname, '../../../../public/uploads/assessor', `user-${userId}`);
         if (fs_1.default.existsSync(uploadPath)) {
             fs_1.default.readdirSync(uploadPath).forEach((file) => {
                 const filePath = path_1.default.join(uploadPath, file);
