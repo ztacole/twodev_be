@@ -146,7 +146,7 @@ export class APL1Service {
         files: any[];
     }): Promise<CertificateDocsResponse> {
         const { assessee_id, assessor_id, assessment_id, bodyData, files } = params;
-        const BASE_URL = window.location.origin;
+        const BASE_URL = "https://assessment24.site/twodev";
 
         // canonical fields and mapping (auto generate camelCase -> snake_case)
         const canonicalFields = [

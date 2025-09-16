@@ -132,7 +132,7 @@ class APL1Service {
     static createOrUploadCertificate(params) {
         return __awaiter(this, void 0, void 0, function* () {
             const { assessee_id, assessor_id, assessment_id, bodyData, files } = params;
-            const BASE_URL = window.location.origin;
+            const BASE_URL = "https://assessment24.site/twodev";
             // canonical fields and mapping (auto generate camelCase -> snake_case)
             const canonicalFields = [
                 'school_report_card',
