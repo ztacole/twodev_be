@@ -172,7 +172,8 @@ export class APL1Service {
         for (const file of fileArray) {
             const mapped = fieldMapping[file.fieldname];
             if (mapped) {
-                fileData[mapped] = `${BASE_URL}/twodev/uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
+                fileData[mapped] = `/twodev/uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
+                console.log(fileData[mapped]);
             }
         }
 
