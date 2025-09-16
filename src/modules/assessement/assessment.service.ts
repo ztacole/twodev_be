@@ -446,7 +446,7 @@ export class AssessmentService {
         const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
         if (!assessment) throw new NotFoundError('Assessment');
 
-        const tabs = ['APL-01', 'APL-02', 'AK-04', 'AK-01']
+        const tabs = ['APL-01', 'APL-02', 'AK-01']
 
         const isAnyIa01 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessment_id, assessment_id) });
         const isAnyIa02 = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
