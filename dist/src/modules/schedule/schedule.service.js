@@ -123,7 +123,6 @@ class ScheduleService {
                 if (rawResults.length === 0)
                     continue;
                 for (const r of rawResults) {
-                    console.log(r);
                     const resultAPL02 = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, r.id) });
                     const resultIA01 = yield drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, r.id) });
                     const resultIA02 = yield drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, r.id) });
@@ -156,7 +155,7 @@ class ScheduleService {
                         (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
                         r.is_competent)
                         results.push({ status: "Competent", detail: yield buildActiveScheduleResponse(r) });
-                    else
+                    else if (r)
                         results.push({ status: "On Going", detail: yield buildActiveScheduleResponse(r) });
                 }
             }

@@ -135,7 +135,6 @@ export class ScheduleService {
             if (rawResults.length === 0) continue;
 
             for (const r of rawResults) {
-                console.log(r);
                 const resultAPL02 = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, r.id) });
                 const resultIA01 = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, r.id) });
                 const resultIA02 = await db.query.resultIa02Header.findFirst({ where: eq(resultIa02HeaderTable.result_id, r.id) });
@@ -169,7 +168,7 @@ export class ScheduleService {
                     (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) && 
                     r.is_competent
                 ) results.push({ status: "Competent", detail: await buildActiveScheduleResponse(r) });
-                else results.push({ status: "On Going", detail: await buildActiveScheduleResponse(r) });
+                else if (r) results.push({ status: "On Going", detail: await buildActiveScheduleResponse(r) });
             }
         }
 
