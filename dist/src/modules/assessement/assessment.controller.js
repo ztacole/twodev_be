@@ -76,6 +76,12 @@ AssessmentController.getAssessmentResultDetails = (0, async_handler_1.asyncHandl
     if (!assesseeId) {
         const user = req.user;
         assesseeId = yield assessment_service_1.AssessmentService.findAssesseeByUserId(assessmentId, assessorId, user.id);
+        if (assesseeId === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Assessee tidak ditemukan untuk user ini",
+            });
+        }
     }
     const result = yield assessment_service_1.AssessmentService.getAssessmentResultDetails(assessmentId, assessorId, assesseeId);
     res.status(200).json({
