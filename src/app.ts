@@ -28,27 +28,27 @@ import assesseeRoutes from './modules/assessee/asseesee.routes';
 
 // Public
 import publicRoutes from './modules/public/public.routes';
-app.use('/api/public', publicRoutes);
+app.use('/twodev/api/public', publicRoutes);
 
-app.use('/api/assessments', assessmentRoutes);
-app.use('/api/assessments', verificationRoutes);
-app.use('/api/schedules', scheduleRoutes);
+app.use('/twodev/api/assessments', assessmentRoutes);
+app.use('/twodev/api/assessments', verificationRoutes);
+app.use('/twodev/api/schedules', scheduleRoutes);
 // Uploads (generic) API
-app.use('/api/uploads', uploadsRoutes);
+app.use('/twodev/api/uploads', uploadsRoutes);
 // Serve uploaded files (secured by auth for now)
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+app.use('/twodev/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Modules
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/approval', approvalRoutes);
-app.use('/api/occupations', occupationRoutes);
-app.use('/api/schemes', schemeRoutes);
-app.use('/api/assessor', assessorRoutes);
-app.use('/api/assessee', assesseeRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/assessor-detail', assessorDetailRoutes);
+app.use('/twodev/api/users', userRoutes);
+app.use('/twodev/api/auth', authRoutes);
+app.use('/twodev/api/dashboard', dashboardRoutes);
+app.use('/twodev/api/approval', approvalRoutes);
+app.use('/twodev/api/occupations', occupationRoutes);
+app.use('/twodev/api/schemes', schemeRoutes);
+app.use('/twodev/api/assessor', assessorRoutes);
+app.use('/twodev/api/assessee', assesseeRoutes);
+app.use('/twodev/api/user', userRoutes);
+app.use('/twodev/api/assessor-detail', assessorDetailRoutes);
 
 // error handler middleware (DON'T MOVE IT)
 app.use(errorHandler);

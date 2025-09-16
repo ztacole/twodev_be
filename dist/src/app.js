@@ -27,25 +27,25 @@ const assessor_detail_routes_1 = __importDefault(require("./modules/assessor-det
 const asseesee_routes_1 = __importDefault(require("./modules/assessee/asseesee.routes"));
 // Public
 const public_routes_1 = __importDefault(require("./modules/public/public.routes"));
-app.use('/api/public', public_routes_1.default);
-app.use('/api/assessments', assessment_routes_1.default);
-app.use('/api/assessments', verification_routes_1.default);
-app.use('/api/schedules', schedule_routes_1.default);
+app.use('/twodev/api/public', public_routes_1.default);
+app.use('/twodev/api/assessments', assessment_routes_1.default);
+app.use('/twodev/api/assessments', verification_routes_1.default);
+app.use('/twodev/api/schedules', schedule_routes_1.default);
 // Uploads (generic) API
-app.use('/api/uploads', uploads_routes_1.default);
+app.use('/twodev/api/uploads', uploads_routes_1.default);
 // Serve uploaded files (secured by auth for now)
-app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads')));
+app.use('/twodev/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads')));
 // Modules
-app.use('/api/users', user_route_1.default);
-app.use('/api/auth', auth_routes_1.default);
-app.use('/api/dashboard', dashboard_routes_1.default);
-app.use('/api/approval', approval_routes_1.default);
-app.use('/api/occupations', occupation_routes_1.default);
-app.use('/api/schemes', scheme_routes_1.default);
-app.use('/api/assessor', assessor_routes_1.default);
-app.use('/api/assessee', asseesee_routes_1.default);
-app.use('/api/user', user_route_1.default);
-app.use('/api/assessor-detail', assessor_detail_routes_1.default);
+app.use('/twodev/api/users', user_route_1.default);
+app.use('/twodev/api/auth', auth_routes_1.default);
+app.use('/twodev/api/dashboard', dashboard_routes_1.default);
+app.use('/twodev/api/approval', approval_routes_1.default);
+app.use('/twodev/api/occupations', occupation_routes_1.default);
+app.use('/twodev/api/schemes', scheme_routes_1.default);
+app.use('/twodev/api/assessor', assessor_routes_1.default);
+app.use('/twodev/api/assessee', asseesee_routes_1.default);
+app.use('/twodev/api/user', user_route_1.default);
+app.use('/twodev/api/assessor-detail', assessor_detail_routes_1.default);
 // error handler middleware (DON'T MOVE IT)
 app.use(error_middleware_1.errorHandler);
 exports.default = app;
