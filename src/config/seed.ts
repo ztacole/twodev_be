@@ -37,8 +37,9 @@ import {
   resultAk05,
   elementApl02,
   elementDetailsApl02,
+  resultAk02Header,
 } from '../../drizzle/schema';
-import { eq } from 'drizzle-orm';
+import { eq,and } from 'drizzle-orm';
 
 const SALT_ROUNDS = 10;
 const DEFAULT_PASSWORD = 'password';
@@ -143,13 +144,37 @@ async function main() {
 
   // Assessees
   console.log('Creating assessees...');
-  await db.insert(userTable).values({ full_name: 'Asesi Pertama', email: 'asesi1@example.com', password: hashedPassword, role_id: assesseeRole?.id || 3 });
+  const assesseeUsers = await Promise.all([
+    db.insert(userTable).values({ full_name: 'Asesi Pertama', email: 'asesi1@example.com', password: hashedPassword, role_id: assesseeRole?.id || 3 }),
+    db.insert(userTable).values({ full_name: 'Asesi Dua', email: 'asesi2@example.com', password: hashedPassword, role_id: assesseeRole?.id || 3 }),
+    db.insert(userTable).values({ full_name: 'Asesi Tiga', email: 'asesi3@example.com', password: hashedPassword, role_id: assesseeRole?.id || 3 }),
+  ]);
+
   const assesseeUser1 = await db.query.user.findFirst({ where: eq(userTable.email, 'asesi1@example.com') });
+  const assesseeUser2 = await db.query.user.findFirst({ where: eq(userTable.email, 'asesi2@example.com') });
+  const assesseeUser3 = await db.query.user.findFirst({ where: eq(userTable.email, 'asesi3@example.com') });
+
   if (assesseeUser1) {
     await db.insert(assesseeTable).values({ user_id: assesseeUser1.id, identity_number: '1234567890', birth_date: new Date('1990-03-10'), birth_location: 'Jakarta', gender: 'male', nationality: 'Indonesia', phone_no: '084567890123', address: 'Jalan Asesi No. 101', educational_qualifications: 'Sarjana' });
-    const assesseeRow = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, assesseeUser1.id) });
-    if (assesseeRow) {
-      await db.insert(assesseeJobTable).values({ assessee_id: assesseeRow.id, institution_name: 'Perusahaan Teknologi Inc.', address: 'Gedung Perkantoran Tower 200', postal_code: '12345', position: 'Pengembang Software', phone_no: '0211234567', job_email: 'asesi1@perusahaan.com' });
+    const assesseeRow1 = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, assesseeUser1.id) });
+    if (assesseeRow1) {
+      await db.insert(assesseeJobTable).values({ assessee_id: assesseeRow1.id, institution_name: 'Perusahaan Teknologi Inc.', address: 'Gedung Perkantoran Tower 200', postal_code: '12345', position: 'Pengembang Software', phone_no: '0211234567', job_email: 'asesi1@perusahaan.com' });
+    }
+  }
+
+  if (assesseeUser2) {
+    await db.insert(assesseeTable).values({ user_id: assesseeUser2.id, identity_number: '9876543210', birth_date: new Date('1991-01-01'), birth_location: 'Bandung', gender: 'female', nationality: 'Indonesia', phone_no: '081234567890', address: 'Jalan Asesi No. 201', educational_qualifications: 'Diploma' });
+    const assesseeRow2 = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, assesseeUser2.id) });
+    if (assesseeRow2) {
+      await db.insert(assesseeJobTable).values({ assessee_id: assesseeRow2.id, institution_name: 'PT. Asesi Teknologi', address: 'Komplek Perkantoran Asesi', postal_code: '67890', position: 'Pengembang Hardware', phone_no: '0219876543', job_email: 'asesi2@asasi.com' });
+    }
+  }
+
+  if (assesseeUser3) {
+    await db.insert(assesseeTable).values({ user_id: assesseeUser3.id, identity_number: '7418529630', birth_date: new Date('1992-05-15'), birth_location: 'Surabaya', gender: 'male', nationality: 'Indonesia', phone_no: '085623741852', address: 'Jalan Asesi No. 301', educational_qualifications: 'Sarjana' });
+    const assesseeRow3 = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, assesseeUser3.id) });
+    if (assesseeRow3) {
+      await db.insert(assesseeJobTable).values({ assessee_id: assesseeRow3.id, institution_name: 'Universitas Asesi', address: 'Kampus Universitas Asesi', postal_code: '12345', position: 'Dosen', phone_no: '0214567890', job_email: 'asesi3@universitasasasi.com' });
     }
   }
 
@@ -258,29 +283,121 @@ async function main() {
   }
 
   // create a simple result + docs + headers
-  console.log('Creating a sample result + docs + headers...');
-  if (assessment && assessorUser1 && assesseeUser1) {
+  const assessees = [
+    { user: assesseeUser1, is_competent: true, allHeadersFilled: true },    // Competent
+    { user: assesseeUser2, is_competent: false, allHeadersFilled: true },   // Not Competent
+    { user: assesseeUser3, is_competent: false, allHeadersFilled: false },  // On Going
+  ];
+  
+  for (const a of assessees) {
+    if (!assessment) throw new Error('Assessment is undefined');
+    if (!assessorUser1) throw new Error('Assessor user is undefined');
+    if (!a.user) continue;
+    
+    const assesseeRow = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, a.user.id) });
     const assessorRow = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, assessorUser1.id) });
-    const assesseeRow = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, assesseeUser1.id) });
-    if (assessorRow && assesseeRow) {
-      await db.insert(resultTable).values({ assessment_id: assessment.id, assessor_id: assessorRow.id, assessee_id: assesseeRow.id, is_competent: false, tuk: 'sewaktu' });
-      const resultRow = await db.query.result.findFirst({ where: eq(resultTable.assessment_id, assessment.id) });
-      if (resultRow) {
-        await db.insert(resultDocTable).values({ result_id: resultRow.id, purpose: 'Sertifikasi Profesi', school_report_card: 'ijazah.pdf', field_work_practice_certificate: 'sertifikat_pkl.pdf', student_card: 'kartu_mahasiswa.pdf', family_card: 'kartu_keluarga.pdf', id_card: 'ktp.pdf', approved: true });
+  
+    if (!assesseeRow || !assessorRow) continue;
+  
+    const resultRows = await db.insert(resultTable).values({
+      assessment_id: assessment.id,
+      assessor_id: assessorRow.id,
+      assessee_id: assesseeRow.id,
+      is_competent: a.is_competent,
+      tuk: 'sewaktu',
+    }).$returningId();
 
-        // headers
-        await db.insert(apl02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_continue: false });
-        await db.insert(ia01HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
-        await db.insert(ia02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-        await db.insert(ia03HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-        await db.insert(ia05HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_achieved: false });
-        await db.insert(ia07HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-        await db.insert(ak01HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-        await db.insert(ak02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
-        await db.insert(resultAk03Header).values({ result_id: resultRow.id });
-        await db.insert(resultAk04).values({ result_id: resultRow.id, approved_assessee: false, q1_yes: false, q2_yes: false, q3_yes: false, reason: "" });
-        await db.insert(resultAk05).values({ result_id: resultRow.id, approved_assessor: false, is_competent: false });
-      }
+    const resultRow = resultRows[0];
+    if (!resultRow) continue;
+  
+    if (a.allHeadersFilled) {
+      await Promise.all([
+        db.insert(apl02HeaderTable).values({
+          result_id: resultRow.id,
+          approved_assessee: true,
+          approved_assessor: true,
+          is_continue: true
+        }),
+        db.insert(ia01HeaderTable).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true, 
+          is_competent: a.is_competent
+        }),
+        db.insert(ia02HeaderTable).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true 
+        }),
+        db.insert(ia03HeaderTable).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true 
+        }),
+        db.insert(ia05HeaderTable).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true, 
+          is_achieved: a.is_competent 
+        }),
+        db.insert(ia07HeaderTable).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true 
+        }),
+        db.insert(ak01HeaderTable).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true 
+        }),
+        db.insert(resultAk02Header).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true,
+          is_competent: a.is_competent
+        }),
+        db.insert(resultAk03Header).values({ 
+          result_id: resultRow.id
+        }),
+        db.insert(resultAk04).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          q1_yes: a.is_competent, 
+          q2_yes: a.is_competent, 
+          q3_yes: a.is_competent,
+          reason: ''
+        }),
+        db.insert(resultAk05).values({ 
+          result_id: resultRow.id, 
+          approved_assessor: true, 
+          is_competent: a.is_competent 
+        })
+      ]);
+    } else {
+      await Promise.all([
+        db.insert(resultAk02Header).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true,
+          is_competent: a.is_competent
+        }),
+        db.insert(ia01HeaderTable).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true, 
+          is_competent: a.is_competent 
+        }),
+        db.insert(ia02HeaderTable).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true 
+        }),
+        db.insert(ia07HeaderTable).values({ 
+          result_id: resultRow.id, 
+          approved_assessee: true, 
+          approved_assessor: true 
+        }),
+      ]);
     }
   }
 
