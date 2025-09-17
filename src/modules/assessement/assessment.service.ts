@@ -53,7 +53,7 @@ import {
     resultIa07Header,
     scheduleDetail,
 } from "../../../drizzle/schema";
-import { eq, and, desc, lt } from "drizzle-orm";
+import { eq, and, desc, lt, asc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
 import { Result } from "drizzle-orm/sqlite-core";
 import { AssessorResponse } from "../assessor/assessor.type";
@@ -547,8 +547,11 @@ export class AssessmentService {
         };
     }
 
-    static async adminNavigation(assessment_id: number, assessor_id: number) {
-        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+    static async adminNavigation(result_id: number) {
+        const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
+        if (!result) throw new NotFoundError('Result');
+
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
         if (!assessment) throw new NotFoundError('Assessment');
 
         const tabs: AssessorTab[] = [
@@ -558,9 +561,9 @@ export class AssessmentService {
             { name: 'IA-02', status: "Not Started" }
         ]
 
-        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
-        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
-        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
+        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, result.assessment_id) });
+        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, result.assessment_id) });
+        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, result.assessment_id) });
 
         if (isAnyIa03) tabs.push({ name: 'IA-03', status: "Not Started" });
         if (isAnyIa05) tabs.push({ name: 'IA-05', status: "Not Started" });
@@ -571,20 +574,6 @@ export class AssessmentService {
             { name: 'AK-03', status: "Not Started" },
             { name: 'AK-05', status: "Not Started" }
         );
-
-        const results = await db.select().from(resultTable)
-            .where(and(
-                eq(resultTable.assessment_id, assessment_id),
-                eq(resultTable.assessor_id, assessor_id)
-            ));
-        if (results.length === 0) {
-            return {
-                assessment_id: assessment.id,
-                assessment_code: assessment.code,
-                tabs: tabs,
-            };
-        }
-
 
         // Config header dan tab
         const headerConfigs = [
@@ -600,18 +589,16 @@ export class AssessmentService {
             { name: 'AK-05', findFirst: (args: any) => db.query.resultAk05.findFirst(args), col: resultAk05Table, notYet: 0, waiting: 0, onlyApproved: true },
         ];
 
-        for (const result of results) {
-            for (const config of headerConfigs) {
-                let header = await config.findFirst({ where: eq(config.col.result_id, result.id) });
-                if (config.name === 'AK-03') {
-                    if (!header) config.notYet++;
-                } else if (config.name === 'AK-05') {
-                    if (header && 'approved_assessor' in header && !header.approved_assessor) config.notYet++;
-                } else {
-                    if (header) {
-                        if ('approved_assessor' in header && !header.approved_assessor) config.notYet++;
-                        if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee) config.waiting++;
-                    }
+        for (const config of headerConfigs) {
+            let header = await config.findFirst({ where: eq(config.col.result_id, result.id) });
+            if (config.name === 'AK-03') {
+                if (!header) config.notYet++;
+            } else if (config.name === 'AK-05') {
+                if (header && 'approved_assessor' in header && !header.approved_assessor) config.notYet++;
+            } else {
+                if (header) {
+                    if ('approved_assessor' in header && !header.approved_assessor) config.notYet++;
+                    if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee) config.waiting++;
                 }
             }
         }
@@ -812,5 +799,23 @@ export class AssessmentService {
             });
         }
         return result;
+    }
+
+    static async getAssesseesByAssessmentAndAssessor(assessment_id: number, assessor_id: number) {
+        const results = await db.select({
+            result_id: resultTable.id,
+            assessee_id: assesseeTable.id,
+            full_name: userTable.full_name,
+            created_at: resultTable.created_at,
+        }).from(resultTable)
+            .innerJoin(assesseeTable, eq(resultTable.assessee_id, assesseeTable.id))
+            .innerJoin(userTable, eq(assesseeTable.user_id, userTable.id))
+            .where(and(
+                eq(resultTable.assessment_id, assessment_id),
+                eq(resultTable.assessor_id, assessor_id)
+            ))
+            .orderBy(asc(userTable.full_name), asc(resultTable.created_at));
+
+        return results;
     }
 }

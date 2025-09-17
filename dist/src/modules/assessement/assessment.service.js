@@ -449,9 +449,12 @@ class AssessmentService {
             };
         });
     }
-    static adminNavigation(assessment_id, assessor_id) {
+    static adminNavigation(result_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
+            const result = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
+            if (!result)
+                throw new error_1.NotFoundError('Result');
+            const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.assessment_id) });
             if (!assessment)
                 throw new error_1.NotFoundError('Assessment');
             const tabs = [
@@ -460,9 +463,9 @@ class AssessmentService {
                 { name: 'IA-01', status: "Not Started" },
                 { name: 'IA-02', status: "Not Started" }
             ];
-            const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, assessment_id) });
-            const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, assessment_id) });
-            const isAnyIa07 = yield drizzle_1.db.query.ia07Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, assessment_id) });
+            const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, result.assessment_id) });
+            const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, result.assessment_id) });
+            const isAnyIa07 = yield drizzle_1.db.query.ia07Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, result.assessment_id) });
             if (isAnyIa03)
                 tabs.push({ name: 'IA-03', status: "Not Started" });
             if (isAnyIa05)
@@ -470,15 +473,6 @@ class AssessmentService {
             if (isAnyIa07)
                 tabs.push({ name: 'IA-07', status: "Not Started" });
             tabs.push({ name: 'AK-02', status: "Not Started" }, { name: 'AK-03', status: "Not Started" }, { name: 'AK-05', status: "Not Started" });
-            const results = yield drizzle_1.db.select().from(schema_1.result)
-                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id)));
-            if (results.length === 0) {
-                return {
-                    assessment_id: assessment.id,
-                    assessment_code: assessment.code,
-                    tabs: tabs,
-                };
-            }
             // Config header dan tab
             const headerConfigs = [
                 { name: 'APL-02', findFirst: (args) => drizzle_1.db.query.resultApl02Header.findFirst(args), col: schema_1.resultApl02Header, notYet: 0, waiting: 0 },
@@ -492,24 +486,22 @@ class AssessmentService {
                 { name: 'AK-03', findFirst: (args) => drizzle_1.db.query.resultAk03Header.findFirst(args), col: schema_1.resultAk03Header, notYet: 0, waiting: 0, isSpecial: true },
                 { name: 'AK-05', findFirst: (args) => drizzle_1.db.query.resultAk05.findFirst(args), col: schema_1.resultAk05, notYet: 0, waiting: 0, onlyApproved: true },
             ];
-            for (const result of results) {
-                for (const config of headerConfigs) {
-                    let header = yield config.findFirst({ where: (0, drizzle_orm_1.eq)(config.col.result_id, result.id) });
-                    if (config.name === 'AK-03') {
-                        if (!header)
+            for (const config of headerConfigs) {
+                let header = yield config.findFirst({ where: (0, drizzle_orm_1.eq)(config.col.result_id, result.id) });
+                if (config.name === 'AK-03') {
+                    if (!header)
+                        config.notYet++;
+                }
+                else if (config.name === 'AK-05') {
+                    if (header && 'approved_assessor' in header && !header.approved_assessor)
+                        config.notYet++;
+                }
+                else {
+                    if (header) {
+                        if ('approved_assessor' in header && !header.approved_assessor)
                             config.notYet++;
-                    }
-                    else if (config.name === 'AK-05') {
-                        if (header && 'approved_assessor' in header && !header.approved_assessor)
-                            config.notYet++;
-                    }
-                    else {
-                        if (header) {
-                            if ('approved_assessor' in header && !header.approved_assessor)
-                                config.notYet++;
-                            if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee)
-                                config.waiting++;
-                        }
+                        if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee)
+                            config.waiting++;
                     }
                 }
             }
@@ -704,6 +696,21 @@ class AssessmentService {
                 });
             }
             return result;
+        });
+    }
+    static getAssesseesByAssessmentAndAssessor(assessment_id, assessor_id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const results = yield drizzle_1.db.select({
+                result_id: schema_1.result.id,
+                assessee_id: schema_1.assessee.id,
+                full_name: schema_1.user.full_name,
+                created_at: schema_1.result.created_at,
+            }).from(schema_1.result)
+                .innerJoin(schema_1.assessee, (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, schema_1.assessee.id))
+                .innerJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id)))
+                .orderBy((0, drizzle_orm_1.asc)(schema_1.user.full_name), (0, drizzle_orm_1.asc)(schema_1.result.created_at));
+            return results;
         });
     }
 }

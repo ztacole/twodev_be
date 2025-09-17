@@ -30,10 +30,11 @@ router.delete('/:id', AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
 
 router.get('/results/status/admin', authenticateToken, adminMiddleware, AssessmentController.getAssessmentResultsForAdmin);
+router.get('/results/status/admin/assessees/:assessmentId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssesseesByAssessmentAndAssessor);
 
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', AssessmentController.getNavigationAssessee);
 router.get('/navigation/assessor/:assessmentId', authenticateToken, assessorMiddleware, AssessmentController.getNavigationAssessor);
-router.get('/navigation/admin/:assessmentId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getNavigationAdmin);
+router.get('/navigation/admin/:resultId', authenticateToken, adminMiddleware, AssessmentController.getNavigationAdmin);
 
 router.get('/assessment-recapt/:scheduleDetailId', authenticateToken, assessorMiddleware, AssessmentController.getAssessmentRecapt);
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssessmentRecaptForAdmin);

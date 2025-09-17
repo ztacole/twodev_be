@@ -126,15 +126,14 @@ AssessmentController.getNavigationAssessor = (0, async_handler_1.asyncHandler)((
     });
 }));
 AssessmentController.getNavigationAdmin = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const assessmentId = Number(req.params.assessmentId);
-    const assessorId = Number(req.params.assessorId);
-    if (!assessmentId || !assessorId) {
+    const resultId = Number(req.params.resultId);
+    if (!resultId) {
         return res.status(400).json({
             success: false,
-            message: "Assessment ID dan Assessor ID harus diisi",
+            message: "Result ID harus diisi",
         });
     }
-    const result = yield assessment_service_1.AssessmentService.adminNavigation(assessmentId, assessorId);
+    const result = yield assessment_service_1.AssessmentService.adminNavigation(resultId);
     res.status(200).json({
         success: true,
         message: "Navigasi berhasil diambil",
@@ -192,6 +191,22 @@ AssessmentController.getAssessmentResultsForAdmin = (0, async_handler_1.asyncHan
     res.status(200).json({
         success: true,
         message: "Hasil assessment berhasil diambil",
+        data: result,
+    });
+}));
+AssessmentController.getAssesseesByAssessmentAndAssessor = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const assessmentId = Number(req.params.assessmentId);
+    const assessorId = Number(req.params.assessorId);
+    if (!assessmentId || !assessorId) {
+        return res.status(400).json({
+            success: false,
+            message: "Assessment ID dan Assessor ID harus diisi",
+        });
+    }
+    const result = yield assessment_service_1.AssessmentService.getAssesseesByAssessmentAndAssessor(assessmentId, assessorId);
+    res.status(200).json({
+        success: true,
+        message: "Navigasi berhasil diambil",
         data: result,
     });
 }));

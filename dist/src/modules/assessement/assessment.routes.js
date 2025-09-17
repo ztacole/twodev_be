@@ -31,9 +31,10 @@ router.get('/:id', assessment_controller_1.AssessmentController.getAssessmentByI
 router.delete('/:id', assessment_controller_1.AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', assessment_controller_1.AssessmentController.getAssessmentResultDetails);
 router.get('/results/status/admin', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssessmentResultsForAdmin);
+router.get('/results/status/admin/assessees/:assessmentId/:assessorId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssesseesByAssessmentAndAssessor);
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', assessment_controller_1.AssessmentController.getNavigationAssessee);
 router.get('/navigation/assessor/:assessmentId', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, assessment_controller_1.AssessmentController.getNavigationAssessor);
-router.get('/navigation/admin/:assessmentId/:assessorId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getNavigationAdmin);
+router.get('/navigation/admin/:resultId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getNavigationAdmin);
 router.get('/assessment-recapt/:scheduleDetailId', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, assessment_controller_1.AssessmentController.getAssessmentRecapt);
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssessmentRecaptForAdmin);
 router.post('/apl-01/create-self-data', apl_01_controller_1.APL1Controller.createAssesseeAPL1);

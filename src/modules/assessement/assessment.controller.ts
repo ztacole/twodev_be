@@ -126,15 +126,14 @@ export class AssessmentController {
     });
 
     static getNavigationAdmin = asyncHandler(async (req: Request, res: Response) => {
-        const assessmentId = Number(req.params.assessmentId);
-        const assessorId = Number(req.params.assessorId);
-        if (!assessmentId || !assessorId) {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
             return res.status(400).json({
                 success: false,
-                message: "Assessment ID dan Assessor ID harus diisi",
+                message: "Result ID harus diisi",
             });
         }
-        const result = await AssessmentService.adminNavigation(assessmentId, assessorId);
+        const result = await AssessmentService.adminNavigation(resultId);
         res.status(200).json({
             success: true,
             message: "Navigasi berhasil diambil",
@@ -199,6 +198,23 @@ export class AssessmentController {
         res.status(200).json({
             success: true,
             message: "Hasil assessment berhasil diambil",
+            data: result,
+        });
+    });
+
+    static getAssesseesByAssessmentAndAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const assessmentId = Number(req.params.assessmentId);
+        const assessorId = Number(req.params.assessorId);
+        if (!assessmentId || !assessorId) {
+            return res.status(400).json({
+                success: false,
+                message: "Assessment ID dan Assessor ID harus diisi",
+            });
+        }
+        const result = await AssessmentService.getAssesseesByAssessmentAndAssessor(assessmentId, assessorId);
+        res.status(200).json({
+            success: true,
+            message: "Navigasi berhasil diambil",
             data: result,
         });
     });
