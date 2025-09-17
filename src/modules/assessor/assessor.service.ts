@@ -1,7 +1,7 @@
 import { db } from '../../config/drizzle';
 import { NotFoundError, DuplicateEntryError } from '../../common/error';
 import { AssessorResponse, AssessorRequest } from './assessor.type';
-import { assessor as assessorTable, user as userTable, role as roleTable, scheme as schemeTable } from '../../../drizzle/schema';
+import { assessor as assessorTable, user as userTable, role as roleTable, scheme as schemeTable, assessorDetail as assessorDetailTable } from '../../../drizzle/schema';
 import { and, eq } from 'drizzle-orm';
 
 export class AssessorService {
@@ -94,6 +94,98 @@ export class AssessorService {
         }
 
         await db.delete(assessorTable).where(eq(assessorTable.id, id));
+    }
+
+    static async createOrUpdateAssessorDetail(params: {
+        assessorId: number;
+        bodyData: any;
+        files: any[];
+    }): Promise<any> {
+        const { assessorId, bodyData, files } = params;
+        const BASE_URL = process.env.BASE_URL || "http://localhost:3000" || "https://asessment24.site/twodev";
+
+        const fileData: Record<string, string> = {};
+
+        const fileArray = Array.isArray(files) ? files : [];
+        for (const file of fileArray) {
+            const fieldName = file.fieldname;
+            if (['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'].includes(fieldName)) {
+                fileData[fieldName] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
+            }
+        }
+
+        for (const key of Object.keys(bodyData || {})) {
+            if (['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'].includes(key) && bodyData[key]) {
+                fileData[key] = bodyData[key];
+            }
+        }
+
+        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, assessorId) });
+        if (!assessor) throw new NotFoundError('Assessor');
+
+        const existingDetail = await db.query.assessorDetail.findFirst({ 
+            where: eq(assessorDetailTable.assessor_id, assessorId) 
+        });
+
+        const detailData = {
+            assessor_id: assessorId,
+            tax_id_number: fileData.tax_id_number || bodyData.tax_id_number || '',
+            bank_book_cover: fileData.bank_book_cover || bodyData.bank_book_cover || '',
+            certificate: fileData.certificate || bodyData.certificate || '',
+            national_id: fileData.national_id || bodyData.national_id || '',
+            id_card: fileData.id_card || bodyData.id_card || ''
+        };
+
+        if (existingDetail) {
+            await db.update(assessorDetailTable)
+                .set(detailData)
+                .where(eq(assessorDetailTable.id, existingDetail.id));
+
+            const updated = await db.query.assessorDetail.findFirst({ 
+                where: eq(assessorDetailTable.id, existingDetail.id) 
+            });
+            return updated;
+        } else {
+            await db.insert(assessorDetailTable).values(detailData);
+            
+            const newDetail = await db.query.assessorDetail.findFirst({ 
+                where: eq(assessorDetailTable.assessor_id, assessorId) 
+            });
+            return newDetail;
+        }
+    }
+
+    static async getAssessorDetail(assessorId: number): Promise<any> {
+        const detail = await db.query.assessorDetail.findFirst({ 
+            where: eq(assessorDetailTable.assessor_id, assessorId) 
+        });
+        if (!detail) throw new NotFoundError('Assessor Detail');
+
+        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, assessorId) });
+        const user = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
+
+        return {
+            ...detail,
+            assessor: assessor ? {
+                ...assessor,
+                user: user
+            } : null
+        };
+    }
+
+    static async getAllAssessorDetails(): Promise<any[]> {
+        const details = await db.select()
+            .from(assessorDetailTable)
+            .innerJoin(assessorTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+            .innerJoin(userTable, eq(assessorTable.user_id, userTable.id));
+
+        return details.map(row => ({
+            ...row.assessor_detail,
+            assessor: {
+                ...row.assessor,
+                user: row.user
+            }
+        }));
     }
 
     private static formatAssessorResponse(assessor: any): AssessorResponse {

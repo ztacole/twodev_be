@@ -78,20 +78,20 @@ async function main() {
     await db.delete(groupsIa03Table);
     await db.delete(groupsIa02Table);
     await db.delete(groupIa01Table);
-    await db.delete(assessmentTable);
+  await db.delete(assessmentTable);
 
     // occupations schemes
-    await db.delete(occupationTable);
-    await db.delete(schemeTable);
+  await db.delete(occupationTable);
+  await db.delete(schemeTable);
 
     // assessee / assessor
     await db.delete(assesseeJobTable);
     await db.delete(assesseeTable);
     await db.delete(assessorDetailTable);
     await db.delete(assessorTable);
-    await db.delete(adminTable);
-    await db.delete(userTable);
-    await db.delete(roleTable);
+  await db.delete(adminTable);
+  await db.delete(userTable);
+  await db.delete(roleTable);
 
   } catch (e) {
     console.warn('Warning while deleting: ', e);
@@ -138,7 +138,7 @@ async function main() {
     await db.insert(assessorTable).values({ user_id: assessorUser1.id, address: 'Jalan Assessor No. 456', phone_no: '082345678901', birth_date: new Date('1985-05-15'), no_reg_met: `MET.000.${Math.floor(Math.random() * 100000)}.${new Date().getFullYear()}`, scheme_id: (schemeRPL?.id ?? 1) });
     const assessorRow = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, assessorUser1.id) });
     if (assessorRow) {
-      await db.insert(assessorDetailTable).values({ assessor_id: assessorRow.id, tax_id_number: '123456789012345', bank_book_cover: 'buku_bank_1.jpg', certificate: 'sertifikat_1.pdf', national_id: 'ktp_1.jpg' });
+      await db.insert(assessorDetailTable).values({ assessor_id: assessorRow.id, tax_id_number: '123456789012345', bank_book_cover: 'buku_bank_1.jpg', certificate: 'sertifikat_1.pdf', id_card: 'id_card_1.jpg', national_id: 'ktp_1.jpg' });
     }
   }
 

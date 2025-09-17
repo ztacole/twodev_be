@@ -1,13 +1,5 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "5",
-      "when": 1757998712698,
-      "tag": "0000_chilly_exiles",
-      "breakpoints": true
-    }
-  ]
+  "entries": []
 }
