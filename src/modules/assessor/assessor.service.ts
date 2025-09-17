@@ -102,7 +102,7 @@ export class AssessorService {
         files: any[];
     }): Promise<any> {
         const { assessorId, bodyData, files } = params;
-        const BASE_URL = process.env.BASE_URL || "http://localhost:3000" || "https://asessment24.site/twodev";
+        const BASE_URL = "https://asessment24.site";
 
         const fileData: Record<string, string> = {};
 
