@@ -55,10 +55,15 @@ export class APL02Service {
       throw new NotFoundError('Result');
     }
 
+    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
+    if (!header) {
+      throw new NotFoundError('APL02 header');
+    }
+
     const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, unitId));
 
     return Promise.all(elements.map(async (element) => {
-      const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, result_id), eq(apl02RowTable.element_id, element.id)) });
+      const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, header.id), eq(apl02RowTable.element_id, element.id)) });
       const evidences = row ? await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id)) : [];
       const details = await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, element.id));
       return {

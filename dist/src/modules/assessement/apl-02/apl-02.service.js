@@ -62,9 +62,13 @@ class APL02Service {
             if (!existingResult) {
                 throw new error_1.NotFoundError('Result');
             }
+            const header = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, result_id) });
+            if (!header) {
+                throw new error_1.NotFoundError('APL02 header');
+            }
             const elements = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, unitId));
             return Promise.all(elements.map((element) => __awaiter(this, void 0, void 0, function* () {
-                const row = yield drizzle_1.db.query.resultApl02.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, result_id), (0, drizzle_orm_1.eq)(schema_1.resultApl02.element_id, element.id)) });
+                const row = yield drizzle_1.db.query.resultApl02.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, header.id), (0, drizzle_orm_1.eq)(schema_1.resultApl02.element_id, element.id)) });
                 const evidences = row ? yield drizzle_1.db.select().from(schema_1.apl02Evidence).where((0, drizzle_orm_1.eq)(schema_1.apl02Evidence.result_apl02_id, row.id)) : [];
                 const details = yield drizzle_1.db.select().from(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.element_id, element.id));
                 return {
