@@ -5,7 +5,8 @@ import fs from 'fs';
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const assessorId = req.params?.assessor_id || req.body?.assessor_id || 'unknown';
-    const uploadPath = path.join(__dirname, '../../../../public/uploads/assessor', `assessor-${assessorId}`);
+    const uploadPath = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessorId}`);
+    
     
     if (fs.existsSync(uploadPath)) {
       fs.readdirSync(uploadPath).forEach((file) => {
