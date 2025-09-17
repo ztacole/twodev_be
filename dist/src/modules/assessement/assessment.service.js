@@ -451,7 +451,6 @@ class AssessmentService {
     }
     static getAssessmentRecapt(schedule_detail_id, assessor) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
             const scheduleDetail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.id, schedule_detail_id), (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.assessor_id, assessor.id)) });
             if (!scheduleDetail)
                 throw new error_1.NotFoundError('Schedule Detail');
@@ -476,7 +475,7 @@ class AssessmentService {
                 is_competent: schema_1.result.is_competent,
             }).from(schema_1.result).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, schedule.assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor.id)));
             let assessees = [];
-            let tuk = (_a = results[0].tuk) !== null && _a !== void 0 ? _a : null;
+            let tuk = (results.length > 0 && results[0].tuk) ? results[0].tuk : 'sewaktu';
             let summary = {
                 total_assessees: 0,
                 total_competent: 0,

@@ -577,7 +577,7 @@ export class AssessmentService {
         );
 
         let assessees: any[] = [];
-        let tuk: string | null = results[0].tuk ?? null;
+        let tuk: string = (results.length > 0 && results[0].tuk) ? results[0].tuk : 'sewaktu';
         let summary = {
             total_assessees: 0,
             total_competent: 0,
