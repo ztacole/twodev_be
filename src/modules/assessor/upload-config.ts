@@ -17,6 +17,7 @@ const storage = multer.diskStorage({
     }
     
     const uploadPath = path.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessorId}`);
+    console.log('Upload path:', uploadPath);
     
     if (fs.existsSync(uploadPath)) {
       fs.readdirSync(uploadPath).forEach((file) => {

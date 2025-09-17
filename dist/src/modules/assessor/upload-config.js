@@ -9,9 +9,19 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        var _a, _b;
-        const assessorId = ((_a = req.params) === null || _a === void 0 ? void 0 : _a.assessor_id) || ((_b = req.body) === null || _b === void 0 ? void 0 : _b.assessor_id) || 'unknown';
+        var _a, _b, _c, _d;
+        const assessorId = ((_a = req.params) === null || _a === void 0 ? void 0 : _a.id) || ((_b = req.params) === null || _b === void 0 ? void 0 : _b.assessor_id) || ((_c = req.body) === null || _c === void 0 ? void 0 : _c.assessor_id) || ((_d = req.body) === null || _d === void 0 ? void 0 : _d.assessorId);
+        // Jika tidak ada assessor ID, gunakan folder default
+        if (!assessorId) {
+            const defaultPath = path_1.default.join(__dirname, '../../../public/uploads/assessor/default');
+            if (!fs_1.default.existsSync(defaultPath)) {
+                fs_1.default.mkdirSync(defaultPath, { recursive: true });
+            }
+            cb(null, defaultPath);
+            return;
+        }
         const uploadPath = path_1.default.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessorId}`);
+        console.log('Upload path:', uploadPath);
         if (fs_1.default.existsSync(uploadPath)) {
             fs_1.default.readdirSync(uploadPath).forEach((file) => {
                 const filePath = path_1.default.join(uploadPath, file);
@@ -44,4 +54,4 @@ exports.uploadAssessorDetail = (0, multer_1.default)({
     limits: {
         fileSize: 5 * 1024 * 1024 // 5MB
     }
-});
+}).any();

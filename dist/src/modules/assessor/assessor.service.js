@@ -58,17 +58,25 @@ class AssessorService {
         return __awaiter(this, void 0, void 0, function* () {
             const existing = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id) });
             if (existing) {
-                throw new error_1.DuplicateEntryError('Assessor untuk user_id', data.user_id.toString());
+                yield drizzle_1.db.update(schema_1.assessor).set({
+                    scheme_id: data.scheme_id,
+                    no_reg_met: data.no_reg_met,
+                    address: data.address,
+                    phone_no: data.phone_no,
+                    birth_date: new Date(data.birth_date),
+                });
             }
-            yield drizzle_1.db.insert(schema_1.assessor).values({
-                user_id: data.user_id,
-                scheme_id: data.scheme_id,
-                no_reg_met: data.no_reg_met,
-                address: data.address,
-                phone_no: data.phone_no,
-                birth_date: new Date(data.birth_date),
-            });
-            const created = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id), (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, data.scheme_id)) });
+            else {
+                yield drizzle_1.db.insert(schema_1.assessor).values({
+                    user_id: data.user_id,
+                    scheme_id: data.scheme_id,
+                    no_reg_met: data.no_reg_met,
+                    address: data.address,
+                    phone_no: data.phone_no,
+                    birth_date: new Date(data.birth_date),
+                });
+            }
+            const created = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id) });
             if (!created)
                 throw new error_1.NotFoundError('Assessor');
             const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, created.user_id) });
