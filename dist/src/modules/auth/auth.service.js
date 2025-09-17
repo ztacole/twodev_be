@@ -65,11 +65,11 @@ class AuthService {
                 where: (0, drizzle_orm_1.eq)(schema_1.user.email, data.email),
             });
             if (!user) {
-                throw new error_1.ValidationError('Email atau password tidak valid');
+                throw new error_1.UnauthorizedError('Email atau password tidak valid');
             }
             const isPasswordValid = yield bcryptjs_1.default.compare(data.password, user.password);
             if (!isPasswordValid) {
-                throw new error_1.ValidationError('Email atau password tidak valid');
+                throw new error_1.UnauthorizedError('Email atau password tidak valid');
             }
             const token = this.generateToken(user.id, user.email, user.role_id);
             return {

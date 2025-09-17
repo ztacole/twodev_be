@@ -4,7 +4,7 @@ import { db } from '../../config/drizzle';
 import { role as roleTable, user as userTable } from '../../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { RegisterRequest, LoginRequest, AuthResponse, JwtPayload } from './auth.type';
-import { DuplicateEntryError, NotFoundError, ValidationError } from '../../common/error';
+import { DuplicateEntryError, NotFoundError, UnauthorizedError, ValidationError } from '../../common/error';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES_IN = '7d';
@@ -59,12 +59,12 @@ export class AuthService {
         });
 
         if (!user) {
-            throw new ValidationError('Email atau password tidak valid');
+            throw new UnauthorizedError('Email atau password tidak valid');
         }
 
         const isPasswordValid = await bcrypt.compare(data.password, user.password);
         if (!isPasswordValid) {
-            throw new ValidationError('Email atau password tidak valid');
+            throw new UnauthorizedError('Email atau password tidak valid');
         }
 
         const token = this.generateToken(user.id, user.email, user.role_id);
