@@ -183,7 +183,6 @@ class AssessorService {
     }
     static getAssessorUsers() {
         return __awaiter(this, void 0, void 0, function* () {
-            // Select users with role 'Assessor' and check if they have data in assessor table
             const users = yield drizzle_1.db.select({
                 id: schema_1.user.id,
                 full_name: schema_1.user.full_name,
@@ -196,7 +195,6 @@ class AssessorService {
                 .leftJoin(schema_1.assessor, (0, drizzle_orm_1.eq)(schema_1.user.id, schema_1.assessor.user_id))
                 .where((0, drizzle_orm_1.eq)(schema_1.role.name, 'Assessor'))
                 .orderBy((0, drizzle_orm_1.asc)(schema_1.user.full_name), (0, drizzle_orm_1.asc)(schema_1.user.created_at));
-            // Add status field: 'has_data' if found in assessor table, 'no_data' otherwise
             const result = users.map(u => ({
                 id: u.id,
                 full_name: u.full_name,
