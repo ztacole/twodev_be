@@ -191,7 +191,6 @@ export class AssessorService {
     }
 
     static async getAssessorUsers() {
-        // Select users with role 'Assessor' and check if they have data in assessor table
         const users = await db.select({
             id: userTable.id,
             full_name: userTable.full_name,
@@ -205,7 +204,6 @@ export class AssessorService {
         .where(eq(roleTable.name, 'Assessor'))
         .orderBy(asc(userTable.full_name), asc(userTable.created_at));
 
-        // Add status field: 'has_data' if found in assessor table, 'no_data' otherwise
         const result = users.map(u => ({
             id: u.id,
             full_name: u.full_name,
