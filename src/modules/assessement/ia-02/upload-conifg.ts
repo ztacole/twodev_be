@@ -7,14 +7,23 @@ const storage = multer.diskStorage({
     const assessmentId = req.params.assessmentId || 'unknown-assessment';
     const uploadPath = path.join(__dirname, '../../../../public/uploads/ia-02', `assessment-${assessmentId}`);
     
-    if (fs.existsSync(uploadPath)) {
-      fs.readdirSync(uploadPath).forEach((file) => {
-        const filePath = path.join(uploadPath, file);
-        fs.unlinkSync(filePath);
-      });
-    } else {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
+    const reqAny: any = req as any;
+    const alreadyCleaned = Boolean(reqAny.__ia02UploadCleaned);
+
+    try {
+      if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+      } else if (!alreadyCleaned) {
+        for (const fileName of fs.readdirSync(uploadPath)) {
+          const filePath = path.join(uploadPath, fileName);
+          try { fs.unlinkSync(filePath); } catch {}
+        }
+        reqAny.__ia02UploadCleaned = true;
+        setTimeout(() => cb(null, uploadPath), 50);
+        return;
+      }
+    } catch {}
+
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {

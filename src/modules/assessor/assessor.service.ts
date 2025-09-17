@@ -45,24 +45,18 @@ export class AssessorService {
     static async createAssessor(data: AssessorRequest): Promise<AssessorResponse> {
         const existing = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, data.user_id) });
         if (existing) {
-            await db.update(assessorTable).set({
-                scheme_id: data.scheme_id,
-                no_reg_met: data.no_reg_met,
-                address: data.address,
-                phone_no: data.phone_no,
-                birth_date: new Date(data.birth_date) as any,
-            })
-        } else {
-            await db.insert(assessorTable).values({
-                user_id: data.user_id,
-                scheme_id: data.scheme_id,
-                no_reg_met: data.no_reg_met,
-                address: data.address,
-                phone_no: data.phone_no,
-                birth_date: new Date(data.birth_date) as any,
-            });
+            throw new DuplicateEntryError('Assessor untuk user_id', data.user_id.toString());
         }
-        const created = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, data.user_id)});
+
+        await db.insert(assessorTable).values({
+            user_id: data.user_id,
+            scheme_id: data.scheme_id,
+            no_reg_met: data.no_reg_met,
+            address: data.address,
+            phone_no: data.phone_no,
+            birth_date: new Date(data.birth_date) as any,
+        });
+        const created = await db.query.assessor.findFirst({ where: and(eq(assessorTable.user_id, data.user_id), eq(assessorTable.scheme_id, data.scheme_id)) });
         if (!created) throw new NotFoundError('Assessor');
         const user = await db.query.user.findFirst({ where: eq(userTable.id, created.user_id) });
         const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
@@ -131,8 +125,8 @@ export class AssessorService {
         const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, assessorId) });
         if (!assessor) throw new NotFoundError('Assessor');
 
-        const existingDetail = await db.query.assessorDetail.findFirst({
-            where: eq(assessorDetailTable.assessor_id, assessorId)
+        const existingDetail = await db.query.assessorDetail.findFirst({ 
+            where: eq(assessorDetailTable.assessor_id, assessorId) 
         });
 
         const detailData = {
@@ -149,23 +143,23 @@ export class AssessorService {
                 .set(detailData)
                 .where(eq(assessorDetailTable.id, existingDetail.id));
 
-            const updated = await db.query.assessorDetail.findFirst({
-                where: eq(assessorDetailTable.id, existingDetail.id)
+            const updated = await db.query.assessorDetail.findFirst({ 
+                where: eq(assessorDetailTable.id, existingDetail.id) 
             });
             return updated;
         } else {
             await db.insert(assessorDetailTable).values(detailData);
-
-            const newDetail = await db.query.assessorDetail.findFirst({
-                where: eq(assessorDetailTable.assessor_id, assessorId)
+            
+            const newDetail = await db.query.assessorDetail.findFirst({ 
+                where: eq(assessorDetailTable.assessor_id, assessorId) 
             });
             return newDetail;
         }
     }
 
     static async getAssessorDetail(assessorId: number): Promise<any> {
-        const detail = await db.query.assessorDetail.findFirst({
-            where: eq(assessorDetailTable.assessor_id, assessorId)
+        const detail = await db.query.assessorDetail.findFirst({ 
+            where: eq(assessorDetailTable.assessor_id, assessorId) 
         });
         if (!detail) throw new NotFoundError('Assessor Detail');
 
