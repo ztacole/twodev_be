@@ -112,18 +112,6 @@ export class AssessorService {
         for (const file of fileArray) {
             const fieldName = file.fieldname;
             if (['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'].includes(fieldName)) {
-                const tempPath = path.join(process.cwd(), 'public/uploads/assessor/assessor-temp', file.filename);
-                const targetPath = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessorId}`, file.filename);
-                
-                const targetDir = path.dirname(targetPath);
-                if (!fs.existsSync(targetDir)) {
-                    fs.mkdirSync(targetDir, { recursive: true });
-                }
-                
-                if (fs.existsSync(tempPath)) {
-                    fs.renameSync(tempPath, targetPath);
-                }
-                
                 fileData[fieldName] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
             }
         }

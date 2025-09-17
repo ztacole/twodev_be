@@ -4,10 +4,16 @@ import fs from 'fs';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let assessorId = req.params?.id || req.params?.assessor_id || req.body?.assessor_id || req.body?.assessorId;
+    const assessorId = req.params?.id || req.params?.assessor_id || req.body?.assessor_id || req.body?.assessorId;
     
+    // Jika tidak ada assessor ID, gunakan folder default
     if (!assessorId) {
-      assessorId = 'temp';
+      const defaultPath = path.join(__dirname, '../../../public/uploads/assessor/default');
+      if (!fs.existsSync(defaultPath)) {
+        fs.mkdirSync(defaultPath, { recursive: true });
+      }
+      cb(null, defaultPath);
+      return;
     }
     
     const uploadPath = path.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessorId}`);
