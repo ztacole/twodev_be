@@ -397,125 +397,51 @@ class AssessmentService {
                     tabs: tabs,
                 };
             }
-            let apl02NotYetCount = 0;
-            let ia01NotYetCount = 0;
-            let ia02NotYetCount = 0;
-            let ia03NotYetCount = 0;
-            let ia05NotYetCount = 0;
-            let ia07NotYetCount = 0;
-            let ak01NotYetCount = 0;
-            let ak02NotYetCount = 0;
-            let ak03NotYetCount = 0;
-            let ak05NotYetCount = 0;
-            let apl02WaitingCount = 0;
-            let ia01WaitingCount = 0;
-            let ia02WaitingCount = 0;
-            let ia03WaitingCount = 0;
-            let ia05WaitingCount = 0;
-            let ia07WaitingCount = 0;
-            let ak01WaitingCount = 0;
-            let ak02WaitingCount = 0;
-            let ak03WaitingCount = 0;
-            let ak05WaitingCount = 0;
+            // Config header dan tab
+            const headerConfigs = [
+                { name: 'APL-02', findFirst: (args) => drizzle_1.db.query.resultApl02Header.findFirst(args), col: schema_1.resultApl02Header, notYet: 0, waiting: 0 },
+                { name: 'IA-01', findFirst: (args) => drizzle_1.db.query.resultIa01Header.findFirst(args), col: schema_1.resultIa01Header, notYet: 0, waiting: 0 },
+                { name: 'IA-02', findFirst: (args) => drizzle_1.db.query.resultIa02Header.findFirst(args), col: schema_1.resultIa02Header, notYet: 0, waiting: 0 },
+                { name: 'IA-03', findFirst: (args) => drizzle_1.db.query.resultIa03Header.findFirst(args), col: schema_1.resultIa03Header, notYet: 0, waiting: 0, isSpecial: true },
+                { name: 'IA-05', findFirst: (args) => drizzle_1.db.query.resultIa05Header.findFirst(args), col: schema_1.resultIa05Header, notYet: 0, waiting: 0 },
+                { name: 'IA-07', findFirst: (args) => drizzle_1.db.query.resultIa07Header.findFirst(args), col: schema_1.resultIa07Header, notYet: 0, waiting: 0 },
+                { name: 'AK-01', findFirst: (args) => drizzle_1.db.query.resultAk01Header.findFirst(args), col: schema_1.resultAk01Header, notYet: 0, waiting: 0 },
+                { name: 'AK-02', findFirst: (args) => drizzle_1.db.query.resultAk02Header.findFirst(args), col: schema_1.resultAk02Header, notYet: 0, waiting: 0 },
+                { name: 'AK-03', findFirst: (args) => drizzle_1.db.query.resultAk03Header.findFirst(args), col: schema_1.resultAk03Header, notYet: 0, waiting: 0, isSpecial: true },
+                { name: 'AK-05', findFirst: (args) => drizzle_1.db.query.resultAk05.findFirst(args), col: schema_1.resultAk05, notYet: 0, waiting: 0, onlyApproved: true },
+            ];
             for (const result of results) {
-                const apl02 = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, result.id) });
-                const ia01 = yield drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, result.id) });
-                const ia02 = yield drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, result.id) });
-                const ia03 = yield drizzle_1.db.query.resultIa03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa03Header.result_id, result.id) });
-                const ia05 = yield drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, result.id) });
-                const ia07 = yield drizzle_1.db.query.resultIa07Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa07Header.result_id, result.id) });
-                const ak01 = yield drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, result.id) });
-                const ak02 = yield drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, result.id) });
-                const ak03 = yield drizzle_1.db.query.resultAk03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk03Header.result_id, result.id) });
-                const ak05 = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result.id) });
-                if (apl02) {
-                    if (!apl02.approved_assessor)
-                        apl02NotYetCount++;
-                    if (apl02.approved_assessor && !apl02.approved_assessee)
-                        apl02WaitingCount++;
-                }
-                if (ia01) {
-                    if (!ia01.approved_assessor)
-                        ia01NotYetCount++;
-                    if (ia01.approved_assessor && !ia01.approved_assessee)
-                        ia01WaitingCount++;
-                }
-                if (ia02) {
-                    if (!ia02.approved_assessor)
-                        ia02NotYetCount++;
-                    if (ia02.approved_assessor && !ia02.approved_assessee)
-                        ia02WaitingCount++;
-                }
-                if (ia03) {
-                    if (!ia03.approved_assessor)
-                        ia03NotYetCount++;
-                    if (ia03.approved_assessor && !ia03.approved_assessee)
-                        ia03WaitingCount++;
-                }
-                if (ia05) {
-                    if (!ia05.approved_assessor)
-                        ia05NotYetCount++;
-                    if (ia05.approved_assessor && !ia05.approved_assessee)
-                        ia05WaitingCount++;
-                }
-                if (ia07) {
-                    if (!ia07.approved_assessor)
-                        ia07NotYetCount++;
-                    if (ia07.approved_assessor && !ia07.approved_assessee)
-                        ia07WaitingCount++;
-                }
-                if (ak01) {
-                    if (!ak01.approved_assessor)
-                        ak01NotYetCount++;
-                    if (ak01.approved_assessor && !ak01.approved_assessee)
-                        ak01WaitingCount++;
-                }
-                if (ak02) {
-                    if (!ak02.approved_assessor)
-                        ak02NotYetCount++;
-                    if (ak02.approved_assessor && !ak02.approved_assessee)
-                        ak02WaitingCount++;
-                }
-                if (ak03) {
-                    if (!ak03)
-                        ak03NotYetCount++;
-                }
-                if (ak05) {
-                    if (!ak05.approved_assessor)
-                        ak05NotYetCount++;
+                for (const config of headerConfigs) {
+                    let header = yield config.findFirst({ where: (0, drizzle_orm_1.eq)(config.col.result_id, result.id) });
+                    if (config.name === 'AK-03') {
+                        if (!header)
+                            config.notYet++;
+                    }
+                    else if (config.name === 'AK-05') {
+                        if (header && 'approved_assessor' in header && !header.approved_assessor)
+                            config.notYet++;
+                    }
+                    else {
+                        if (header) {
+                            if ('approved_assessor' in header && !header.approved_assessor)
+                                config.notYet++;
+                            if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee)
+                                config.waiting++;
+                        }
+                    }
                 }
             }
-            ;
-            const apl02Tab = tabs.find((tab) => tab.name === 'APL-02');
-            if (apl02Tab)
-                apl02Tab.status = (apl02NotYetCount > 0) ? 'Not Started' : (apl02NotYetCount === 0 && apl02WaitingCount > 0) ? 'Waiting' : 'Completed';
-            const ia01Tab = tabs.find((tab) => tab.name === 'IA-01');
-            if (ia01Tab)
-                ia01Tab.status = (ia01NotYetCount > 0) ? 'Not Started' : (ia01NotYetCount === 0 && ia01WaitingCount > 0) ? 'Waiting' : 'Completed';
-            const ia02Tab = tabs.find((tab) => tab.name === 'IA-02');
-            if (ia02Tab)
-                ia02Tab.status = (ia02NotYetCount > 0) ? 'Not Started' : (ia02NotYetCount === 0 && ia02WaitingCount > 0) ? 'Waiting' : 'Completed';
-            const ia03Tab = tabs.find((tab) => tab.name === 'IA-03');
-            if (ia03Tab)
-                ia03Tab.status = (ia03NotYetCount > 0) ? 'Not Started' : (ia03NotYetCount === 0 && ia03WaitingCount > 0) ? 'Waiting' : 'Completed';
-            const ia05Tab = tabs.find((tab) => tab.name === 'IA-05');
-            if (ia05Tab)
-                ia05Tab.status = (ia05NotYetCount > 0) ? 'Not Started' : (ia05NotYetCount === 0 && ia05WaitingCount > 0) ? 'Waiting' : 'Completed';
-            const ia07Tab = tabs.find((tab) => tab.name === 'IA-07');
-            if (ia07Tab)
-                ia07Tab.status = (ia07NotYetCount > 0) ? 'Not Started' : (ia07NotYetCount === 0 && ia07WaitingCount > 0) ? 'Waiting' : 'Completed';
-            const ak01Tab = tabs.find((tab) => tab.name === 'AK-01');
-            if (ak01Tab)
-                ak01Tab.status = (ak01NotYetCount > 0) ? 'Not Started' : (ak01NotYetCount === 0 && ak01WaitingCount > 0) ? 'Waiting' : 'Completed';
-            const ak02Tab = tabs.find((tab) => tab.name === 'AK-02');
-            if (ak02Tab)
-                ak02Tab.status = (ak02NotYetCount > 0) ? 'Not Started' : (ak02NotYetCount === 0 && ak02WaitingCount > 0) ? 'Waiting' : 'Completed';
-            const ak03Tab = tabs.find((tab) => tab.name === 'AK-03');
-            if (ak03Tab)
-                ak03Tab.status = (ak03NotYetCount > 0) ? 'Not Started' : (ak03NotYetCount === 0 && ak03WaitingCount > 0) ? 'Waiting' : 'Completed';
-            const ak05Tab = tabs.find((tab) => tab.name === 'AK-05');
-            if (ak05Tab)
-                ak05Tab.status = (ak05NotYetCount > 0) ? 'Not Started' : (ak05NotYetCount === 0 && ak05WaitingCount > 0) ? 'Waiting' : 'Completed';
+            // Update status tab
+            for (const config of headerConfigs) {
+                const tab = tabs.find((tab) => tab.name === config.name);
+                if (tab) {
+                    tab.status = (config.notYet > 0)
+                        ? 'Not Started'
+                        : (config.notYet === 0 && config.waiting > 0)
+                            ? 'Waiting'
+                            : 'Completed';
+                }
+            }
             return {
                 assessment_id: assessment.id,
                 assessment_code: assessment.code,
