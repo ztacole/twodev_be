@@ -9,3 +9,5 @@ node_modules
 !/uploads/temp/
 
 /public/uploads
+
+/dist/public

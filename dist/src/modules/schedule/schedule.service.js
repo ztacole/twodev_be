@@ -118,45 +118,62 @@ class ScheduleService {
             if (!assessees)
                 return [];
             let results = [];
+            // Config header dan property
+            const headerConfigs = [
+                { key: 'APL02', find: (id) => drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, id) }) },
+                { key: 'IA01', find: (id) => drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, id) }) },
+                { key: 'IA02', find: (id) => drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, id) }) },
+                { key: 'IA03', find: (id) => drizzle_1.db.query.resultIa03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa03Header.result_id, id) }) },
+                { key: 'IA05', find: (id) => drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, id) }) },
+                { key: 'AK01', find: (id) => drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, id) }) },
+                { key: 'AK02', find: (id) => drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, id) }) },
+                { key: 'AK05', find: (id) => drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, id) }) },
+            ];
             for (const assessee of assessees) {
                 const rawResults = yield drizzle_1.db.select().from(schema_1.result).where((0, drizzle_orm_1.eq)(schema_1.result.assessee_id, assessee.id));
                 if (rawResults.length === 0)
                     continue;
                 for (const r of rawResults) {
-                    const resultAPL02 = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, r.id) });
-                    const resultIA01 = yield drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, r.id) });
-                    const resultIA02 = yield drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, r.id) });
-                    const resultIA03 = yield drizzle_1.db.query.resultIa03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa03Header.result_id, r.id) });
-                    const resultIA05 = yield drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, r.id) });
-                    const resultAK01 = yield drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, r.id) });
-                    const resultAK02 = yield drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, r.id) });
-                    const resultAK05 = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, r.id) });
+                    // Ambil semua header sekaligus
+                    const headers = {};
+                    for (const config of headerConfigs) {
+                        headers[config.key] = yield config.find(r.id);
+                    }
+                    const resultAPL02 = headers.APL02;
+                    const resultIA01 = headers.IA01;
+                    const resultIA02 = headers.IA02;
+                    const resultIA03 = headers.IA03;
+                    const resultIA05 = headers.IA05;
+                    const resultAK01 = headers.AK01;
+                    const resultAK02 = headers.AK02;
+                    const resultAK05 = headers.AK05;
+                    // Penentuan status
+                    let status = "On Going";
                     if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee)
-                        results.push({ status: "Not Competent", detail: yield buildActiveScheduleResponse(r) });
-                    else if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee)
-                        results.push({ status: "Not Competent", detail: yield buildActiveScheduleResponse(r) });
-                    else if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                        status = "Not Competent";
+                    if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee)
+                        status = "Not Competent";
+                    if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
                         (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
                         (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
                         (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
-                        resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true &&
+                        (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true) &&
                         (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
                         (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
                         (resultAK05 && resultAK05.approved_assessor) &&
                         !resultAK05.is_competent && !r.is_competent)
-                        results.push({ status: "Not Competent", detail: yield buildActiveScheduleResponse(r) });
-                    else if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                        status = "Not Competent";
+                    if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
                         (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
                         (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
                         (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
-                        resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true &&
+                        (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true) &&
                         (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
                         (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
                         (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
                         r.is_competent)
-                        results.push({ status: "Competent", detail: yield buildActiveScheduleResponse(r) });
-                    else if (r)
-                        results.push({ status: "On Going", detail: yield buildActiveScheduleResponse(r) });
+                        status = "Competent";
+                    results.push({ status, detail: yield buildActiveScheduleResponse(r) });
                 }
             }
             return results;

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const assessor_controller_1 = require("./assessor.controller");
+const upload_config_1 = require("./upload-config");
 const router = (0, express_1.Router)();
 router.post('/', assessor_controller_1.AssessorController.createAssessor);
 router.get('/', assessor_controller_1.AssessorController.getAssessors);
@@ -9,4 +10,7 @@ router.get('/user/:userId', assessor_controller_1.AssessorController.getAssessor
 router.get('/:id', assessor_controller_1.AssessorController.getAssessorById);
 router.put('/:id', assessor_controller_1.AssessorController.updateAssessor);
 router.delete('/:id', assessor_controller_1.AssessorController.deleteAssessor);
+router.post('/uploads', upload_config_1.uploadAssessorDetail.any(), assessor_controller_1.AssessorController.createOrUpdateAssessorDetail);
+router.get('/:assessorId/detail', assessor_controller_1.AssessorController.getAssessorDetail);
+router.get('/detail/all', assessor_controller_1.AssessorController.getAllAssessorDetails);
 exports.default = router;

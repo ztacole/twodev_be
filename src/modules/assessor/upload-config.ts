@@ -10,7 +10,7 @@ const storage = multer.diskStorage({
       assessorId = 'temp';
     }
     
-    const uploadPath = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessorId}`);
+    const uploadPath = path.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessorId}`);
     
     if (fs.existsSync(uploadPath)) {
       fs.readdirSync(uploadPath).forEach((file) => {
@@ -44,5 +44,5 @@ export const uploadAssessorDetail = multer({
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB
   }
-}).any();
+});
 

@@ -9,7 +9,7 @@ export class AssessorDetailService {
         return detail;
     }
 
-    static async upsertByAssessorId(assessor_id: number, data: { tax_id_number?: string; bank_book_cover?: string; certificate?: string; national_id?: string }) {
+    static async upsertByAssessorId(assessor_id: number, data: { tax_id_number?: string; bank_book_cover?: string; certificate?: string; national_id?: string, id_card?: string }) {
         const existing = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, assessor_id) });
         if (existing) {
             await db.update(assessorDetailTable)
@@ -30,6 +30,7 @@ export class AssessorDetailService {
             bank_book_cover: data.bank_book_cover ?? '',
             certificate: data.certificate ?? '',
             national_id: data.national_id ?? '',
+            id_card: data.id_card ?? ''
         });
         const created = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, assessor_id) });
         return created;

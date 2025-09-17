@@ -22,7 +22,7 @@ class AssessorDetailService {
     }
     static upsertByAssessorId(assessor_id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e, _f, _g, _h;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
             const existing = yield drizzle_1.db.query.assessorDetail.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, assessor_id) });
             if (existing) {
                 yield drizzle_1.db.update(schema_1.assessorDetail)
@@ -42,6 +42,7 @@ class AssessorDetailService {
                 bank_book_cover: (_f = data.bank_book_cover) !== null && _f !== void 0 ? _f : '',
                 certificate: (_g = data.certificate) !== null && _g !== void 0 ? _g : '',
                 national_id: (_h = data.national_id) !== null && _h !== void 0 ? _h : '',
+                id_card: (_j = data.id_card) !== null && _j !== void 0 ? _j : ''
             });
             const created = yield drizzle_1.db.query.assessorDetail.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, assessor_id) });
             return created;
