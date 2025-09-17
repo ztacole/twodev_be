@@ -143,7 +143,7 @@ export class AssessmentController {
             });
         }
 
-        const result = await AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+        const result = await AssessmentService.getAssessmentRecapt(scheduleDetailId);
         res.status(200).json({
             success: true,
             message: "Navigasi berhasil diambil",

@@ -54,8 +54,6 @@ export class AK04Service {
   }
 
   static async getAK04ByResult_id(result_id: number): Promise<AK04Response> {
-    const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
-    if (!result) throw new NotFoundError('Result');
     const record = await db.query.resultAk04.findFirst({
       where: eq(resultAk04.result_id, result_id)
     });
@@ -91,8 +89,6 @@ export class AK04Service {
   }
 
   static async approvedByAssessee(result_id: number): Promise<AK04Response> {
-    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
-    if (!existingResult) throw new NotFoundError('Result');
     const existing = await db.query.resultAk04.findFirst({ where: eq(resultAk04.result_id, result_id) });
     if (!existing) throw new NotFoundError('AK04');
     await db.update(resultAk04).set({ approved_assessee: true }).where(eq(resultAk04.id, existing.id));

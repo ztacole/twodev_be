@@ -12,11 +12,6 @@ export class APL02Service {
       throw new NotFoundError('Result');
     }
 
-    const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
-    if (!apl02Header) {
-      throw new NotFoundError('APL02 header');
-    }
-
     const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, existingResult.assessment_id));
     const elementsByUc = await Promise.all(unitCompetencies.map(async (uc) => {
       const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
@@ -28,7 +23,7 @@ export class APL02Service {
       const totalElements = elements.length;
       let completedElements = 0;
       for (const el of elements) {
-        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, apl02Header.id), eq(apl02RowTable.element_id, el.id)) });
+        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, result_id), eq(apl02RowTable.element_id, el.id)) });
         if (row) completedElements += 1;
       }
       const finished = totalElements > 0 && completedElements === totalElements;
@@ -55,15 +50,10 @@ export class APL02Service {
       throw new NotFoundError('Result');
     }
 
-    const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
-    if (!header) {
-      throw new NotFoundError('APL02 header');
-    }
-
     const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, unitId));
 
     return Promise.all(elements.map(async (element) => {
-      const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, header.id), eq(apl02RowTable.element_id, element.id)) });
+      const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, result_id), eq(apl02RowTable.element_id, element.id)) });
       const evidences = row ? await db.select().from(apl02EvidenceTable).where(eq(apl02EvidenceTable.result_apl02_id, row.id)) : [];
       const details = await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, element.id));
       return {
