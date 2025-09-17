@@ -48,7 +48,7 @@ export class AK03Service {
     if (!header) {
       const [created] = await db.insert(ak03HeaderTable).values({
         result_id: data.result_id,
-        comment: data.comment ?? null,
+        comment: data.comment,
       });
   
       header = await db.query.resultAk03Header.findFirst({
@@ -58,7 +58,7 @@ export class AK03Service {
     } else {
       await db
         .update(ak03HeaderTable)
-        .set({ comment: data.comment ?? null })
+        .set({ comment: data.comment })
         .where(eq(ak03HeaderTable.id, header.id));
   
       await db.delete(ak03RowTable).where(eq(ak03RowTable.header_id, header.id));
@@ -69,7 +69,7 @@ export class AK03Service {
         header_id: header.id,
         question: item.question,
         answer: item.answer,
-        comment: item.comment ?? null,
+        comment: item.comment,
       });
     }
   

@@ -46,7 +46,6 @@ class AK03Service {
     }
     static createAnswerAK03(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c;
             const result = yield drizzle_1.db.query.result.findFirst({
                 where: (0, drizzle_orm_1.eq)(schema_1.result.id, data.result_id),
             });
@@ -58,7 +57,7 @@ class AK03Service {
             if (!header) {
                 const [created] = yield drizzle_1.db.insert(schema_1.resultAk03Header).values({
                     result_id: data.result_id,
-                    comment: (_a = data.comment) !== null && _a !== void 0 ? _a : null,
+                    comment: data.comment,
                 });
                 header = yield drizzle_1.db.query.resultAk03Header.findFirst({
                     where: (0, drizzle_orm_1.eq)(schema_1.resultAk03Header.result_id, data.result_id),
@@ -69,7 +68,7 @@ class AK03Service {
             else {
                 yield drizzle_1.db
                     .update(schema_1.resultAk03Header)
-                    .set({ comment: (_b = data.comment) !== null && _b !== void 0 ? _b : null })
+                    .set({ comment: data.comment })
                     .where((0, drizzle_orm_1.eq)(schema_1.resultAk03Header.id, header.id));
                 yield drizzle_1.db.delete(schema_1.resultAk03).where((0, drizzle_orm_1.eq)(schema_1.resultAk03.header_id, header.id));
             }
@@ -78,7 +77,7 @@ class AK03Service {
                     header_id: header.id,
                     question: item.question,
                     answer: item.answer,
-                    comment: (_c = item.comment) !== null && _c !== void 0 ? _c : null,
+                    comment: item.comment,
                 });
             }
             const answers = yield drizzle_1.db.query.resultAk03.findMany({
