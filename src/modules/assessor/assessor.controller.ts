@@ -21,7 +21,22 @@ export class AssessorController {
             const assessor = await AssessorService.createAssessor(req.body);
 
             if (files.length > 0) {
-                req.body.assessor_id = assessor.id;
+                const fs = require('fs');
+                const path = require('path');
+                
+                for (const file of files) {
+                    const oldPath = path.join(process.cwd(), 'public/uploads/assessor/default', file.filename);
+                    const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
+                    const newPath = path.join(newDir, file.filename);
+                    
+                    if (!fs.existsSync(newDir)) {
+                        fs.mkdirSync(newDir, { recursive: true });
+                    }
+                    
+                    if (fs.existsSync(oldPath)) {
+                        fs.renameSync(oldPath, newPath);
+                    }
+                }
                 
                 const detail = await AssessorService.createOrUpdateAssessorDetail({
                     assessorId: assessor.id,
