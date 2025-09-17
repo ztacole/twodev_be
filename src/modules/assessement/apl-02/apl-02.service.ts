@@ -12,6 +12,11 @@ export class APL02Service {
       throw new NotFoundError('Result');
     }
 
+    const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
+    if (!apl02Header) {
+      throw new NotFoundError('APL02 header');
+    }
+
     const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, existingResult.assessment_id));
     const elementsByUc = await Promise.all(unitCompetencies.map(async (uc) => {
       const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
@@ -23,7 +28,7 @@ export class APL02Service {
       const totalElements = elements.length;
       let completedElements = 0;
       for (const el of elements) {
-        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, result_id), eq(apl02RowTable.element_id, el.id)) });
+        const row = await db.query.resultApl02.findFirst({ where: and(eq(apl02RowTable.result_apl02_id, apl02Header.id), eq(apl02RowTable.element_id, el.id)) });
         if (row) completedElements += 1;
       }
       const finished = totalElements > 0 && completedElements === totalElements;

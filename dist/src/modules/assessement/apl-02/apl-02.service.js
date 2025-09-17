@@ -21,6 +21,10 @@ class APL02Service {
             if (!existingResult) {
                 throw new error_1.NotFoundError('Result');
             }
+            const apl02Header = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, result_id) });
+            if (!apl02Header) {
+                throw new error_1.NotFoundError('APL02 header');
+            }
             const unitCompetencies = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, existingResult.assessment_id));
             const elementsByUc = yield Promise.all(unitCompetencies.map((uc) => __awaiter(this, void 0, void 0, function* () {
                 const elements = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, uc.id));
@@ -31,7 +35,7 @@ class APL02Service {
                 const totalElements = elements.length;
                 let completedElements = 0;
                 for (const el of elements) {
-                    const row = yield drizzle_1.db.query.resultApl02.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, result_id), (0, drizzle_orm_1.eq)(schema_1.resultApl02.element_id, el.id)) });
+                    const row = yield drizzle_1.db.query.resultApl02.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, apl02Header.id), (0, drizzle_orm_1.eq)(schema_1.resultApl02.element_id, el.id)) });
                     if (row)
                         completedElements += 1;
                 }
