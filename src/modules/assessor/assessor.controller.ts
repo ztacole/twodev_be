@@ -4,24 +4,56 @@ import { asyncHandler } from '../../common/async.handler';
 
 export class AssessorController {
     static createAssessor = asyncHandler(async (req: Request, res: Response) => {
-        const requiredFields = ['user_id', 'scheme_id', 'address', 'phone_no', 'birth_date', 'no_reg_met'];
-        for (const field of requiredFields) {
-            if (!req.body[field]) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Field ${field} diperlukan`,
+        try {
+            
+            const requiredFields = ['user_id', 'scheme_id', 'address', 'phone_no', 'birth_date', 'no_reg_met'];
+            for (const field of requiredFields) {
+                if (!req.body[field]) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Field ${field} diperlukan`,
+                    });
+                }
+            }
+
+            const files = Array.isArray(req.files) ? req.files : [];
+
+            const assessor = await AssessorService.createAssessor(req.body);
+
+            if (files.length > 0) {
+                req.body.assessor_id = assessor.id;
+                
+                const detail = await AssessorService.createOrUpdateAssessorDetail({
+                    assessorId: assessor.id,
+                    bodyData: req.body,
+                    files
+                });
+
+                res.status(201).json({
+                    success: true,
+                    message: 'Data assessor dan detail berhasil dibuat',
+                    data: {
+                        assessor,
+                        detail
+                    }
+                });
+            } else {
+                res.status(201).json({
+                    success: true,
+                    message: 'Data assessor berhasil dibuat',
+                    data: assessor,
                 });
             }
+        } catch (error: any) {
+            console.error('Error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Terjadi kesalahan dalam membuat assessor',
+                error: error.message
+            });
         }
-
-        const assessor = await AssessorService.createAssessor(req.body);
-
-        res.status(201).json({
-            success: true,
-            message: 'Data assessor berhasil dibuat',
-            data: assessor,
-        });
     });
+
 
     static getAssessors = asyncHandler(async (req: Request, res: Response) => {
         const assessors = await AssessorService.getAssessors();
@@ -54,13 +86,42 @@ export class AssessorController {
     });
 
     static updateAssessor = asyncHandler(async (req: Request, res: Response) => {
-        const assessor = await AssessorService.updateAssessor(Number(req.params.id), req.body);
+        try {
+            
+            const files = Array.isArray(req.files) ? req.files : [];
 
-        res.json({
-            success: true,
-            message: 'Data assessor berhasil diubah',
-            data: assessor,
-        });
+            const assessor = await AssessorService.updateAssessor(Number(req.params.id), req.body);
+
+            if (files.length > 0) {
+                const detail = await AssessorService.createOrUpdateAssessorDetail({
+                    assessorId: Number(req.params.id),
+                    bodyData: req.body,
+                    files
+                });
+
+                res.json({
+                    success: true,
+                    message: 'Data assessor dan detail berhasil diubah',
+                    data: {
+                        assessor,
+                        detail
+                    }
+                });
+            } else {
+                res.json({
+                    success: true,
+                    message: 'Data assessor berhasil diubah',
+                    data: assessor,
+                });
+            }
+        } catch (error: any) {
+            console.error('Update Error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Terjadi kesalahan dalam mengubah assessor',
+                error: error.message
+            });
+        }
     });
 
     static deleteAssessor = asyncHandler(async (req: Request, res: Response) => {
