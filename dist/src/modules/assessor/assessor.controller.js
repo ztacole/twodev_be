@@ -33,15 +33,9 @@ AssessorController.createAssessor = (0, async_handler_1.asyncHandler)((req, res)
         if (files.length > 0) {
             const fs = require('fs');
             const path = require('path');
-            const newDir = path.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessor.id}`);
-            if (fs.existsSync(newDir)) {
-                fs.readdirSync(newDir).forEach((file) => {
-                    const filePath = path.join(newDir, file);
-                    fs.unlinkSync(filePath);
-                });
-            }
             for (const file of files) {
-                const oldPath = path.join(__dirname, '../../../public/uploads/assessor/default', file.filename);
+                const oldPath = path.join(process.cwd(), 'public/uploads/assessor/default', file.filename);
+                const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
                 const newPath = path.join(newDir, file.filename);
                 if (!fs.existsSync(newDir)) {
                     fs.mkdirSync(newDir, { recursive: true });

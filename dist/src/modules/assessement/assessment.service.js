@@ -449,6 +449,88 @@ class AssessmentService {
             };
         });
     }
+    static adminNavigation(assessment_id, assessor_id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
+            if (!assessment)
+                throw new error_1.NotFoundError('Assessment');
+            const tabs = [
+                { name: 'APL-02', status: "Not Started" },
+                { name: 'AK-01', status: "Not Started" },
+                { name: 'IA-01', status: "Not Started" },
+                { name: 'IA-02', status: "Not Started" }
+            ];
+            const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, assessment_id) });
+            const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, assessment_id) });
+            const isAnyIa07 = yield drizzle_1.db.query.ia07Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, assessment_id) });
+            if (isAnyIa03)
+                tabs.push({ name: 'IA-03', status: "Not Started" });
+            if (isAnyIa05)
+                tabs.push({ name: 'IA-05', status: "Not Started" });
+            if (isAnyIa07)
+                tabs.push({ name: 'IA-07', status: "Not Started" });
+            tabs.push({ name: 'AK-02', status: "Not Started" }, { name: 'AK-03', status: "Not Started" }, { name: 'AK-05', status: "Not Started" });
+            const results = yield drizzle_1.db.select().from(schema_1.result)
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id)));
+            if (results.length === 0) {
+                return {
+                    assessment_id: assessment.id,
+                    assessment_code: assessment.code,
+                    tabs: tabs,
+                };
+            }
+            // Config header dan tab
+            const headerConfigs = [
+                { name: 'APL-02', findFirst: (args) => drizzle_1.db.query.resultApl02Header.findFirst(args), col: schema_1.resultApl02Header, notYet: 0, waiting: 0 },
+                { name: 'IA-01', findFirst: (args) => drizzle_1.db.query.resultIa01Header.findFirst(args), col: schema_1.resultIa01Header, notYet: 0, waiting: 0 },
+                { name: 'IA-02', findFirst: (args) => drizzle_1.db.query.resultIa02Header.findFirst(args), col: schema_1.resultIa02Header, notYet: 0, waiting: 0 },
+                { name: 'IA-03', findFirst: (args) => drizzle_1.db.query.resultIa03Header.findFirst(args), col: schema_1.resultIa03Header, notYet: 0, waiting: 0, isSpecial: true },
+                { name: 'IA-05', findFirst: (args) => drizzle_1.db.query.resultIa05Header.findFirst(args), col: schema_1.resultIa05Header, notYet: 0, waiting: 0 },
+                { name: 'IA-07', findFirst: (args) => drizzle_1.db.query.resultIa07Header.findFirst(args), col: schema_1.resultIa07Header, notYet: 0, waiting: 0 },
+                { name: 'AK-01', findFirst: (args) => drizzle_1.db.query.resultAk01Header.findFirst(args), col: schema_1.resultAk01Header, notYet: 0, waiting: 0 },
+                { name: 'AK-02', findFirst: (args) => drizzle_1.db.query.resultAk02Header.findFirst(args), col: schema_1.resultAk02Header, notYet: 0, waiting: 0 },
+                { name: 'AK-03', findFirst: (args) => drizzle_1.db.query.resultAk03Header.findFirst(args), col: schema_1.resultAk03Header, notYet: 0, waiting: 0, isSpecial: true },
+                { name: 'AK-05', findFirst: (args) => drizzle_1.db.query.resultAk05.findFirst(args), col: schema_1.resultAk05, notYet: 0, waiting: 0, onlyApproved: true },
+            ];
+            for (const result of results) {
+                for (const config of headerConfigs) {
+                    let header = yield config.findFirst({ where: (0, drizzle_orm_1.eq)(config.col.result_id, result.id) });
+                    if (config.name === 'AK-03') {
+                        if (!header)
+                            config.notYet++;
+                    }
+                    else if (config.name === 'AK-05') {
+                        if (header && 'approved_assessor' in header && !header.approved_assessor)
+                            config.notYet++;
+                    }
+                    else {
+                        if (header) {
+                            if ('approved_assessor' in header && !header.approved_assessor)
+                                config.notYet++;
+                            if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee)
+                                config.waiting++;
+                        }
+                    }
+                }
+            }
+            // Update status tab
+            for (const config of headerConfigs) {
+                const tab = tabs.find((tab) => tab.name === config.name);
+                if (tab) {
+                    tab.status = (config.notYet > 0)
+                        ? 'Not Started'
+                        : (config.notYet === 0 && config.waiting > 0)
+                            ? 'Waiting'
+                            : 'Completed';
+                }
+            }
+            return {
+                assessment_id: assessment.id,
+                assessment_code: assessment.code,
+                tabs: tabs,
+            };
+        });
+    }
     static getAssessmentRecapt(schedule_detail_id, assessor) {
         return __awaiter(this, void 0, void 0, function* () {
             const scheduleDetail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.id, schedule_detail_id), (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.assessor_id, assessor.id)) });
@@ -557,6 +639,71 @@ class AssessmentService {
                     summary: summary
                 }
             };
+        });
+    }
+    static getAssessmentResultsForAdmin() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const schedules = yield drizzle_1.db.select().from(schema_1.assessmentSchedule).orderBy((0, drizzle_orm_1.desc)(schema_1.assessmentSchedule.created_at));
+            const result = [];
+            const now = new Date();
+            for (const schedule of schedules) {
+                const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id) });
+                if (!assessment)
+                    continue;
+                const occupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id) });
+                if (!occupation)
+                    continue;
+                const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id) });
+                // Status schedule
+                let status = '';
+                if (schedule.start_date <= now && schedule.end_date >= now) {
+                    status = 'Sedang Berjalan';
+                }
+                else if (schedule.end_date < now) {
+                    status = 'Selesai';
+                }
+                else {
+                    status = 'Belum Mulai';
+                }
+                const details = yield drizzle_1.db.select().from(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, schedule.id));
+                const detailList = [];
+                for (const detail of details) {
+                    const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, detail.assessor_id) });
+                    if (!assessor)
+                        continue;
+                    const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) });
+                    detailList.push({
+                        id: detail.id,
+                        location: detail.location,
+                        assessor: assessor ? {
+                            id: assessor.id,
+                            full_name: user === null || user === void 0 ? void 0 : user.full_name,
+                            phone_no: assessor.phone_no
+                        } : null
+                    });
+                }
+                result.push({
+                    id: schedule.id,
+                    start_date: schedule.start_date,
+                    end_date: schedule.end_date,
+                    status,
+                    assessment: {
+                        id: assessment.id,
+                        code: assessment.code,
+                        occupation: {
+                            id: occupation.id,
+                            name: occupation.name,
+                            scheme: scheme ? {
+                                id: scheme.id,
+                                code: scheme.code,
+                                name: scheme.name
+                            } : null
+                        }
+                    },
+                    schedule_details: detailList
+                });
+            }
+            return result;
         });
     }
 }

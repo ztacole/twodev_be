@@ -51,10 +51,12 @@ import {
     resultAk05,
     assessor,
     resultIa07Header,
+    scheduleDetail,
 } from "../../../drizzle/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, lt } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
 import { Result } from "drizzle-orm/sqlite-core";
+import { AssessorResponse } from "../assessor/assessor.type";
 
 export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
@@ -149,7 +151,7 @@ export class AssessmentService {
                     for (const element of unit.elements) {
                         const [elementIa] = await tx.insert(elementIaTable).values({
                             uc_id: (ucIa01 as any).insertId,
-                                title: element.title,
+                            title: element.title,
                         });
 
                         for (const detail of element.details) {
@@ -167,14 +169,14 @@ export class AssessmentService {
             for (const group of data.groups_ia03) {
                 const [groupIa03] = await tx.insert(groupIa03Table).values({
                     assessment_id,
-                        name: group.name,
+                    name: group.name,
                 });
 
                 for (const unit of group.units) {
                     await tx.insert(ucIa03Table).values({
                         group_id: (groupIa03 as any).insertId,
                         unit_code: unit.unit_code,
-                                title: unit.title,
+                        title: unit.title,
                     });
                 }
 
@@ -188,31 +190,31 @@ export class AssessmentService {
 
             // Create IA05 Questions
             if (data.ia05_questions && data.ia05_questions.length > 0) {
-            for (const question of data.ia05_questions) {
-                const [ia05Question] = await tx.insert(ia05QuestionTable).values({
+                for (const question of data.ia05_questions) {
+                    const [ia05Question] = await tx.insert(ia05QuestionTable).values({
                         assessment_id,
-                    order: question.order,
-                    question: question.question,
-                });
-
-                for (const option of question.options) {
-                    await tx.insert(questionOptionTable).values({
-                            question_id: (ia05Question as any).insertId,
-                        option: option.option,
-                            is_answer: option.is_answer,
+                        order: question.order,
+                        question: question.question,
                     });
+
+                    for (const option of question.options) {
+                        await tx.insert(questionOptionTable).values({
+                            question_id: (ia05Question as any).insertId,
+                            option: option.option,
+                            is_answer: option.is_answer,
+                        });
                     }
                 }
             }
 
             // Create IA07 Questions
             if (data.ia07_questions && data.ia07_questions.length > 0) {
-            for (const question of data.ia07_questions) {
-                await tx.insert(ia07QuestionTable).values({
+                for (const question of data.ia07_questions) {
+                    await tx.insert(ia07QuestionTable).values({
                         assessment_id,
-                    question: question.question,
+                        question: question.question,
                         answer_key: question.answer_key,
-                });
+                    });
                 }
             }
 
@@ -241,10 +243,10 @@ export class AssessmentService {
                 .from(schemeTable)
                 .where(eq(schemeTable.id, (occupation as any).scheme_id));
 
-                result.push({
-                    id: assessment.id,
-                    code: assessment.code,
-                    occupation: {
+            result.push({
+                id: assessment.id,
+                code: assessment.code,
+                occupation: {
                     id: (occupation as any).id,
                     name: (occupation as any).name,
                     scheme: scheme
@@ -545,28 +547,110 @@ export class AssessmentService {
         };
     }
 
-    static async getAssessmentRecapt(schedule_id: number) {
-        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, schedule_id) });
+    static async adminNavigation(assessment_id: number, assessor_id: number) {
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+        if (!assessment) throw new NotFoundError('Assessment');
+
+        const tabs: AssessorTab[] = [
+            { name: 'APL-02', status: "Not Started" },
+            { name: 'AK-01', status: "Not Started" },
+            { name: 'IA-01', status: "Not Started" },
+            { name: 'IA-02', status: "Not Started" }
+        ]
+
+        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
+        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
+        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
+
+        if (isAnyIa03) tabs.push({ name: 'IA-03', status: "Not Started" });
+        if (isAnyIa05) tabs.push({ name: 'IA-05', status: "Not Started" });
+        if (isAnyIa07) tabs.push({ name: 'IA-07', status: "Not Started" });
+
+        tabs.push(
+            { name: 'AK-02', status: "Not Started" },
+            { name: 'AK-03', status: "Not Started" },
+            { name: 'AK-05', status: "Not Started" }
+        );
+
+        const results = await db.select().from(resultTable)
+            .where(and(
+                eq(resultTable.assessment_id, assessment_id),
+                eq(resultTable.assessor_id, assessor_id)
+            ));
+        if (results.length === 0) {
+            return {
+                assessment_id: assessment.id,
+                assessment_code: assessment.code,
+                tabs: tabs,
+            };
+        }
+
+
+        // Config header dan tab
+        const headerConfigs = [
+            { name: 'APL-02', findFirst: (args: any) => db.query.resultApl02Header.findFirst(args), col: resultApl02HeaderTable, notYet: 0, waiting: 0 },
+            { name: 'IA-01', findFirst: (args: any) => db.query.resultIa01Header.findFirst(args), col: resultIa01HeaderTable, notYet: 0, waiting: 0 },
+            { name: 'IA-02', findFirst: (args: any) => db.query.resultIa02Header.findFirst(args), col: resultIa02HeaderTable, notYet: 0, waiting: 0 },
+            { name: 'IA-03', findFirst: (args: any) => db.query.resultIa03Header.findFirst(args), col: resultIa03HeaderTable, notYet: 0, waiting: 0, isSpecial: true },
+            { name: 'IA-05', findFirst: (args: any) => db.query.resultIa05Header.findFirst(args), col: resultIa05HeaderTable, notYet: 0, waiting: 0 },
+            { name: 'IA-07', findFirst: (args: any) => db.query.resultIa07Header.findFirst(args), col: resultIa07HeaderTable, notYet: 0, waiting: 0 },
+            { name: 'AK-01', findFirst: (args: any) => db.query.resultAk01Header.findFirst(args), col: resultAk01HeaderTable, notYet: 0, waiting: 0 },
+            { name: 'AK-02', findFirst: (args: any) => db.query.resultAk02Header.findFirst(args), col: resultAk02HeaderTable, notYet: 0, waiting: 0 },
+            { name: 'AK-03', findFirst: (args: any) => db.query.resultAk03Header.findFirst(args), col: resultAk03HeaderTable, notYet: 0, waiting: 0, isSpecial: true },
+            { name: 'AK-05', findFirst: (args: any) => db.query.resultAk05.findFirst(args), col: resultAk05Table, notYet: 0, waiting: 0, onlyApproved: true },
+        ];
+
+        for (const result of results) {
+            for (const config of headerConfigs) {
+                let header = await config.findFirst({ where: eq(config.col.result_id, result.id) });
+                if (config.name === 'AK-03') {
+                    if (!header) config.notYet++;
+                } else if (config.name === 'AK-05') {
+                    if (header && 'approved_assessor' in header && !header.approved_assessor) config.notYet++;
+                } else {
+                    if (header) {
+                        if ('approved_assessor' in header && !header.approved_assessor) config.notYet++;
+                        if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee) config.waiting++;
+                    }
+                }
+            }
+        }
+
+        // Update status tab
+        for (const config of headerConfigs) {
+            const tab = tabs.find((tab) => tab.name === config.name);
+            if (tab) {
+                tab.status = (config.notYet > 0)
+                    ? 'Not Started'
+                    : (config.notYet === 0 && config.waiting > 0)
+                        ? 'Waiting'
+                        : 'Completed';
+            }
+        }
+
+        return {
+            assessment_id: assessment.id,
+            assessment_code: assessment.code,
+            tabs: tabs,
+        };
+    }
+
+    static async getAssessmentRecapt(schedule_detail_id: number, assessor: AssessorResponse) {
+        const scheduleDetail = await db.query.scheduleDetail.findFirst({ where: and(eq(scheduleDetailTable.id, schedule_detail_id), eq(scheduleDetailTable.assessor_id, assessor.id)) });
+        if (!scheduleDetail) throw new NotFoundError('Schedule Detail');
+
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, scheduleDetail.schedule_id) });
         if (!schedule) throw new NotFoundError('Assessment Schedule');
-        
+
         const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
         if (!assessment) throw new NotFoundError('Assessment');
-    
+
         const occupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) });
         if (!occupation) throw new NotFoundError('Occupation');
-        
+
         const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) });
         if (!scheme) throw new NotFoundError('Scheme');
-    
-        const scheduleDetail = await db.query.scheduleDetail.findFirst({ where: eq(scheduleDetailTable.schedule_id, schedule_id) });
-        if (!scheduleDetail) throw new NotFoundError('Schedule Detail');
-    
-        let assessor: any = null;
-        if(scheduleDetail) {
-            assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, scheduleDetail.assessor_id) });
-            if (!assessor) throw new NotFoundError('Assessor');
-        }
-    
+
         const results = await db.select({
             id: resultTable.id,
             assessment_id: resultTable.assessment_id,
@@ -574,25 +658,33 @@ export class AssessmentService {
             assessee_id: resultTable.assessee_id,
             tuk: resultTable.tuk,
             is_competent: resultTable.is_competent,
-        }).from(resultTable).where(eq(resultTable.assessment_id, schedule.assessment_id));
-    
+        }).from(resultTable).where(
+            and(
+                eq(resultTable.assessment_id, schedule.assessment_id),
+                eq(resultTable.assessor_id, assessor.id)
+            )
+        );
+
         let assessees: any[] = [];
-        let tuk: string | null = results[0].tuk ?? null;
+        let tuk: string = (results.length > 0 && results[0].tuk) ? results[0].tuk : 'sewaktu';
         let summary = {
             total_assessees: 0,
             total_competent: 0,
             total_incompetent: 0,
             total_ongoing: 0,
         }
-    
+
+        const assessorUser = await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) });
+        if (!assessorUser) throw new NotFoundError('Assessor User');
+
         for (const res of results) {
             const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, res.assessee_id) });
             if (!assessee) continue;
-    
+
             const user = await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) });
-    
+
             // Ambil semua header terkait
-            const [apl02, ia01, ia02, ia03, ia05, ia07, ak01, ak02, ak03, ak04, ak05] = await Promise.all([
+            const [resultAPL02, resultIA01, resultIA02, resultIA03, resultIA05, resultIA07, resultAK01, resultAK02, resultAK03, resultAK05] = await Promise.all([
                 db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, res.id) }),
                 db.query.resultIa01Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, res.id) }),
                 db.query.resultIa02Header.findFirst({ where: eq(resultIa02HeaderTable.result_id, res.id) }),
@@ -602,29 +694,44 @@ export class AssessmentService {
                 db.query.resultAk01Header.findFirst({ where: eq(resultAk01HeaderTable.result_id, res.id) }),
                 db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, res.id) }),
                 db.query.resultAk03Header.findFirst({ where: eq(resultAk03HeaderTable.result_id, res.id) }),
-                db.query.resultAk04.findFirst({ where: eq(resultAk04Table.result_id, res.id) }),
                 db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, res.id) }),
             ]);
-    
-            // Tentukan status
-            const headers = [apl02, ia01, ia02, ia03, ia05, ia07, ak01, ak02, ak03, ak04, ak05];
-            const anyHeaderMissing = headers.some(header => header === null || header === undefined);
-    
-            let status: string;
-            if (anyHeaderMissing) {
-                status = "On Going";
-            } else {
-                status = res.is_competent ? "Competent" : "Not Competent";
-            }
-    
+
+            // Penentuan status
+            let status: string = "On Going";
+            if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) status = "Not Competent";
+            if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) status = "Not Competent";
+            if (
+                (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true) &&
+                (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                (resultAK05 && resultAK05.approved_assessor) &&
+                !resultAK05.is_competent && !res.is_competent
+            ) status = "Not Competent";
+            if (
+                (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true) &&
+                (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
+                res.is_competent
+            ) status = "Competent";
+
             assessees.push({ id: assessee.id, name: user?.full_name, status });
-    
+
             summary.total_assessees++;
             if (status === 'Competent') summary.total_competent++;
             if (status === 'Not Competent') summary.total_incompetent++;
             if (status === 'On Going') summary.total_ongoing++;
         }
-    
+
         return {
             assessment: {
                 id: assessment.id,
@@ -637,12 +744,73 @@ export class AssessmentService {
                     location: scheduleDetail.location,
                     assessor: {
                         id: assessor.id,
-                        full_name: assessor.full_name
+                        full_name: assessorUser.full_name
                     }
                 },
                 assessees: assessees,
                 summary: summary
             }
+        };
+    }
+
+    static async getAssessmentResultsForAdmin() {
+        const schedules = await db.select().from(assessmentScheduleTable).orderBy(desc(assessmentScheduleTable.created_at));
+        const result = [];
+        const now = new Date();
+        for (const schedule of schedules) {
+            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
+            if (!assessment) continue;
+            const occupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) });
+            if (!occupation) continue;
+            const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) });
+
+            // Status schedule
+            let status = '';
+            if (schedule.start_date <= now && schedule.end_date >= now) {
+                status = 'Sedang Berjalan';
+            } else if (schedule.end_date < now) {
+                status = 'Selesai';
+            } else {
+                status = 'Belum Mulai';
+            }
+
+            const details = await db.select().from(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, schedule.id));
+            const detailList = [];
+            for (const detail of details) {
+                const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, detail.assessor_id) });
+                if (!assessor) continue;
+                const user = await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) });
+                detailList.push({
+                    id: detail.id,
+                    location: detail.location,
+                    assessor: assessor ? {
+                        id: assessor.id,
+                        full_name: user?.full_name,
+                        phone_no: assessor.phone_no
+                    } : null
+                });
+            }
+            result.push({
+                id: schedule.id,
+                start_date: schedule.start_date,
+                end_date: schedule.end_date,
+                status,
+                assessment: {
+                    id: assessment.id,
+                    code: assessment.code,
+                    occupation: {
+                        id: occupation.id,
+                        name: occupation.name,
+                        scheme: scheme ? {
+                            id: scheme.id,
+                            code: scheme.code,
+                            name: scheme.name
+                        } : null
+                    }
+                },
+                schedule_details: detailList
+            });
         }
+        return result;
     }
 }

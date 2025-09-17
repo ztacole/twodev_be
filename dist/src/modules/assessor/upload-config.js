@@ -21,16 +21,26 @@ const storage = multer_1.default.diskStorage({
             return;
         }
         const uploadPath = path_1.default.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessorId}`);
-        console.log('Upload path:', uploadPath);
-        if (fs_1.default.existsSync(uploadPath)) {
-            fs_1.default.readdirSync(uploadPath).forEach((file) => {
-                const filePath = path_1.default.join(uploadPath, file);
-                fs_1.default.unlinkSync(filePath);
-            });
+        const reqAny = req;
+        const alreadyCleaned = Boolean(reqAny.__assessorUploadCleaned);
+        try {
+            if (!fs_1.default.existsSync(uploadPath)) {
+                fs_1.default.mkdirSync(uploadPath, { recursive: true });
+            }
+            else if (!alreadyCleaned) {
+                for (const fileName of fs_1.default.readdirSync(uploadPath)) {
+                    const filePath = path_1.default.join(uploadPath, fileName);
+                    try {
+                        fs_1.default.unlinkSync(filePath);
+                    }
+                    catch (_e) { }
+                }
+                reqAny.__assessorUploadCleaned = true;
+                setTimeout(() => cb(null, uploadPath), 50);
+                return;
+            }
         }
-        else {
-            fs_1.default.mkdirSync(uploadPath, { recursive: true });
-        }
+        catch (_f) { }
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {

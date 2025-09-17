@@ -125,6 +125,23 @@ export class AssessmentController {
         });
     });
 
+    static getNavigationAdmin = asyncHandler(async (req: Request, res: Response) => {
+        const assessmentId = Number(req.params.assessmentId);
+        const assessorId = Number(req.params.assessorId);
+        if (!assessmentId || !assessorId) {
+            return res.status(400).json({
+                success: false,
+                message: "Assessment ID dan Assessor ID harus diisi",
+            });
+        }
+        const result = await AssessmentService.adminNavigation(assessmentId, assessorId);
+        res.status(200).json({
+            success: true,
+            message: "Navigasi berhasil diambil",
+            data: result,
+        });
+    });
+
     static getAssessmentRecapt = asyncHandler(async (req: Request, res: Response) => {
         const user = req.user as JwtPayload;
         const scheduleDetailId = Number(req.params.scheduleDetailId);
@@ -143,10 +160,45 @@ export class AssessmentController {
             });
         }
 
-        const result = await AssessmentService.getAssessmentRecapt(scheduleDetailId);
+        const result = await AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
         res.status(200).json({
             success: true,
             message: "Navigasi berhasil diambil",
+            data: result,
+        });
+    });
+
+    static getAssessmentRecaptForAdmin = asyncHandler(async (req: Request, res: Response) => {
+        const scheduleDetailId = Number(req.params.scheduleDetailId);
+        const assessorId = Number(req.params.assessorId);
+        if (!scheduleDetailId || !assessorId) {
+            return res.status(400).json({
+                success: false,
+                message: "Schedule ID dan Assessor ID harus diisi",
+            });
+        }
+
+        const assessor = await AssessorService.getAssessorById(assessorId);
+        if (!assessor) {
+            return res.status(404).json({
+                success: false,
+                message: "Assessor tidak ditemukan",
+            });
+        }
+
+        const result = await AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+        res.status(200).json({
+            success: true,
+            message: "Navigasi berhasil diambil",
+            data: result,
+        });
+    });
+
+    static getAssessmentResultsForAdmin = asyncHandler(async (req: Request, res: Response) => {
+        const result = await AssessmentService.getAssessmentResultsForAdmin();
+        res.status(200).json({
+            success: true,
+            message: "Hasil assessment berhasil diambil",
             data: result,
         });
     });

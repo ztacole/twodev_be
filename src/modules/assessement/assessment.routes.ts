@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { adminOrAssessorMiddleware, assessorMiddleware, authUpload } from '../../middleware/auth.middleware';
+import { adminMiddleware, adminOrAssessorMiddleware, assessorMiddleware, authUpload } from '../../middleware/auth.middleware';
 import path from 'path';
 import fs from 'fs';
 import { upload as uploadCertificate } from "./apl-01/upload-config";
@@ -29,10 +29,14 @@ router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
 
+router.get('/results/status/admin', authenticateToken, adminMiddleware, AssessmentController.getAssessmentResultsForAdmin);
+
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', AssessmentController.getNavigationAssessee);
 router.get('/navigation/assessor/:assessmentId', authenticateToken, assessorMiddleware, AssessmentController.getNavigationAssessor);
+router.get('/navigation/admin/:assessmentId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getNavigationAdmin);
 
 router.get('/assessment-recapt/:scheduleDetailId', authenticateToken, assessorMiddleware, AssessmentController.getAssessmentRecapt);
+router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssessmentRecaptForAdmin);
 
 router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', 

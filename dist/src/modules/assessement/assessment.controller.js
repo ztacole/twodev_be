@@ -125,6 +125,22 @@ AssessmentController.getNavigationAssessor = (0, async_handler_1.asyncHandler)((
         data: result,
     });
 }));
+AssessmentController.getNavigationAdmin = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const assessmentId = Number(req.params.assessmentId);
+    const assessorId = Number(req.params.assessorId);
+    if (!assessmentId || !assessorId) {
+        return res.status(400).json({
+            success: false,
+            message: "Assessment ID dan Assessor ID harus diisi",
+        });
+    }
+    const result = yield assessment_service_1.AssessmentService.adminNavigation(assessmentId, assessorId);
+    res.status(200).json({
+        success: true,
+        message: "Navigasi berhasil diambil",
+        data: result,
+    });
+}));
 AssessmentController.getAssessmentRecapt = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = req.user;
     const scheduleDetailId = Number(req.params.scheduleDetailId);
@@ -145,6 +161,37 @@ AssessmentController.getAssessmentRecapt = (0, async_handler_1.asyncHandler)((re
     res.status(200).json({
         success: true,
         message: "Navigasi berhasil diambil",
+        data: result,
+    });
+}));
+AssessmentController.getAssessmentRecaptForAdmin = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const scheduleDetailId = Number(req.params.scheduleDetailId);
+    const assessorId = Number(req.params.assessorId);
+    if (!scheduleDetailId || !assessorId) {
+        return res.status(400).json({
+            success: false,
+            message: "Schedule ID dan Assessor ID harus diisi",
+        });
+    }
+    const assessor = yield assessor_service_1.AssessorService.getAssessorById(assessorId);
+    if (!assessor) {
+        return res.status(404).json({
+            success: false,
+            message: "Assessor tidak ditemukan",
+        });
+    }
+    const result = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+    res.status(200).json({
+        success: true,
+        message: "Navigasi berhasil diambil",
+        data: result,
+    });
+}));
+AssessmentController.getAssessmentResultsForAdmin = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield assessment_service_1.AssessmentService.getAssessmentResultsForAdmin();
+    res.status(200).json({
+        success: true,
+        message: "Hasil assessment berhasil diambil",
         data: result,
     });
 }));
