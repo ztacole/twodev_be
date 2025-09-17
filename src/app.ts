@@ -23,7 +23,6 @@ import verificationRoutes from './modules/assessement/verification.routes';
 import uploadsRoutes from './modules/assessement/uploads/uploads.routes';
 import scheduleRoutes from './modules/schedule/schedule.routes';
 import assessorRoutes from './modules/assessor/assessor.routes';
-import assessorDetailRoutes from './modules/assessor-detail/assessor-detail.routes';
 import assesseeRoutes from './modules/assessee/asseesee.routes';
 
 // Public
@@ -48,7 +47,6 @@ app.use('/twodev/api/schemes', schemeRoutes);
 app.use('/twodev/api/assessor', assessorRoutes);
 app.use('/twodev/api/assessee', assesseeRoutes);
 app.use('/twodev/api/user', userRoutes);
-app.use('/twodev/api/assessor-detail', assessorDetailRoutes);
 
 // error handler middleware (DON'T MOVE IT)
 app.use(errorHandler);

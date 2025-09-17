@@ -67,6 +67,7 @@ export const assessorDetail = mysqlTable('assessor_detail', {
     tax_id_number: varchar('tax_id_number', { length: 255 }).notNull(),
     bank_book_cover: varchar('bank_book_cover', { length: 255 }).notNull(),
     certificate: varchar('certificate', { length: 255 }).notNull(),
+    id_card: varchar('id_card', { length: 255 }).notNull(),
     national_id: varchar('national_id', { length: 255 }).notNull(),
     ...timestamps
 });

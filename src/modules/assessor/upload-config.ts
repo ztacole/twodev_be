@@ -4,8 +4,8 @@ import fs from 'fs';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const userId = req.params?.user_id || req.body?.user_id || 'unknown';
-    const uploadPath = path.join(__dirname, '../../../../public/uploads/assessor', `user-${userId}`);
+    const assessorId = req.params?.assessor_id || req.body?.assessor_id || 'unknown';
+    const uploadPath = path.join(__dirname, '../../../../public/uploads/assessor', `assessor-${assessorId}`);
     
     if (fs.existsSync(uploadPath)) {
       fs.readdirSync(uploadPath).forEach((file) => {
@@ -33,11 +33,11 @@ const fileFilter = (req: any, file: any, cb: any) => {
   }
 };
 
-export const upload = multer({
+export const uploadAssessorDetail = multer({
   storage,
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB
   }
-});
+}).any();
 
