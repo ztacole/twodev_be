@@ -3,15 +3,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.upload = void 0;
+exports.uploadAssessorDetail = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
         var _a, _b;
-        const userId = ((_a = req.params) === null || _a === void 0 ? void 0 : _a.user_id) || ((_b = req.body) === null || _b === void 0 ? void 0 : _b.user_id) || 'unknown';
-        const uploadPath = path_1.default.join(__dirname, '../../../../public/uploads/assessor', `user-${userId}`);
+        const assessorId = ((_a = req.params) === null || _a === void 0 ? void 0 : _a.assessor_id) || ((_b = req.body) === null || _b === void 0 ? void 0 : _b.assessor_id) || 'unknown';
+        const uploadPath = path_1.default.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessorId}`);
         if (fs_1.default.existsSync(uploadPath)) {
             fs_1.default.readdirSync(uploadPath).forEach((file) => {
                 const filePath = path_1.default.join(uploadPath, file);
@@ -38,7 +38,7 @@ const fileFilter = (req, file, cb) => {
         cb(new Error('Hanya file gambar yang diperbolehkan'), false);
     }
 };
-exports.upload = (0, multer_1.default)({
+exports.uploadAssessorDetail = (0, multer_1.default)({
     storage,
     fileFilter,
     limits: {

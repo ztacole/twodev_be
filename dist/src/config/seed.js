@@ -105,7 +105,7 @@ function main() {
             yield drizzle_1.db.insert(schema_1.assessor).values({ user_id: assessorUser1.id, address: 'Jalan Assessor No. 456', phone_no: '082345678901', birth_date: new Date('1985-05-15'), no_reg_met: `MET.000.${Math.floor(Math.random() * 100000)}.${new Date().getFullYear()}`, scheme_id: ((_d = schemeRPL === null || schemeRPL === void 0 ? void 0 : schemeRPL.id) !== null && _d !== void 0 ? _d : 1) });
             const assessorRow = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, assessorUser1.id) });
             if (assessorRow) {
-                yield drizzle_1.db.insert(schema_1.assessorDetail).values({ assessor_id: assessorRow.id, tax_id_number: '123456789012345', bank_book_cover: 'buku_bank_1.jpg', certificate: 'sertifikat_1.pdf', national_id: 'ktp_1.jpg' });
+                yield drizzle_1.db.insert(schema_1.assessorDetail).values({ assessor_id: assessorRow.id, tax_id_number: '123456789012345', bank_book_cover: 'buku_bank_1.jpg', certificate: 'sertifikat_1.pdf', id_card: 'id_card_1.jpg', national_id: 'ktp_1.jpg' });
             }
         }
         // Assessees

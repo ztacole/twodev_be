@@ -73,3 +73,73 @@ AssessorController.deleteAssessor = (0, async_handler_1.asyncHandler)((req, res)
         message: 'Data assessor berhasil dihapus',
     });
 }));
+AssessorController.createOrUpdateAssessorDetail = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const assessorId = parseInt(req.body.assessor_id || req.body.assessorId);
+        if (isNaN(assessorId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'assessor_id harus valid'
+            });
+        }
+        const files = Array.isArray(req.files) ? req.files : [];
+        const result = yield assessor_service_1.AssessorService.createOrUpdateAssessorDetail({
+            assessorId,
+            bodyData: req.body,
+            files
+        });
+        res.status(201).json({
+            success: true,
+            message: 'Data detail assessor berhasil disimpan',
+            data: result
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan dalam menyimpan detail assessor',
+            error: error.message
+        });
+    }
+}));
+AssessorController.getAssessorDetail = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const assessorId = parseInt(req.params.assessorId);
+        if (isNaN(assessorId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Assessor ID harus valid'
+            });
+        }
+        const result = yield assessor_service_1.AssessorService.getAssessorDetail(assessorId);
+        res.status(200).json({
+            success: true,
+            message: 'Detail assessor berhasil diambil',
+            data: result
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan dalam mengambil detail assessor',
+            error: error.message
+        });
+    }
+}));
+AssessorController.getAllAssessorDetails = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const results = yield assessor_service_1.AssessorService.getAllAssessorDetails();
+        res.status(200).json({
+            success: true,
+            message: 'Semua detail assessor berhasil diambil',
+            data: results
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan dalam mengambil detail assessor',
+            error: error.message
+        });
+    }
+}));

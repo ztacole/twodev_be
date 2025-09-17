@@ -23,7 +23,6 @@ const verification_routes_1 = __importDefault(require("./modules/assessement/ver
 const uploads_routes_1 = __importDefault(require("./modules/assessement/uploads/uploads.routes"));
 const schedule_routes_1 = __importDefault(require("./modules/schedule/schedule.routes"));
 const assessor_routes_1 = __importDefault(require("./modules/assessor/assessor.routes"));
-const assessor_detail_routes_1 = __importDefault(require("./modules/assessor-detail/assessor-detail.routes"));
 const asseesee_routes_1 = __importDefault(require("./modules/assessee/asseesee.routes"));
 // Public
 const public_routes_1 = __importDefault(require("./modules/public/public.routes"));
@@ -45,7 +44,6 @@ app.use('/twodev/api/schemes', scheme_routes_1.default);
 app.use('/twodev/api/assessor', assessor_routes_1.default);
 app.use('/twodev/api/assessee', asseesee_routes_1.default);
 app.use('/twodev/api/user', user_route_1.default);
-app.use('/twodev/api/assessor-detail', assessor_detail_routes_1.default);
 // error handler middleware (DON'T MOVE IT)
 app.use(error_middleware_1.errorHandler);
 exports.default = app;

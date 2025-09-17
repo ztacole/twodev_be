@@ -111,6 +111,76 @@ class AssessorService {
             yield drizzle_1.db.delete(schema_1.assessor).where((0, drizzle_orm_1.eq)(schema_1.assessor.id, id));
         });
     }
+    static createOrUpdateAssessorDetail(params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { assessorId, bodyData, files } = params;
+            const BASE_URL = "https://asessment24.site";
+            const fileData = {};
+            const fileArray = Array.isArray(files) ? files : [];
+            for (const file of fileArray) {
+                const fieldName = file.fieldname;
+                if (['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'].includes(fieldName)) {
+                    fileData[fieldName] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
+                }
+            }
+            for (const key of Object.keys(bodyData || {})) {
+                if (['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'].includes(key) && bodyData[key]) {
+                    fileData[key] = bodyData[key];
+                }
+            }
+            const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, assessorId) });
+            if (!assessor)
+                throw new error_1.NotFoundError('Assessor');
+            const existingDetail = yield drizzle_1.db.query.assessorDetail.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, assessorId)
+            });
+            const detailData = {
+                assessor_id: assessorId,
+                tax_id_number: fileData.tax_id_number || bodyData.tax_id_number || '',
+                bank_book_cover: fileData.bank_book_cover || bodyData.bank_book_cover || '',
+                certificate: fileData.certificate || bodyData.certificate || '',
+                national_id: fileData.national_id || bodyData.national_id || '',
+                id_card: fileData.id_card || bodyData.id_card || ''
+            };
+            if (existingDetail) {
+                yield drizzle_1.db.update(schema_1.assessorDetail)
+                    .set(detailData)
+                    .where((0, drizzle_orm_1.eq)(schema_1.assessorDetail.id, existingDetail.id));
+                const updated = yield drizzle_1.db.query.assessorDetail.findFirst({
+                    where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.id, existingDetail.id)
+                });
+                return updated;
+            }
+            else {
+                yield drizzle_1.db.insert(schema_1.assessorDetail).values(detailData);
+                const newDetail = yield drizzle_1.db.query.assessorDetail.findFirst({
+                    where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, assessorId)
+                });
+                return newDetail;
+            }
+        });
+    }
+    static getAssessorDetail(assessorId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const detail = yield drizzle_1.db.query.assessorDetail.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, assessorId)
+            });
+            if (!detail)
+                throw new error_1.NotFoundError('Assessor Detail');
+            const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, assessorId) });
+            const user = assessor ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) }) : null;
+            return Object.assign(Object.assign({}, detail), { assessor: assessor ? Object.assign(Object.assign({}, assessor), { user: user }) : null });
+        });
+    }
+    static getAllAssessorDetails() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const details = yield drizzle_1.db.select()
+                .from(schema_1.assessorDetail)
+                .innerJoin(schema_1.assessor, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
+                .innerJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, schema_1.user.id));
+            return details.map(row => (Object.assign(Object.assign({}, row.assessor_detail), { assessor: Object.assign(Object.assign({}, row.assessor), { user: row.user }) })));
+        });
+    }
     static formatAssessorResponse(assessor) {
         return {
             id: assessor.id,

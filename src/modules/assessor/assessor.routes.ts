@@ -11,7 +11,7 @@ router.get('/:id', AssessorController.getAssessorById);
 router.put('/:id', AssessorController.updateAssessor);
 router.delete('/:id', AssessorController.deleteAssessor);
 
-router.post('/uploads', uploadAssessorDetail, AssessorController.createOrUpdateAssessorDetail);
+router.post('/uploads', uploadAssessorDetail.any(), AssessorController.createOrUpdateAssessorDetail);
 router.get('/:assessorId/detail', AssessorController.getAssessorDetail);
 router.get('/detail/all', AssessorController.getAllAssessorDetails);
 
