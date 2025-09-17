@@ -126,14 +126,22 @@ AssessmentController.getNavigationAssessor = (0, async_handler_1.asyncHandler)((
     });
 }));
 AssessmentController.getAssessmentRecapt = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const scheduleId = Number(req.params.scheduleId);
-    if (!scheduleId) {
+    const user = req.user;
+    const scheduleDetailId = Number(req.params.scheduleDetailId);
+    if (!scheduleDetailId) {
         return res.status(400).json({
             success: false,
             message: "Schedule ID harus diisi",
         });
     }
-    const result = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleId);
+    const assessor = yield assessor_service_1.AssessorService.getAssessorByUserId(user.id);
+    if (!assessor) {
+        return res.status(404).json({
+            success: false,
+            message: "Assessor tidak ditemukan",
+        });
+    }
+    const result = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
     res.status(200).json({
         success: true,
         message: "Navigasi berhasil diambil",

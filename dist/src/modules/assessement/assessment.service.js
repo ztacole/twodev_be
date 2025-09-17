@@ -449,10 +449,13 @@ class AssessmentService {
             };
         });
     }
-    static getAssessmentRecapt(schedule_id) {
+    static getAssessmentRecapt(schedule_detail_id, assessor) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
-            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, schedule_id) });
+            const scheduleDetail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.id, schedule_detail_id), (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.assessor_id, assessor.id)) });
+            if (!scheduleDetail)
+                throw new error_1.NotFoundError('Schedule Detail');
+            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, scheduleDetail.schedule_id) });
             if (!schedule)
                 throw new error_1.NotFoundError('Assessment Schedule');
             const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id) });
@@ -464,15 +467,6 @@ class AssessmentService {
             const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id) });
             if (!scheme)
                 throw new error_1.NotFoundError('Scheme');
-            const scheduleDetail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, schedule_id) });
-            if (!scheduleDetail)
-                throw new error_1.NotFoundError('Schedule Detail');
-            let assessor = null;
-            if (scheduleDetail) {
-                assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, scheduleDetail.assessor_id) });
-                if (!assessor)
-                    throw new error_1.NotFoundError('Assessor');
-            }
             const results = yield drizzle_1.db.select({
                 id: schema_1.result.id,
                 assessment_id: schema_1.result.assessment_id,
@@ -480,7 +474,7 @@ class AssessmentService {
                 assessee_id: schema_1.result.assessee_id,
                 tuk: schema_1.result.tuk,
                 is_competent: schema_1.result.is_competent,
-            }).from(schema_1.result).where((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, schedule.assessment_id));
+            }).from(schema_1.result).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, schedule.assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor.id)));
             let assessees = [];
             let tuk = (_a = results[0].tuk) !== null && _a !== void 0 ? _a : null;
             let summary = {
@@ -489,13 +483,16 @@ class AssessmentService {
                 total_incompetent: 0,
                 total_ongoing: 0,
             };
+            const assessorUser = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) });
+            if (!assessorUser)
+                throw new error_1.NotFoundError('Assessor User');
             for (const res of results) {
                 const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, res.assessee_id) });
                 if (!assessee)
                     continue;
                 const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.user_id) });
                 // Ambil semua header terkait
-                const [apl02, ia01, ia02, ia03, ia05, ia07, ak01, ak02, ak03, ak04, ak05] = yield Promise.all([
+                const [resultAPL02, resultIA01, resultIA02, resultIA03, resultIA05, resultIA07, resultAK01, resultAK02, resultAK03, resultAK05] = yield Promise.all([
                     drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, res.id) }),
                     drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, res.id) }),
                     drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, res.id) }),
@@ -505,19 +502,34 @@ class AssessmentService {
                     drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, res.id) }),
                     drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, res.id) }),
                     drizzle_1.db.query.resultAk03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk03Header.result_id, res.id) }),
-                    drizzle_1.db.query.resultAk04.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk04.result_id, res.id) }),
                     drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, res.id) }),
                 ]);
-                // Tentukan status
-                const headers = [apl02, ia01, ia02, ia03, ia05, ia07, ak01, ak02, ak03, ak04, ak05];
-                const anyHeaderMissing = headers.some(header => header === null || header === undefined);
-                let status;
-                if (anyHeaderMissing) {
-                    status = "On Going";
-                }
-                else {
-                    status = res.is_competent ? "Competent" : "Not Competent";
-                }
+                // Penentuan status
+                let status = "On Going";
+                if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee)
+                    status = "Not Competent";
+                if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee)
+                    status = "Not Competent";
+                if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                    (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                    (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                    (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                    (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true) &&
+                    (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                    (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                    (resultAK05 && resultAK05.approved_assessor) &&
+                    !resultAK05.is_competent && !res.is_competent)
+                    status = "Not Competent";
+                if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                    (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                    (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                    (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                    (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true) &&
+                    (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                    (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                    (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
+                    res.is_competent)
+                    status = "Competent";
                 assessees.push({ id: assessee.id, name: user === null || user === void 0 ? void 0 : user.full_name, status });
                 summary.total_assessees++;
                 if (status === 'Competent')
@@ -539,7 +551,7 @@ class AssessmentService {
                         location: scheduleDetail.location,
                         assessor: {
                             id: assessor.id,
-                            full_name: assessor.full_name
+                            full_name: assessorUser.full_name
                         }
                     },
                     assessees: assessees,

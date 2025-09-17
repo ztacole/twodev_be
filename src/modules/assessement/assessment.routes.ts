@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { assessorMiddleware, authUpload } from '../../middleware/auth.middleware';
+import { adminOrAssessorMiddleware, assessorMiddleware, authUpload } from '../../middleware/auth.middleware';
 import path from 'path';
 import fs from 'fs';
 import { upload as uploadCertificate } from "./apl-01/upload-config";
@@ -32,7 +32,7 @@ router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', AssessmentController.getNavigationAssessee);
 router.get('/navigation/assessor/:assessmentId', authenticateToken, assessorMiddleware, AssessmentController.getNavigationAssessor);
 
-router.get('/assessment-recapt/:scheduleId', AssessmentController.getAssessmentRecapt);
+router.get('/assessment-recapt/:scheduleDetailId', authenticateToken, assessorMiddleware, AssessmentController.getAssessmentRecapt);
 
 router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', 

@@ -126,15 +126,24 @@ export class AssessmentController {
     });
 
     static getAssessmentRecapt = asyncHandler(async (req: Request, res: Response) => {
-        const scheduleId = Number(req.params.scheduleId);
-        if (!scheduleId) {
+        const user = req.user as JwtPayload;
+        const scheduleDetailId = Number(req.params.scheduleDetailId);
+        if (!scheduleDetailId) {
             return res.status(400).json({
                 success: false,
                 message: "Schedule ID harus diisi",
             });
         }
 
-        const result = await AssessmentService.getAssessmentRecapt(scheduleId);
+        const assessor = await AssessorService.getAssessorByUserId(user.id);
+        if (!assessor) {
+            return res.status(404).json({
+                success: false,
+                message: "Assessor tidak ditemukan",
+            });
+        }
+
+        const result = await AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
         res.status(200).json({
             success: true,
             message: "Navigasi berhasil diambil",
