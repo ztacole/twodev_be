@@ -56,6 +56,9 @@ class AK04Service {
     }
     static getAK04ByResult_id(result_id) {
         return __awaiter(this, void 0, void 0, function* () {
+            const result = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
+            if (!result)
+                throw new error_1.NotFoundError('Result');
             const record = yield drizzle_1.db.query.resultAk04.findFirst({
                 where: (0, drizzle_orm_1.eq)(schema_1.resultAk04.result_id, result_id)
             });
@@ -94,6 +97,9 @@ class AK04Service {
     }
     static approvedByAssessee(result_id) {
         return __awaiter(this, void 0, void 0, function* () {
+            const existingResult = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
+            if (!existingResult)
+                throw new error_1.NotFoundError('Result');
             const existing = yield drizzle_1.db.query.resultAk04.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk04.result_id, result_id) });
             if (!existing)
                 throw new error_1.NotFoundError('AK04');

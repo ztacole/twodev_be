@@ -19,7 +19,7 @@ import {
 import { and, eq, inArray } from "drizzle-orm";
 
 export class IA01Service {
-    static async getIA01Groups(result_id: number): Promise<GroupIA01Response[]> {
+  static async getIA01Groups(result_id: number): Promise<GroupIA01Response[]> {
     const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id), });
     if (!existingResult) throw new NotFoundError('Result');
 
@@ -45,11 +45,11 @@ export class IA01Service {
           if (hasResult) completedElements += 1;
         }
         const totalElements = elements.length;
-                const finished = totalElements > 0 && totalElements === completedElements;
-                return {
-                    id: unit.id,
+        const finished = totalElements > 0 && totalElements === completedElements;
+        return {
+          id: unit.id,
           unit_code: unit.unitCode,
-                    title: unit.title,
+          title: unit.title,
           finished,
           progress: totalElements > 0 ? Math.round((completedElements / totalElements) * 100) : 0,
         };
@@ -60,10 +60,10 @@ export class IA01Service {
         name: group.name,
         units: decorated,
       } as GroupIA01Response;
-        }));
-    }
+    }));
+  }
 
-    static async getElementsByUnitId(result_id: number, unitId: number) {
+  static async getElementsByUnitId(result_id: number, unitId: number) {
     const existingUnit = await db.query.ucIa01.findFirst({ where: eq(ucIa01Table.id, unitId) });
     if (!existingUnit) throw new NotFoundError('Unit competency');
 
@@ -77,17 +77,17 @@ export class IA01Service {
       const details = await db.select().from(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, element.id));
       const rows = header_id ? await db.select().from(ia01RowTable).where(and(eq(ia01RowTable.header_id, header_id), inArray(ia01RowTable.element_detail_id, details.map(d => d.id)))) : [];
       return {
-            id: element.id,
+        id: element.id,
         uc_id: element.uc_id,
-            title: element.title,
+        title: element.title,
         details: details.map((detail) => {
           const result = rows.find(r => r.element_detail_id === detail.id);
-                return {
-                    id: detail.id,
-                    description: detail.description,
-                    benchmark: detail.benchmark,
-                    result: result ? {
-                        id: result.id,
+          return {
+            id: detail.id,
+            description: detail.description,
+            benchmark: detail.benchmark,
+            result: result ? {
+              id: result.id,
               header_id: result.header_id,
               is_competent: result.is_competent,
               evaluation: result.evaluation,
@@ -96,9 +96,9 @@ export class IA01Service {
         })
       };
     }));
-    }
+  }
 
-    static async sendResult(data: SendResultRequest) {
+  static async sendResult(data: SendResultRequest) {
     const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, data.result_id) });
     if (!existingResult) throw new NotFoundError('Result');
 
@@ -129,10 +129,10 @@ export class IA01Service {
         if (created) results.push(created);
       }
     }
-        return results;
-    }
+    return results;
+  }
 
-    static async sendResultHeader(data: AssessorApproveRequest) {
+  static async sendResultHeader(data: AssessorApproveRequest) {
     const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, data.result_id) });
     if (!existingResult) throw new NotFoundError('Result');
 
@@ -153,10 +153,10 @@ export class IA01Service {
     const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, existingResult.assessee_id) });
     const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
 
-        return {
+    return {
       id: updated.id,
       result_id: updated.result_id,
-            assessee: {
+      assessee: {
         id: assessee?.id,
         name: assesseeUser?.full_name,
         email: assesseeUser?.email,
@@ -168,28 +168,32 @@ export class IA01Service {
       unit: updated.unit,
       element: updated.element,
       kuk: updated.kuk,
-        };
-    }
+    };
+  }
 
-    static async approvedByAssessee(result_id: number) {
-    const header = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.result_id, result_id) });
+  static async approvedByAssessee(result_id: number) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
+    if (!existingResult) throw new NotFoundError('Result');
+    const header = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.result_id, existingResult.id) });
     if (!header) throw new NotFoundError('IA01 header');
     await db.update(ia01HeaderTable).set({ approved_assessee: true }).where(eq(ia01HeaderTable.id, header.id));
     const updated = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.id, header.id) });
     if (!updated) throw new NotFoundError('IA01 header');
     return updated;
-    }
+  }
 
-    static async approvedByAssessor(result_id: number) {
-    const header = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.result_id, result_id) });
+  static async approvedByAssessor(result_id: number) {
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
+    if (!existingResult) throw new NotFoundError('Result');
+    const header = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.result_id, existingResult.id) });
     if (!header) throw new NotFoundError('IA01 header');
     await db.update(ia01HeaderTable).set({ approved_assessor: true }).where(eq(ia01HeaderTable.id, header.id));
     const updated = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.id, header.id) });
     if (!updated) throw new NotFoundError('IA01 header');
     return updated;
-    }
+  }
 
-    static async getResultDetails(result_id: number) {
+  static async getResultDetails(result_id: number) {
     const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!result) throw new NotFoundError('Result');
 

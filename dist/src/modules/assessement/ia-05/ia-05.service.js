@@ -149,7 +149,10 @@ class IA05Service {
     }
     static approvedByAssessor(result_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const header = yield drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, result_id) });
+            const existingResult = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
+            if (!existingResult)
+                throw new error_1.NotFoundError('Result');
+            const header = yield drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, existingResult.id) });
             if (!header)
                 throw new error_1.NotFoundError('IA05 header');
             yield drizzle_1.db.update(schema_1.resultIa05Header).set({ approved_assessor: true }).where((0, drizzle_orm_1.eq)(schema_1.resultIa05Header.id, header.id));
@@ -161,7 +164,10 @@ class IA05Service {
     }
     static approvedByAssessee(result_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const header = yield drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, result_id) });
+            const existingResult = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
+            if (!existingResult)
+                throw new error_1.NotFoundError('Result');
+            const header = yield drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, existingResult.id) });
             if (!header)
                 throw new error_1.NotFoundError('IA05 header');
             yield drizzle_1.db.update(schema_1.resultIa05Header).set({ approved_assessee: true }).where((0, drizzle_orm_1.eq)(schema_1.resultIa05Header.id, header.id));

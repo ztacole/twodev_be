@@ -136,7 +136,9 @@ export class IA05Service {
   }
 
   static async approvedByAssessor(result_id: number) {
-    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result_id) });
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
+    if (!existingResult) throw new NotFoundError('Result');
+    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, existingResult.id) });
     if (!header) throw new NotFoundError('IA05 header');
     await db.update(ia05HeaderTable).set({ approved_assessor: true }).where(eq(ia05HeaderTable.id, header.id));
     const updated = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.id, header.id) });
@@ -145,7 +147,9 @@ export class IA05Service {
   }
 
   static async approvedByAssessee(result_id: number) {
-    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result_id) });
+    const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
+    if (!existingResult) throw new NotFoundError('Result');
+    const header = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, existingResult.id) });
     if (!header) throw new NotFoundError('IA05 header');
     await db.update(ia05HeaderTable).set({ approved_assessee: true }).where(eq(ia05HeaderTable.id, header.id));
     const updated = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.id, header.id) });
