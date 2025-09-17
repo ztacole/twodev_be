@@ -212,3 +212,20 @@ AssessorController.getAllAssessorDetails = (0, async_handler_1.asyncHandler)((re
         });
     }
 }));
+AssessorController.getAssessorUsers = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const users = yield assessor_service_1.AssessorService.getAssessorUsers();
+        res.status(200).json({
+            success: true,
+            message: 'Semua detail assessor berhasil diambil',
+            data: users
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan dalam mengambil detail assessor',
+            error: error.message
+        });
+    }
+}));

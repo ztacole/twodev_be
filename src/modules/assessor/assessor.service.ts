@@ -2,7 +2,7 @@ import { db } from '../../config/drizzle';
 import { NotFoundError, DuplicateEntryError } from '../../common/error';
 import { AssessorResponse, AssessorRequest } from './assessor.type';
 import { assessor as assessorTable, user as userTable, role as roleTable, scheme as schemeTable, assessorDetail as assessorDetailTable } from '../../../drizzle/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 
@@ -125,8 +125,8 @@ export class AssessorService {
         const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, assessorId) });
         if (!assessor) throw new NotFoundError('Assessor');
 
-        const existingDetail = await db.query.assessorDetail.findFirst({ 
-            where: eq(assessorDetailTable.assessor_id, assessorId) 
+        const existingDetail = await db.query.assessorDetail.findFirst({
+            where: eq(assessorDetailTable.assessor_id, assessorId)
         });
 
         const detailData = {
@@ -143,23 +143,23 @@ export class AssessorService {
                 .set(detailData)
                 .where(eq(assessorDetailTable.id, existingDetail.id));
 
-            const updated = await db.query.assessorDetail.findFirst({ 
-                where: eq(assessorDetailTable.id, existingDetail.id) 
+            const updated = await db.query.assessorDetail.findFirst({
+                where: eq(assessorDetailTable.id, existingDetail.id)
             });
             return updated;
         } else {
             await db.insert(assessorDetailTable).values(detailData);
-            
-            const newDetail = await db.query.assessorDetail.findFirst({ 
-                where: eq(assessorDetailTable.assessor_id, assessorId) 
+
+            const newDetail = await db.query.assessorDetail.findFirst({
+                where: eq(assessorDetailTable.assessor_id, assessorId)
             });
             return newDetail;
         }
     }
 
     static async getAssessorDetail(assessorId: number): Promise<any> {
-        const detail = await db.query.assessorDetail.findFirst({ 
-            where: eq(assessorDetailTable.assessor_id, assessorId) 
+        const detail = await db.query.assessorDetail.findFirst({
+            where: eq(assessorDetailTable.assessor_id, assessorId)
         });
         if (!detail) throw new NotFoundError('Assessor Detail');
 
@@ -189,6 +189,34 @@ export class AssessorService {
             }
         }));
     }
+
+    static async getAssessorUsers() {
+        // Select users with role 'Assessor' and check if they have data in assessor table
+        const users = await db.select({
+            id: userTable.id,
+            full_name: userTable.full_name,
+            email: userTable.email,
+            role: roleTable.name,
+            has_assessor_data: assessorTable.id
+        })
+        .from(userTable)
+        .innerJoin(roleTable, eq(userTable.role_id, roleTable.id))
+        .leftJoin(assessorTable, eq(userTable.id, assessorTable.user_id))
+        .where(eq(roleTable.name, 'Assessor'))
+        .orderBy(asc(userTable.full_name), asc(userTable.created_at));
+
+        // Add status field: 'has_data' if found in assessor table, 'no_data' otherwise
+        const result = users.map(u => ({
+            id: u.id,
+            full_name: u.full_name,
+            email: u.email,
+            role: u.role,
+            status: u.has_assessor_data ? 'Lengkap' : 'Belum Lengkap'
+        }));
+
+        return result;
+    }
+
 
     private static formatAssessorResponse(assessor: any): AssessorResponse {
         return {

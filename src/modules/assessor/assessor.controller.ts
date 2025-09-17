@@ -225,4 +225,22 @@ export class AssessorController {
             });
         }
     });
+
+    static getAssessorUsers = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const users = await AssessorService.getAssessorUsers();
+
+            res.status(200).json({
+                success: true,
+                message: 'Semua detail assessor berhasil diambil',
+                data: users
+            });
+        } catch (error: any) {
+            res.status(500).json({
+                success: false,
+                message: 'Terjadi kesalahan dalam mengambil detail assessor',
+                error: error.message
+            });
+        }
+    });
 }

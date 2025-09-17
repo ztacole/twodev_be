@@ -6,6 +6,7 @@ const upload_config_1 = require("./upload-config");
 const router = (0, express_1.Router)();
 router.post('/', upload_config_1.uploadAssessorDetail, assessor_controller_1.AssessorController.createAssessor);
 router.get('/', assessor_controller_1.AssessorController.getAssessors);
+router.get('/user/status', assessor_controller_1.AssessorController.getAssessorUsers);
 router.get('/user/:userId', assessor_controller_1.AssessorController.getAssessorByUserId);
 router.get('/:id', assessor_controller_1.AssessorController.getAssessorById);
 router.put('/:id', upload_config_1.uploadAssessorDetail, assessor_controller_1.AssessorController.updateAssessor);

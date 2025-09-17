@@ -181,6 +181,32 @@ class AssessorService {
             return details.map(row => (Object.assign(Object.assign({}, row.assessor_detail), { assessor: Object.assign(Object.assign({}, row.assessor), { user: row.user }) })));
         });
     }
+    static getAssessorUsers() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Select users with role 'Assessor' and check if they have data in assessor table
+            const users = yield drizzle_1.db.select({
+                id: schema_1.user.id,
+                full_name: schema_1.user.full_name,
+                email: schema_1.user.email,
+                role: schema_1.role.name,
+                has_assessor_data: schema_1.assessor.id
+            })
+                .from(schema_1.user)
+                .innerJoin(schema_1.role, (0, drizzle_orm_1.eq)(schema_1.user.role_id, schema_1.role.id))
+                .leftJoin(schema_1.assessor, (0, drizzle_orm_1.eq)(schema_1.user.id, schema_1.assessor.user_id))
+                .where((0, drizzle_orm_1.eq)(schema_1.role.name, 'Assessor'))
+                .orderBy((0, drizzle_orm_1.asc)(schema_1.user.full_name), (0, drizzle_orm_1.asc)(schema_1.user.created_at));
+            // Add status field: 'has_data' if found in assessor table, 'no_data' otherwise
+            const result = users.map(u => ({
+                id: u.id,
+                full_name: u.full_name,
+                email: u.email,
+                role: u.role,
+                status: u.has_assessor_data ? 'Lengkap' : 'Belum Lengkap'
+            }));
+            return result;
+        });
+    }
     static formatAssessorResponse(assessor) {
         return {
             id: assessor.id,
