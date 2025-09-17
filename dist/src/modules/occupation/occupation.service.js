@@ -21,11 +21,17 @@ const drizzle_orm_1 = require("drizzle-orm");
 class OccupationService {
     static getOccupations() {
         return __awaiter(this, void 0, void 0, function* () {
-            const occupations = yield drizzle_1.db.select().from(schema_1.occupation);
-            const schemeIds = [...new Set(occupations.map(o => o.scheme_id))];
-            const schemes = schemeIds.length ? yield drizzle_1.db.select().from(schema_1.scheme).where((0, drizzle_orm_1.eq)(schema_1.scheme.id, schemeIds[0])) : [];
-            const schemeById = new Map(schemes.map(s => [s.id, s]));
-            return occupations.map(o => (Object.assign(Object.assign({}, o), { scheme: schemeById.get(o.scheme_id) || null })));
+            const occupations = yield drizzle_1.db.select({
+                id: schema_1.occupation.id,
+                scheme_id: schema_1.occupation.scheme_id,
+                name: schema_1.occupation.name,
+                created_at: schema_1.occupation.created_at,
+                updated_at: schema_1.occupation.updated_at,
+                scheme: schema_1.scheme
+            }).from(schema_1.occupation)
+                .leftJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, schema_1.scheme.id))
+                .orderBy((0, drizzle_orm_1.desc)(schema_1.occupation.created_at));
+            return occupations;
         });
     }
     static getOccupationById(id) {

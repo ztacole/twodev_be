@@ -3,18 +3,21 @@ import ExcelJS from 'exceljs';
 import { OccupationRequest, OccupationResponse } from './occupation.type';
 import { DuplicateEntryError, NotFoundError } from '../../common/error';
 import { occupation as occupationTable, scheme as schemeTable } from '../../../drizzle/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 export class OccupationService {
     static async getOccupations(): Promise<OccupationResponse[]> {
-        const occupations = await db.select().from(occupationTable);
-        const schemeIds = [...new Set(occupations.map(o => o.scheme_id))];
-        const schemes = schemeIds.length ? await db.select().from(schemeTable).where(eq(schemeTable.id, schemeIds[0])) : [];
-        const schemeById = new Map(schemes.map(s => [s.id, s]));
-        return occupations.map(o => ({
-            ...o,
-            scheme: schemeById.get(o.scheme_id) || null,
-        }) as any);
+        const occupations = await db.select({
+            id: occupationTable.id,
+            scheme_id: occupationTable.scheme_id,
+            name: occupationTable.name,
+            created_at: occupationTable.created_at,
+            updated_at: occupationTable.updated_at,
+            scheme: schemeTable
+        }).from(occupationTable)
+            .leftJoin(schemeTable, eq(occupationTable.scheme_id, schemeTable.id))
+            .orderBy(desc(occupationTable.created_at));
+        return occupations as any;
     }
 
     static async getOccupationById(id: number): Promise<OccupationResponse> {
