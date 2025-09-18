@@ -57,6 +57,9 @@ import { eq, and, desc, lt, asc } from "drizzle-orm";
 import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
 import { Result } from "drizzle-orm/sqlite-core";
 import { AssessorResponse } from "../assessor/assessor.type";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { embedQrCode } from "../../helper/pdfAssets.helper";
+import { drawParagraph, drawMixedParagraph } from "../../helper/pdfDraw.helper";
 
 export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
@@ -817,5 +820,207 @@ export class AssessmentService {
             .orderBy(asc(userTable.full_name), asc(resultTable.created_at));
 
         return results;
+    }
+
+    static async generateRecaptPDF(assessment: any) {
+        const schedule = assessment.schedule;
+
+        // Format date
+        const start = new Date(schedule.start_date);
+        const end = new Date(schedule.end_date);
+
+        const days = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+        const months = [
+            "Januari","Februari","Maret","April","Mei","Juni",
+            "Juli","Agustus","September","Oktober","November","Desember"
+        ];
+
+        const startDay = days[start.getDay()];
+        const startDate = start.getDate();
+        const startMonth = months[start.getMonth()];
+        const startYear = start.getFullYear();
+
+        const startHour = (`0${start.getHours()}`).slice(-2);
+        const startMinute = (`0${start.getMinutes()}`).slice(-2);
+        const endHour = (`0${end.getHours()}`).slice(-2);
+        const endMinute = (`0${end.getMinutes()}`).slice(-2);
+
+        // === Create a new PDF document ===
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([612, 936]);
+
+        // === Fonts ===
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const iconFont = await pdfDoc.embedFont(StandardFonts.ZapfDingbats);
+
+        let y = page.getHeight() - 50;
+        const fontSizeSmall = 11;
+        
+        const lineGap = 4;
+        const lLineGap = 12;
+        const xlLineGap = 20;
+
+        // === TITLE ===
+        const headerText = [
+            "BERITA ACARA",
+            "HASIL REKOMENDASI PENILAIAN",
+            "UJI KOMPETENSI KEAHLIAN",
+        ];
+        headerText.forEach(text => {
+            y = drawParagraph(page, text, 40, y, fontBold, fontSizeSmall, "center");
+        });
+
+        // === INTRODUCTION PARAGRAPH ===
+        const textParts = [
+            { text: "Pada hari ini ", font },
+            { text: `${startDay}, `, font: fontBold },
+            { text: "tanggal ", font },
+            { text: `${startDate} `, font: fontBold },
+            { text: "bulan ", font },
+            { text: `${startMonth} `, font: fontBold },
+            { text: "tahun ", font },
+            { text: `${startYear}, `, font: fontBold },
+            { text: "jam ", font },
+            { text: `${startHour}:${startMinute} `, font: fontBold },
+            { text: "sampai dengan jam ", font },
+            { text: `${endHour}:${endMinute}, `, font: fontBold },
+            { text: "bertempat TUK ", font },
+            { text: `${assessment.tuk}, `, font: fontBold },
+            { text: "ruang ", font },
+            { text: `${assessment.schedule.location}, `, font: fontBold },
+            { text: "telah dilaksanakan pemberian rekomendasi penilaian terhadap peserta yang namanya tercantum dibawah ini:", font }
+        ];
+        y = drawMixedParagraph(page, textParts, 40, y - lLineGap, 12, rgb(0, 0, 0), 540, 18);
+        y -= xlLineGap;
+
+        // === TABLE CONTENT ===
+        const tableData = (assessment.assessees as { name: string; status: string }[]).map(
+            (assessee, index) => ({
+                no: index + 1,
+                name: assessee.name,
+                k: assessee.status === "Competent" ? "✓" : "",
+                bk: assessee.status === "Not Competent" ? "✓" : "",
+            })
+        );
+
+        const tableTop = y;
+        const rowHeight = 25;
+        const colWidths: any = [30, 260, 110, 110];
+        const headerColor = rgb(1, 0.95, 0.7);
+
+        // === TABLE HEADER ===
+        let x = 50;
+
+        // Column No
+        page.drawRectangle({
+            x, y: tableTop - rowHeight * 2,
+            width: colWidths[0], height: rowHeight * 3,
+            color: headerColor, borderColor: rgb(0,0,0), borderWidth: 1
+        });
+        page.drawText("No", { x: x + 8, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
+        x += colWidths[0];
+
+        // Column Name
+        page.drawRectangle({
+            x, y: tableTop - rowHeight * 2,
+            width: colWidths[1], height: rowHeight * 3,
+            color: headerColor, borderColor: rgb(0,0,0), borderWidth: 1
+        });
+        page.drawText("Nama Peserta", { x: x + colWidths[1] / 2 - 47, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
+        x += colWidths[1];
+
+        // Kolom Rekomendasi (gabungan K & BK)
+        page.drawRectangle({
+            x, y: tableTop - rowHeight * 2,
+            width: colWidths[2] + colWidths[3],
+            height: rowHeight * 3,
+            color: headerColor, borderColor: rgb(0,0,0), borderWidth: 1
+        });
+        page.drawText("REKOMENDASI", { x: x + (colWidths[2] + colWidths[3]) / 2 - 45, y: tableTop + 7, size: fontSizeSmall, font: fontBold });
+        page.drawText("ASISTEN PEMROGRAMAN JUNIOR", { x: x + 15, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
+        // Subkolom K
+        page.drawRectangle({
+            x, y: tableTop - rowHeight * 2,
+            width: colWidths[2],
+            height: rowHeight,
+            color: headerColor,
+            borderColor: rgb(0,0,0),
+            borderWidth: 1
+        });
+        page.drawText("K", { x: x + colWidths[2] / 2 - 5, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
+        // Subkolom BK
+        page.drawRectangle({
+            x: x + colWidths[2],
+            y: tableTop - rowHeight * 2,
+            width: colWidths[3],
+            height: rowHeight,
+            color: headerColor,
+            borderColor: rgb(0,0,0),
+            borderWidth: 1
+        });
+        page.drawText("BK", { x: x + colWidths[2] + colWidths[3] / 2 - 5, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
+
+        // === TABLE CONTENT ===
+        let currentY = tableTop - rowHeight * 3;
+
+        tableData.forEach(row => {
+            let x = 50;
+            page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0,0,0), borderWidth: 1 });
+            page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
+            x += colWidths[0];
+            
+            page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0,0,0), borderWidth: 1 });
+            page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
+            x += colWidths[1];
+            
+            page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0,0,0), borderWidth: 1 });
+            page.drawText(row.k, { x: x + colWidths[2] / 2 - 3, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+            x += colWidths[2];
+            
+            page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0,0,0), borderWidth: 1 });
+            page.drawText(row.bk, { x: x + colWidths[3] / 2 - 3, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+        
+            currentY -= rowHeight;
+        });
+        y = currentY;  
+
+        // === NOTE ===
+        drawParagraph(page, "Selama pelaksanaan rekomendasi telah terjadi hal penting sebagai berikut :", 50, y, font, fontSizeSmall);
+        
+        const boxSize = 12;
+        const boxX = 50;
+        let boxY = y - boxSize * 2 + 10 - 6;
+
+        page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: rgb(0,0,0), borderWidth: 1, color: rgb(1,1,1) });
+        drawParagraph(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY, font, fontSizeSmall);
+        boxY -= lineGap;
+        page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: rgb(0,0,0), borderWidth: 1, color: rgb(1,1,1) });
+        drawParagraph(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);
+        boxY -= lineGap;
+        drawParagraph(page, "catatan : ...........................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
+        drawParagraph(page, "................................................................................................................................................................", 50, boxY - boxSize * 3, font, fontSizeSmall);
+
+        y = boxY - boxSize * 4;
+        drawParagraph(page, "Demikianlah, berita acara ini dibuat sesuai dengan kejadian yang sebenernya, untuk digunakan sebagaimana mestinya.", 50, y, font, fontSizeSmall);
+
+        // === SIGNATURE ===
+        const signatureX = 50;
+        let signatureY = y - 50;
+        const signatureWidth = 75;
+
+        const assessor_name = assessment.schedule.assessor.full_name;
+        drawParagraph(page, `${startDay + ", " + startDate + " " + startMonth + " " + startYear}`, signatureX, signatureY, font, fontSizeSmall, "right");
+        drawParagraph(page, `${assessor_name}`, signatureX + 20, signatureY - 15, font, fontSizeSmall, "right");
+        signatureY -= 20;
+
+        const qrData = "https://www.google.com";
+        const qrCode = await embedQrCode(pdfDoc, qrData);
+        page.drawImage(qrCode, 
+            { x: page.getWidth() - signatureWidth * 2, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
+        );
+
+        const pdfBytes = await pdfDoc.save();
+        return pdfBytes;
     }
 }

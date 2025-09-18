@@ -38,6 +38,8 @@ router.get('/navigation/admin/:resultId', authenticateToken, adminMiddleware, As
 
 router.get('/assessment-recapt/:scheduleDetailId', authenticateToken, assessorMiddleware, AssessmentController.getAssessmentRecapt);
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssessmentRecaptForAdmin);
+router.get('/recap/:scheduleDetailId/pdf', authenticateToken, assessorMiddleware, AssessmentController.generateRecaptPdf);
+router.get('/recap/:scheduleDetailId/:assessorId/pdf', authenticateToken, adminMiddleware, AssessmentController.generateRecaptPdfForAdmin);
 
 router.post('/apl-01/create-self-data', APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', 
