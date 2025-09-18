@@ -23,7 +23,7 @@ class ScheduleService {
                 throw new error_1.NotFoundError('Assessment');
             }
             const assessor_ids = data.schedule_details.map(detail => Number(detail.assessor_id));
-            const existingAssessors = assessor_ids.length ? yield drizzle_1.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.id, assessor_ids[0])) : [];
+            const existingAssessors = assessor_ids.length ? yield drizzle_1.db.select().from(schema_1.assessor).where((0, drizzle_orm_1.inArray)(schema_1.assessor.id, assessor_ids)) : [];
             if (existingAssessors.length !== assessor_ids.length) {
                 throw new error_1.NotFoundError('Assessor');
             }

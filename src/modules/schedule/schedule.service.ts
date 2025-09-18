@@ -21,7 +21,7 @@ import {
     resultAk03Header as resultAk03HeaderTable,
     resultAk05 as resultAk05Table,
 } from '../../../drizzle/schema';
-import { and, between, eq, gte, lte } from 'drizzle-orm';
+import { and, between, eq, gte, inArray, lte } from 'drizzle-orm';
 import { ActiveScheduleResponse, DetailResponse, ScheduleRequest, ScheduleResponse, updateScheduleRequest } from './schedule.type';
 
 export class ScheduleService {
@@ -33,7 +33,7 @@ export class ScheduleService {
         }
 
         const assessor_ids = data.schedule_details.map(detail => Number(detail.assessor_id));
-        const existingAssessors = assessor_ids.length ? await db.select().from(userTable).where(eq(userTable.id, assessor_ids[0])) : [];
+        const existingAssessors = assessor_ids.length ? await db.select().from(assessorTable).where(inArray(assessorTable.id, assessor_ids)) : [];
         if (existingAssessors.length !== assessor_ids.length) {
             throw new NotFoundError('Assessor');
         }
