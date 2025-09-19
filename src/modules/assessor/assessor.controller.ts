@@ -71,15 +71,26 @@ export class AssessorController {
 
 
     static getAssessors = asyncHandler(async (req: Request, res: Response) => {
-        const page = Math.max(1, Number(req.query.page) || 1);
-        const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
-        const result = await AssessorService.getAssessors(page, limit);
+        const hasPagingParams = typeof (req.params as any)?.page !== 'undefined' && typeof (req.params as any)?.limit !== 'undefined';
+        const hasPagingQuery = typeof req.query.page !== 'undefined' || typeof req.query.limit !== 'undefined';
 
+        if (hasPagingParams || hasPagingQuery) {
+            const page = Math.max(1, Number((req.params as any).page ?? req.query.page) || 1);
+            const limit = Math.max(1, Math.min(100, Number((req.params as any).limit ?? req.query.limit) || 10));
+            const result = await AssessorService.getAssessors(page, limit);
+            return res.json({
+                success: true,
+                message: 'Data assessor berhasil diambil',
+                data: result.data,
+                meta: result.meta,
+            });
+        }
+
+        const data = await AssessorService.getAllAssessors();
         res.json({
             success: true,
             message: 'Data assessor berhasil diambil',
-            data: result.data,
-            meta: result.meta,
+            data
         });
     });
 

@@ -40,6 +40,13 @@ export class UserService {
         };
     }
 
+    static async getAllUsers(): Promise<UserResponse[]> {
+        const users = await db.select().from(userTable);
+        const roles = await db.select().from(roleTable);
+        const roleById = new Map(roles.map(r => [r.id, r]));
+        return users.map(u => formatUserResponse({ ...u, role: roleById.get(u.role_id) }));
+    }
+
     static async getUserById(id: number): Promise<UserResponse> {
         const user = await db.query.user.findFirst({ where: eq(userTable.id, id) });
         if (!user) throw new NotFoundError('User');
