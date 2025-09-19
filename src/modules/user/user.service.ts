@@ -4,6 +4,7 @@ import { CreateUserRequest, UpdateUserRequest, UserResponse } from './user.type'
 import bcrypt from 'bcryptjs';
 import { user as userTable, role as roleTable } from '../../../drizzle/schema';
 import { and, eq, sql } from 'drizzle-orm';
+import { PagingMeta } from '../../helper/type';
 
 export class UserService {
     static async createUser(data: CreateUserRequest): Promise<UserResponse> {
@@ -23,7 +24,7 @@ export class UserService {
         return formatUserResponse({ ...user, role });
     }
 
-    static async getUsers(page: number = 1, limit: number = 10): Promise<{ data: UserResponse[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    static async getUsers(page: number = 1, limit: number = 10): Promise<{ data: UserResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
 
         const users = await db.select().from(userTable).limit(limit).offset(offset);
@@ -36,15 +37,8 @@ export class UserService {
 
         return {
             data: users.map(u => formatUserResponse({ ...u, role: roleById.get(u.role_id) })),
-            meta: { page, limit, total, totalPages }
+            meta: { current_page: page, limit, total, total_pages: totalPages }
         };
-    }
-
-    static async getAllUsers(): Promise<UserResponse[]> {
-        const users = await db.select().from(userTable);
-        const roles = await db.select().from(roleTable);
-        const roleById = new Map(roles.map(r => [r.id, r]));
-        return users.map(u => formatUserResponse({ ...u, role: roleById.get(u.role_id) }));
     }
 
     static async getUserById(id: number): Promise<UserResponse> {

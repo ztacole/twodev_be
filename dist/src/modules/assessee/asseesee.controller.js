@@ -38,25 +38,14 @@ AssesseeController.createAssessee = (0, async_handler_1.asyncHandler)((req, res)
     });
 }));
 AssesseeController.getAssessees = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b, _c, _d, _e;
-    const hasPagingParams = typeof ((_b = req.params) === null || _b === void 0 ? void 0 : _b.page) !== 'undefined' && typeof ((_c = req.params) === null || _c === void 0 ? void 0 : _c.limit) !== 'undefined';
-    const hasPagingQuery = typeof req.query.page !== 'undefined' || typeof req.query.limit !== 'undefined';
-    if (hasPagingParams || hasPagingQuery) {
-        const page = Math.max(1, Number((_d = req.params.page) !== null && _d !== void 0 ? _d : req.query.page) || 1);
-        const limit = Math.max(1, Math.min(100, Number((_e = req.params.limit) !== null && _e !== void 0 ? _e : req.query.limit) || 10));
-        const result = yield asseessee_service_1.AssesseeService.getAssessees(page, limit);
-        return res.json({
-            success: true,
-            message: 'Data assessee berhasil diambil',
-            data: result.data,
-            meta: result.meta,
-        });
-    }
-    const data = yield asseessee_service_1.AssesseeService.getAllAssessees();
-    res.json({
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
+    const result = yield asseessee_service_1.AssesseeService.getAssessees(page, limit);
+    return res.json({
         success: true,
         message: 'Data assessee berhasil diambil',
-        data
+        data: result.data,
+        meta: result.meta,
     });
 }));
 AssesseeController.getAssesseeById = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

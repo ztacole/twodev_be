@@ -6,7 +6,6 @@ const router = Router();
 
 router.post('/', uploadAssessorDetail, AssessorController.createAssessor);
 router.get('/', AssessorController.getAssessors);
-// router.get('/:page/:limit', AssessorController.getAssessors);
 router.get('/user/status', AssessorController.getAssessorUsers);
 router.get('/user/:userId', AssessorController.getAssessorByUserId);
 router.get('/:id', AssessorController.getAssessorById);

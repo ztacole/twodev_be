@@ -47,16 +47,8 @@ class UserService {
             const totalPages = Math.max(1, Math.ceil(total / limit));
             return {
                 data: users.map(u => formatUserResponse(Object.assign(Object.assign({}, u), { role: roleById.get(u.role_id) }))),
-                meta: { page, limit, total, totalPages }
+                meta: { current_page: page, limit, total, total_pages: totalPages }
             };
-        });
-    }
-    static getAllUsers() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const users = yield drizzle_1.db.select().from(schema_1.user);
-            const roles = yield drizzle_1.db.select().from(schema_1.role);
-            const roleById = new Map(roles.map(r => [r.id, r]));
-            return users.map(u => formatUserResponse(Object.assign(Object.assign({}, u), { role: roleById.get(u.role_id) })));
         });
     }
     static getUserById(id) {

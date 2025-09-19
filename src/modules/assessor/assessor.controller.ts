@@ -5,7 +5,7 @@ import { asyncHandler } from '../../common/async.handler';
 export class AssessorController {
     static createAssessor = asyncHandler(async (req: Request, res: Response) => {
         try {
-            
+
             const requiredFields = ['user_id', 'scheme_id', 'address', 'phone_no', 'birth_date', 'no_reg_met'];
             for (const field of requiredFields) {
                 if (!req.body[field]) {
@@ -23,21 +23,21 @@ export class AssessorController {
             if (files.length > 0) {
                 const fs = require('fs');
                 const path = require('path');
-                
+
                 for (const file of files) {
                     const oldPath = path.join(process.cwd(), 'public/uploads/assessor/default', file.filename);
                     const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
                     const newPath = path.join(newDir, file.filename);
-                    
+
                     if (!fs.existsSync(newDir)) {
                         fs.mkdirSync(newDir, { recursive: true });
                     }
-                    
+
                     if (fs.existsSync(oldPath)) {
                         fs.renameSync(oldPath, newPath);
                     }
                 }
-                
+
                 const detail = await AssessorService.createOrUpdateAssessorDetail({
                     assessorId: assessor.id,
                     bodyData: req.body,
@@ -71,26 +71,14 @@ export class AssessorController {
 
 
     static getAssessors = asyncHandler(async (req: Request, res: Response) => {
-        const hasPagingParams = typeof (req.params as any)?.page !== 'undefined' && typeof (req.params as any)?.limit !== 'undefined';
-        const hasPagingQuery = typeof req.query.page !== 'undefined' || typeof req.query.limit !== 'undefined';
-
-        if (hasPagingParams || hasPagingQuery) {
-            const page = Math.max(1, Number((req.params as any).page ?? req.query.page) || 1);
-            const limit = Math.max(1, Math.min(100, Number((req.params as any).limit ?? req.query.limit) || 10));
-            const result = await AssessorService.getAssessors(page, limit);
-            return res.json({
-                success: true,
-                message: 'Data assessor berhasil diambil',
-                data: result.data,
-                meta: result.meta,
-            });
-        }
-
-        const data = await AssessorService.getAllAssessors();
-        res.json({
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
+        const result = await AssessorService.getAssessors(page, limit);
+        return res.json({
             success: true,
             message: 'Data assessor berhasil diambil',
-            data
+            data: result.data,
+            meta: result.meta,
         });
     });
 
@@ -116,7 +104,7 @@ export class AssessorController {
 
     static updateAssessor = asyncHandler(async (req: Request, res: Response) => {
         try {
-            
+
             const files = Array.isArray(req.files) ? req.files : [];
 
             const assessor = await AssessorService.updateAssessor(Number(req.params.id), req.body);
@@ -165,7 +153,7 @@ export class AssessorController {
     static createOrUpdateAssessorDetail = asyncHandler(async (req: Request, res: Response) => {
         try {
             const assessorId = parseInt(req.body.assessor_id || req.body.assessorId);
-            
+
             if (isNaN(assessorId)) {
                 return res.status(400).json({
                     success: false,
@@ -198,7 +186,7 @@ export class AssessorController {
     static getAssessorDetail = asyncHandler(async (req: Request, res: Response) => {
         try {
             const assessorId = parseInt(req.params.assessorId);
-            
+
             if (isNaN(assessorId)) {
                 return res.status(400).json({
                     success: false,
@@ -242,12 +230,15 @@ export class AssessorController {
 
     static getAssessorUsers = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const users = await AssessorService.getAssessorUsers();
+            const page = Math.max(1, Number(req.query.page) || 1);
+            const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
+            const users = await AssessorService.getAssessorUsers(page, limit);
 
             res.status(200).json({
                 success: true,
                 message: 'Semua detail assessor berhasil diambil',
-                data: users
+                data: users.data,
+                meta: users.meta
             });
         } catch (error: any) {
             res.status(500).json({

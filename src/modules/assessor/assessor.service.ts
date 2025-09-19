@@ -2,12 +2,14 @@ import { db } from '../../config/drizzle';
 import { NotFoundError, DuplicateEntryError } from '../../common/error';
 import { AssessorResponse, AssessorRequest } from './assessor.type';
 import { assessor as assessorTable, user as userTable, role as roleTable, scheme as schemeTable, assessorDetail as assessorDetailTable } from '../../../drizzle/schema';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+import { PagingMeta } from '../../helper/type';
+import { count } from 'console';
 
 export class AssessorService {
-    static async getAssessors(page: number = 1, limit: number = 10): Promise<{ data: AssessorResponse[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    static async getAssessors(page: number = 1, limit: number = 10): Promise<{ data: AssessorResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
         const assessors = await db.select().from(assessorTable).limit(limit).offset(offset);
         const userIds = assessors.map(a => a.user_id);
@@ -30,7 +32,7 @@ export class AssessorService {
             scheme: schemeById.get(a.scheme_id),
         } as any));
 
-        return { data, meta: { page, limit, total, totalPages } };
+        return { data, meta: { current_page: page, limit, total, total_pages: totalPages } };
     }
 
     static async getAllAssessors(): Promise<AssessorResponse[]> {
@@ -214,7 +216,8 @@ export class AssessorService {
         }));
     }
 
-    static async getAssessorUsers() {
+    static async getAssessorUsers(page: number = 1, limit: number = 10): Promise<{ data: { id: number; full_name: string; email: string; role: string; status: string }[], meta: PagingMeta }> {
+        const offset = (page - 1) * limit;
         const users = await db.select({
             id: userTable.id,
             full_name: userTable.full_name,
@@ -226,9 +229,11 @@ export class AssessorService {
         .innerJoin(roleTable, eq(userTable.role_id, roleTable.id))
         .leftJoin(assessorTable, eq(userTable.id, assessorTable.user_id))
         .where(eq(roleTable.name, 'Assessor'))
-        .orderBy(asc(userTable.full_name), asc(userTable.created_at));
+        .orderBy(asc(userTable.full_name), asc(userTable.created_at))
+        .limit(limit)
+        .offset(offset);
 
-        const result = users.map(u => ({
+        const results = users.map(u => ({
             id: u.id,
             full_name: u.full_name,
             email: u.email,
@@ -236,7 +241,22 @@ export class AssessorService {
             status: u.has_assessor_data ? 'Lengkap' : 'Belum Lengkap'
         }));
 
-        return result;
+        const allUsers = await db.select({ count: sql<number>`COUNT(*)` })
+            .from(userTable)
+            .innerJoin(roleTable, eq(userTable.role_id, roleTable.id))
+            .leftJoin(assessorTable, eq(userTable.id, assessorTable.user_id))
+            .where(eq(roleTable.name, 'Assessor'));
+        const total = Number(allUsers?.[0]?.count ?? 0);
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+
+        const meta: PagingMeta = {
+            current_page: page,
+            limit,
+            total,
+            total_pages: totalPages
+        };
+
+        return { data: results, meta };
     }
 
 

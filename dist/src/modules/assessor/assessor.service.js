@@ -69,7 +69,7 @@ class AssessorService {
                 var _a;
                 return this.formatAssessorResponse(Object.assign(Object.assign({}, a), { user: Object.assign(Object.assign({}, userById.get(a.user_id)), { role: roleById.get((_a = userById.get(a.user_id)) === null || _a === void 0 ? void 0 : _a.role_id) }), scheme: schemeById.get(a.scheme_id) }));
             });
-            return { data, meta: { page, limit, total, totalPages } };
+            return { data, meta: { current_page: page, limit, total, total_pages: totalPages } };
         });
     }
     static getAllAssessors() {
@@ -237,7 +237,9 @@ class AssessorService {
         });
     }
     static getAssessorUsers() {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10) {
+            var _a, _b;
+            const offset = (page - 1) * limit;
             const users = yield drizzle_1.db.select({
                 id: schema_1.user.id,
                 full_name: schema_1.user.full_name,
@@ -249,15 +251,30 @@ class AssessorService {
                 .innerJoin(schema_1.role, (0, drizzle_orm_1.eq)(schema_1.user.role_id, schema_1.role.id))
                 .leftJoin(schema_1.assessor, (0, drizzle_orm_1.eq)(schema_1.user.id, schema_1.assessor.user_id))
                 .where((0, drizzle_orm_1.eq)(schema_1.role.name, 'Assessor'))
-                .orderBy((0, drizzle_orm_1.asc)(schema_1.user.full_name), (0, drizzle_orm_1.asc)(schema_1.user.created_at));
-            const result = users.map(u => ({
+                .orderBy((0, drizzle_orm_1.asc)(schema_1.user.full_name), (0, drizzle_orm_1.asc)(schema_1.user.created_at))
+                .limit(limit)
+                .offset(offset);
+            const results = users.map(u => ({
                 id: u.id,
                 full_name: u.full_name,
                 email: u.email,
                 role: u.role,
                 status: u.has_assessor_data ? 'Lengkap' : 'Belum Lengkap'
             }));
-            return result;
+            const allUsers = yield drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(*)` })
+                .from(schema_1.user)
+                .innerJoin(schema_1.role, (0, drizzle_orm_1.eq)(schema_1.user.role_id, schema_1.role.id))
+                .leftJoin(schema_1.assessor, (0, drizzle_orm_1.eq)(schema_1.user.id, schema_1.assessor.user_id))
+                .where((0, drizzle_orm_1.eq)(schema_1.role.name, 'Assessor'));
+            const total = Number((_b = (_a = allUsers === null || allUsers === void 0 ? void 0 : allUsers[0]) === null || _a === void 0 ? void 0 : _a.count) !== null && _b !== void 0 ? _b : 0);
+            const totalPages = Math.max(1, Math.ceil(total / limit));
+            const meta = {
+                current_page: page,
+                limit,
+                total,
+                total_pages: totalPages
+            };
+            return { data: results, meta };
         });
     }
     static formatAssessorResponse(assessor) {

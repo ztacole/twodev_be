@@ -2,7 +2,8 @@ import { db } from '../../config/drizzle';
 import { NotFoundError, DuplicateEntryError } from '../../common/error';
 import { AssesseeResponse, AssesseeRequest } from './asseessee.type';
 import { assessee as assesseeTable, user as userTable, role as roleTable } from '../../../drizzle/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import { PagingMeta } from '../../helper/type';
 
 const translateGenderToEn = (gender: string): 'male' | 'female' => {
     const lowerGender = gender.toLowerCase().trim();
@@ -29,18 +30,13 @@ const translateGenderToId = (gender: string): 'LAKI-LAKI' | 'PEREMPUAN' => {
 };
 
 export class AssesseeService {
-    static async getAssessees(page: number = 1, limit: number = 10): Promise<{ data: AssesseeResponse[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    static async getAssessees(page: number = 1, limit: number = 10): Promise<{ data: AssesseeResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
         const assessees = await db.select().from(assesseeTable).limit(limit).offset(offset);
-        const countRows = await db.select({ count: (await import('drizzle-orm')).sql<number>`COUNT(*)` }).from(assesseeTable);
+        const countRows = await db.select({ count: sql<number>`COUNT(*)` }).from(assesseeTable);
         const total = Number(countRows?.[0]?.count ?? 0);
         const totalPages = Math.max(1, Math.ceil(total / limit));
-        return { data: assessees.map(this.formatAssesseeResponse), meta: { page, limit, total, totalPages } };
-    }
-
-    static async getAllAssessees(): Promise<AssesseeResponse[]> {
-        const assessees = await db.select().from(assesseeTable);
-        return assessees.map(this.formatAssesseeResponse);
+        return { data: assessees.map(this.formatAssesseeResponse), meta: { current_page: page, limit, total, total_pages: totalPages } };
     }
 
     static async getAssesseeById(id: number): Promise<AssesseeResponse> {

@@ -26,27 +26,14 @@ UserController.createUser = (0, async_handler_1.asyncHandler)((req, res) => __aw
     });
 }));
 UserController.getUsers = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b, _c, _d, _e;
-    const hasPagingParams = typeof ((_b = req.params) === null || _b === void 0 ? void 0 : _b.page) !== 'undefined' && typeof ((_c = req.params) === null || _c === void 0 ? void 0 : _c.limit) !== 'undefined';
-    const hasPagingQuery = typeof req.query.page !== 'undefined' || typeof req.query.limit !== 'undefined';
-    if (hasPagingParams || hasPagingQuery) {
-        const pageParam = (_d = req.params) === null || _d === void 0 ? void 0 : _d.page;
-        const limitParam = (_e = req.params) === null || _e === void 0 ? void 0 : _e.limit;
-        const page = Math.max(1, Number(pageParam !== null && pageParam !== void 0 ? pageParam : req.query.page) || 1);
-        const limit = Math.max(1, Math.min(100, Number(limitParam !== null && limitParam !== void 0 ? limitParam : req.query.limit) || 10));
-        const result = yield user_service_1.UserService.getUsers(page, limit);
-        return res.status(200).json({
-            success: true,
-            message: 'Daftar user berhasil diambil',
-            data: result.data,
-            meta: result.meta
-        });
-    }
-    const data = yield user_service_1.UserService.getAllUsers();
-    res.status(200).json({
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
+    const result = yield user_service_1.UserService.getUsers(page, limit);
+    return res.status(200).json({
         success: true,
         message: 'Daftar user berhasil diambil',
-        data
+        data: result.data,
+        meta: result.meta
     });
 }));
 UserController.getUserById = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
