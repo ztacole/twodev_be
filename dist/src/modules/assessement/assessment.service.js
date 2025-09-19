@@ -780,11 +780,11 @@ class AssessmentService {
                     drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, res.id) }),
                 ]);
                 // Penentuan status
-                let status = "On Going";
+                let status = "Sedang Berjalan";
                 if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee)
-                    status = "Not Competent";
+                    status = "Belum Kompeten";
                 if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee)
-                    status = "Not Competent";
+                    status = "Belum Kompeten";
                 if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
                     (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
                     (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
@@ -794,7 +794,7 @@ class AssessmentService {
                     (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
                     (resultAK05 && resultAK05.approved_assessor) &&
                     !resultAK05.is_competent && !res.is_competent)
-                    status = "Not Competent";
+                    status = "Belum Kompeten";
                 if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
                     (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
                     (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
@@ -804,7 +804,7 @@ class AssessmentService {
                     (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
                     (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
                     res.is_competent)
-                    status = "Competent";
+                    status = "Kompeten";
                 finalResults.push({
                     id: res.id,
                     assessee_id: res.assessee_id,
