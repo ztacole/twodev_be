@@ -5,6 +5,7 @@ import { AssessmentRequest } from "./assessment.type";
 import { JwtPayload } from "jsonwebtoken";
 import { AssessorService } from "../assessor/assessor.service";
 import { AssessorResponse } from "../assessor/assessor.type";
+import { ScheduleService } from "../schedule/schedule.service";
 
 export class AssessmentController {
     static createAssessment = asyncHandler(async (req: Request, res: Response) => {
@@ -78,7 +79,7 @@ export class AssessmentController {
                 });
             }
         }
-        
+
         const result = await AssessmentService.getAssessmentResultDetails(assessmentId, assessorId, assesseeId);
         res.status(200).json({
             success: true,
@@ -221,57 +222,71 @@ export class AssessmentController {
     });
 
     static generateRecaptPdf = asyncHandler(async (req: Request, res: Response) => {
-        const user = req.user as JwtPayload;
-        const scheduleDetailId = Number(req.params.scheduleDetailId);
+        try {
+            const scheduleDetailId = Number(req.params.scheduleDetailId);
+            if (!scheduleDetailId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Schedule ID harus diisi",
+                });
+            }
 
-        if (!scheduleDetailId) {
-            return res.status(400).json({
-            success: false,
-            message: "Schedule ID harus diisi",
+            const schedule = await ScheduleService.getScheduleDetailById(scheduleDetailId);
+            if (!schedule) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Jadwal tidak ditemukan",
+                });
+            }
+
+            const assessor = await AssessorService.getAssessorById(schedule.assessor_id);
+            if (!assessor) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Assessor tidak ditemukan",
+                });
+            }
+
+            const data = await AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+            const pdfBytes = await AssessmentService.generateRecaptPDF(data.assessment);
+
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename=berita-acara-${scheduleDetailId}.pdf`
+            );
+            res.send(Buffer.from(pdfBytes));
+        } catch (error: any) {
+            res.status(500).json({
+                success: false,
+                message: "Terjadi kesalahan dalam menghasilkan PDF",
+                error: error.message
             });
         }
-
-        const assessor = await AssessorService.getAssessorByUserId(user.id);
-        if (!assessor) {
-            return res.status(404).json({
-            success: false,
-            message: "Assessor tidak ditemukan",
-            });
-        }
-
-        const data = await AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
-        const pdfBytes = await AssessmentService.generateRecaptPDF(data.assessment);
-
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename=rekap-${scheduleDetailId}.pdf`
-        );
-        res.send(Buffer.from(pdfBytes));
     });
 
     static generateRecaptPdfForAdmin = asyncHandler(async (req: Request, res: Response) => {
         const scheduleDetailId = Number(req.params.scheduleDetailId);
         if (!scheduleDetailId) {
             return res.status(400).json({
-            success: false,
-            message: "Schedule ID dan Assessor ID harus diisi",
+                success: false,
+                message: "Schedule ID dan Assessor ID harus diisi",
             });
         }
 
         const assessorId = Number(req.params.assessorId);
         if (!assessorId) {
             return res.status(400).json({
-            success: false,
-            message: "Assessor ID harus diisi",
+                success: false,
+                message: "Assessor ID harus diisi",
             });
         }
 
         const assessor = await AssessorService.getAssessorById(assessorId);
         if (!assessor) {
             return res.status(404).json({
-            success: false,
-            message: "Assessor tidak ditemukan",
+                success: false,
+                message: "Assessor tidak ditemukan",
             });
         }
 
@@ -280,15 +295,15 @@ export class AssessmentController {
 
         const safe = (str: string) =>
             str.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_");
-        
-            const code = safe(data.assessment.code);
-            const assessorName = safe(assessor.name);
-            const startDate = new Date(data.assessment.schedule.start_date)
-                .toISOString()
-                .split("T")[0];
-            const endDate = new Date(data.assessment.schedule.end_date)
-                .toISOString()
-                .split("T")[0];
+
+        const code = safe(data.assessment.code);
+        const assessorName = safe(assessor.name);
+        const startDate = new Date(data.assessment.schedule.start_date)
+            .toISOString()
+            .split("T")[0];
+        const endDate = new Date(data.assessment.schedule.end_date)
+            .toISOString()
+            .split("T")[0];
 
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(

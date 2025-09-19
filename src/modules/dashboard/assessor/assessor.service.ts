@@ -24,34 +24,34 @@ export class DashboardAssessorService {
             const ak04 = await db.query.resultAk04.findFirst({ where: eq(resultAk04.id, result.id) });
             const ak05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05.result_id, result.id) });
 
-            const getHeaderStatus = (type: string): 'Belum Selesai' | 'Menunggu Asesi' | 'Selesai' => {
+            const getHeaderStatus = (type: string): 'Belum Tuntas' | 'Menunggu Asesi' | 'Tuntas' => {
                 switch (type) {
                     case "apl-01":
-                        return 'Selesai';
+                        return 'Tuntas';
                     case "data-sertifikasi":
-                        return doc?.approved ? 'Selesai' : 'Belum Selesai';
+                        return doc?.approved ? 'Tuntas' : 'Belum Tuntas';
                     case "apl-02":
-                        return (apl02?.approved_assessor && apl02?.approved_assessee) ? 'Selesai' : (apl02?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                        return (apl02?.approved_assessor && apl02?.approved_assessee) ? 'Tuntas' : (apl02?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                     case "ia-01":
-                        return (ia01?.approved_assessee && ia01?.approved_assessor) ? 'Selesai' : (ia01?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                        return (ia01?.approved_assessee && ia01?.approved_assessor) ? 'Tuntas' : (ia01?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                     case "ia-02":
-                        return (ia02?.approved_assessee && ia02?.approved_assessor) ? 'Selesai' : (ia02?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                        return (ia02?.approved_assessee && ia02?.approved_assessor) ? 'Tuntas' : (ia02?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                     case "ia-03":
-                        return (ia03?.approved_assessee && ia03?.approved_assessor) ? 'Selesai' : (ia03?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                        return (ia03?.approved_assessee && ia03?.approved_assessor) ? 'Tuntas' : (ia03?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                     case "ia-05":
-                        return (ia05?.approved_assessee && ia05?.approved_assessor) ? 'Selesai' : (ia05?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                        return (ia05?.approved_assessee && ia05?.approved_assessor) ? 'Tuntas' : (ia05?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                     case "ia-07":
-                        return (ia07?.approved_assessee && ia07?.approved_assessor) ? 'Selesai' : (ia07?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                        return (ia07?.approved_assessee && ia07?.approved_assessor) ? 'Tuntas' : (ia07?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                     case "ak-01":
-                        return (ak01?.approved_assessee && ak01?.approved_assessor) ? 'Selesai' : (ak01?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                        return (ak01?.approved_assessee && ak01?.approved_assessor) ? 'Tuntas' : (ak01?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                     case "ak-02":
-                        return (ak02?.approved_assessee && ak02?.approved_assessor) ? 'Selesai' : (ak02?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                        return (ak02?.approved_assessee && ak02?.approved_assessor) ? 'Tuntas' : (ak02?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                     case "ak-03":
-                        return ak03?.comment ? 'Selesai' : 'Menunggu Asesi';
+                        return ak03?.comment ? 'Tuntas' : 'Belum Tuntas';
                     // case "ak-04":
                     //     return false;
                     case "ak-05":
-                        return (ak05?.approved_assessor) ? 'Selesai' : 'Belum Selesai';
+                        return (ak05?.approved_assessor) ? 'Tuntas' : 'Belum Tuntas';
                     default:
                         throw new ValidationError('Result Type tidak valid');
                 }

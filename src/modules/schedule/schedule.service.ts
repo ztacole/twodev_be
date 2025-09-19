@@ -210,6 +210,12 @@ export class ScheduleService {
             };
         }));
     }
+
+    static async getScheduleDetailById(id: number) {
+        const detail = await db.query.scheduleDetail.findFirst({ where: eq(scheduleDetailTable.id, id) });
+        if (!detail) throw new NotFoundError('Schedule Detail');
+        return detail;
+    }
 }
 
 interface Assessee {

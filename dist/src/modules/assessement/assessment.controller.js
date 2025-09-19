@@ -14,6 +14,7 @@ exports.AssessmentController = void 0;
 const assessment_service_1 = require("./assessment.service");
 const async_handler_1 = require("../../common/async.handler");
 const assessor_service_1 = require("../assessor/assessor.service");
+const schedule_service_1 = require("../schedule/schedule.service");
 class AssessmentController {
 }
 exports.AssessmentController = AssessmentController;
@@ -211,26 +212,41 @@ AssessmentController.getAssesseesByAssessmentAndAssessor = (0, async_handler_1.a
     });
 }));
 AssessmentController.generateRecaptPdf = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = req.user;
-    const scheduleDetailId = Number(req.params.scheduleDetailId);
-    if (!scheduleDetailId) {
-        return res.status(400).json({
+    try {
+        const scheduleDetailId = Number(req.params.scheduleDetailId);
+        if (!scheduleDetailId) {
+            return res.status(400).json({
+                success: false,
+                message: "Schedule ID harus diisi",
+            });
+        }
+        const schedule = yield schedule_service_1.ScheduleService.getScheduleDetailById(scheduleDetailId);
+        if (!schedule) {
+            return res.status(404).json({
+                success: false,
+                message: "Jadwal tidak ditemukan",
+            });
+        }
+        const assessor = yield assessor_service_1.AssessorService.getAssessorById(schedule.assessor_id);
+        if (!assessor) {
+            return res.status(404).json({
+                success: false,
+                message: "Assessor tidak ditemukan",
+            });
+        }
+        const data = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+        const pdfBytes = yield assessment_service_1.AssessmentService.generateRecaptPDF(data.assessment);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename=berita-acara-${scheduleDetailId}.pdf`);
+        res.send(Buffer.from(pdfBytes));
+    }
+    catch (error) {
+        res.status(500).json({
             success: false,
-            message: "Schedule ID harus diisi",
+            message: "Terjadi kesalahan dalam menghasilkan PDF",
+            error: error.message
         });
     }
-    const assessor = yield assessor_service_1.AssessorService.getAssessorByUserId(user.id);
-    if (!assessor) {
-        return res.status(404).json({
-            success: false,
-            message: "Assessor tidak ditemukan",
-        });
-    }
-    const data = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
-    const pdfBytes = yield assessment_service_1.AssessmentService.generateRecaptPDF(data.assessment);
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=rekap-${scheduleDetailId}.pdf`);
-    res.send(Buffer.from(pdfBytes));
 }));
 AssessmentController.generateRecaptPdfForAdmin = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const scheduleDetailId = Number(req.params.scheduleDetailId);

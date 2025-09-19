@@ -36,31 +36,31 @@ class DashboardAssessorService {
                 const getHeaderStatus = (type) => {
                     switch (type) {
                         case "apl-01":
-                            return 'Selesai';
+                            return 'Tuntas';
                         case "data-sertifikasi":
-                            return (doc === null || doc === void 0 ? void 0 : doc.approved) ? 'Selesai' : 'Belum Selesai';
+                            return (doc === null || doc === void 0 ? void 0 : doc.approved) ? 'Tuntas' : 'Belum Tuntas';
                         case "apl-02":
-                            return ((apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessor) && (apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessee)) ? 'Selesai' : (apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                            return ((apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessor) && (apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessee)) ? 'Tuntas' : (apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ia-01":
-                            return ((ia01 === null || ia01 === void 0 ? void 0 : ia01.approved_assessee) && (ia01 === null || ia01 === void 0 ? void 0 : ia01.approved_assessor)) ? 'Selesai' : (ia01 === null || ia01 === void 0 ? void 0 : ia01.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                            return ((ia01 === null || ia01 === void 0 ? void 0 : ia01.approved_assessee) && (ia01 === null || ia01 === void 0 ? void 0 : ia01.approved_assessor)) ? 'Tuntas' : (ia01 === null || ia01 === void 0 ? void 0 : ia01.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ia-02":
-                            return ((ia02 === null || ia02 === void 0 ? void 0 : ia02.approved_assessee) && (ia02 === null || ia02 === void 0 ? void 0 : ia02.approved_assessor)) ? 'Selesai' : (ia02 === null || ia02 === void 0 ? void 0 : ia02.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                            return ((ia02 === null || ia02 === void 0 ? void 0 : ia02.approved_assessee) && (ia02 === null || ia02 === void 0 ? void 0 : ia02.approved_assessor)) ? 'Tuntas' : (ia02 === null || ia02 === void 0 ? void 0 : ia02.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ia-03":
-                            return ((ia03 === null || ia03 === void 0 ? void 0 : ia03.approved_assessee) && (ia03 === null || ia03 === void 0 ? void 0 : ia03.approved_assessor)) ? 'Selesai' : (ia03 === null || ia03 === void 0 ? void 0 : ia03.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                            return ((ia03 === null || ia03 === void 0 ? void 0 : ia03.approved_assessee) && (ia03 === null || ia03 === void 0 ? void 0 : ia03.approved_assessor)) ? 'Tuntas' : (ia03 === null || ia03 === void 0 ? void 0 : ia03.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ia-05":
-                            return ((ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessee) && (ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessor)) ? 'Selesai' : (ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                            return ((ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessee) && (ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessor)) ? 'Tuntas' : (ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ia-07":
-                            return ((ia07 === null || ia07 === void 0 ? void 0 : ia07.approved_assessee) && (ia07 === null || ia07 === void 0 ? void 0 : ia07.approved_assessor)) ? 'Selesai' : (ia07 === null || ia07 === void 0 ? void 0 : ia07.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                            return ((ia07 === null || ia07 === void 0 ? void 0 : ia07.approved_assessee) && (ia07 === null || ia07 === void 0 ? void 0 : ia07.approved_assessor)) ? 'Tuntas' : (ia07 === null || ia07 === void 0 ? void 0 : ia07.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ak-01":
-                            return ((ak01 === null || ak01 === void 0 ? void 0 : ak01.approved_assessee) && (ak01 === null || ak01 === void 0 ? void 0 : ak01.approved_assessor)) ? 'Selesai' : (ak01 === null || ak01 === void 0 ? void 0 : ak01.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                            return ((ak01 === null || ak01 === void 0 ? void 0 : ak01.approved_assessee) && (ak01 === null || ak01 === void 0 ? void 0 : ak01.approved_assessor)) ? 'Tuntas' : (ak01 === null || ak01 === void 0 ? void 0 : ak01.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ak-02":
-                            return ((ak02 === null || ak02 === void 0 ? void 0 : ak02.approved_assessee) && (ak02 === null || ak02 === void 0 ? void 0 : ak02.approved_assessor)) ? 'Selesai' : (ak02 === null || ak02 === void 0 ? void 0 : ak02.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
+                            return ((ak02 === null || ak02 === void 0 ? void 0 : ak02.approved_assessee) && (ak02 === null || ak02 === void 0 ? void 0 : ak02.approved_assessor)) ? 'Tuntas' : (ak02 === null || ak02 === void 0 ? void 0 : ak02.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ak-03":
-                            return (ak03 === null || ak03 === void 0 ? void 0 : ak03.comment) ? 'Selesai' : 'Menunggu Asesi';
+                            return (ak03 === null || ak03 === void 0 ? void 0 : ak03.comment) ? 'Tuntas' : 'Belum Tuntas';
                         // case "ak-04":
                         //     return false;
                         case "ak-05":
-                            return (ak05 === null || ak05 === void 0 ? void 0 : ak05.approved_assessor) ? 'Selesai' : 'Belum Selesai';
+                            return (ak05 === null || ak05 === void 0 ? void 0 : ak05.approved_assessor) ? 'Tuntas' : 'Belum Tuntas';
                         default:
                             throw new error_1.ValidationError('Result Type tidak valid');
                     }

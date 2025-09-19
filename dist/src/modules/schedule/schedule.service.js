@@ -196,6 +196,14 @@ class ScheduleService {
             })));
         });
     }
+    static getScheduleDetailById(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const detail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.id, id) });
+            if (!detail)
+                throw new error_1.NotFoundError('Schedule Detail');
+            return detail;
+        });
+    }
 }
 exports.ScheduleService = ScheduleService;
 function buildScheduleResponse(schedule_1) {

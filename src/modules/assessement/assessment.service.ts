@@ -62,6 +62,7 @@ import { AssessorResponse } from "../assessor/assessor.type";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { embedQrCode } from "../../helper/pdfAssets.helper";
 import { drawParagraph, drawMixedParagraph } from "../../helper/pdfDraw.helper";
+import { getAssessorUrl } from "../../helper/hashids";
 
 export class AssessmentService {
     static async createAssessment(data: AssessmentRequest) {
@@ -1015,7 +1016,7 @@ export class AssessmentService {
             })
         );
 
-        const tableTop = y;
+        const tableTop = y + 7;
         const rowHeight = 25;
         const colWidths: any = [30, 260, 110, 110];
         const headerColor = rgb(1, 0.95, 0.7);
@@ -1026,29 +1027,29 @@ export class AssessmentService {
         // Column No
         page.drawRectangle({
             x, y: tableTop - rowHeight * 2,
-            width: colWidths[0], height: rowHeight * 3,
+            width: colWidths[0], height: rowHeight * 3 - 11,
             color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
         });
-        page.drawText("No", { x: x + 8, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
+        page.drawText("No", { x: x + 8, y: tableTop - rowHeight + 2, size: fontSizeSmall, font: fontBold });
         x += colWidths[0];
 
         // Column Name
         page.drawRectangle({
             x, y: tableTop - rowHeight * 2,
-            width: colWidths[1], height: rowHeight * 3,
+            width: colWidths[1], height: rowHeight * 3 - 11,
             color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
         });
-        page.drawText("Nama Peserta", { x: x + colWidths[1] / 2 - 47, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
+        page.drawText("Nama Peserta", { x: x + colWidths[1] / 2 - 40, y: tableTop - rowHeight + 2, size: fontSizeSmall, font: fontBold });
         x += colWidths[1];
 
         // Kolom Rekomendasi (gabungan K & BK)
         page.drawRectangle({
-            x, y: tableTop - rowHeight * 2,
+            x, y: tableTop - rowHeight * 2 + 11,
             width: colWidths[2] + colWidths[3],
-            height: rowHeight * 3,
+            height: rowHeight * 3 - 22,
             color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
         });
-        page.drawText("REKOMENDASI", { x: x + (colWidths[2] + colWidths[3]) / 2 - 45, y: tableTop + 7, size: fontSizeSmall, font: fontBold });
+        page.drawText("REKOMENDASI", { x: x + (colWidths[2] + colWidths[3]) / 2 - 45, y: tableTop - 5, size: fontSizeSmall, font: fontBold });
         page.drawText("ASISTEN PEMROGRAMAN JUNIOR", { x: x + 15, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
         // Subkolom K
         page.drawRectangle({
@@ -1059,7 +1060,7 @@ export class AssessmentService {
             borderColor: rgb(0, 0, 0),
             borderWidth: 1
         });
-        page.drawText("K", { x: x + colWidths[2] / 2 - 5, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
+        page.drawText("K", { x: x + colWidths[2] / 2 - 2, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
         // Subkolom BK
         page.drawRectangle({
             x: x + colWidths[2],
@@ -1070,30 +1071,32 @@ export class AssessmentService {
             borderColor: rgb(0, 0, 0),
             borderWidth: 1
         });
-        page.drawText("BK", { x: x + colWidths[2] + colWidths[3] / 2 - 5, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
+        page.drawText("BK", { x: x + colWidths[2] + colWidths[3] / 2 - 6, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
 
         // === TABLE CONTENT ===
         let currentY = tableTop - rowHeight * 3;
 
-        tableData.forEach(row => {
-            let x = 50;
-            page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-            page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
-            x += colWidths[0];
+        for (let i = 0; i < 4; i++) {
+            tableData.forEach(row => {
+                let x = 50;
+                page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+                page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
+                x += colWidths[0];
 
-            page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-            page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
-            x += colWidths[1];
+                page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+                page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
+                x += colWidths[1];
 
-            page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-            page.drawText(row.k, { x: x + colWidths[2] / 2 - 3, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-            x += colWidths[2];
+                page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+                page.drawText(row.k, { x: x + colWidths[2] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+                x += colWidths[2];
 
-            page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-            page.drawText(row.bk, { x: x + colWidths[3] / 2 - 3, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+                page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+                page.drawText(row.bk, { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
 
-            currentY -= rowHeight;
-        });
+                currentY -= rowHeight;
+            });
+        }
         y = currentY;
 
         // === NOTE ===
@@ -1118,17 +1121,20 @@ export class AssessmentService {
         // === SIGNATURE ===
         const signatureX = 50;
         let signatureY = y - 50;
-        const signatureWidth = 75;
+        const signatureWidth = 60;
 
+        const signatureDate = `Jakarta, ${startDate + " " + startMonth + " " + startYear}`;
         const assessor_name = assessment.schedule.assessor.full_name;
-        drawParagraph(page, `${startDay + ", " + startDate + " " + startMonth + " " + startYear}`, signatureX, signatureY, font, fontSizeSmall, "right");
-        drawParagraph(page, `${assessor_name}`, signatureX + 20, signatureY - 15, font, fontSizeSmall, "right");
+        drawParagraph(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
+        drawParagraph(page, `${assessor_name}`, signatureX, signatureY - 15, font, fontSizeSmall, "right");
         signatureY -= 20;
 
-        const qrData = "https://www.google.com";
+        const signatureNameLength = font.widthOfTextAtSize(assessor_name, fontSizeSmall);
+
+        const qrData = getAssessorUrl(assessment.schedule.assessor.id);
         const qrCode = await embedQrCode(pdfDoc, qrData);
         page.drawImage(qrCode,
-            { x: page.getWidth() - signatureWidth * 2, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
+            { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
         );
 
         const pdfBytes = await pdfDoc.save();
