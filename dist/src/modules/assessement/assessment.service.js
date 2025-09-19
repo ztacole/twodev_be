@@ -750,16 +750,70 @@ class AssessmentService {
     static getAssesseesByAssessmentAndAssessor(assessment_id, assessor_id) {
         return __awaiter(this, void 0, void 0, function* () {
             const results = yield drizzle_1.db.select({
-                result_id: schema_1.result.id,
+                id: schema_1.result.id,
                 assessee_id: schema_1.assessee.id,
+                is_competent: schema_1.result.is_competent,
                 full_name: schema_1.user.full_name,
-                created_at: schema_1.result.created_at,
+                created_at: schema_1.result.created_at
             }).from(schema_1.result)
                 .innerJoin(schema_1.assessee, (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, schema_1.assessee.id))
                 .innerJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
                 .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id)))
                 .orderBy((0, drizzle_orm_1.asc)(schema_1.user.full_name), (0, drizzle_orm_1.asc)(schema_1.result.created_at));
-            return results;
+            let finalResults = [];
+            for (const res of results) {
+                const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, res.assessee_id) });
+                if (!assessee)
+                    continue;
+                const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.user_id) });
+                // Ambil semua header terkait
+                const [resultAPL02, resultIA01, resultIA02, resultIA03, resultIA05, resultIA07, resultAK01, resultAK02, resultAK03, resultAK05] = yield Promise.all([
+                    drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, res.id) }),
+                    drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, res.id) }),
+                    drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, res.id) }),
+                    drizzle_1.db.query.resultIa03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa03Header.result_id, res.id) }),
+                    drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, res.id) }),
+                    drizzle_1.db.query.resultIa07Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa07Header.result_id, res.id) }),
+                    drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, res.id) }),
+                    drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, res.id) }),
+                    drizzle_1.db.query.resultAk03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk03Header.result_id, res.id) }),
+                    drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, res.id) }),
+                ]);
+                // Penentuan status
+                let status = "On Going";
+                if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee)
+                    status = "Not Competent";
+                if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee)
+                    status = "Not Competent";
+                if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                    (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                    (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                    (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                    (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true) &&
+                    (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                    (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                    (resultAK05 && resultAK05.approved_assessor) &&
+                    !resultAK05.is_competent && !res.is_competent)
+                    status = "Not Competent";
+                if ((resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                    (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                    (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                    (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                    (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true) &&
+                    (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                    (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                    (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
+                    res.is_competent)
+                    status = "Competent";
+                finalResults.push({
+                    id: res.id,
+                    assessee_id: res.assessee_id,
+                    full_name: res.full_name,
+                    status: status,
+                    created_at: res.created_at,
+                });
+            }
+            return finalResults;
         });
     }
     static generateRecaptPDF(assessment) {

@@ -56,7 +56,7 @@ import {
     resultIa01,
     resultIa05,
 } from "../../../drizzle/schema";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, is, sql } from "drizzle-orm";
 import { AdminTab, AssesseeTab, AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
 import { AssessorResponse } from "../assessor/assessor.type";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -858,10 +858,11 @@ export class AssessmentService {
 
     static async getAssesseesByAssessmentAndAssessor(assessment_id: number, assessor_id: number) {
         const results = await db.select({
-            result_id: resultTable.id,
+            id: resultTable.id,
             assessee_id: assesseeTable.id,
+            is_competent: resultTable.is_competent,
             full_name: userTable.full_name,
-            created_at: resultTable.created_at,
+            created_at: resultTable.created_at
         }).from(resultTable)
             .innerJoin(assesseeTable, eq(resultTable.assessee_id, assesseeTable.id))
             .innerJoin(userTable, eq(assesseeTable.user_id, userTable.id))
@@ -871,7 +872,65 @@ export class AssessmentService {
             ))
             .orderBy(asc(userTable.full_name), asc(resultTable.created_at));
 
-        return results;
+        let finalResults: any[] = [];
+
+        for (const res of results) {
+            const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, res.assessee_id) });
+            if (!assessee) continue;
+
+            const user = await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) });
+
+            // Ambil semua header terkait
+            const [resultAPL02, resultIA01, resultIA02, resultIA03, resultIA05, resultIA07, resultAK01, resultAK02, resultAK03, resultAK05] = await Promise.all([
+                db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, res.id) }),
+                db.query.resultIa01Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, res.id) }),
+                db.query.resultIa02Header.findFirst({ where: eq(resultIa02HeaderTable.result_id, res.id) }),
+                db.query.resultIa03Header.findFirst({ where: eq(resultIa03HeaderTable.result_id, res.id) }),
+                db.query.resultIa05Header.findFirst({ where: eq(resultIa05HeaderTable.result_id, res.id) }),
+                db.query.resultIa07Header.findFirst({ where: eq(resultIa07HeaderTable.result_id, res.id) }),
+                db.query.resultAk01Header.findFirst({ where: eq(resultAk01HeaderTable.result_id, res.id) }),
+                db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, res.id) }),
+                db.query.resultAk03Header.findFirst({ where: eq(resultAk03HeaderTable.result_id, res.id) }),
+                db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, res.id) }),
+            ]);
+
+            // Penentuan status
+            let status: string = "On Going";
+            if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) status = "Not Competent";
+            if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) status = "Not Competent";
+            if (
+                (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true) &&
+                (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                (resultAK05 && resultAK05.approved_assessor) &&
+                !resultAK05.is_competent && !res.is_competent
+            ) status = "Not Competent";
+            if (
+                (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
+                (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
+                (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
+                (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
+                (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true) &&
+                (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
+                (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
+                (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
+                res.is_competent
+            ) status = "Competent";
+
+            finalResults.push({
+                id: res.id,
+                assessee_id: res.assessee_id,
+                full_name: res.full_name,
+                status: status,
+                created_at: res.created_at,
+            });
+        }
+
+        return finalResults;
     }
 
     static async generateRecaptPDF(assessment: any) {
