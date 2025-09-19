@@ -36,6 +36,7 @@ export const getApproved = async (req: Request, res: Response) => {
 export const getDetail = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.resultId);
+    if (!Number.isFinite(id)) return res.status(400).json({ success: false, message: 'resultId tidak valid' });
     const data = await verificationService.getVerificationDetail(id);
     res.status(200).json({ success: true, data });
   } catch (error: any) {
@@ -46,6 +47,7 @@ export const getDetail = async (req: Request, res: Response) => {
 export const approve = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.resultId);
+    if (!Number.isFinite(id)) return res.status(400).json({ success: false, message: 'resultId tidak valid' });
     const data = await verificationService.approveVerification(id);
     res.status(200).json({ success: true, data });
   } catch (error: any) {
@@ -55,7 +57,10 @@ export const approve = async (req: Request, res: Response) => {
 
 export const approveByScheduleDetail = async (req: Request, res: Response) => {
   try {
-    const scheduleDetailId = Number(req.params.scheduleDetailId || req.body.schedule_detail_id);
+    const raw = req.params.scheduleDetailId ?? (req.body as any)?.schedule_detail_id;
+    const parsed = raw !== undefined && raw !== null && raw !== '' ? Number(raw) : NaN;
+    if (!Number.isFinite(parsed)) return res.status(400).json({ success: false, message: 'scheduleDetailId tidak valid' });
+    const scheduleDetailId = parsed;
     const data = await verificationService.approveVerificationByScheduleDetail(scheduleDetailId);
     res.status(200).json({ success: true, data });
   } catch (error: any) {

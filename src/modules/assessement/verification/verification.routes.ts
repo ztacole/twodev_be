@@ -9,9 +9,11 @@ router.get('/verification/pending', authenticateToken, verificationController.ge
 router.get('/verification/pending/:scheduleDetailId', authenticateToken, verificationController.getPending);
 router.get('/verification/approved', authenticateToken, verificationController.getApproved);
 router.get('/verification/approved/:scheduleDetailId', authenticateToken, verificationController.getApproved);
-router.get('/verification/:resultId', authenticateToken, verificationController.getDetail);
-router.get('/verification/:scheduleDetailId', authenticateToken, verificationController.getByScheduleDetail);
-router.post('/verification/:resultId/approve', authenticateToken, verificationController.approve);
-router.post('/verification/:scheduleDetailId/approve', authenticateToken, verificationController.approveByScheduleDetail);
+
+router.get('/verification/schedule-detail/:scheduleDetailId', authenticateToken, verificationController.getByScheduleDetail);
+router.post('/verification/schedule-detail/:scheduleDetailId/approve', authenticateToken, verificationController.approveByScheduleDetail);
+
+router.get('/verification/result/:resultId', authenticateToken, verificationController.getDetail);
+router.post('/verification/result/:resultId/approve', authenticateToken, verificationController.approve);
 
 export default router;
