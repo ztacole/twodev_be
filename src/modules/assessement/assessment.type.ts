@@ -217,15 +217,15 @@ interface IA07QuestionResponse {
 
 export interface AssessorTab {
     name: string;
-    status: "Not Started" | "Waiting" | "Completed";
+    status: "Belum Tuntas" | "Menunggu Asesi" | "Tuntas";
 }
 
 export interface AssesseeTab {
     name: string;
-    status: "Belum Selesai" | "Menunggu" | "Setujui" | "Selesai";
+    status: "Belum Tuntas" | "Menunggu" | "Butuh Persetujuan" | "Tuntas";
 }
 
 export interface AdminTab {
     name: string;
-    status: "Belum Selesai" | "Selesai";
+    status: "Belum Tuntas" | "Tuntas";
 }

@@ -368,12 +368,12 @@ class AssessmentService {
             if (!ia01Header)
                 throw new error_1.NotFoundError('Result IA01 Header');
             const tabs = [
-                { name: 'APL-01', status: "Selesai" },
-                { name: 'Data Sertifikasi', status: doc.approved ? "Selesai" : "Menunggu" },
-                { name: 'APL-02', status: (apl02Header.approved_assessor && apl02Header.approved_assessee && finishedApl02) ? "Selesai" : (apl02Header.approved_assessor && finishedApl02) ? "Setujui" : finishedApl02 ? "Menunggu" : "Belum Selesai" },
-                { name: 'AK-01', status: (ak01Header.approved_assessor && ak01Header.approved_assessee) ? "Selesai" : (ak01Header.approved_assessor) ? "Setujui" : "Menunggu" },
-                { name: 'IA-02', status: (ia02Header.approved_assessor && ia02Header.approved_assessee) ? "Selesai" : (ia02Header.approved_assessor) ? "Setujui" : "Menunggu" },
-                { name: 'IA-01', status: (ia01Header.approved_assessor && ia01Header.approved_assessee) ? "Selesai" : (ia01Header.approved_assessor) ? "Setujui" : "Menunggu" }
+                { name: 'APL-01', status: "Tuntas" },
+                { name: 'Data Sertifikasi', status: doc.approved ? "Tuntas" : "Menunggu" },
+                { name: 'APL-02', status: (apl02Header.approved_assessor && apl02Header.approved_assessee && finishedApl02) ? "Tuntas" : (apl02Header.approved_assessor && finishedApl02) ? "Butuh Persetujuan" : finishedApl02 ? "Menunggu" : "Belum Tuntas" },
+                { name: 'AK-01', status: (ak01Header.approved_assessor && ak01Header.approved_assessee) ? "Tuntas" : (ak01Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" },
+                { name: 'IA-02', status: (ia02Header.approved_assessor && ia02Header.approved_assessee) ? "Tuntas" : (ia02Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" },
+                { name: 'IA-01', status: (ia01Header.approved_assessor && ia01Header.approved_assessee) ? "Tuntas" : (ia01Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" }
             ];
             const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, assessment_id) });
             const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, assessment_id) });
@@ -382,7 +382,7 @@ class AssessmentService {
                 const ia03Header = yield drizzle_1.db.query.resultIa03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa03Header.result_id, result[0].id) });
                 if (!ia03Header)
                     throw new error_1.NotFoundError('Result IA03 Header');
-                const status = (ia03Header.approved_assessor && ia03Header.approved_assessee) ? "Selesai" : (ia03Header.approved_assessor) ? "Setujui" : "Menunggu";
+                const status = (ia03Header.approved_assessor && ia03Header.approved_assessee) ? "Tuntas" : (ia03Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu";
                 tabs.push({ name: 'IA-03', status: status });
             }
             if (isAnyIa05) {
@@ -390,10 +390,9 @@ class AssessmentService {
                 if (!ia05Header)
                     throw new error_1.NotFoundError('Result IA05 Header');
                 const ia05Result = yield drizzle_1.db.query.resultIa05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05.header_id, ia05Header.id) });
-                const status = (ia05Header.approved_assessor && ia05Header.approved_assessee) ? "Selesai" : (ia05Header.approved_assessor) ? "Setujui" : (ia05Result) ? "Menunggu" : "Belum Selesai";
+                const status = (ia05Header.approved_assessor && ia05Header.approved_assessee) ? "Tuntas" : (ia05Header.approved_assessor) ? "Butuh Persetujuan" : (ia05Result) ? "Menunggu" : "Belum Tuntas";
                 tabs.push({ name: 'IA-05', status: status });
             }
-            ;
             // if (isAnyIa07) tabs.push({ name: 'IA-07', status: 'Belum Selesai' });
             const ak02Header = yield drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, result[0].id) });
             if (!ak02Header)
@@ -404,7 +403,7 @@ class AssessmentService {
             const ak05Header = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result[0].id) });
             if (!ak05Header)
                 throw new error_1.NotFoundError('Result AK05');
-            tabs.push({ name: 'AK-02', status: (ak02Header.approved_assessor && ak02Header.approved_assessee) ? "Selesai" : (ak02Header.approved_assessor) ? "Setujui" : "Menunggu" }, { name: 'AK-03', status: (ak03Header.comment) ? "Selesai" : "Belum Selesai" }, { name: 'AK-05', status: (ak05Header.approved_assessor) ? "Selesai" : "Menunggu" });
+            tabs.push({ name: 'AK-02', status: (ak02Header.approved_assessor && ak02Header.approved_assessee) ? "Tuntas" : (ak02Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" }, { name: 'AK-03', status: (ak03Header.comment) ? "Tuntas" : "Belum Tuntas" }, { name: 'AK-05', status: (ak05Header.approved_assessor) ? "Tuntas" : "Menunggu" });
             const enableOtherRoute = (doc.approved && (apl02Header.approved_assessor && apl02Header.is_continue));
             return {
                 result_id: result[0].id,
@@ -425,21 +424,21 @@ class AssessmentService {
             if (!assessment)
                 throw new error_1.NotFoundError('Assessment');
             const tabs = [
-                { name: 'APL-02', status: "Not Started" },
-                { name: 'AK-01', status: "Not Started" },
-                { name: 'IA-02', status: "Not Started" },
-                { name: 'IA-01', status: "Not Started" }
+                { name: 'APL-02', status: "Belum Tuntas" },
+                { name: 'AK-01', status: "Belum Tuntas" },
+                { name: 'IA-02', status: "Belum Tuntas" },
+                { name: 'IA-01', status: "Belum Tuntas" }
             ];
             const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, assessment_id) });
             const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, assessment_id) });
             const isAnyIa07 = yield drizzle_1.db.query.ia07Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, assessment_id) });
             if (isAnyIa03)
-                tabs.push({ name: 'IA-03', status: "Not Started" });
+                tabs.push({ name: 'IA-03', status: "Belum Tuntas" });
             if (isAnyIa05)
-                tabs.push({ name: 'IA-05', status: "Not Started" });
+                tabs.push({ name: 'IA-05', status: "Belum Tuntas" });
             if (isAnyIa07)
-                tabs.push({ name: 'IA-07', status: "Not Started" });
-            tabs.push({ name: 'AK-02', status: "Not Started" }, { name: 'AK-03', status: "Not Started" }, { name: 'AK-05', status: "Not Started" });
+                tabs.push({ name: 'IA-07', status: "Belum Tuntas" });
+            tabs.push({ name: 'AK-02', status: "Belum Tuntas" }, { name: 'AK-03', status: "Belum Tuntas" }, { name: 'AK-05', status: "Belum Tuntas" });
             const results = yield drizzle_1.db.select().from(schema_1.result)
                 .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id)));
             if (results.length === 0) {
@@ -483,15 +482,15 @@ class AssessmentService {
                     }
                 }
             }
-            // Update status tab
+            // Update status tab (AssessorTab: 'Belum Tuntas' | 'Menunggu Asesi' | 'Tuntas')
             for (const config of headerConfigs) {
                 const tab = tabs.find((tab) => tab.name === config.name);
                 if (tab) {
                     tab.status = (config.notYet > 0)
-                        ? 'Not Started'
+                        ? 'Belum Tuntas'
                         : (config.notYet === 0 && config.waiting > 0)
-                            ? 'Waiting'
-                            : 'Completed';
+                            ? 'Menunggu Asesi'
+                            : 'Tuntas';
                 }
             }
             return {
@@ -513,23 +512,23 @@ class AssessmentService {
             if (!doc)
                 throw new error_1.NotFoundError('Result Document');
             const tabs = [
-                { name: 'APL-01', status: 'Selesai' },
-                { name: 'Data Sertifikasi', status: doc.approved ? 'Selesai' : 'Belum Selesai' },
-                { name: 'APL-02', status: 'Belum Selesai' },
-                { name: 'AK-01', status: 'Belum Selesai' },
-                { name: 'IA-02', status: 'Belum Selesai' },
-                { name: 'IA-01', status: 'Belum Selesai' }
+                { name: 'APL-01', status: 'Tuntas' },
+                { name: 'Data Sertifikasi', status: doc.approved ? 'Tuntas' : 'Belum Tuntas' },
+                { name: 'APL-02', status: 'Belum Tuntas' },
+                { name: 'AK-01', status: 'Belum Tuntas' },
+                { name: 'IA-02', status: 'Belum Tuntas' },
+                { name: 'IA-01', status: 'Belum Tuntas' }
             ];
             const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, result.assessment_id) });
             const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, result.assessment_id) });
             const isAnyIa07 = yield drizzle_1.db.query.ia07Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, result.assessment_id) });
             if (isAnyIa03)
-                tabs.push({ name: 'IA-03', status: 'Belum Selesai' });
+                tabs.push({ name: 'IA-03', status: 'Belum Tuntas' });
             if (isAnyIa05)
-                tabs.push({ name: 'IA-05', status: 'Belum Selesai' });
+                tabs.push({ name: 'IA-05', status: 'Belum Tuntas' });
             if (isAnyIa07)
-                tabs.push({ name: 'IA-07', status: 'Belum Selesai' });
-            tabs.push({ name: 'AK-02', status: 'Belum Selesai' }, { name: 'AK-03', status: 'Belum Selesai' }, { name: 'AK-05', status: 'Belum Selesai' });
+                tabs.push({ name: 'IA-07', status: 'Belum Tuntas' });
+            tabs.push({ name: 'AK-02', status: 'Belum Tuntas' }, { name: 'AK-03', status: 'Belum Tuntas' }, { name: 'AK-05', status: 'Belum Tuntas' });
             const headerConfigs = [
                 { name: 'APL-02', findFirst: (args) => drizzle_1.db.query.resultApl02Header.findFirst(args), col: schema_1.resultApl02Header, completed: false },
                 { name: 'IA-01', findFirst: (args) => drizzle_1.db.query.resultIa01Header.findFirst(args), col: schema_1.resultIa01Header, completed: false },
@@ -559,11 +558,11 @@ class AssessmentService {
                     }
                 }
             }
-            // Update tab status: only 'Belum Selesai' or 'Selesai'
+            // Update tab status: only 'Belum Tuntas' or 'Tuntas' (AdminTab)
             for (const config of headerConfigs) {
                 const tab = tabs.find((tab) => tab.name === config.name);
                 if (tab) {
-                    tab.status = config.completed ? 'Selesai' : 'Belum Selesai';
+                    tab.status = config.completed ? 'Tuntas' : 'Belum Tuntas';
                 }
             }
             return {

@@ -461,12 +461,12 @@ export class AssessmentService {
         if (!ia01Header) throw new NotFoundError('Result IA01 Header');
 
         const tabs: AssesseeTab[] = [
-            { name: 'APL-01', status: "Selesai" },
-            { name: 'Data Sertifikasi', status: doc.approved ? "Selesai" : "Menunggu" },
-            { name: 'APL-02', status: (apl02Header.approved_assessor && apl02Header.approved_assessee && finishedApl02) ? "Selesai" : (apl02Header.approved_assessor && finishedApl02) ? "Setujui" : finishedApl02 ? "Menunggu" : "Belum Selesai" },
-            { name: 'AK-01', status: (ak01Header.approved_assessor && ak01Header.approved_assessee) ? "Selesai" : (ak01Header.approved_assessor) ? "Setujui" : "Menunggu" },
-            { name: 'IA-02', status: (ia02Header.approved_assessor && ia02Header.approved_assessee) ? "Selesai" : (ia02Header.approved_assessor) ? "Setujui" : "Menunggu" },
-            { name: 'IA-01', status: (ia01Header.approved_assessor && ia01Header.approved_assessee) ? "Selesai" : (ia01Header.approved_assessor) ? "Setujui" : "Menunggu" }
+            { name: 'APL-01', status: "Tuntas" },
+            { name: 'Data Sertifikasi', status: doc.approved ? "Tuntas" : "Menunggu" },
+            { name: 'APL-02', status: (apl02Header.approved_assessor && apl02Header.approved_assessee && finishedApl02) ? "Tuntas" : (apl02Header.approved_assessor && finishedApl02) ? "Butuh Persetujuan" : finishedApl02 ? "Menunggu" : "Belum Tuntas" },
+            { name: 'AK-01', status: (ak01Header.approved_assessor && ak01Header.approved_assessee) ? "Tuntas" : (ak01Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" },
+            { name: 'IA-02', status: (ia02Header.approved_assessor && ia02Header.approved_assessee) ? "Tuntas" : (ia02Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" },
+            { name: 'IA-01', status: (ia01Header.approved_assessor && ia01Header.approved_assessee) ? "Tuntas" : (ia01Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" }
         ];
 
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
@@ -476,16 +476,16 @@ export class AssessmentService {
         if (isAnyIa03) {
             const ia03Header = await db.query.resultIa03Header.findFirst({ where: eq(resultIa03HeaderTable.result_id, result[0].id) });
             if (!ia03Header) throw new NotFoundError('Result IA03 Header');
-            const status = (ia03Header.approved_assessor && ia03Header.approved_assessee) ? "Selesai" : (ia03Header.approved_assessor) ? "Setujui" : "Menunggu";
+            const status = (ia03Header.approved_assessor && ia03Header.approved_assessee) ? "Tuntas" : (ia03Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu";
             tabs.push({ name: 'IA-03', status: status });
         }
         if (isAnyIa05) {
             const ia05Header = await db.query.resultIa05Header.findFirst({ where: eq(resultIa05HeaderTable.result_id, result[0].id) });
             if (!ia05Header) throw new NotFoundError('Result IA05 Header');
             const ia05Result = await db.query.resultIa05.findFirst({ where: eq(resultIa05.header_id, ia05Header.id) });
-            const status = (ia05Header.approved_assessor && ia05Header.approved_assessee) ? "Selesai" : (ia05Header.approved_assessor) ? "Setujui" : (ia05Result) ? "Menunggu" : "Belum Selesai";
+            const status = (ia05Header.approved_assessor && ia05Header.approved_assessee) ? "Tuntas" : (ia05Header.approved_assessor) ? "Butuh Persetujuan" : (ia05Result) ? "Menunggu" : "Belum Tuntas";
             tabs.push({ name: 'IA-05', status: status });
-        };
+        }
         // if (isAnyIa07) tabs.push({ name: 'IA-07', status: 'Belum Selesai' });
 
         const ak02Header = await db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, result[0].id) });
@@ -498,9 +498,9 @@ export class AssessmentService {
         if (!ak05Header) throw new NotFoundError('Result AK05');
 
         tabs.push(
-            { name: 'AK-02', status: (ak02Header.approved_assessor && ak02Header.approved_assessee) ? "Selesai" : (ak02Header.approved_assessor) ? "Setujui" : "Menunggu" },
-            { name: 'AK-03', status: (ak03Header.comment) ? "Selesai" : "Belum Selesai" },
-            { name: 'AK-05', status: (ak05Header.approved_assessor) ? "Selesai" : "Menunggu" }
+            { name: 'AK-02', status: (ak02Header.approved_assessor && ak02Header.approved_assessee) ? "Tuntas" : (ak02Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" },
+            { name: 'AK-03', status: (ak03Header.comment) ? "Tuntas" : "Belum Tuntas" },
+            { name: 'AK-05', status: (ak05Header.approved_assessor) ? "Tuntas" : "Menunggu" }
         );
 
         const enableOtherRoute = (doc.approved && (apl02Header.approved_assessor && apl02Header.is_continue))
@@ -523,24 +523,24 @@ export class AssessmentService {
         if (!assessment) throw new NotFoundError('Assessment');
 
         const tabs: AssessorTab[] = [
-            { name: 'APL-02', status: "Not Started" },
-            { name: 'AK-01', status: "Not Started" },
-            { name: 'IA-02', status: "Not Started" },
-            { name: 'IA-01', status: "Not Started" }
-        ]
+            { name: 'APL-02', status: "Belum Tuntas" },
+            { name: 'AK-01', status: "Belum Tuntas" },
+            { name: 'IA-02', status: "Belum Tuntas" },
+            { name: 'IA-01', status: "Belum Tuntas" }
+        ];
 
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
         const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
         const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
 
-        if (isAnyIa03) tabs.push({ name: 'IA-03', status: "Not Started" });
-        if (isAnyIa05) tabs.push({ name: 'IA-05', status: "Not Started" });
-        if (isAnyIa07) tabs.push({ name: 'IA-07', status: "Not Started" });
+        if (isAnyIa03) tabs.push({ name: 'IA-03', status: "Belum Tuntas" });
+        if (isAnyIa05) tabs.push({ name: 'IA-05', status: "Belum Tuntas" });
+        if (isAnyIa07) tabs.push({ name: 'IA-07', status: "Belum Tuntas" });
 
         tabs.push(
-            { name: 'AK-02', status: "Not Started" },
-            { name: 'AK-03', status: "Not Started" },
-            { name: 'AK-05', status: "Not Started" }
+            { name: 'AK-02', status: "Belum Tuntas" },
+            { name: 'AK-03', status: "Belum Tuntas" },
+            { name: 'AK-05', status: "Belum Tuntas" }
         );
 
         const results = await db.select().from(resultTable)
@@ -587,15 +587,15 @@ export class AssessmentService {
             }
         }
 
-        // Update status tab
+        // Update status tab (AssessorTab: 'Belum Tuntas' | 'Menunggu Asesi' | 'Tuntas')
         for (const config of headerConfigs) {
             const tab = tabs.find((tab) => tab.name === config.name);
             if (tab) {
                 tab.status = (config.notYet > 0)
-                    ? 'Not Started'
+                    ? 'Belum Tuntas'
                     : (config.notYet === 0 && config.waiting > 0)
-                        ? 'Waiting'
-                        : 'Completed';
+                        ? 'Menunggu Asesi'
+                        : 'Tuntas';
             }
         }
 
@@ -617,23 +617,23 @@ export class AssessmentService {
         if (!doc) throw new NotFoundError('Result Document');
 
         const tabs: AdminTab[] = [
-            { name: 'APL-01', status: 'Selesai' },
-            { name: 'Data Sertifikasi', status: doc.approved ? 'Selesai' : 'Belum Selesai' },
-            { name: 'APL-02', status: 'Belum Selesai' },
-            { name: 'AK-01', status: 'Belum Selesai' },
-            { name: 'IA-02', status: 'Belum Selesai' },
-            { name: 'IA-01', status: 'Belum Selesai' }
+            { name: 'APL-01', status: 'Tuntas' },
+            { name: 'Data Sertifikasi', status: doc.approved ? 'Tuntas' : 'Belum Tuntas' },
+            { name: 'APL-02', status: 'Belum Tuntas' },
+            { name: 'AK-01', status: 'Belum Tuntas' },
+            { name: 'IA-02', status: 'Belum Tuntas' },
+            { name: 'IA-01', status: 'Belum Tuntas' }
         ];
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, result.assessment_id) });
         const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, result.assessment_id) });
         const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, result.assessment_id) });
-        if (isAnyIa03) tabs.push({ name: 'IA-03', status: 'Belum Selesai' });
-        if (isAnyIa05) tabs.push({ name: 'IA-05', status: 'Belum Selesai' });
-        if (isAnyIa07) tabs.push({ name: 'IA-07', status: 'Belum Selesai' });
+        if (isAnyIa03) tabs.push({ name: 'IA-03', status: 'Belum Tuntas' });
+        if (isAnyIa05) tabs.push({ name: 'IA-05', status: 'Belum Tuntas' });
+        if (isAnyIa07) tabs.push({ name: 'IA-07', status: 'Belum Tuntas' });
         tabs.push(
-            { name: 'AK-02', status: 'Belum Selesai' },
-            { name: 'AK-03', status: 'Belum Selesai' },
-            { name: 'AK-05', status: 'Belum Selesai' }
+            { name: 'AK-02', status: 'Belum Tuntas' },
+            { name: 'AK-03', status: 'Belum Tuntas' },
+            { name: 'AK-05', status: 'Belum Tuntas' }
         );
 
         const headerConfigs = [
@@ -662,11 +662,11 @@ export class AssessmentService {
             }
         }
 
-        // Update tab status: only 'Belum Selesai' or 'Selesai'
+        // Update tab status: only 'Belum Tuntas' or 'Tuntas' (AdminTab)
         for (const config of headerConfigs) {
             const tab = tabs.find((tab) => tab.name === config.name);
             if (tab) {
-                tab.status = config.completed ? 'Selesai' : 'Belum Selesai';
+                tab.status = config.completed ? 'Tuntas' : 'Belum Tuntas';
             }
         }
 
