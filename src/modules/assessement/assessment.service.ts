@@ -57,7 +57,7 @@ import {
     resultIa05,
 } from "../../../drizzle/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
-import { AssesseeTab, AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
+import { AdminTab, AssesseeTab, AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
 import { AssessorResponse } from "../assessor/assessor.type";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { embedQrCode } from "../../helper/pdfAssets.helper";
@@ -436,21 +436,16 @@ export class AssessmentService {
         const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result[0].id) });
         if (!apl02Header) throw new NotFoundError('Result APL02 Header');
         const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, result[0].assessment_id));
-        const elementsByUc = await Promise.all(unitCompetencies.map(async (uc) => {
-            const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
-            const results = await db.select().from(resultApl02).where(eq(resultApl02.result_apl02_id, apl02Header.id));
-            return { uc, elements, results };
-        }));
         let finishedUcApl02Count = 0;
-        Promise.all(elementsByUc.map(async ({ uc, elements, results }) => {
-            const totalElements = elements.length;
+        for (const uc of unitCompetencies) {
+            const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
             let completedElements = 0;
             for (const el of elements) {
                 const row = await db.query.resultApl02.findFirst({ where: and(eq(resultApl02.result_apl02_id, apl02Header.id), eq(resultApl02.element_id, el.id)) });
                 if (row) completedElements += 1;
             }
-            finishedUcApl02Count = (totalElements > 0 && completedElements === totalElements) ? finishedUcApl02Count + 1 : finishedUcApl02Count;
-        }));
+            if (elements.length > 0 && completedElements === elements.length) finishedUcApl02Count++;
+        }
         const finishedApl02 = finishedUcApl02Count === unitCompetencies.length;
 
         // AK01
@@ -618,64 +613,57 @@ export class AssessmentService {
         const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
         if (!assessment) throw new NotFoundError('Assessment');
 
-        const tabs: AssessorTab[] = [
-            { name: 'APL-02', status: "Not Started" },
-            { name: 'AK-01', status: "Not Started" },
-            { name: 'IA-02', status: "Not Started" },
-            { name: 'IA-01', status: "Not Started" }
-        ]
 
+        // Tabs setup: all default to 'Belum Selesai'
+        const tabs: AdminTab[] = [
+            { name: 'APL-02', status: 'Belum Selesai' },
+            { name: 'AK-01', status: 'Belum Selesai' },
+            { name: 'IA-02', status: 'Belum Selesai' },
+            { name: 'IA-01', status: 'Belum Selesai' }
+        ];
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, result.assessment_id) });
         const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, result.assessment_id) });
         const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, result.assessment_id) });
-
-        if (isAnyIa03) tabs.push({ name: 'IA-03', status: "Not Started" });
-        if (isAnyIa05) tabs.push({ name: 'IA-05', status: "Not Started" });
-        if (isAnyIa07) tabs.push({ name: 'IA-07', status: "Not Started" });
-
+        if (isAnyIa03) tabs.push({ name: 'IA-03', status: 'Belum Selesai' });
+        if (isAnyIa05) tabs.push({ name: 'IA-05', status: 'Belum Selesai' });
+        if (isAnyIa07) tabs.push({ name: 'IA-07', status: 'Belum Selesai' });
         tabs.push(
-            { name: 'AK-02', status: "Not Started" },
-            { name: 'AK-03', status: "Not Started" },
-            { name: 'AK-05', status: "Not Started" }
+            { name: 'AK-02', status: 'Belum Selesai' },
+            { name: 'AK-03', status: 'Belum Selesai' },
+            { name: 'AK-05', status: 'Belum Selesai' }
         );
 
-        // Config header dan tab
         const headerConfigs = [
-            { name: 'APL-02', findFirst: (args: any) => db.query.resultApl02Header.findFirst(args), col: resultApl02HeaderTable, notYet: 0, waiting: 0 },
-            { name: 'IA-01', findFirst: (args: any) => db.query.resultIa01Header.findFirst(args), col: resultIa01HeaderTable, notYet: 0, waiting: 0 },
-            { name: 'IA-02', findFirst: (args: any) => db.query.resultIa02Header.findFirst(args), col: resultIa02HeaderTable, notYet: 0, waiting: 0 },
-            { name: 'IA-03', findFirst: (args: any) => db.query.resultIa03Header.findFirst(args), col: resultIa03HeaderTable, notYet: 0, waiting: 0, isSpecial: true },
-            { name: 'IA-05', findFirst: (args: any) => db.query.resultIa05Header.findFirst(args), col: resultIa05HeaderTable, notYet: 0, waiting: 0 },
-            { name: 'IA-07', findFirst: (args: any) => db.query.resultIa07Header.findFirst(args), col: resultIa07HeaderTable, notYet: 0, waiting: 0 },
-            { name: 'AK-01', findFirst: (args: any) => db.query.resultAk01Header.findFirst(args), col: resultAk01HeaderTable, notYet: 0, waiting: 0 },
-            { name: 'AK-02', findFirst: (args: any) => db.query.resultAk02Header.findFirst(args), col: resultAk02HeaderTable, notYet: 0, waiting: 0 },
-            { name: 'AK-03', findFirst: (args: any) => db.query.resultAk03Header.findFirst(args), col: resultAk03HeaderTable, notYet: 0, waiting: 0, isSpecial: true },
-            { name: 'AK-05', findFirst: (args: any) => db.query.resultAk05.findFirst(args), col: resultAk05Table, notYet: 0, waiting: 0, onlyApproved: true },
+            { name: 'APL-02', findFirst: (args: any) => db.query.resultApl02Header.findFirst(args), col: resultApl02HeaderTable, completed: false },
+            { name: 'IA-01', findFirst: (args: any) => db.query.resultIa01Header.findFirst(args), col: resultIa01HeaderTable, completed: false },
+            { name: 'IA-02', findFirst: (args: any) => db.query.resultIa02Header.findFirst(args), col: resultIa02HeaderTable, completed: false },
+            { name: 'IA-03', findFirst: (args: any) => db.query.resultIa03Header.findFirst(args), col: resultIa03HeaderTable, completed: false },
+            { name: 'IA-05', findFirst: (args: any) => db.query.resultIa05Header.findFirst(args), col: resultIa05HeaderTable, completed: false },
+            { name: 'IA-07', findFirst: (args: any) => db.query.resultIa07Header.findFirst(args), col: resultIa07HeaderTable, completed: false },
+            { name: 'AK-01', findFirst: (args: any) => db.query.resultAk01Header.findFirst(args), col: resultAk01HeaderTable, completed: false },
+            { name: 'AK-02', findFirst: (args: any) => db.query.resultAk02Header.findFirst(args), col: resultAk02HeaderTable, completed: false },
+            { name: 'AK-03', findFirst: (args: any) => db.query.resultAk03Header.findFirst(args), col: resultAk03HeaderTable, completed: false },
+            { name: 'AK-05', findFirst: (args: any) => db.query.resultAk05.findFirst(args), col: resultAk05Table, completed: false },
         ];
 
         for (const config of headerConfigs) {
             let header = await config.findFirst({ where: eq(config.col.result_id, result.id) });
-            if (config.name === 'AK-03') {
-                if (!header) config.notYet++;
-            } else if (config.name === 'AK-05') {
-                if (header && 'approved_assessor' in header && !header.approved_assessor) config.notYet++;
-            } else {
-                if (header) {
-                    if ('approved_assessor' in header && !header.approved_assessor) config.notYet++;
-                    if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee) config.waiting++;
+            if (header) {
+                if (config.name === 'AK-05') {
+                    if ('approved_assessor' in header && header.approved_assessor) config.completed = true;
+                } else if (config.name === 'AK-03') {
+                    if ('comment' in header && header.comment) config.completed = true;
+                } else {
+                    if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && header.approved_assessee) config.completed = true;
                 }
             }
         }
 
-        // Update status tab
+        // Update tab status: only 'Belum Selesai' or 'Selesai'
         for (const config of headerConfigs) {
             const tab = tabs.find((tab) => tab.name === config.name);
             if (tab) {
-                tab.status = (config.notYet > 0)
-                    ? 'Not Started'
-                    : (config.notYet === 0 && config.waiting > 0)
-                        ? 'Waiting'
-                        : 'Completed';
+                tab.status = config.completed ? 'Selesai' : 'Belum Selesai';
             }
         }
 

@@ -4,6 +4,7 @@ const express_1 = require("express");
 const user_controller_1 = require("./user.controller");
 const router = (0, express_1.Router)();
 router.get('/', user_controller_1.UserController.getUsers);
+router.get('/:page/:limit', user_controller_1.UserController.getUsers);
 router.get('/:id', user_controller_1.UserController.getUserById);
 router.post('/', user_controller_1.UserController.createUser);
 router.put('/:id', user_controller_1.UserController.updateUser);

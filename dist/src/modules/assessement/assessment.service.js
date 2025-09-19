@@ -342,22 +342,18 @@ class AssessmentService {
             if (!apl02Header)
                 throw new error_1.NotFoundError('Result APL02 Header');
             const unitCompetencies = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, result[0].assessment_id));
-            const elementsByUc = yield Promise.all(unitCompetencies.map((uc) => __awaiter(this, void 0, void 0, function* () {
-                const elements = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, uc.id));
-                const results = yield drizzle_1.db.select().from(schema_1.resultApl02).where((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, apl02Header.id));
-                return { uc, elements, results };
-            })));
             let finishedUcApl02Count = 0;
-            Promise.all(elementsByUc.map((_a) => __awaiter(this, [_a], void 0, function* ({ uc, elements, results }) {
-                const totalElements = elements.length;
+            for (const uc of unitCompetencies) {
+                const elements = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, uc.id));
                 let completedElements = 0;
                 for (const el of elements) {
                     const row = yield drizzle_1.db.query.resultApl02.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, apl02Header.id), (0, drizzle_orm_1.eq)(schema_1.resultApl02.element_id, el.id)) });
                     if (row)
                         completedElements += 1;
                 }
-                finishedUcApl02Count = (totalElements > 0 && completedElements === totalElements) ? finishedUcApl02Count + 1 : finishedUcApl02Count;
-            })));
+                if (elements.length > 0 && completedElements === elements.length)
+                    finishedUcApl02Count++;
+            }
             const finishedApl02 = finishedUcApl02Count === unitCompetencies.length;
             // AK01
             const ak01Header = yield drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, result[0].id) });
@@ -513,63 +509,57 @@ class AssessmentService {
             const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.assessment_id) });
             if (!assessment)
                 throw new error_1.NotFoundError('Assessment');
+            // Tabs setup: all default to 'Belum Selesai'
             const tabs = [
-                { name: 'APL-02', status: "Not Started" },
-                { name: 'AK-01', status: "Not Started" },
-                { name: 'IA-02', status: "Not Started" },
-                { name: 'IA-01', status: "Not Started" }
+                { name: 'APL-02', status: 'Belum Selesai' },
+                { name: 'AK-01', status: 'Belum Selesai' },
+                { name: 'IA-02', status: 'Belum Selesai' },
+                { name: 'IA-01', status: 'Belum Selesai' }
             ];
             const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, result.assessment_id) });
             const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, result.assessment_id) });
             const isAnyIa07 = yield drizzle_1.db.query.ia07Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, result.assessment_id) });
             if (isAnyIa03)
-                tabs.push({ name: 'IA-03', status: "Not Started" });
+                tabs.push({ name: 'IA-03', status: 'Belum Selesai' });
             if (isAnyIa05)
-                tabs.push({ name: 'IA-05', status: "Not Started" });
+                tabs.push({ name: 'IA-05', status: 'Belum Selesai' });
             if (isAnyIa07)
-                tabs.push({ name: 'IA-07', status: "Not Started" });
-            tabs.push({ name: 'AK-02', status: "Not Started" }, { name: 'AK-03', status: "Not Started" }, { name: 'AK-05', status: "Not Started" });
-            // Config header dan tab
+                tabs.push({ name: 'IA-07', status: 'Belum Selesai' });
+            tabs.push({ name: 'AK-02', status: 'Belum Selesai' }, { name: 'AK-03', status: 'Belum Selesai' }, { name: 'AK-05', status: 'Belum Selesai' });
             const headerConfigs = [
-                { name: 'APL-02', findFirst: (args) => drizzle_1.db.query.resultApl02Header.findFirst(args), col: schema_1.resultApl02Header, notYet: 0, waiting: 0 },
-                { name: 'IA-01', findFirst: (args) => drizzle_1.db.query.resultIa01Header.findFirst(args), col: schema_1.resultIa01Header, notYet: 0, waiting: 0 },
-                { name: 'IA-02', findFirst: (args) => drizzle_1.db.query.resultIa02Header.findFirst(args), col: schema_1.resultIa02Header, notYet: 0, waiting: 0 },
-                { name: 'IA-03', findFirst: (args) => drizzle_1.db.query.resultIa03Header.findFirst(args), col: schema_1.resultIa03Header, notYet: 0, waiting: 0, isSpecial: true },
-                { name: 'IA-05', findFirst: (args) => drizzle_1.db.query.resultIa05Header.findFirst(args), col: schema_1.resultIa05Header, notYet: 0, waiting: 0 },
-                { name: 'IA-07', findFirst: (args) => drizzle_1.db.query.resultIa07Header.findFirst(args), col: schema_1.resultIa07Header, notYet: 0, waiting: 0 },
-                { name: 'AK-01', findFirst: (args) => drizzle_1.db.query.resultAk01Header.findFirst(args), col: schema_1.resultAk01Header, notYet: 0, waiting: 0 },
-                { name: 'AK-02', findFirst: (args) => drizzle_1.db.query.resultAk02Header.findFirst(args), col: schema_1.resultAk02Header, notYet: 0, waiting: 0 },
-                { name: 'AK-03', findFirst: (args) => drizzle_1.db.query.resultAk03Header.findFirst(args), col: schema_1.resultAk03Header, notYet: 0, waiting: 0, isSpecial: true },
-                { name: 'AK-05', findFirst: (args) => drizzle_1.db.query.resultAk05.findFirst(args), col: schema_1.resultAk05, notYet: 0, waiting: 0, onlyApproved: true },
+                { name: 'APL-02', findFirst: (args) => drizzle_1.db.query.resultApl02Header.findFirst(args), col: schema_1.resultApl02Header, completed: false },
+                { name: 'IA-01', findFirst: (args) => drizzle_1.db.query.resultIa01Header.findFirst(args), col: schema_1.resultIa01Header, completed: false },
+                { name: 'IA-02', findFirst: (args) => drizzle_1.db.query.resultIa02Header.findFirst(args), col: schema_1.resultIa02Header, completed: false },
+                { name: 'IA-03', findFirst: (args) => drizzle_1.db.query.resultIa03Header.findFirst(args), col: schema_1.resultIa03Header, completed: false },
+                { name: 'IA-05', findFirst: (args) => drizzle_1.db.query.resultIa05Header.findFirst(args), col: schema_1.resultIa05Header, completed: false },
+                { name: 'IA-07', findFirst: (args) => drizzle_1.db.query.resultIa07Header.findFirst(args), col: schema_1.resultIa07Header, completed: false },
+                { name: 'AK-01', findFirst: (args) => drizzle_1.db.query.resultAk01Header.findFirst(args), col: schema_1.resultAk01Header, completed: false },
+                { name: 'AK-02', findFirst: (args) => drizzle_1.db.query.resultAk02Header.findFirst(args), col: schema_1.resultAk02Header, completed: false },
+                { name: 'AK-03', findFirst: (args) => drizzle_1.db.query.resultAk03Header.findFirst(args), col: schema_1.resultAk03Header, completed: false },
+                { name: 'AK-05', findFirst: (args) => drizzle_1.db.query.resultAk05.findFirst(args), col: schema_1.resultAk05, completed: false },
             ];
             for (const config of headerConfigs) {
                 let header = yield config.findFirst({ where: (0, drizzle_orm_1.eq)(config.col.result_id, result.id) });
-                if (config.name === 'AK-03') {
-                    if (!header)
-                        config.notYet++;
-                }
-                else if (config.name === 'AK-05') {
-                    if (header && 'approved_assessor' in header && !header.approved_assessor)
-                        config.notYet++;
-                }
-                else {
-                    if (header) {
-                        if ('approved_assessor' in header && !header.approved_assessor)
-                            config.notYet++;
-                        if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee)
-                            config.waiting++;
+                if (header) {
+                    if (config.name === 'AK-05') {
+                        if ('approved_assessor' in header && header.approved_assessor)
+                            config.completed = true;
+                    }
+                    else if (config.name === 'AK-03') {
+                        if ('comment' in header && header.comment)
+                            config.completed = true;
+                    }
+                    else {
+                        if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && header.approved_assessee)
+                            config.completed = true;
                     }
                 }
             }
-            // Update status tab
+            // Update tab status: only 'Belum Selesai' or 'Selesai'
             for (const config of headerConfigs) {
                 const tab = tabs.find((tab) => tab.name === config.name);
                 if (tab) {
-                    tab.status = (config.notYet > 0)
-                        ? 'Not Started'
-                        : (config.notYet === 0 && config.waiting > 0)
-                            ? 'Waiting'
-                            : 'Completed';
+                    tab.status = config.completed ? 'Selesai' : 'Belum Selesai';
                 }
             }
             return {

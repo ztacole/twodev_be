@@ -76,11 +76,25 @@ AssessorController.createAssessor = (0, async_handler_1.asyncHandler)((req, res)
     }
 }));
 AssessorController.getAssessors = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const assessors = yield assessor_service_1.AssessorService.getAssessors();
+    var _b, _c, _d, _e;
+    const hasPagingParams = typeof ((_b = req.params) === null || _b === void 0 ? void 0 : _b.page) !== 'undefined' && typeof ((_c = req.params) === null || _c === void 0 ? void 0 : _c.limit) !== 'undefined';
+    const hasPagingQuery = typeof req.query.page !== 'undefined' || typeof req.query.limit !== 'undefined';
+    if (hasPagingParams || hasPagingQuery) {
+        const page = Math.max(1, Number((_d = req.params.page) !== null && _d !== void 0 ? _d : req.query.page) || 1);
+        const limit = Math.max(1, Math.min(100, Number((_e = req.params.limit) !== null && _e !== void 0 ? _e : req.query.limit) || 10));
+        const result = yield assessor_service_1.AssessorService.getAssessors(page, limit);
+        return res.json({
+            success: true,
+            message: 'Data assessor berhasil diambil',
+            data: result.data,
+            meta: result.meta,
+        });
+    }
+    const data = yield assessor_service_1.AssessorService.getAllAssessors();
     res.json({
         success: true,
         message: 'Data assessor berhasil diambil',
-        data: assessors,
+        data
     });
 }));
 AssessorController.getAssessorById = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

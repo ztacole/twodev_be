@@ -1,0 +1,136 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getByScheduleDetail = exports.approveByScheduleDetail = exports.approve = exports.getDetail = exports.getApproved = exports.getPending = void 0;
+const verificationService = __importStar(require("./verification.service"));
+const getPending = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const rawParam = (_a = req.params.scheduleDetailId) !== null && _a !== void 0 ? _a : req.query.schedule_detail_id;
+        const parsed = rawParam !== undefined ? Number(rawParam) : undefined;
+        const scheduleDetailId = parsed !== undefined && !Number.isNaN(parsed) ? parsed : undefined;
+        const data = yield verificationService.getPendingVerifications(scheduleDetailId);
+        res.status(200).json({ success: true, data });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+exports.getPending = getPending;
+const getApproved = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const raw = (_a = req.params.scheduleDetailId) !== null && _a !== void 0 ? _a : req.query.schedule_detail_id;
+        let scheduleDetailId;
+        if (raw !== undefined && raw !== null && raw !== '') {
+            const parsed = Number(raw);
+            if (!Number.isFinite(parsed)) {
+                return res.status(400).json({ success: false, message: 'scheduleDetailId tidak valid' });
+            }
+            scheduleDetailId = parsed;
+        }
+        const data = yield verificationService.getApprovedVerifications(scheduleDetailId);
+        res.status(200).json({ success: true, data });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+exports.getApproved = getApproved;
+const getDetail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const id = Number(req.params.resultId);
+        if (!Number.isFinite(id))
+            return res.status(400).json({ success: false, message: 'resultId tidak valid' });
+        const data = yield verificationService.getVerificationDetail(id);
+        res.status(200).json({ success: true, data });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+exports.getDetail = getDetail;
+const approve = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const id = Number(req.params.resultId);
+        if (!Number.isFinite(id))
+            return res.status(400).json({ success: false, message: 'resultId tidak valid' });
+        const data = yield verificationService.approveVerification(id);
+        res.status(200).json({ success: true, data });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+exports.approve = approve;
+const approveByScheduleDetail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    try {
+        const raw = (_a = req.params.scheduleDetailId) !== null && _a !== void 0 ? _a : (_b = req.body) === null || _b === void 0 ? void 0 : _b.schedule_detail_id;
+        const parsed = raw !== undefined && raw !== null && raw !== '' ? Number(raw) : NaN;
+        if (!Number.isFinite(parsed))
+            return res.status(400).json({ success: false, message: 'scheduleDetailId tidak valid' });
+        const scheduleDetailId = parsed;
+        const data = yield verificationService.approveVerificationByScheduleDetail(scheduleDetailId);
+        res.status(200).json({ success: true, data });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+exports.approveByScheduleDetail = approveByScheduleDetail;
+const getByScheduleDetail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const parsed = Number(req.params.scheduleDetailId);
+        if (Number.isNaN(parsed))
+            return res.status(400).json({ success: false, message: 'scheduleDetailId tidak valid' });
+        const scheduleDetailId = parsed;
+        const data = yield verificationService.getVerificationsByScheduleDetail(scheduleDetailId);
+        res.status(200).json({ success: true, data });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+exports.getByScheduleDetail = getByScheduleDetail;

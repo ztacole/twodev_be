@@ -224,3 +224,8 @@ export interface AssesseeTab {
     name: string;
     status: "Belum Selesai" | "Menunggu" | "Setujui" | "Selesai";
 }
+
+export interface AdminTab {
+    name: string;
+    status: "Belum Selesai" | "Selesai";
+}

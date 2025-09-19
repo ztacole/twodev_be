@@ -36,6 +36,22 @@ class UserService {
         });
     }
     static getUsers() {
+        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10) {
+            var _a, _b;
+            const offset = (page - 1) * limit;
+            const users = yield drizzle_1.db.select().from(schema_1.user).limit(limit).offset(offset);
+            const roles = yield drizzle_1.db.select().from(schema_1.role);
+            const roleById = new Map(roles.map(r => [r.id, r]));
+            const countRows = yield drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(*)` }).from(schema_1.user);
+            const total = Number((_b = (_a = countRows === null || countRows === void 0 ? void 0 : countRows[0]) === null || _a === void 0 ? void 0 : _a.count) !== null && _b !== void 0 ? _b : 0);
+            const totalPages = Math.max(1, Math.ceil(total / limit));
+            return {
+                data: users.map(u => formatUserResponse(Object.assign(Object.assign({}, u), { role: roleById.get(u.role_id) }))),
+                meta: { page, limit, total, totalPages }
+            };
+        });
+    }
+    static getAllUsers() {
         return __awaiter(this, void 0, void 0, function* () {
             const users = yield drizzle_1.db.select().from(schema_1.user);
             const roles = yield drizzle_1.db.select().from(schema_1.role);
