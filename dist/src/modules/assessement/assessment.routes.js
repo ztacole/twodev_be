@@ -37,6 +37,8 @@ router.get('/navigation/assessor/:assessmentId', auth_middleware_2.authenticateT
 router.get('/navigation/admin/:resultId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getNavigationAdmin);
 router.get('/assessment-recapt/:scheduleDetailId', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, assessment_controller_1.AssessmentController.getAssessmentRecapt);
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssessmentRecaptForAdmin);
+router.get('/recap/:scheduleDetailId/pdf', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, assessment_controller_1.AssessmentController.generateRecaptPdf);
+router.get('/recap/:scheduleDetailId/:assessorId/pdf', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.generateRecaptPdfForAdmin);
 router.post('/apl-01/create-self-data', apl_01_controller_1.APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', upload_config_1.upload.any(), apl_01_controller_1.APL1Controller.createOrUploadCertificateDocs);
 router.get('/uploads/apl-01/:folder/:filename', auth_middleware_1.authUpload, (req, res) => {

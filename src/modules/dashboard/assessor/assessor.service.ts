@@ -24,34 +24,34 @@ export class DashboardAssessorService {
             const ak04 = await db.query.resultAk04.findFirst({ where: eq(resultAk04.id, result.id) });
             const ak05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05.result_id, result.id) });
 
-            const getHeaderStatus = (type: string) => {
+            const getHeaderStatus = (type: string): 'Belum Selesai' | 'Menunggu Asesi' | 'Selesai' => {
                 switch (type) {
                     case "apl-01":
-                        return true;
+                        return 'Selesai';
                     case "data-sertifikasi":
-                        return doc?.approved ? true : false;
+                        return doc?.approved ? 'Selesai' : 'Belum Selesai';
                     case "apl-02":
-                        return (apl02?.approved_assessor && apl02?.approved_assessee) ? true : false;
+                        return (apl02?.approved_assessor && apl02?.approved_assessee) ? 'Selesai' : (apl02?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
                     case "ia-01":
-                        return (ia01?.approved_assessee && ia01?.approved_assessor) ? true : false;
+                        return (ia01?.approved_assessee && ia01?.approved_assessor) ? 'Selesai' : (ia01?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
                     case "ia-02":
-                        return (ia02?.approved_assessee && ia02?.approved_assessor) ? true : false;
+                        return (ia02?.approved_assessee && ia02?.approved_assessor) ? 'Selesai' : (ia02?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
                     case "ia-03":
-                        return (ia03?.approved_assessee && ia03?.approved_assessor) ? true : false;
+                        return (ia03?.approved_assessee && ia03?.approved_assessor) ? 'Selesai' : (ia03?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
                     case "ia-05":
-                        return (ia05?.approved_assessee && ia05?.approved_assessor) ? true : false;
+                        return (ia05?.approved_assessee && ia05?.approved_assessor) ? 'Selesai' : (ia05?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
                     case "ia-07":
-                        return (ia07?.approved_assessee && ia07?.approved_assessor) ? true : false;
+                        return (ia07?.approved_assessee && ia07?.approved_assessor) ? 'Selesai' : (ia07?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
                     case "ak-01":
-                        return (ak01?.approved_assessee && ak01?.approved_assessor) ? true : false;
+                        return (ak01?.approved_assessee && ak01?.approved_assessor) ? 'Selesai' : (ak01?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
                     case "ak-02":
-                        return (ak02?.approved_assessee && ak02?.approved_assessor) ? true : false;
+                        return (ak02?.approved_assessee && ak02?.approved_assessor) ? 'Selesai' : (ak02?.approved_assessor) ? 'Menunggu Asesi' : 'Belum Selesai';
                     case "ak-03":
-                        return false;
-                    case "ak-04":
-                        return false;
+                        return ak03?.comment ? 'Selesai' : 'Menunggu Asesi';
+                    // case "ak-04":
+                    //     return false;
                     case "ak-05":
-                        return (ak05?.approved_assessor) ? true : false;
+                        return (ak05?.approved_assessor) ? 'Selesai' : 'Belum Selesai';
                     default:
                         throw new ValidationError('Result Type tidak valid');
                 }

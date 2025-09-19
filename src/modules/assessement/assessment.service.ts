@@ -439,8 +439,8 @@ export class AssessmentService {
         const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
         const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
 
-        if (isAnyIa01) tabs.push('IA-01');
         if (isAnyIa02) tabs.push('IA-02');
+        if (isAnyIa01) tabs.push('IA-01');
         if (isAnyIa03) tabs.push('IA-03');
         if (isAnyIa05) tabs.push('IA-05');
         if (isAnyIa07) tabs.push('IA-07');
@@ -469,8 +469,8 @@ export class AssessmentService {
         const tabs: AssessorTab[] = [
             { name: 'APL-02', status: "Not Started" },
             { name: 'AK-01', status: "Not Started" },
-            { name: 'IA-01', status: "Not Started" },
-            { name: 'IA-02', status: "Not Started" }
+            { name: 'IA-02', status: "Not Started" },
+            { name: 'IA-01', status: "Not Started" }
         ]
 
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
@@ -560,8 +560,8 @@ export class AssessmentService {
         const tabs: AssessorTab[] = [
             { name: 'APL-02', status: "Not Started" },
             { name: 'AK-01', status: "Not Started" },
-            { name: 'IA-01', status: "Not Started" },
-            { name: 'IA-02', status: "Not Started" }
+            { name: 'IA-02', status: "Not Started" },
+            { name: 'IA-01', status: "Not Started" }
         ]
 
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, result.assessment_id) });

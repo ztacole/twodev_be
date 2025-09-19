@@ -210,3 +210,62 @@ AssessmentController.getAssesseesByAssessmentAndAssessor = (0, async_handler_1.a
         data: result,
     });
 }));
+AssessmentController.generateRecaptPdf = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.user;
+    const scheduleDetailId = Number(req.params.scheduleDetailId);
+    if (!scheduleDetailId) {
+        return res.status(400).json({
+            success: false,
+            message: "Schedule ID harus diisi",
+        });
+    }
+    const assessor = yield assessor_service_1.AssessorService.getAssessorByUserId(user.id);
+    if (!assessor) {
+        return res.status(404).json({
+            success: false,
+            message: "Assessor tidak ditemukan",
+        });
+    }
+    const data = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+    const pdfBytes = yield assessment_service_1.AssessmentService.generateRecaptPDF(data.assessment);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=rekap-${scheduleDetailId}.pdf`);
+    res.send(Buffer.from(pdfBytes));
+}));
+AssessmentController.generateRecaptPdfForAdmin = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const scheduleDetailId = Number(req.params.scheduleDetailId);
+    if (!scheduleDetailId) {
+        return res.status(400).json({
+            success: false,
+            message: "Schedule ID dan Assessor ID harus diisi",
+        });
+    }
+    const assessorId = Number(req.params.assessorId);
+    if (!assessorId) {
+        return res.status(400).json({
+            success: false,
+            message: "Assessor ID harus diisi",
+        });
+    }
+    const assessor = yield assessor_service_1.AssessorService.getAssessorById(assessorId);
+    if (!assessor) {
+        return res.status(404).json({
+            success: false,
+            message: "Assessor tidak ditemukan",
+        });
+    }
+    const data = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+    const pdfBytes = yield assessment_service_1.AssessmentService.generateRecaptPDF(data.assessment);
+    const safe = (str) => str.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_");
+    const code = safe(data.assessment.code);
+    const assessorName = safe(assessor.name);
+    const startDate = new Date(data.assessment.schedule.start_date)
+        .toISOString()
+        .split("T")[0];
+    const endDate = new Date(data.assessment.schedule.end_date)
+        .toISOString()
+        .split("T")[0];
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=rekap-${code}-${assessorName}-${startDate}_sampai_${endDate}.pdf`);
+    res.send(Buffer.from(pdfBytes));
+}));
