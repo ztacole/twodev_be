@@ -425,7 +425,7 @@ class AssessmentService {
             if (!assessment)
                 throw new error_1.NotFoundError('Assessment');
             const tabs = [
-                { name: 'APL-02', status: "Belum Tuntas" },
+                { name: 'APL-02', status: "Menunggu Asesi" },
                 { name: 'AK-01', status: "Belum Tuntas" },
                 { name: 'IA-02', status: "Belum Tuntas" },
                 { name: 'IA-01', status: "Belum Tuntas" }
@@ -436,10 +436,10 @@ class AssessmentService {
             if (isAnyIa03)
                 tabs.push({ name: 'IA-03', status: "Belum Tuntas" });
             if (isAnyIa05)
-                tabs.push({ name: 'IA-05', status: "Belum Tuntas" });
+                tabs.push({ name: 'IA-05', status: "Menunggu Asesi" });
             if (isAnyIa07)
                 tabs.push({ name: 'IA-07', status: "Belum Tuntas" });
-            tabs.push({ name: 'AK-02', status: "Belum Tuntas" }, { name: 'AK-03', status: "Belum Tuntas" }, { name: 'AK-05', status: "Belum Tuntas" });
+            tabs.push({ name: 'AK-02', status: "Belum Tuntas" }, { name: 'AK-03', status: "Menunggu Asesi" }, { name: 'AK-05', status: "Belum Tuntas" });
             const results = yield drizzle_1.db.select().from(schema_1.result)
                 .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id)));
             if (results.length === 0) {
@@ -449,50 +449,157 @@ class AssessmentService {
                     tabs: tabs,
                 };
             }
-            // Config header dan tab
-            const headerConfigs = [
-                { name: 'APL-02', findFirst: (args) => drizzle_1.db.query.resultApl02Header.findFirst(args), col: schema_1.resultApl02Header, notYet: 0, waiting: 0 },
-                { name: 'IA-01', findFirst: (args) => drizzle_1.db.query.resultIa01Header.findFirst(args), col: schema_1.resultIa01Header, notYet: 0, waiting: 0 },
-                { name: 'IA-02', findFirst: (args) => drizzle_1.db.query.resultIa02Header.findFirst(args), col: schema_1.resultIa02Header, notYet: 0, waiting: 0 },
-                { name: 'IA-03', findFirst: (args) => drizzle_1.db.query.resultIa03Header.findFirst(args), col: schema_1.resultIa03Header, notYet: 0, waiting: 0, isSpecial: true },
-                { name: 'IA-05', findFirst: (args) => drizzle_1.db.query.resultIa05Header.findFirst(args), col: schema_1.resultIa05Header, notYet: 0, waiting: 0 },
-                { name: 'IA-07', findFirst: (args) => drizzle_1.db.query.resultIa07Header.findFirst(args), col: schema_1.resultIa07Header, notYet: 0, waiting: 0 },
-                { name: 'AK-01', findFirst: (args) => drizzle_1.db.query.resultAk01Header.findFirst(args), col: schema_1.resultAk01Header, notYet: 0, waiting: 0 },
-                { name: 'AK-02', findFirst: (args) => drizzle_1.db.query.resultAk02Header.findFirst(args), col: schema_1.resultAk02Header, notYet: 0, waiting: 0 },
-                { name: 'AK-03', findFirst: (args) => drizzle_1.db.query.resultAk03Header.findFirst(args), col: schema_1.resultAk03Header, notYet: 0, waiting: 0, isSpecial: true },
-                { name: 'AK-05', findFirst: (args) => drizzle_1.db.query.resultAk05.findFirst(args), col: schema_1.resultAk05, notYet: 0, waiting: 0, onlyApproved: true },
-            ];
-            for (const result of results) {
-                for (const config of headerConfigs) {
-                    let header = yield config.findFirst({ where: (0, drizzle_orm_1.eq)(config.col.result_id, result.id) });
-                    if (config.name === 'AK-03') {
-                        if (header && 'comment' in header && !header.comment)
-                            config.notYet++;
-                    }
-                    else if (config.name === 'AK-05') {
-                        if (header && 'approved_assessor' in header && !header.approved_assessor)
-                            config.notYet++;
-                    }
-                    else {
-                        if (header) {
-                            if ('approved_assessor' in header && !header.approved_assessor)
-                                config.notYet++;
-                            if ('approved_assessor' in header && 'approved_assessee' in header && header.approved_assessor && !header.approved_assessee)
-                                config.waiting++;
-                        }
+            for (const tab of tabs) {
+                let status = tab.status;
+                for (const result of results) {
+                    let header = null;
+                    switch (tab.name) {
+                        case 'APL-02':
+                            header = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, result.id) });
+                            if (header) {
+                                const unitCompetencies = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, result.assessment_id));
+                                let finishedUcApl02Count = 0;
+                                for (const uc of unitCompetencies) {
+                                    const elements = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, uc.id));
+                                    let completedElements = 0;
+                                    for (const el of elements) {
+                                        const row = yield drizzle_1.db.query.resultApl02.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, header.id), (0, drizzle_orm_1.eq)(schema_1.resultApl02.element_id, el.id)) });
+                                        if (row)
+                                            completedElements += 1;
+                                    }
+                                    if (elements.length > 0 && completedElements === elements.length)
+                                        finishedUcApl02Count++;
+                                }
+                                const finishedApl02 = finishedUcApl02Count === unitCompetencies.length;
+                                if (!finishedApl02 && !header.approved_assessor && !header.approved_assessee) {
+                                    status = "Menunggu Asesi";
+                                }
+                                else if (finishedApl02 && !header.approved_assessor && !header.approved_assessee) {
+                                    status = "Butuh Persetujuan";
+                                }
+                                else if (header.approved_assessor && !header.approved_assessee) {
+                                    status = "Menunggu Asesi";
+                                }
+                                else if (header.approved_assessor && header.approved_assessee) {
+                                    status = "Tuntas";
+                                }
+                            }
+                            break;
+                        case 'AK-01':
+                            header = yield drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, result.id) });
+                            if (header) {
+                                if (!header.approved_assessor && !header.approved_assessee) {
+                                    status = "Belum Tuntas";
+                                }
+                                else if (header.approved_assessor && !header.approved_assessee) {
+                                    status = "Menunggu Asesi";
+                                }
+                                else if (header.approved_assessor && header.approved_assessee) {
+                                    status = "Tuntas";
+                                }
+                            }
+                            break;
+                        case 'AK-02':
+                            header = yield drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, result.id) });
+                            if (header) {
+                                if (!header.approved_assessor && !header.approved_assessee) {
+                                    status = "Belum Tuntas";
+                                }
+                                else if (header.approved_assessor && !header.approved_assessee) {
+                                    status = "Menunggu Asesi";
+                                }
+                                else if (header.approved_assessor && header.approved_assessee) {
+                                    status = "Tuntas";
+                                }
+                            }
+                            break;
+                        case 'AK-03':
+                            header = yield drizzle_1.db.query.resultAk03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk03Header.result_id, result.id) });
+                            if (header) {
+                                status = header.comment ? "Tuntas" : "Menunggu Asesi";
+                            }
+                            break;
+                        case 'AK-05':
+                            header = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result.id) });
+                            if (header) {
+                                status = header.approved_assessor ? "Tuntas" : "Belum Tuntas";
+                            }
+                            break;
+                        case 'IA-01':
+                            header = yield drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, result.id) });
+                            if (header) {
+                                if (!header.approved_assessor && !header.approved_assessee) {
+                                    status = "Belum Tuntas";
+                                }
+                                else if (header.approved_assessor && !header.approved_assessee) {
+                                    status = "Menunggu Asesi";
+                                }
+                                else if (header.approved_assessor && header.approved_assessee) {
+                                    status = "Tuntas";
+                                }
+                            }
+                            break;
+                        case 'IA-02':
+                            header = yield drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, result.id) });
+                            if (header) {
+                                if (!header.approved_assessor && !header.approved_assessee) {
+                                    status = "Butuh Persetujuan";
+                                }
+                                else if (header.approved_assessor && !header.approved_assessee) {
+                                    status = "Menunggu Asesi";
+                                }
+                                else if (header.approved_assessor && header.approved_assessee) {
+                                    status = "Tuntas";
+                                }
+                            }
+                            break;
+                        case 'IA-03':
+                            header = yield drizzle_1.db.query.resultIa03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa03Header.result_id, result.id) });
+                            if (header) {
+                                if (!header.approved_assessor && !header.approved_assessee) {
+                                    status = "Belum Tuntas";
+                                }
+                                else if (header.approved_assessor && !header.approved_assessee) {
+                                    status = "Menunggu Asesi";
+                                }
+                                else if (header.approved_assessor && header.approved_assessee) {
+                                    status = "Tuntas";
+                                }
+                            }
+                            break;
+                        case 'IA-05':
+                            header = yield drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, result.id) });
+                            if (header) {
+                                const ia05Result = yield drizzle_1.db.query.resultIa05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05.header_id, header.id) });
+                                if (!ia05Result) {
+                                    status = "Menunggu Asesi";
+                                }
+                                else if (ia05Result && !header.approved_assessor && !header.approved_assessee) {
+                                    status = "Butuh Persetujuan";
+                                }
+                                else if (ia05Result && header.approved_assessor && !header.approved_assessee) {
+                                    status = "Menunggu Asesi";
+                                }
+                                else if (ia05Result && header.approved_assessor && header.approved_assessee) {
+                                    status = "Tuntas";
+                                }
+                            }
+                            break;
+                        // case 'IA-07':
+                        //     header = await db.query.resultIa07Header.findFirst({ where: eq(resultIa07HeaderTable.result_id, result.id) });
+                        //     if (header) {
+                        //         if (!header.approved_assessor && !header.approved_assessee) {
+                        //             status = "Butuh Persetujuan";
+                        //         } else if (header.approved_assessor && !header.approved_assessee) {
+                        //             status = "Menunggu Asesi";
+                        //         } else if (header.approved_assessor && header.approved_assessor) {
+                        //             status = "Tuntas";
+                        //         }
+                        //     }
+                        //     break;
                     }
                 }
-            }
-            // Update status tab (AssessorTab: 'Belum Tuntas' | 'Menunggu Asesi' | 'Tuntas')
-            for (const config of headerConfigs) {
-                const tab = tabs.find((tab) => tab.name === config.name);
-                if (tab) {
-                    tab.status = (config.notYet > 0)
-                        ? 'Belum Tuntas'
-                        : (config.notYet === 0 && config.waiting > 0)
-                            ? 'Menunggu Asesi'
-                            : 'Tuntas';
-                }
+                tab.status = status;
             }
             return {
                 assessment_id: assessment.id,
@@ -766,8 +873,6 @@ class AssessmentService {
                 const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, res.assessee_id) });
                 if (!assessee)
                     continue;
-                const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.user_id) });
-                // Ambil semua header terkait
                 const [resultAPL02, resultIA01, resultIA02, resultIA03, resultIA05, resultIA07, resultAK01, resultAK02, resultAK03, resultAK05] = yield Promise.all([
                     drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, res.id) }),
                     drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, res.id) }),
@@ -780,7 +885,6 @@ class AssessmentService {
                     drizzle_1.db.query.resultAk03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk03Header.result_id, res.id) }),
                     drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, res.id) }),
                 ]);
-                // Penentuan status
                 let status = "Sedang Berjalan";
                 if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee)
                     status = "Belum Kompeten";

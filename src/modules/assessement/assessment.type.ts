@@ -217,7 +217,7 @@ interface IA07QuestionResponse {
 
 export interface AssessorTab {
     name: string;
-    status: "Belum Tuntas" | "Menunggu Asesi" | "Tuntas";
+    status: "Belum Tuntas" | "Menunggu Asesi" | "Butuh Persetujuan" | "Tuntas";
 }
 
 export interface AssesseeTab {

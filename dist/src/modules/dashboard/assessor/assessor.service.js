@@ -33,14 +33,26 @@ class DashboardAssessorService {
                 const ak03 = yield drizzle_1.db.query.resultAk03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk03Header.result_id, result.id) });
                 const ak04 = yield drizzle_1.db.query.resultAk04.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk04.id, result.id) });
                 const ak05 = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result.id) });
-                const getHeaderStatus = (type) => {
+                const getHeaderStatus = (type) => __awaiter(this, void 0, void 0, function* () {
                     switch (type) {
-                        case "apl-01":
-                            return 'Tuntas';
-                        case "data-sertifikasi":
-                            return (doc === null || doc === void 0 ? void 0 : doc.approved) ? 'Tuntas' : 'Belum Tuntas';
                         case "apl-02":
-                            return ((apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessor) && (apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessee)) ? 'Tuntas' : (apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
+                            if (!apl02)
+                                throw new error_1.NotFoundError('Result APL02 Header');
+                            const unitCompetencies = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, result.assessment_id));
+                            let finishedUcApl02Count = 0;
+                            for (const uc of unitCompetencies) {
+                                const elements = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, uc.id));
+                                let completedElements = 0;
+                                for (const el of elements) {
+                                    const row = yield drizzle_1.db.query.resultApl02.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, apl02.id), (0, drizzle_orm_1.eq)(schema_1.resultApl02.element_id, el.id)) });
+                                    if (row)
+                                        completedElements += 1;
+                                }
+                                if (elements.length > 0 && completedElements === elements.length)
+                                    finishedUcApl02Count++;
+                            }
+                            const finishedApl02 = finishedUcApl02Count === unitCompetencies.length;
+                            return ((apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessor) && (apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessee)) ? 'Tuntas' : (apl02 === null || apl02 === void 0 ? void 0 : apl02.approved_assessor) ? 'Menunggu Asesi' : (finishedApl02) ? 'Butuh Persetujuan' : 'Menunggu Asesi';
                         case "ia-01":
                             return ((ia01 === null || ia01 === void 0 ? void 0 : ia01.approved_assessee) && (ia01 === null || ia01 === void 0 ? void 0 : ia01.approved_assessor)) ? 'Tuntas' : (ia01 === null || ia01 === void 0 ? void 0 : ia01.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ia-02":
@@ -48,7 +60,10 @@ class DashboardAssessorService {
                         case "ia-03":
                             return ((ia03 === null || ia03 === void 0 ? void 0 : ia03.approved_assessee) && (ia03 === null || ia03 === void 0 ? void 0 : ia03.approved_assessor)) ? 'Tuntas' : (ia03 === null || ia03 === void 0 ? void 0 : ia03.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ia-05":
-                            return ((ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessee) && (ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessor)) ? 'Tuntas' : (ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
+                            if (!ia05)
+                                throw new error_1.NotFoundError('Result IA05 Header');
+                            const ia05Result = yield drizzle_1.db.query.resultIa05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05.header_id, ia05.id) });
+                            return ((ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessee) && (ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessor)) ? 'Tuntas' : (ia05 === null || ia05 === void 0 ? void 0 : ia05.approved_assessor) ? 'Menunggu Asesi' : (ia05Result) ? 'Butuh Persetujuan' : 'Menunggu Asesi';
                         case "ia-07":
                             return ((ia07 === null || ia07 === void 0 ? void 0 : ia07.approved_assessee) && (ia07 === null || ia07 === void 0 ? void 0 : ia07.approved_assessor)) ? 'Tuntas' : (ia07 === null || ia07 === void 0 ? void 0 : ia07.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ak-01":
@@ -56,7 +71,7 @@ class DashboardAssessorService {
                         case "ak-02":
                             return ((ak02 === null || ak02 === void 0 ? void 0 : ak02.approved_assessee) && (ak02 === null || ak02 === void 0 ? void 0 : ak02.approved_assessor)) ? 'Tuntas' : (ak02 === null || ak02 === void 0 ? void 0 : ak02.approved_assessor) ? 'Menunggu Asesi' : 'Belum Tuntas';
                         case "ak-03":
-                            return (ak03 === null || ak03 === void 0 ? void 0 : ak03.comment) ? 'Tuntas' : 'Belum Tuntas';
+                            return (ak03 === null || ak03 === void 0 ? void 0 : ak03.comment) ? 'Tuntas' : 'Menunggu Asesi';
                         // case "ak-04":
                         //     return false;
                         case "ak-05":
@@ -64,13 +79,13 @@ class DashboardAssessorService {
                         default:
                             throw new error_1.ValidationError('Result Type tidak valid');
                     }
-                };
+                });
                 return {
                     result_id: result.id,
                     assessment_id: result.assessment_id,
                     assessee_id: result.assessee_id,
                     assessee_name: user === null || user === void 0 ? void 0 : user.full_name,
-                    status: getHeaderStatus(type),
+                    status: yield getHeaderStatus(type),
                 };
             })));
         });
