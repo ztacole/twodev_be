@@ -3,7 +3,7 @@ import { NotFoundError } from '../../common/error';
 import { CreateUserRequest, UpdateUserRequest, UserResponse } from './user.type';
 import bcrypt from 'bcryptjs';
 import { user as userTable, role as roleTable } from '../../../drizzle/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 export class UserService {
     static async createUser(data: CreateUserRequest): Promise<UserResponse> {
@@ -23,11 +23,21 @@ export class UserService {
         return formatUserResponse({ ...user, role });
     }
 
-    static async getUsers(): Promise<UserResponse[]> {
-        const users = await db.select().from(userTable);
+    static async getUsers(page: number = 1, limit: number = 10): Promise<{ data: UserResponse[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+        const offset = (page - 1) * limit;
+
+        const users = await db.select().from(userTable).limit(limit).offset(offset);
         const roles = await db.select().from(roleTable);
         const roleById = new Map(roles.map(r => [r.id, r]));
-        return users.map(u => formatUserResponse({ ...u, role: roleById.get(u.role_id) }));
+
+        const countRows = await db.select({ count: sql<number>`COUNT(*)` }).from(userTable);
+        const total = Number(countRows?.[0]?.count ?? 0);
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+
+        return {
+            data: users.map(u => formatUserResponse({ ...u, role: roleById.get(u.role_id) })),
+            meta: { page, limit, total, totalPages }
+        };
     }
 
     static async getUserById(id: number): Promise<UserResponse> {
