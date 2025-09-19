@@ -12,14 +12,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-import userRoutes from './modules/user/user.route';
+import userRoutes from './modules/user/user.routes';
 import authRoutes from './modules/auth/auth.routes';
 import approvalRoutes from './modules/admin/approval/approval.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import occupationRoutes from './modules/occupation/occupation.routes';
 import schemeRoutes from './modules/scheme/scheme.routes';
 import assessmentRoutes from './modules/assessement/assessment.routes';
-import verificationRoutes from './modules/assessement/verification.routes';
+import verificationRoutes from './modules/assessement/verification/verification.routes';
 import uploadsRoutes from './modules/assessement/uploads/uploads.routes';
 import scheduleRoutes from './modules/schedule/schedule.routes';
 import assessorRoutes from './modules/assessor/assessor.routes';
