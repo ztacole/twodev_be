@@ -48,7 +48,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req: any, file: any, cb: any) => {
-  if (['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp'].includes(file.mimetype)) {
+  if (['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(file.mimetype)) {
     cb(null, true);
   } else {
     cb(new Error('Hanya file gambar yang diperbolehkan'), false);
@@ -59,7 +59,7 @@ export const uploadAssessorDetail = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
+    fileSize: 10 * 1024 * 1024 // 5MB
   }
 }).any();
 

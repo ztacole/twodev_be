@@ -44,7 +44,7 @@ const storage = multer_1.default.diskStorage({
     }
 });
 const fileFilter = (req, file, cb) => {
-    if (['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp'].includes(file.mimetype)) {
+    if (['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(file.mimetype)) {
         cb(null, true);
     }
     else {
@@ -55,6 +55,6 @@ exports.upload = (0, multer_1.default)({
     storage,
     fileFilter,
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB
+        fileSize: 10 * 1024 * 1024 // 10MB
     }
 });
