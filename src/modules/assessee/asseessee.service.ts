@@ -29,9 +29,13 @@ const translateGenderToId = (gender: string): 'LAKI-LAKI' | 'PEREMPUAN' => {
 };
 
 export class AssesseeService {
-    static async getAssessees(): Promise<AssesseeResponse[]> {
-        const assessees = await db.select().from(assesseeTable);
-        return assessees.map(this.formatAssesseeResponse);
+    static async getAssessees(page: number = 1, limit: number = 10): Promise<{ data: AssesseeResponse[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+        const offset = (page - 1) * limit;
+        const assessees = await db.select().from(assesseeTable).limit(limit).offset(offset);
+        const countRows = await db.select({ count: (await import('drizzle-orm')).sql<number>`COUNT(*)` }).from(assesseeTable);
+        const total = Number(countRows?.[0]?.count ?? 0);
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+        return { data: assessees.map(this.formatAssesseeResponse), meta: { page, limit, total, totalPages } };
     }
 
     static async getAssesseeById(id: number): Promise<AssesseeResponse> {

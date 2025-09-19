@@ -7,8 +7,9 @@ import fs from 'fs';
 import path from 'path';
 
 export class AssessorService {
-    static async getAssessors(): Promise<AssessorResponse[]> {
-        const assessors = await db.select().from(assessorTable);
+    static async getAssessors(page: number = 1, limit: number = 10): Promise<{ data: AssessorResponse[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+        const offset = (page - 1) * limit;
+        const assessors = await db.select().from(assessorTable).limit(limit).offset(offset);
         const userIds = assessors.map(a => a.user_id);
         const schemeIds = assessors.map(a => a.scheme_id);
         const users = userIds.length ? await db.select().from(userTable) : [];
@@ -17,11 +18,19 @@ export class AssessorService {
         const roleById = new Map(roles.map(r => [r.id, r]));
         const userById = new Map(users.map(u => [u.id, u]));
         const schemeById = new Map(schemes.map(s => [s.id, s]));
-        return assessors.map(a => this.formatAssessorResponse({
+
+        const { sql } = await import('drizzle-orm');
+        const countRows = await db.select({ count: sql<number>`COUNT(*)` }).from(assessorTable);
+        const total = Number(countRows?.[0]?.count ?? 0);
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+
+        const data = assessors.map(a => this.formatAssessorResponse({
             ...a,
             user: { ...userById.get(a.user_id), role: roleById.get(userById.get(a.user_id)?.role_id as number) },
             scheme: schemeById.get(a.scheme_id),
         } as any));
+
+        return { data, meta: { page, limit, total, totalPages } };
     }
 
     static async getAssessorById(id: number): Promise<AssessorResponse> {

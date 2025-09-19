@@ -13,11 +13,14 @@ export class UserController {
     });
 
     static getUsers = asyncHandler(async (req: Request, res: Response) => {
-        const users = await UserService.getUsers();
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
+        const result = await UserService.getUsers(page, limit);
         res.status(200).json({
             success: true,
             message: 'Daftar user berhasil diambil',
-            data: users
+            data: result.data,
+            meta: result.meta
         });
     });
 
