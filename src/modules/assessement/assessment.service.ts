@@ -52,10 +52,12 @@ import {
     assessor,
     resultIa07Header,
     scheduleDetail,
+    resultApl02,
+    resultIa01,
+    resultIa05,
 } from "../../../drizzle/schema";
-import { eq, and, desc, lt, asc } from "drizzle-orm";
-import { AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
-import { Result } from "drizzle-orm/sqlite-core";
+import { eq, and, desc, asc } from "drizzle-orm";
+import { AssesseeTab, AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
 import { AssessorResponse } from "../assessor/assessor.type";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { embedQrCode } from "../../helper/pdfAssets.helper";
@@ -426,26 +428,85 @@ export class AssessmentService {
             .limit(1);
         if (result.length === 0 || !result[0]) throw new NotFoundError('Result');
 
+        // Document
         const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result[0].id) });
         if (!doc) throw new NotFoundError('Result Document');
+
+        // APL02
         const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result[0].id) });
         if (!apl02Header) throw new NotFoundError('Result APL02 Header');
+        const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, result[0].assessment_id));
+        const elementsByUc = await Promise.all(unitCompetencies.map(async (uc) => {
+            const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
+            const results = await db.select().from(resultApl02).where(eq(resultApl02.result_apl02_id, apl02Header.id));
+            return { uc, elements, results };
+        }));
+        let finishedUcApl02Count = 0;
+        Promise.all(elementsByUc.map(async ({ uc, elements, results }) => {
+            const totalElements = elements.length;
+            let completedElements = 0;
+            for (const el of elements) {
+                const row = await db.query.resultApl02.findFirst({ where: and(eq(resultApl02.result_apl02_id, apl02Header.id), eq(resultApl02.element_id, el.id)) });
+                if (row) completedElements += 1;
+            }
+            finishedUcApl02Count = (totalElements > 0 && completedElements === totalElements) ? finishedUcApl02Count + 1 : finishedUcApl02Count;
+        }));
+        const finishedApl02 = finishedUcApl02Count === unitCompetencies.length;
 
-        const tabs = ['APL-01', 'Data Sertifikasi', 'APL-02', 'AK-04', 'AK-01']
+        // AK01
+        const ak01Header = await db.query.resultAk01Header.findFirst({ where: eq(resultAk01HeaderTable.result_id, result[0].id) });
+        if (!ak01Header) throw new NotFoundError('Result AK01 Header');
 
-        const isAnyIa01 = await db.query.groupIa01.findFirst({ where: eq(groupIa01Table.assessment_id, assessment_id) });
-        const isAnyIa02 = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
+        // IA02
+        const ia02Header = await db.query.resultIa02Header.findFirst({ where: eq(resultIa02HeaderTable.result_id, result[0].id) });
+        if (!ia02Header) throw new NotFoundError('Result IA02 Header');
+
+        // IA01
+        const ia01Header = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, result[0].id) });
+        if (!ia01Header) throw new NotFoundError('Result IA01 Header');
+
+        const tabs: AssesseeTab[] = [
+            { name: 'APL-01', status: "Selesai" },
+            { name: 'Data Sertifikasi', status: doc.approved ? "Selesai" : "Menunggu" },
+            { name: 'APL-02', status: (apl02Header.approved_assessor && apl02Header.approved_assessee && finishedApl02) ? "Selesai" : (apl02Header.approved_assessor && finishedApl02) ? "Setujui" : finishedApl02 ? "Menunggu" : "Belum Selesai" },
+            { name: 'AK-01', status: (ak01Header.approved_assessor && ak01Header.approved_assessee) ? "Selesai" : (ak01Header.approved_assessor) ? "Setujui" : "Menunggu" },
+            { name: 'IA-02', status: (ia02Header.approved_assessor && ia02Header.approved_assessee) ? "Selesai" : (ia02Header.approved_assessor) ? "Setujui" : "Menunggu" },
+            { name: 'IA-01', status: (ia01Header.approved_assessor && ia01Header.approved_assessee) ? "Selesai" : (ia01Header.approved_assessor) ? "Setujui" : "Menunggu" }
+        ];
+
         const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
         const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
-        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
+        // const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
 
-        if (isAnyIa02) tabs.push('IA-02');
-        if (isAnyIa01) tabs.push('IA-01');
-        if (isAnyIa03) tabs.push('IA-03');
-        if (isAnyIa05) tabs.push('IA-05');
-        if (isAnyIa07) tabs.push('IA-07');
+        if (isAnyIa03) {
+            const ia03Header = await db.query.resultIa03Header.findFirst({ where: eq(resultIa03HeaderTable.result_id, result[0].id) });
+            if (!ia03Header) throw new NotFoundError('Result IA03 Header');
+            const status = (ia03Header.approved_assessor && ia03Header.approved_assessee) ? "Selesai" : (ia03Header.approved_assessor) ? "Setujui" : "Menunggu";
+            tabs.push({ name: 'IA-03', status: status });
+        }
+        if (isAnyIa05) {
+            const ia05Header = await db.query.resultIa05Header.findFirst({ where: eq(resultIa05HeaderTable.result_id, result[0].id) });
+            if (!ia05Header) throw new NotFoundError('Result IA05 Header');
+            const ia05Result = await db.query.resultIa05.findFirst({ where: eq(resultIa05.header_id, ia05Header.id) });
+            const status = (ia05Header.approved_assessor && ia05Header.approved_assessee) ? "Selesai" : (ia05Header.approved_assessor) ? "Setujui" : (ia05Result) ? "Menunggu" : "Belum Selesai";
+            tabs.push({ name: 'IA-05', status: status });
+        };
+        // if (isAnyIa07) tabs.push({ name: 'IA-07', status: 'Belum Selesai' });
 
-        tabs.push('AK-02', 'AK-03', 'AK-05');
+        const ak02Header = await db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, result[0].id) });
+        if (!ak02Header) throw new NotFoundError('Result AK02 Header');
+
+        const ak03Header = await db.query.resultAk03Header.findFirst({ where: eq(resultAk03HeaderTable.result_id, result[0].id) });
+        if (!ak03Header) throw new NotFoundError('Result AK03 Header');
+
+        const ak05Header = await db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, result[0].id) });
+        if (!ak05Header) throw new NotFoundError('Result AK05');
+
+        tabs.push(
+            { name: 'AK-02', status: (ak02Header.approved_assessor && ak02Header.approved_assessee) ? "Selesai" : (ak02Header.approved_assessor) ? "Setujui" : "Menunggu" },
+            { name: 'AK-03', status: (ak03Header.comment) ? "Selesai" : "Belum Selesai" },
+            { name: 'AK-05', status: (ak05Header.approved_assessor) ? "Selesai" : "Menunggu" }
+        );
 
         const enableOtherRoute = (doc.approved && (apl02Header.approved_assessor && apl02Header.is_continue))
 
@@ -829,10 +890,10 @@ export class AssessmentService {
         const start = new Date(schedule.start_date);
         const end = new Date(schedule.end_date);
 
-        const days = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+        const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
         const months = [
-            "Januari","Februari","Maret","April","Mei","Juni",
-            "Juli","Agustus","September","Oktober","November","Desember"
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
         ];
 
         const startDay = days[start.getDay()];
@@ -856,7 +917,7 @@ export class AssessmentService {
 
         let y = page.getHeight() - 50;
         const fontSizeSmall = 11;
-        
+
         const lineGap = 4;
         const lLineGap = 12;
         const xlLineGap = 20;
@@ -916,7 +977,7 @@ export class AssessmentService {
         page.drawRectangle({
             x, y: tableTop - rowHeight * 2,
             width: colWidths[0], height: rowHeight * 3,
-            color: headerColor, borderColor: rgb(0,0,0), borderWidth: 1
+            color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
         });
         page.drawText("No", { x: x + 8, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
         x += colWidths[0];
@@ -925,7 +986,7 @@ export class AssessmentService {
         page.drawRectangle({
             x, y: tableTop - rowHeight * 2,
             width: colWidths[1], height: rowHeight * 3,
-            color: headerColor, borderColor: rgb(0,0,0), borderWidth: 1
+            color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
         });
         page.drawText("Nama Peserta", { x: x + colWidths[1] / 2 - 47, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
         x += colWidths[1];
@@ -935,7 +996,7 @@ export class AssessmentService {
             x, y: tableTop - rowHeight * 2,
             width: colWidths[2] + colWidths[3],
             height: rowHeight * 3,
-            color: headerColor, borderColor: rgb(0,0,0), borderWidth: 1
+            color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
         });
         page.drawText("REKOMENDASI", { x: x + (colWidths[2] + colWidths[3]) / 2 - 45, y: tableTop + 7, size: fontSizeSmall, font: fontBold });
         page.drawText("ASISTEN PEMROGRAMAN JUNIOR", { x: x + 15, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
@@ -945,7 +1006,7 @@ export class AssessmentService {
             width: colWidths[2],
             height: rowHeight,
             color: headerColor,
-            borderColor: rgb(0,0,0),
+            borderColor: rgb(0, 0, 0),
             borderWidth: 1
         });
         page.drawText("K", { x: x + colWidths[2] / 2 - 5, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
@@ -956,7 +1017,7 @@ export class AssessmentService {
             width: colWidths[3],
             height: rowHeight,
             color: headerColor,
-            borderColor: rgb(0,0,0),
+            borderColor: rgb(0, 0, 0),
             borderWidth: 1
         });
         page.drawText("BK", { x: x + colWidths[2] + colWidths[3] / 2 - 5, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
@@ -966,36 +1027,36 @@ export class AssessmentService {
 
         tableData.forEach(row => {
             let x = 50;
-            page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0,0,0), borderWidth: 1 });
+            page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
             page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
             x += colWidths[0];
-            
-            page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0,0,0), borderWidth: 1 });
+
+            page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
             page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
             x += colWidths[1];
-            
-            page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0,0,0), borderWidth: 1 });
+
+            page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
             page.drawText(row.k, { x: x + colWidths[2] / 2 - 3, y: currentY + 7, size: fontSizeSmall, font: iconFont });
             x += colWidths[2];
-            
-            page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0,0,0), borderWidth: 1 });
+
+            page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
             page.drawText(row.bk, { x: x + colWidths[3] / 2 - 3, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-        
+
             currentY -= rowHeight;
         });
-        y = currentY;  
+        y = currentY;
 
         // === NOTE ===
         drawParagraph(page, "Selama pelaksanaan rekomendasi telah terjadi hal penting sebagai berikut :", 50, y, font, fontSizeSmall);
-        
+
         const boxSize = 12;
         const boxX = 50;
         let boxY = y - boxSize * 2 + 10 - 6;
 
-        page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: rgb(0,0,0), borderWidth: 1, color: rgb(1,1,1) });
+        page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: rgb(0, 0, 0), borderWidth: 1, color: rgb(1, 1, 1) });
         drawParagraph(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY, font, fontSizeSmall);
         boxY -= lineGap;
-        page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: rgb(0,0,0), borderWidth: 1, color: rgb(1,1,1) });
+        page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: rgb(0, 0, 0), borderWidth: 1, color: rgb(1, 1, 1) });
         drawParagraph(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);
         boxY -= lineGap;
         drawParagraph(page, "catatan : ...........................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
@@ -1016,7 +1077,7 @@ export class AssessmentService {
 
         const qrData = "https://www.google.com";
         const qrCode = await embedQrCode(pdfDoc, qrData);
-        page.drawImage(qrCode, 
+        page.drawImage(qrCode,
             { x: page.getWidth() - signatureWidth * 2, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
         );
 

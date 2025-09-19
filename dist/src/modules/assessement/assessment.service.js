@@ -333,29 +333,82 @@ class AssessmentService {
                 .limit(1);
             if (result.length === 0 || !result[0])
                 throw new error_1.NotFoundError('Result');
+            // Document
             const doc = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, result[0].id) });
             if (!doc)
                 throw new error_1.NotFoundError('Result Document');
+            // APL02
             const apl02Header = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, result[0].id) });
             if (!apl02Header)
                 throw new error_1.NotFoundError('Result APL02 Header');
-            const tabs = ['APL-01', 'Data Sertifikasi', 'APL-02', 'AK-04', 'AK-01'];
-            const isAnyIa01 = yield drizzle_1.db.query.groupIa01.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa01.assessment_id, assessment_id) });
-            const isAnyIa02 = yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id) });
+            const unitCompetencies = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, result[0].assessment_id));
+            const elementsByUc = yield Promise.all(unitCompetencies.map((uc) => __awaiter(this, void 0, void 0, function* () {
+                const elements = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, uc.id));
+                const results = yield drizzle_1.db.select().from(schema_1.resultApl02).where((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, apl02Header.id));
+                return { uc, elements, results };
+            })));
+            let finishedUcApl02Count = 0;
+            Promise.all(elementsByUc.map((_a) => __awaiter(this, [_a], void 0, function* ({ uc, elements, results }) {
+                const totalElements = elements.length;
+                let completedElements = 0;
+                for (const el of elements) {
+                    const row = yield drizzle_1.db.query.resultApl02.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.resultApl02.result_apl02_id, apl02Header.id), (0, drizzle_orm_1.eq)(schema_1.resultApl02.element_id, el.id)) });
+                    if (row)
+                        completedElements += 1;
+                }
+                finishedUcApl02Count = (totalElements > 0 && completedElements === totalElements) ? finishedUcApl02Count + 1 : finishedUcApl02Count;
+            })));
+            const finishedApl02 = finishedUcApl02Count === unitCompetencies.length;
+            // AK01
+            const ak01Header = yield drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, result[0].id) });
+            if (!ak01Header)
+                throw new error_1.NotFoundError('Result AK01 Header');
+            // IA02
+            const ia02Header = yield drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, result[0].id) });
+            if (!ia02Header)
+                throw new error_1.NotFoundError('Result IA02 Header');
+            // IA01
+            const ia01Header = yield drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, result[0].id) });
+            if (!ia01Header)
+                throw new error_1.NotFoundError('Result IA01 Header');
+            const tabs = [
+                { name: 'APL-01', status: "Selesai" },
+                { name: 'Data Sertifikasi', status: doc.approved ? "Selesai" : "Menunggu" },
+                { name: 'APL-02', status: (apl02Header.approved_assessor && apl02Header.approved_assessee && finishedApl02) ? "Selesai" : (apl02Header.approved_assessor && finishedApl02) ? "Setujui" : finishedApl02 ? "Menunggu" : "Belum Selesai" },
+                { name: 'AK-01', status: (ak01Header.approved_assessor && ak01Header.approved_assessee) ? "Selesai" : (ak01Header.approved_assessor) ? "Setujui" : "Menunggu" },
+                { name: 'IA-02', status: (ia02Header.approved_assessor && ia02Header.approved_assessee) ? "Selesai" : (ia02Header.approved_assessor) ? "Setujui" : "Menunggu" },
+                { name: 'IA-01', status: (ia01Header.approved_assessor && ia01Header.approved_assessee) ? "Selesai" : (ia01Header.approved_assessor) ? "Setujui" : "Menunggu" }
+            ];
             const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, assessment_id) });
             const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, assessment_id) });
-            const isAnyIa07 = yield drizzle_1.db.query.ia07Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, assessment_id) });
-            if (isAnyIa02)
-                tabs.push('IA-02');
-            if (isAnyIa01)
-                tabs.push('IA-01');
-            if (isAnyIa03)
-                tabs.push('IA-03');
-            if (isAnyIa05)
-                tabs.push('IA-05');
-            if (isAnyIa07)
-                tabs.push('IA-07');
-            tabs.push('AK-02', 'AK-03', 'AK-05');
+            // const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
+            if (isAnyIa03) {
+                const ia03Header = yield drizzle_1.db.query.resultIa03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa03Header.result_id, result[0].id) });
+                if (!ia03Header)
+                    throw new error_1.NotFoundError('Result IA03 Header');
+                const status = (ia03Header.approved_assessor && ia03Header.approved_assessee) ? "Selesai" : (ia03Header.approved_assessor) ? "Setujui" : "Menunggu";
+                tabs.push({ name: 'IA-03', status: status });
+            }
+            if (isAnyIa05) {
+                const ia05Header = yield drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, result[0].id) });
+                if (!ia05Header)
+                    throw new error_1.NotFoundError('Result IA05 Header');
+                const ia05Result = yield drizzle_1.db.query.resultIa05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05.header_id, ia05Header.id) });
+                const status = (ia05Header.approved_assessor && ia05Header.approved_assessee) ? "Selesai" : (ia05Header.approved_assessor) ? "Setujui" : (ia05Result) ? "Menunggu" : "Belum Selesai";
+                tabs.push({ name: 'IA-05', status: status });
+            }
+            ;
+            // if (isAnyIa07) tabs.push({ name: 'IA-07', status: 'Belum Selesai' });
+            const ak02Header = yield drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, result[0].id) });
+            if (!ak02Header)
+                throw new error_1.NotFoundError('Result AK02 Header');
+            const ak03Header = yield drizzle_1.db.query.resultAk03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk03Header.result_id, result[0].id) });
+            if (!ak03Header)
+                throw new error_1.NotFoundError('Result AK03 Header');
+            const ak05Header = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result[0].id) });
+            if (!ak05Header)
+                throw new error_1.NotFoundError('Result AK05');
+            tabs.push({ name: 'AK-02', status: (ak02Header.approved_assessor && ak02Header.approved_assessee) ? "Selesai" : (ak02Header.approved_assessor) ? "Setujui" : "Menunggu" }, { name: 'AK-03', status: (ak03Header.comment) ? "Selesai" : "Belum Selesai" }, { name: 'AK-05', status: (ak05Header.approved_assessor) ? "Selesai" : "Menunggu" });
             const enableOtherRoute = (doc.approved && (apl02Header.approved_assessor && apl02Header.is_continue));
             return {
                 result_id: result[0].id,

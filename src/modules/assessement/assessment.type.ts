@@ -215,7 +215,12 @@ interface IA07QuestionResponse {
     answer_key: string;
 }
 
-export interface AssessorTab{
+export interface AssessorTab {
     name: string;
     status: "Not Started" | "Waiting" | "Completed";
+}
+
+export interface AssesseeTab {
+    name: string;
+    status: "Belum Selesai" | "Menunggu" | "Setujui" | "Selesai";
 }
