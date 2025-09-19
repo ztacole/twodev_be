@@ -466,7 +466,7 @@ class AssessmentService {
                 for (const config of headerConfigs) {
                     let header = yield config.findFirst({ where: (0, drizzle_orm_1.eq)(config.col.result_id, result.id) });
                     if (config.name === 'AK-03') {
-                        if (!header)
+                        if (header && 'comment' in header && !header.comment)
                             config.notYet++;
                     }
                     else if (config.name === 'AK-05') {
@@ -509,8 +509,12 @@ class AssessmentService {
             const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.assessment_id) });
             if (!assessment)
                 throw new error_1.NotFoundError('Assessment');
-            // Tabs setup: all default to 'Belum Selesai'
+            const doc = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, result.id) });
+            if (!doc)
+                throw new error_1.NotFoundError('Result Document');
             const tabs = [
+                { name: 'APL-01', status: 'Selesai' },
+                { name: 'Data Sertifikasi', status: doc.approved ? 'Selesai' : 'Belum Selesai' },
                 { name: 'APL-02', status: 'Belum Selesai' },
                 { name: 'AK-01', status: 'Belum Selesai' },
                 { name: 'IA-02', status: 'Belum Selesai' },

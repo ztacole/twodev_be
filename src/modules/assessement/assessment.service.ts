@@ -575,7 +575,7 @@ export class AssessmentService {
             for (const config of headerConfigs) {
                 let header = await config.findFirst({ where: eq(config.col.result_id, result.id) });
                 if (config.name === 'AK-03') {
-                    if (!header) config.notYet++;
+                    if (header && 'comment' in header && !header.comment) config.notYet++;
                 } else if (config.name === 'AK-05') {
                     if (header && 'approved_assessor' in header && !header.approved_assessor) config.notYet++;
                 } else {
@@ -613,9 +613,12 @@ export class AssessmentService {
         const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
         if (!assessment) throw new NotFoundError('Assessment');
 
+        const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result.id) });
+        if (!doc) throw new NotFoundError('Result Document');
 
-        // Tabs setup: all default to 'Belum Selesai'
         const tabs: AdminTab[] = [
+            { name: 'APL-01', status: 'Selesai' },
+            { name: 'Data Sertifikasi', status: doc.approved ? 'Selesai' : 'Belum Selesai' },
             { name: 'APL-02', status: 'Belum Selesai' },
             { name: 'AK-01', status: 'Belum Selesai' },
             { name: 'IA-02', status: 'Belum Selesai' },
