@@ -38,6 +38,11 @@ export class AssesseeService {
         return { data: assessees.map(this.formatAssesseeResponse), meta: { page, limit, total, totalPages } };
     }
 
+    static async getAllAssessees(): Promise<AssesseeResponse[]> {
+        const assessees = await db.select().from(assesseeTable);
+        return assessees.map(this.formatAssesseeResponse);
+    }
+
     static async getAssesseeById(id: number): Promise<AssesseeResponse> {
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
         if (!assessee) throw new NotFoundError('Assessee');

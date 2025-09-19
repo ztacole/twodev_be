@@ -33,6 +33,21 @@ export class AssessorService {
         return { data, meta: { page, limit, total, totalPages } };
     }
 
+    static async getAllAssessors(): Promise<AssessorResponse[]> {
+        const assessors = await db.select().from(assessorTable);
+        const users = await db.select().from(userTable);
+        const roles = await db.select().from(roleTable);
+        const schemes = await db.select().from(schemeTable);
+        const roleById = new Map(roles.map(r => [r.id, r]));
+        const userById = new Map(users.map(u => [u.id, u]));
+        const schemeById = new Map(schemes.map(s => [s.id, s]));
+        return assessors.map(a => this.formatAssessorResponse({
+            ...a,
+            user: { ...userById.get(a.user_id), role: roleById.get(userById.get(a.user_id)?.role_id as number) },
+            scheme: schemeById.get(a.scheme_id)
+        } as any));
+    }
+
     static async getAssessorById(id: number): Promise<AssessorResponse> {
         const a = await db.query.assessor.findFirst({ where: eq(assessorTable.id, id) });
         if (!a) throw new NotFoundError('Assessor');

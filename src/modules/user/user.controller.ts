@@ -13,14 +13,28 @@ export class UserController {
     });
 
     static getUsers = asyncHandler(async (req: Request, res: Response) => {
-        const page = Math.max(1, Number(req.query.page) || 1);
-        const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
-        const result = await UserService.getUsers(page, limit);
+        const hasPagingParams = typeof (req.params as any)?.page !== 'undefined' && typeof (req.params as any)?.limit !== 'undefined';
+        const hasPagingQuery = typeof req.query.page !== 'undefined' || typeof req.query.limit !== 'undefined';
+
+        if (hasPagingParams || hasPagingQuery) {
+            const pageParam = (req.params as any)?.page;
+            const limitParam = (req.params as any)?.limit;
+            const page = Math.max(1, Number(pageParam ?? req.query.page) || 1);
+            const limit = Math.max(1, Math.min(100, Number(limitParam ?? req.query.limit) || 10));
+            const result = await UserService.getUsers(page, limit);
+            return res.status(200).json({
+                success: true,
+                message: 'Daftar user berhasil diambil',
+                data: result.data,
+                meta: result.meta
+            });
+        }
+
+        const data = await UserService.getAllUsers();
         res.status(200).json({
             success: true,
             message: 'Daftar user berhasil diambil',
-            data: result.data,
-            meta: result.meta
+            data
         });
     });
 
