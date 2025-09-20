@@ -4,40 +4,11 @@ import fs from 'fs';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const assessorId = req.params?.id || req.params?.assessor_id || req.body?.assessor_id || req.body?.assessorId;
-    
-    // Jika tidak ada assessor ID, gunakan folder default
-    if (!assessorId) {
-      const defaultPath = path.join(__dirname, '../../../public/uploads/assessor/default');
-      if (!fs.existsSync(defaultPath)) {
-        fs.mkdirSync(defaultPath, { recursive: true });
-      }
-      cb(null, defaultPath);
-      return;
+    const defaultPath = path.join(__dirname, '../../../public/uploads/assessor/default');
+    if (!fs.existsSync(defaultPath)) {
+      fs.mkdirSync(defaultPath, { recursive: true });
     }
-    
-    const uploadPath = path.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessorId}`);
-    
-    const reqAny: any = req as any;
-    const alreadyCleaned = Boolean(reqAny.__assessorUploadCleaned);
-
-    try {
-      if (!fs.existsSync(uploadPath)) {
-        fs.mkdirSync(uploadPath, { recursive: true });
-      } else if (!alreadyCleaned) {
-        for (const fileName of fs.readdirSync(uploadPath)) {
-          const filePath = path.join(uploadPath, fileName);
-          try {
-            fs.unlinkSync(filePath);
-          } catch {}
-        }
-        reqAny.__assessorUploadCleaned = true;
-        setTimeout(() => cb(null, uploadPath), 50);
-        return;
-      }
-    } catch {}
-
-    cb(null, uploadPath);
+    cb(null, defaultPath);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);

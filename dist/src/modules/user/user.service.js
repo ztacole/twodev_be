@@ -22,6 +22,10 @@ class UserService {
     static createUser(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const hashedPassword = yield bcryptjs_1.default.hash(data.password, 10);
+            const existing = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.email, data.email) });
+            if (existing) {
+                throw new error_1.DuplicateEntryError('Email', data.email);
+            }
             yield drizzle_1.db.insert(schema_1.user).values({
                 full_name: data.full_name,
                 email: data.email,

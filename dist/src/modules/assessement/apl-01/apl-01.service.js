@@ -82,8 +82,8 @@ class APL1Service {
                 if (!updated)
                     throw new error_1.NotFoundError('Assessee');
                 const u = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, updated.user_id) });
-                const jobsData = yield drizzle_1.db.select().from(schema_1.assesseeJob).where((0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, updated.id));
-                return Object.assign(Object.assign({}, updated), { full_name: u === null || u === void 0 ? void 0 : u.full_name, jobs: jobsData });
+                const [jobsData] = yield drizzle_1.db.select().from(schema_1.assesseeJob).where((0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, updated.id));
+                return Object.assign(Object.assign({}, updated), { full_name: u === null || u === void 0 ? void 0 : u.full_name, job: jobsData });
             }
             else {
                 // create assessee
@@ -114,9 +114,10 @@ class APL1Service {
                         });
                     }
                 }
+                const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, createdAssessee.id) });
                 const u = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, user_id) });
-                const jobsData = yield drizzle_1.db.select().from(schema_1.assesseeJob).where((0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, createdAssessee.id));
-                return Object.assign(Object.assign({}, createdAssessee), { full_name: u === null || u === void 0 ? void 0 : u.full_name, jobs: jobsData });
+                const [jobsData] = yield drizzle_1.db.select().from(schema_1.assesseeJob).where((0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, createdAssessee.id));
+                return Object.assign(Object.assign({}, assessee), { full_name: u === null || u === void 0 ? void 0 : u.full_name, job: jobsData });
             }
         });
     }
@@ -132,8 +133,23 @@ class APL1Service {
     static createOrUploadCertificate(params) {
         return __awaiter(this, void 0, void 0, function* () {
             const { assessee_id, assessor_id, assessment_id, bodyData, files } = params;
+            if (!assessee_id)
+                throw new error_1.ValidationError('assessee_id');
+            if (!assessor_id)
+                throw new error_1.ValidationError('assessor_id');
+            if (!assessment_id)
+                throw new error_1.ValidationError('assessment_id');
+            const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
+            if (!existingAssessment)
+                throw new error_1.NotFoundError('Assessment');
+            const existingAssessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, assessee_id) });
+            if (!existingAssessee)
+                throw new error_1.NotFoundError('Assessee');
+            const existingAssessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, assessor_id) });
+            if (!existingAssessor)
+                throw new error_1.NotFoundError('Assessor');
             const BASE_URL = "https://asessment24.site/twodev";
-            // canonical fields and mapping (auto generate camelCase -> snake_case)
+            const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${assessment_id}`);
             const canonicalFields = [
                 'school_report_card',
                 'field_work_practice_certificate',
@@ -149,19 +165,29 @@ class APL1Service {
                 const camel = f.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
                 fieldMapping[camel] = f;
             }
-            // initialize fileData with empty string fallback (DB may be NOT NULL)
             const fileData = {};
             for (const canonical of canonicalFields)
                 fileData[canonical] = '';
-            // fill fileData from uploaded files
             const fileArray = Array.isArray(files) ? files : [];
+            if (fileArray.length < 5) {
+                const fs = require('fs');
+                if (fs.existsSync(uploadPath)) {
+                    for (const fileName of fs.readdirSync(uploadPath)) {
+                        const filePath = require('path').join(uploadPath, fileName);
+                        try {
+                            fs.unlinkSync(filePath);
+                        }
+                        catch (_a) { }
+                    }
+                }
+                throw new error_1.ValidationError('File belum lengkap. Upload gagal, silakan ulangi.');
+            }
             for (const file of fileArray) {
                 const mapped = fieldMapping[file.fieldname];
                 if (mapped) {
                     fileData[mapped] = `${BASE_URL}/uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
                 }
             }
-            // fallback: accept text URL in body too
             for (const key of Object.keys(bodyData || {})) {
                 const mapped = fieldMapping[key];
                 if (mapped && bodyData[key]) {
@@ -170,42 +196,41 @@ class APL1Service {
             }
             const docsData = Object.assign({ purpose: (bodyData === null || bodyData === void 0 ? void 0 : bodyData.purpose) || 'APL1 Certificate Documents' }, fileData);
             // find latest result
-            let results = yield drizzle_1.db.select().from(schema_1.result)
+            let [result] = yield drizzle_1.db.select().from(schema_1.result)
                 .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessee_id, assessee_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id), (0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id)))
                 .orderBy((0, drizzle_orm_1.desc)(schema_1.result.id));
-            let resultRow = results[0] || null;
-            if (!resultRow) {
+            if (!result) {
                 const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
                 if (!assessment)
                     throw new error_1.NotFoundError('Assessment');
-                yield drizzle_1.db.insert(schema_1.result).values({
+                const [createdResult] = yield drizzle_1.db.insert(schema_1.result).values({
                     assessment_id,
                     assessee_id,
                     assessor_id,
                     tuk: TUK_VALUES.SEWAKTU,
                     is_competent: false,
-                });
+                }).$returningId();
                 const found = yield drizzle_1.db.query.result.findFirst({
-                    where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id), (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, assessee_id))
+                    where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.id, createdResult.id)),
                 });
                 if (!found)
                     throw new error_1.NotFoundError('result');
-                resultRow = found;
+                result = found;
                 // create headers
-                yield drizzle_1.db.insert(schema_1.resultApl02Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_continue: false });
-                yield drizzle_1.db.insert(schema_1.resultIa01Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
-                yield drizzle_1.db.insert(schema_1.resultIa02Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-                yield drizzle_1.db.insert(schema_1.resultIa03Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-                yield drizzle_1.db.insert(schema_1.resultIa05Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_achieved: false });
-                yield drizzle_1.db.insert(schema_1.resultIa07Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-                yield drizzle_1.db.insert(schema_1.resultAk01Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-                yield drizzle_1.db.insert(schema_1.resultAk02Header).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
-                yield drizzle_1.db.insert(schema_1.resultAk03Header).values({ result_id: resultRow.id });
-                yield drizzle_1.db.insert(schema_1.resultAk04).values({ result_id: resultRow.id, approved_assessee: false, q1_yes: false, q2_yes: false, q3_yes: false, reason: "" });
-                yield drizzle_1.db.insert(schema_1.resultAk05).values({ result_id: resultRow.id, approved_assessor: false, is_competent: false });
+                yield drizzle_1.db.insert(schema_1.resultApl02Header).values({ result_id: result.id, approved_assessee: false, approved_assessor: false, is_continue: false });
+                yield drizzle_1.db.insert(schema_1.resultIa01Header).values({ result_id: result.id, approved_assessee: false, approved_assessor: false, is_competent: false });
+                yield drizzle_1.db.insert(schema_1.resultIa02Header).values({ result_id: result.id, approved_assessee: false, approved_assessor: false });
+                yield drizzle_1.db.insert(schema_1.resultIa03Header).values({ result_id: result.id, approved_assessee: false, approved_assessor: false });
+                yield drizzle_1.db.insert(schema_1.resultIa05Header).values({ result_id: result.id, approved_assessee: false, approved_assessor: false, is_achieved: false });
+                // await db.insert(ia07HeaderTable).values({ result_id: result.id, approved_assessee: false, approved_assessor: false });
+                yield drizzle_1.db.insert(schema_1.resultAk01Header).values({ result_id: result.id, approved_assessee: false, approved_assessor: false });
+                yield drizzle_1.db.insert(schema_1.resultAk02Header).values({ result_id: result.id, approved_assessee: false, approved_assessor: false, is_competent: false });
+                yield drizzle_1.db.insert(schema_1.resultAk03Header).values({ result_id: result.id });
+                yield drizzle_1.db.insert(schema_1.resultAk04).values({ result_id: result.id, approved_assessee: false, q1_yes: false, q2_yes: false, q3_yes: false, reason: "" });
+                yield drizzle_1.db.insert(schema_1.resultAk05).values({ result_id: result.id, approved_assessor: false, is_competent: false });
             }
             // existing docs?
-            const existingDocs = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, resultRow.id) });
+            const existingDocs = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, result.id) });
             if (existingDocs) {
                 yield drizzle_1.db.update(schema_1.resultDoc).set({
                     purpose: docsData.purpose,
@@ -218,13 +243,13 @@ class APL1Service {
                 // fetch updated doc
                 const updated = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.id, existingDocs.id) });
                 // build full result nested
-                const fullresult = yield APL1Service._buildFullresult(resultRow.id);
+                const fullresult = yield APL1Service._buildFullresult(result.id);
                 return Object.assign(Object.assign({}, updated), { result: fullresult });
             }
             else {
                 // create new doc
                 const [ins] = yield drizzle_1.db.insert(schema_1.resultDoc).values({
-                    result_id: resultRow.id,
+                    result_id: result.id,
                     approved: false,
                     purpose: docsData.purpose,
                     school_report_card: docsData.school_report_card,
@@ -232,10 +257,10 @@ class APL1Service {
                     student_card: docsData.student_card,
                     family_card: docsData.family_card,
                     id_card: docsData.id_card
-                });
+                }).$returningId();
                 // fetch created doc (by result_id)
-                const created = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, resultRow.id) });
-                const fullresult = yield APL1Service._buildFullresult(resultRow.id);
+                const created = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, ins.id) });
+                const fullresult = yield APL1Service._buildFullresult(result.id);
                 return Object.assign(Object.assign({}, created), { result: fullresult });
             }
         });
@@ -352,7 +377,7 @@ class APL1Service {
             if (assesseeJobs.length === 0)
                 throw new error_1.NotFoundError('Assessee Jobs');
             const assesseeJob = assesseeJobs[0];
-            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, jobs: assesseeJob });
+            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob });
         });
     }
     static getResultDocsByResultId(result_id) {

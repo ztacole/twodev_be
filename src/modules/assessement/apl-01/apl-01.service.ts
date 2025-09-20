@@ -1,4 +1,4 @@
-import { DuplicateEntryError, NotFoundError } from '../../../common/error';
+import { DuplicateEntryError, NotFoundError, ValidationError } from '../../../common/error';
 import { db } from '../../../config/drizzle';
 import {
     user as userTable,
@@ -21,6 +21,7 @@ import {
     result,
     assessment,
     assessee,
+    assessor,
 } from '../../../../drizzle/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import {
@@ -93,8 +94,8 @@ export class APL1Service {
             if (!updated) throw new NotFoundError('Assessee');
 
             const u = await db.query.user.findFirst({ where: eq(userTable.id, updated.user_id) });
-            const jobsData = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, updated.id));
-            return { ...(updated as any), full_name: u?.full_name, jobs: jobsData } as AssesseeResponse;
+            const [jobsData] = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, updated.id));
+            return { ...(updated as any), full_name: u?.full_name, job: jobsData } as AssesseeResponse;
         } else {
             // create assessee
             const [createdAssessee] = await db.insert(assesseeTable).values({
@@ -126,9 +127,11 @@ export class APL1Service {
                 }
             }
 
+            const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, createdAssessee.id) });
+
             const u = await db.query.user.findFirst({ where: eq(userTable.id, user_id) });
-            const jobsData = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, createdAssessee.id));
-            return { ...(createdAssessee as any), full_name: u?.full_name, jobs: jobsData } as AssesseeResponse;
+            const [jobsData] = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, createdAssessee.id));
+            return { ...(assessee as any), full_name: u?.full_name, job: jobsData } as AssesseeResponse;
         }
     }
 
@@ -146,10 +149,25 @@ export class APL1Service {
         bodyData: any;
         files: any[];
     }): Promise<CertificateDocsResponse> {
-        const { assessee_id, assessor_id, assessment_id, bodyData, files } = params;
-        const BASE_URL = "https://asessment24.site/twodev";
+    const { assessee_id, assessor_id, assessment_id, bodyData, files } = params;
 
-        // canonical fields and mapping (auto generate camelCase -> snake_case)
+    if (!assessee_id) throw new ValidationError('assessee_id');
+    if (!assessor_id) throw new ValidationError('assessor_id');
+    if (!assessment_id) throw new ValidationError('assessment_id');
+
+    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+    if (!existingAssessment) throw new NotFoundError('Assessment');
+
+    const existingAssessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assessee_id) });
+    if (!existingAssessee) throw new NotFoundError('Assessee');
+
+    const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessor.id, assessor_id) });
+    if (!existingAssessor) throw new NotFoundError('Assessor');
+
+    const BASE_URL = "https://asessment24.site/twodev";
+
+    const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${assessment_id}`);
+
         const canonicalFields = [
             'school_report_card',
             'field_work_practice_certificate',
@@ -167,12 +185,20 @@ export class APL1Service {
             fieldMapping[camel] = f;
         }
 
-        // initialize fileData with empty string fallback (DB may be NOT NULL)
         const fileData: Record<string, string> = {};
         for (const canonical of canonicalFields) fileData[canonical] = '';
 
-        // fill fileData from uploaded files
         const fileArray = Array.isArray(files) ? files : [];
+        if (fileArray.length < 5) {
+            const fs = require('fs');
+            if (fs.existsSync(uploadPath)) {
+                for (const fileName of fs.readdirSync(uploadPath)) {
+                    const filePath = require('path').join(uploadPath, fileName);
+                    try { fs.unlinkSync(filePath); } catch {}
+                }
+            }
+            throw new ValidationError('File belum lengkap. Upload gagal, silakan ulangi.');
+        }
         for (const file of fileArray) {
             const mapped = fieldMapping[file.fieldname];
             if (mapped) {
@@ -180,7 +206,6 @@ export class APL1Service {
             }
         }
 
-        // fallback: accept text URL in body too
         for (const key of Object.keys(bodyData || {})) {
             const mapped = fieldMapping[key];
             if (mapped && bodyData[key]) {
@@ -194,46 +219,44 @@ export class APL1Service {
         };
 
         // find latest result
-        let results = await db.select().from(resultTable)
+        let [result] = await db.select().from(resultTable)
             .where(and(eq(resultTable.assessee_id, assessee_id), eq(resultTable.assessor_id, assessor_id), eq(resultTable.assessment_id, assessment_id)))
             .orderBy(desc(resultTable.id));
 
-        let resultRow = results[0] || null;
-
-        if (!resultRow) {
+        if (!result) {
             const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
             if (!assessment) throw new NotFoundError('Assessment');
 
-            await db.insert(resultTable).values({
+            const [createdResult] = await db.insert(resultTable).values({
                 assessment_id,
                 assessee_id,
                 assessor_id,
                 tuk: TUK_VALUES.SEWAKTU as any,
                 is_competent: false,
-            });
+            }).$returningId();
 
             const found = await db.query.result.findFirst({
-                where: and(eq(resultTable.assessment_id, assessment_id), eq(resultTable.assessor_id, assessor_id), eq(resultTable.assessee_id, assessee_id))
+                where: and(eq(resultTable.id, createdResult.id)),
             });
             if (!found) throw new NotFoundError('result');
-            resultRow = found as any;
+            result = found as any;
 
             // create headers
-            await db.insert(apl02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_continue: false });
-            await db.insert(ia01HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
-            await db.insert(ia02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-            await db.insert(ia03HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-            await db.insert(ia05HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_achieved: false });
-            await db.insert(ia07HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-            await db.insert(ak01HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false });
-            await db.insert(ak02HeaderTable).values({ result_id: resultRow.id, approved_assessee: false, approved_assessor: false, is_competent: false });
-            await db.insert(resultAk03Header).values({ result_id: resultRow.id });
-            await db.insert(resultAk04).values({ result_id: resultRow.id, approved_assessee: false, q1_yes: false, q2_yes: false, q3_yes: false, reason: "" });
-            await db.insert(resultAk05).values({ result_id: resultRow.id, approved_assessor: false, is_competent: false });
+            await db.insert(apl02HeaderTable).values({ result_id: result.id, approved_assessee: false, approved_assessor: false, is_continue: false });
+            await db.insert(ia01HeaderTable).values({ result_id: result.id, approved_assessee: false, approved_assessor: false, is_competent: false });
+            await db.insert(ia02HeaderTable).values({ result_id: result.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ia03HeaderTable).values({ result_id: result.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ia05HeaderTable).values({ result_id: result.id, approved_assessee: false, approved_assessor: false, is_achieved: false });
+            // await db.insert(ia07HeaderTable).values({ result_id: result.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ak01HeaderTable).values({ result_id: result.id, approved_assessee: false, approved_assessor: false });
+            await db.insert(ak02HeaderTable).values({ result_id: result.id, approved_assessee: false, approved_assessor: false, is_competent: false });
+            await db.insert(resultAk03Header).values({ result_id: result.id });
+            await db.insert(resultAk04).values({ result_id: result.id, approved_assessee: false, q1_yes: false, q2_yes: false, q3_yes: false, reason: "" });
+            await db.insert(resultAk05).values({ result_id: result.id, approved_assessor: false, is_competent: false });
         }
 
         // existing docs?
-        const existingDocs = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, resultRow.id) });
+        const existingDocs = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result.id) });
 
         if (existingDocs) {
             await db.update(resultDocTable).set({
@@ -248,12 +271,12 @@ export class APL1Service {
             // fetch updated doc
             const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, existingDocs.id) });
             // build full result nested
-            const fullresult = await APL1Service._buildFullresult(resultRow.id);
+            const fullresult = await APL1Service._buildFullresult(result.id);
             return { ...(updated as any), result: fullresult } as CertificateDocsResponse;
         } else {
             // create new doc
             const [ins] = await db.insert(resultDocTable).values({
-                result_id: resultRow.id,
+                result_id: result.id,
                 approved: false,
                 purpose: docsData.purpose,
                 school_report_card: docsData.school_report_card,
@@ -261,11 +284,11 @@ export class APL1Service {
                 student_card: docsData.student_card,
                 family_card: docsData.family_card,
                 id_card: docsData.id_card
-            });
+            }).$returningId();
 
             // fetch created doc (by result_id)
-            const created = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, resultRow.id) });
-            const fullresult = await APL1Service._buildFullresult(resultRow.id);
+            const created = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, ins.id) });
+            const fullresult = await APL1Service._buildFullresult(result.id);
             return { ...(created as any), result: fullresult } as CertificateDocsResponse;
         }
     }
@@ -393,7 +416,7 @@ export class APL1Service {
         return {
             ...(assessee as any),
             full_name: user?.full_name,
-            jobs: assesseeJob,
+            job: assesseeJob,
         } as AssesseeResponse;
     }
 

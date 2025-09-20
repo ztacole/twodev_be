@@ -18,6 +18,7 @@ const error_1 = require("../../common/error");
 const schema_1 = require("../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const promises_1 = require("fs/promises");
+const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 class AssessorService {
     static getAssessors() {
@@ -41,7 +42,7 @@ class AssessorService {
                 .from(schema_1.assessor)
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, schema_1.user.id))
                 .innerJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, schema_1.scheme.id))
-                .leftJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
+                .innerJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
                 .limit(limit)
                 .offset(offset);
             const countRows = yield drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(*)` }).from(schema_1.assessor);
@@ -70,7 +71,7 @@ class AssessorService {
                 .from(schema_1.assessor)
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, schema_1.user.id))
                 .innerJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, schema_1.scheme.id))
-                .leftJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
+                .innerJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
                 .where((0, drizzle_orm_1.eq)(schema_1.assessor.id, id));
             if (!assessor)
                 throw new error_1.NotFoundError('Assessor');
@@ -96,14 +97,14 @@ class AssessorService {
                 .from(schema_1.assessor)
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, schema_1.user.id))
                 .innerJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, schema_1.scheme.id))
-                .leftJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
+                .innerJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
                 .where((0, drizzle_orm_1.eq)(schema_1.assessor.user_id, user_id));
             if (!assessor)
                 throw new error_1.NotFoundError('Assessor');
             return this.formatAssessorResponse(assessor);
         });
     }
-    static createAssessor(data) {
+    static createAssessor(data, files) {
         return __awaiter(this, void 0, void 0, function* () {
             const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, data.user_id) });
             if (!user)
@@ -111,8 +112,8 @@ class AssessorService {
             if ((user === null || user === void 0 ? void 0 : user.role_id) !== 2) {
                 throw new Error('User bukan assessor');
             }
-            const existingAssessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id) });
-            if (existingAssessor) {
+            let assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id) });
+            if (assessor) {
                 yield drizzle_1.db.update(schema_1.assessor).set({
                     scheme_id: data.scheme_id,
                     no_reg_met: data.no_reg_met,
@@ -120,29 +121,77 @@ class AssessorService {
                     phone_no: data.phone_no,
                     birth_date: new Date(data.birth_date)
                 });
-                const created = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id), (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, data.scheme_id)) });
-                if (!created)
-                    throw new error_1.NotFoundError('Assessor');
-                const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) }) : null;
-                const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, created.scheme_id) });
-                return this.formatAssessorResponse(Object.assign(Object.assign({}, created), { user: Object.assign(Object.assign({}, user), { role }), scheme }));
             }
-            yield drizzle_1.db.insert(schema_1.assessor).values({
-                user_id: data.user_id,
-                scheme_id: data.scheme_id,
-                no_reg_met: data.no_reg_met,
-                institution: data.institution,
-                address: data.address,
-                phone_no: data.phone_no,
-                birth_location: data.birth_location,
-                birth_date: new Date(data.birth_date),
-            });
-            const created = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id), (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, data.scheme_id)) });
-            if (!created)
+            else {
+                const [id] = yield drizzle_1.db.insert(schema_1.assessor).values({
+                    user_id: data.user_id,
+                    scheme_id: data.scheme_id,
+                    no_reg_met: data.no_reg_met,
+                    institution: data.institution,
+                    address: data.address,
+                    phone_no: data.phone_no,
+                    birth_location: data.birth_location,
+                    birth_date: new Date(data.birth_date),
+                }).$returningId();
+                assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, Number(id.id)) });
+            }
+            if (!assessor)
                 throw new error_1.NotFoundError('Assessor');
-            const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) }) : null;
-            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, created.scheme_id) });
-            return this.formatAssessorResponse(Object.assign(Object.assign({}, created), { user: Object.assign(Object.assign({}, user), { role }), scheme }));
+            // Pindahkan file dari folder default ke folder final setelah id diketahui
+            const newDir = path_1.default.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
+            if (fs_1.default.existsSync(newDir)) {
+                for (const fileName of fs_1.default.readdirSync(newDir)) {
+                    const filePath = path_1.default.join(newDir, fileName);
+                    try {
+                        fs_1.default.unlinkSync(filePath);
+                    }
+                    catch (_a) { }
+                }
+            }
+            for (const file of files) {
+                const oldPath = path_1.default.join(process.cwd(), 'public/uploads/assessor/default', file.filename);
+                const newPath = path_1.default.join(newDir, file.filename);
+                if (!fs_1.default.existsSync(newDir)) {
+                    fs_1.default.mkdirSync(newDir, { recursive: true });
+                }
+                if (fs_1.default.existsSync(oldPath)) {
+                    fs_1.default.renameSync(oldPath, newPath);
+                }
+            }
+            try {
+                yield this.createOrUpdateAssessorDetail({
+                    assessorId: assessor.id,
+                    bodyData: data,
+                    files
+                });
+                console.log('Assessor detail created/updated successfully');
+            }
+            catch (error) {
+                yield drizzle_1.db.delete(schema_1.assessor).where((0, drizzle_orm_1.eq)(schema_1.assessor.id, assessor.id));
+                console.log('Error creating/updating assessor detail:', error.message);
+                throw new Error(error.message);
+            }
+            console.log('Assessor created/updated successfully');
+            const [assessorResponse] = yield drizzle_1.db.select({
+                id: schema_1.assessor.id,
+                user_id: schema_1.assessor.user_id,
+                scheme_id: schema_1.assessor.scheme_id,
+                name: schema_1.user.full_name,
+                birth_location: schema_1.assessor.birth_location,
+                birth_date: schema_1.assessor.birth_date,
+                no_reg_met: schema_1.assessor.no_reg_met,
+                institution: schema_1.assessor.institution,
+                address: schema_1.assessor.address,
+                phone_no: schema_1.assessor.phone_no,
+                scheme: schema_1.scheme,
+                detail: schema_1.assessorDetail
+            })
+                .from(schema_1.assessor)
+                .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, schema_1.user.id))
+                .innerJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, schema_1.scheme.id))
+                .innerJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
+                .where((0, drizzle_orm_1.eq)(schema_1.assessor.id, assessor.id));
+            return this.formatAssessorResponse(assessorResponse);
         });
     }
     static deleteAssessor(id) {
@@ -164,11 +213,12 @@ class AssessorService {
             try {
                 const fileArray = Array.isArray(files) ? files : [];
                 if (fileArray.length < 5) {
-                    throw new Error('File tidak boleh kurang dari 5');
+                    throw new error_1.ValidationError('File belum lengkap.');
                 }
                 for (const file of fileArray) {
                     if (requiredFields.includes(file.fieldname)) {
-                        fileData[file.filename] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
+                        // File sudah dipindahkan ke folder final
+                        fileData[file.fieldname] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
                     }
                 }
                 for (const key of Object.keys(bodyData || {})) {
@@ -206,9 +256,9 @@ class AssessorService {
                     return updated;
                 }
                 else {
-                    yield drizzle_1.db.insert(schema_1.assessorDetail).values(detailData);
+                    const [inserted] = yield drizzle_1.db.insert(schema_1.assessorDetail).values(detailData).$returningId();
                     const created = yield drizzle_1.db.query.assessorDetail.findFirst({
-                        where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, assessorId)
+                        where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.id, inserted.id)
                     });
                     return created;
                 }
@@ -221,6 +271,7 @@ class AssessorService {
                 catch (error) {
                     console.log(error);
                 }
+                throw new Error(error.message);
             }
         });
     }

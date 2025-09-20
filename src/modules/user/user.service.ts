@@ -1,5 +1,5 @@
 import { db } from '../../config/drizzle';
-import { NotFoundError } from '../../common/error';
+import { DuplicateEntryError, NotFoundError } from '../../common/error';
 import { CreateUserRequest, UpdateUserRequest, UserResponse } from './user.type';
 import bcrypt from 'bcryptjs';
 import { user as userTable, role as roleTable } from '../../../drizzle/schema';
@@ -9,6 +9,11 @@ import { PagingMeta } from '../../helper/type';
 export class UserService {
     static async createUser(data: CreateUserRequest): Promise<UserResponse> {
         const hashedPassword = await bcrypt.hash(data.password, 10);
+
+        const existing = await db.query.user.findFirst({ where: eq(userTable.email, data.email) });
+        if (existing) {
+            throw new DuplicateEntryError('Email', data.email);
+        }
 
         await db.insert(userTable).values({
             full_name: data.full_name,

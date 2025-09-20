@@ -27,12 +27,12 @@ export class AssessorService {
             scheme: schemeTable,
             detail: assessorDetailTable
         })
-        .from(assessorTable)
-        .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
-        .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
-        .leftJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
-        .limit(limit)
-        .offset(offset);
+            .from(assessorTable)
+            .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
+            .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
+            .innerJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+            .limit(limit)
+            .offset(offset);
 
         const countRows = await db.select({ count: sql<number>`COUNT(*)` }).from(assessorTable);
         const total = Number(countRows?.[0]?.count ?? 0);
@@ -58,11 +58,11 @@ export class AssessorService {
             scheme: schemeTable,
             detail: assessorDetailTable
         })
-        .from(assessorTable)
-        .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
-        .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
-        .leftJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
-        .where(eq(assessorTable.id, id));
+            .from(assessorTable)
+            .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
+            .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
+            .innerJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+            .where(eq(assessorTable.id, id));
 
         if (!assessor) throw new NotFoundError('Assessor');
         return this.formatAssessorResponse(assessor);
@@ -83,26 +83,29 @@ export class AssessorService {
             scheme: schemeTable,
             detail: assessorDetailTable
         })
-        .from(assessorTable)
-        .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
-        .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
-        .leftJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
-        .where(eq(assessorTable.user_id, user_id));
+            .from(assessorTable)
+            .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
+            .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
+            .innerJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+            .where(eq(assessorTable.user_id, user_id));
 
         if (!assessor) throw new NotFoundError('Assessor');
         return this.formatAssessorResponse(assessor);
     }
 
-    static async createAssessor(data: AssessorRequest): Promise<AssessorResponse> {
+    static async createAssessor(
+        data: AssessorRequest,
+        files: any[]
+    ): Promise<AssessorResponse> {
         const user = await db.query.user.findFirst({ where: eq(userTable.id, data.user_id) });
-        if(!user) throw new NotFoundError('User');
+        if (!user) throw new NotFoundError('User');
 
-        if(user?.role_id !== 2) {
+        if (user?.role_id !== 2) {
             throw new Error('User bukan assessor');
         }
 
-        const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, data.user_id) });
-        if (existingAssessor) {
+        let assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, data.user_id) });
+        if (assessor) {
             await db.update(assessorTable).set({
                 scheme_id: data.scheme_id,
                 no_reg_met: data.no_reg_met,
@@ -110,30 +113,82 @@ export class AssessorService {
                 phone_no: data.phone_no,
                 birth_date: new Date(data.birth_date) as any
             })
+        } else {
+            const [id] = await db.insert(assessorTable).values({
+                user_id: data.user_id,
+                scheme_id: data.scheme_id,
+                no_reg_met: data.no_reg_met,
+                institution: data.institution,
+                address: data.address,
+                phone_no: data.phone_no,
+                birth_location: data.birth_location,
+                birth_date: new Date(data.birth_date) as any,
+            }).$returningId();
+            assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, Number(id.id)) });
+        }
+        if (!assessor) throw new NotFoundError('Assessor');
 
-            const created = await db.query.assessor.findFirst({ where: and(eq(assessorTable.user_id, data.user_id), eq(assessorTable.scheme_id, data.scheme_id)) });
-            if (!created) throw new NotFoundError('Assessor');
-            const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
-            const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, created.scheme_id) });
-            return this.formatAssessorResponse({ ...created, user: { ...user, role }, scheme } as any);
+        // Pindahkan file dari folder default ke folder final setelah id diketahui
+        const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
+        if (fs.existsSync(newDir)) {
+            for (const fileName of fs.readdirSync(newDir)) {
+                const filePath = path.join(newDir, fileName);
+                try {
+                    fs.unlinkSync(filePath);
+                } catch { }
+            }
         }
 
-        await db.insert(assessorTable).values({
-            user_id: data.user_id,
-            scheme_id: data.scheme_id,
-            no_reg_met: data.no_reg_met,
-            institution: data.institution,
-            address: data.address,
-            phone_no: data.phone_no,
-            birth_location: data.birth_location,
-            birth_date: new Date(data.birth_date) as any,
-        });
-        const created = await db.query.assessor.findFirst({ where: and(eq(assessorTable.user_id, data.user_id), eq(assessorTable.scheme_id, data.scheme_id)) });
-        if (!created) throw new NotFoundError('Assessor');
-        
-        const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
-        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, created.scheme_id) });
-        return this.formatAssessorResponse({ ...created, user: { ...user, role }, scheme } as any);
+        for (const file of files) {
+            const oldPath = path.join(process.cwd(), 'public/uploads/assessor/default', file.filename);
+            const newPath = path.join(newDir, file.filename);
+
+            if (!fs.existsSync(newDir)) {
+                fs.mkdirSync(newDir, { recursive: true });
+            }
+
+            if (fs.existsSync(oldPath)) {
+                fs.renameSync(oldPath, newPath);
+            }
+        }
+
+        try {
+            await this.createOrUpdateAssessorDetail({
+                assessorId: assessor.id,
+                bodyData: data,
+                files
+            });
+
+            console.log('Assessor detail created/updated successfully');
+        } catch (error: any) {
+            await db.delete(assessorTable).where(eq(assessorTable.id, assessor.id));
+            console.log('Error creating/updating assessor detail:', error.message);
+            throw new Error(error.message);
+        }
+
+        console.log('Assessor created/updated successfully');
+
+        const [assessorResponse] = await db.select({
+            id: assessorTable.id,
+            user_id: assessorTable.user_id,
+            scheme_id: assessorTable.scheme_id,
+            name: userTable.full_name,
+            birth_location: assessorTable.birth_location,
+            birth_date: assessorTable.birth_date,
+            no_reg_met: assessorTable.no_reg_met,
+            institution: assessorTable.institution,
+            address: assessorTable.address,
+            phone_no: assessorTable.phone_no,
+            scheme: schemeTable,
+            detail: assessorDetailTable
+        })
+            .from(assessorTable)
+            .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
+            .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
+            .innerJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+            .where(eq(assessorTable.id, assessor.id));
+
+        return this.formatAssessorResponse(assessorResponse);
     }
 
     static async deleteAssessor(id: number): Promise<void> {
@@ -153,43 +208,44 @@ export class AssessorService {
         const { assessorId, bodyData, files } = params;
         const BASE_URL = "https://asessment24.site";
         const UPLOAD_DIR = path.join(__dirname, `../../../../public/uploads/assessor/assessor-${assessorId}`);
-        
+
         const requiredFields = ['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'];
         const fileData: Record<string, string> = {};
 
         try {
             const fileArray = Array.isArray(files) ? files : [];
-            if(fileArray.length < 5) {
-                throw new Error('File tidak boleh kurang dari 5');
+            if (fileArray.length < 5) {
+                throw new ValidationError('File belum lengkap.');
             }
-    
+
             for (const file of fileArray) {
-                if(requiredFields.includes(file.fieldname)) {
-                    fileData[file.filename] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
+                if (requiredFields.includes(file.fieldname)) {
+                    // File sudah dipindahkan ke folder final
+                    fileData[file.fieldname] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
                 }
             }
-    
+
             for (const key of Object.keys(bodyData || {})) {
                 if (requiredFields.includes(key) && bodyData[key]) {
                     fileData[key] = bodyData[key];
                 }
             }
 
-            for(const field of requiredFields) {
-                if(!fileData[field] && !bodyData[field]) {
+            for (const field of requiredFields) {
+                if (!fileData[field] && !bodyData[field]) {
                     throw new ValidationError(`Field ${field} harus diisi`);
                 }
             }
-    
+
             const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, assessorId) });
             if (!existingAssessor) {
                 throw new NotFoundError('Assessor');
             }
-    
+
             const existingDetail = await db.query.assessorDetail.findFirst({
                 where: eq(assessorDetailTable.assessor_id, assessorId)
             });
-    
+
             const detailData = {
                 assessor_id: assessorId,
                 tax_id_number: fileData.tax_id_number,
@@ -198,34 +254,34 @@ export class AssessorService {
                 national_id: fileData.national_id,
                 id_card: fileData.id_card
             };
-    
+
             if (existingDetail) {
                 await db.update(assessorDetailTable)
                     .set(detailData)
                     .where(eq(assessorDetailTable.id, existingDetail.id));
-    
+
                 const updated = await db.query.assessorDetail.findFirst({
                     where: eq(assessorDetailTable.id, existingDetail.id)
                 });
 
                 return updated;
             } else {
-                await db.insert(assessorDetailTable).values(detailData);
-    
+                const [inserted] = await db.insert(assessorDetailTable).values(detailData).$returningId();
+
                 const created = await db.query.assessorDetail.findFirst({
-                    where: eq(assessorDetailTable.assessor_id, assessorId)
+                    where: eq(assessorDetailTable.id, inserted.id)
                 });
-    
+
                 return created;
             }
-        } catch (error) {
+        } catch (error: any) {
             await db.delete(assessorDetailTable).where(eq(assessorDetailTable.assessor_id, assessorId));
-
             try {
                 await rm(UPLOAD_DIR, { recursive: true, force: true });
             } catch (error) {
                 console.log(error);
             }
+            throw new Error(error.message);
         }
     }
 
@@ -271,14 +327,14 @@ export class AssessorService {
             role: roleTable.name,
             has_assessor_data: assessorTable.id
         })
-        .from(userTable)
-        .innerJoin(roleTable, eq(userTable.role_id, roleTable.id))
-        .leftJoin(assessorTable, eq(userTable.id, assessorTable.user_id))
-        .leftJoin(assessorDetailTable, eq(assessorTable.id, assessorDetailTable.assessor_id))
-        .where(eq(roleTable.name, 'Assessor'))
-        .orderBy(asc(userTable.full_name), asc(userTable.created_at))
-        .limit(limit)
-        .offset(offset);
+            .from(userTable)
+            .innerJoin(roleTable, eq(userTable.role_id, roleTable.id))
+            .leftJoin(assessorTable, eq(userTable.id, assessorTable.user_id))
+            .leftJoin(assessorDetailTable, eq(assessorTable.id, assessorDetailTable.assessor_id))
+            .where(eq(roleTable.name, 'Assessor'))
+            .orderBy(asc(userTable.full_name), asc(userTable.created_at))
+            .limit(limit)
+            .offset(offset);
 
         const results = users.map(u => ({
             id: u.id,

@@ -25,7 +25,7 @@ interface AssesseeResponse {
     address: string;
     postal_code: string;
     educational_qualifications: string;
-    jobs: AssesseeJobResponse[];
+    job: AssesseeJobResponse;
 }
 
 interface CertificateDocsResponse {

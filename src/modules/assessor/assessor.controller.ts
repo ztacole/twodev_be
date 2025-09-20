@@ -5,7 +5,7 @@ import { asyncHandler } from '../../common/async.handler';
 export class AssessorController {
     static createAssessor = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const requiredFields = ['user_id', 'scheme_id', 'address', 'phone_no', 'birth_date', 'no_reg_met'];
+            const requiredFields = ['user_id', 'scheme_id', 'address', 'birth_location', 'institution', 'phone_no', 'birth_date', 'no_reg_met'];
             for (const field of requiredFields) {
                 if (!req.body[field]) {
                     return res.status(400).json({
@@ -17,55 +17,19 @@ export class AssessorController {
 
             const files = Array.isArray(req.files) ? req.files : [];
 
-            const assessor = await AssessorService.createAssessor(req.body);
-
-            if (files.length > 0) {
-                const fs = require('fs');
-                const path = require('path');
-                const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
-                if (fs.existsSync(newDir)) {
-                    for (const fileName of fs.readdirSync(newDir)) {
-                        const filePath = path.join(newDir, fileName);
-                        try {
-                            fs.unlinkSync(filePath);
-                        } catch { }
-                    }
-                }
-
-                for (const file of files) {
-                    const oldPath = path.join(process.cwd(), 'public/uploads/assessor/default', file.filename);
-                    const newPath = path.join(newDir, file.filename);
-
-                    if (!fs.existsSync(newDir)) {
-                        fs.mkdirSync(newDir, { recursive: true });
-                    }
-
-                    if (fs.existsSync(oldPath)) {
-                        fs.renameSync(oldPath, newPath);
-                    }
-                }
-
-                const detail = await AssessorService.createOrUpdateAssessorDetail({
-                    assessorId: assessor.id,
-                    bodyData: req.body,
-                    files
-                });
-
-                res.status(201).json({
-                    success: true,
-                    message: 'Data assessor dan detail berhasil dibuat',
-                    data: {
-                        assessor,
-                        detail
-                    }
-                });
-            } else {
-                res.status(201).json({
-                    success: true,
-                    message: 'Data assessor berhasil dibuat',
-                    data: assessor,
+            if (files.length < 5) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'File belum lengkap.',
                 });
             }
+
+            const assessor = await AssessorService.createAssessor(req.body, files);
+            res.status(201).json({
+                success: true,
+                message: 'Data assessor berhasil dibuat',
+                data: assessor,
+            });
         } catch (error: any) {
             console.error('Error:', error);
             res.status(500).json({

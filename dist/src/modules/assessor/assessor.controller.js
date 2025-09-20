@@ -19,7 +19,7 @@ exports.AssessorController = AssessorController;
 _a = AssessorController;
 AssessorController.createAssessor = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const requiredFields = ['user_id', 'scheme_id', 'address', 'phone_no', 'birth_date', 'no_reg_met'];
+        const requiredFields = ['user_id', 'scheme_id', 'address', 'birth_location', 'institution', 'phone_no', 'birth_date', 'no_reg_met'];
         for (const field of requiredFields) {
             if (!req.body[field]) {
                 return res.status(400).json({
@@ -29,51 +29,18 @@ AssessorController.createAssessor = (0, async_handler_1.asyncHandler)((req, res)
             }
         }
         const files = Array.isArray(req.files) ? req.files : [];
-        const assessor = yield assessor_service_1.AssessorService.createAssessor(req.body);
-        if (files.length > 0) {
-            const fs = require('fs');
-            const path = require('path');
-            const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
-            if (fs.existsSync(newDir)) {
-                for (const fileName of fs.readdirSync(newDir)) {
-                    const filePath = path.join(newDir, fileName);
-                    try {
-                        fs.unlinkSync(filePath);
-                    }
-                    catch (_b) { }
-                }
-            }
-            for (const file of files) {
-                const oldPath = path.join(process.cwd(), 'public/uploads/assessor/default', file.filename);
-                const newPath = path.join(newDir, file.filename);
-                if (!fs.existsSync(newDir)) {
-                    fs.mkdirSync(newDir, { recursive: true });
-                }
-                if (fs.existsSync(oldPath)) {
-                    fs.renameSync(oldPath, newPath);
-                }
-            }
-            const detail = yield assessor_service_1.AssessorService.createOrUpdateAssessorDetail({
-                assessorId: assessor.id,
-                bodyData: req.body,
-                files
-            });
-            res.status(201).json({
-                success: true,
-                message: 'Data assessor dan detail berhasil dibuat',
-                data: {
-                    assessor,
-                    detail
-                }
+        if (files.length < 5) {
+            return res.status(400).json({
+                success: false,
+                message: 'File belum lengkap.',
             });
         }
-        else {
-            res.status(201).json({
-                success: true,
-                message: 'Data assessor berhasil dibuat',
-                data: assessor,
-            });
-        }
+        const assessor = yield assessor_service_1.AssessorService.createAssessor(req.body, files);
+        res.status(201).json({
+            success: true,
+            message: 'Data assessor berhasil dibuat',
+            data: assessor,
+        });
     }
     catch (error) {
         console.error('Error:', error);

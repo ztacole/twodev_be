@@ -58,6 +58,12 @@ APL1Controller.createOrUploadCertificateDocs = (0, async_handler_1.asyncHandler)
         });
     }
     const files = Array.isArray(req.files) ? req.files : [];
+    if (files.length < 5) {
+        return res.status(400).json({
+            success: false,
+            message: 'File belum lengkap. Pastikan semua file yang diperlukan diunggah.'
+        });
+    }
     try {
         const result = yield apl_01_service_1.APL1Service.createOrUploadCertificate({
             assessee_id: assesseeId,
