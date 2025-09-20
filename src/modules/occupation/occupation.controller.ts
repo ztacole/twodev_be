@@ -16,7 +16,8 @@ export class OccupationController {
     });
 
     static getOccupations = asyncHandler(async (req: Request, res: Response) => {
-        const occupations = await OccupationService.getOccupations();
+        const schemeId = req.query.scheme_id ? Number(req.query.scheme_id) : undefined;
+        const occupations = (schemeId) ? await OccupationService.getOccupations(schemeId) : await OccupationService.getOccupations();
 
         res.json({
             success: true,

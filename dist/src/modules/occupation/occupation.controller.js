@@ -27,7 +27,8 @@ OccupationController.createOccupation = (0, async_handler_1.asyncHandler)((req, 
     });
 }));
 OccupationController.getOccupations = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const occupations = yield occupation_service_1.OccupationService.getOccupations();
+    const schemeId = req.query.scheme_id ? Number(req.query.scheme_id) : undefined;
+    const occupations = (schemeId) ? yield occupation_service_1.OccupationService.getOccupations(schemeId) : yield occupation_service_1.OccupationService.getOccupations();
     res.json({
         success: true,
         message: 'Data occupation berhasil diambil',

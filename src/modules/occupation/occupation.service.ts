@@ -6,7 +6,7 @@ import { occupation as occupationTable, scheme as schemeTable } from '../../../d
 import { and, desc, eq } from 'drizzle-orm';
 
 export class OccupationService {
-    static async getOccupations(): Promise<OccupationResponse[]> {
+    static async getOccupations(schemeId?: number): Promise<OccupationResponse[]> {
         const occupations = await db.select({
             id: occupationTable.id,
             scheme_id: occupationTable.scheme_id,
@@ -16,6 +16,7 @@ export class OccupationService {
             scheme: schemeTable
         }).from(occupationTable)
             .leftJoin(schemeTable, eq(occupationTable.scheme_id, schemeTable.id))
+            .where(schemeId ? eq(occupationTable.scheme_id, schemeId) : undefined)
             .orderBy(desc(occupationTable.created_at));
         return occupations as any;
     }

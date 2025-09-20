@@ -19,7 +19,7 @@ const error_1 = require("../../common/error");
 const schema_1 = require("../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 class OccupationService {
-    static getOccupations() {
+    static getOccupations(schemeId) {
         return __awaiter(this, void 0, void 0, function* () {
             const occupations = yield drizzle_1.db.select({
                 id: schema_1.occupation.id,
@@ -30,6 +30,7 @@ class OccupationService {
                 scheme: schema_1.scheme
             }).from(schema_1.occupation)
                 .leftJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, schema_1.scheme.id))
+                .where(schemeId ? (0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, schemeId) : undefined)
                 .orderBy((0, drizzle_orm_1.desc)(schema_1.occupation.created_at));
             return occupations;
         });
