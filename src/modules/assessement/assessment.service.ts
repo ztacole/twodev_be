@@ -1163,27 +1163,25 @@ export class AssessmentService {
         // === TABLE CONTENT ===
         let currentY = tableTop - rowHeight * 3;
 
-        for (let i = 0; i < 4; i++) {
-            tableData.forEach(row => {
-                let x = 50;
-                page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-                page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
-                x += colWidths[0];
+        tableData.forEach(row => {
+            let x = 50;
+            page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
+            x += colWidths[0];
 
-                page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-                page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
-                x += colWidths[1];
+            page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
+            x += colWidths[1];
 
-                page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-                page.drawText(row.k, { x: x + colWidths[2] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-                x += colWidths[2];
+            page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            page.drawText(row.k, { x: x + colWidths[2] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+            x += colWidths[2];
 
-                page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-                page.drawText(row.bk, { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+            page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            page.drawText(row.bk, { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
 
-                currentY -= rowHeight;
-            });
-        }
+            currentY -= rowHeight;
+        });
         y = currentY;
 
         // === NOTE ===
