@@ -415,7 +415,7 @@ class AssessmentService {
                 is_competent: result[0].is_competent,
                 created_at: result[0].created_at,
                 tabs: tabs,
-                enable_other_route: enableOtherRoute,
+                enable_other_route: true,
             };
         });
     }
