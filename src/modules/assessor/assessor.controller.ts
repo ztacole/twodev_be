@@ -5,7 +5,6 @@ import { asyncHandler } from '../../common/async.handler';
 export class AssessorController {
     static createAssessor = asyncHandler(async (req: Request, res: Response) => {
         try {
-
             const requiredFields = ['user_id', 'scheme_id', 'address', 'phone_no', 'birth_date', 'no_reg_met'];
             for (const field of requiredFields) {
                 if (!req.body[field]) {
@@ -100,45 +99,6 @@ export class AssessorController {
             message: 'Data assessor berhasil diambil',
             data: assessor,
         });
-    });
-
-    static updateAssessor = asyncHandler(async (req: Request, res: Response) => {
-        try {
-
-            const files = Array.isArray(req.files) ? req.files : [];
-
-            const assessor = await AssessorService.updateAssessor(Number(req.params.id), req.body);
-
-            if (files.length > 0) {
-                const detail = await AssessorService.createOrUpdateAssessorDetail({
-                    assessorId: Number(req.params.id),
-                    bodyData: req.body,
-                    files
-                });
-
-                res.json({
-                    success: true,
-                    message: 'Data assessor dan detail berhasil diubah',
-                    data: {
-                        assessor,
-                        detail
-                    }
-                });
-            } else {
-                res.json({
-                    success: true,
-                    message: 'Data assessor berhasil diubah',
-                    data: assessor,
-                });
-            }
-        } catch (error: any) {
-            console.error('Update Error:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Terjadi kesalahan dalam mengubah assessor',
-                error: error.message
-            });
-        }
     });
 
     static deleteAssessor = asyncHandler(async (req: Request, res: Response) => {

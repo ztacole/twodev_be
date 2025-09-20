@@ -1,8 +1,9 @@
 import { db } from '../../config/drizzle';
-import { NotFoundError, DuplicateEntryError } from '../../common/error';
+import { NotFoundError, DuplicateEntryError, ValidationError } from '../../common/error';
 import { AssessorResponse, AssessorRequest } from './assessor.type';
 import { assessor as assessorTable, user as userTable, role as roleTable, scheme as schemeTable, assessorDetail as assessorDetailTable } from '../../../drizzle/schema';
 import { and, asc, eq, sql } from 'drizzle-orm';
+import { rm } from "fs/promises";
 import fs from 'fs';
 import path from 'path';
 import { PagingMeta } from '../../helper/type';
@@ -77,9 +78,28 @@ export class AssessorService {
     }
 
     static async createAssessor(data: AssessorRequest): Promise<AssessorResponse> {
-        const existing = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, data.user_id) });
-        if (existing) {
-            throw new DuplicateEntryError('Assessor untuk user_id', data.user_id.toString());
+        const user = await db.query.user.findFirst({ where: eq(userTable.id, data.user_id) });
+        if(!user) throw new NotFoundError('User');
+
+        if(user?.role_id !== 2) {
+            throw new Error('User bukan assessor');
+        }
+
+        const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, data.user_id) });
+        if (existingAssessor) {
+            await db.update(assessorTable).set({
+                scheme_id: data.scheme_id,
+                no_reg_met: data.no_reg_met,
+                address: data.address,
+                phone_no: data.phone_no,
+                birth_date: new Date(data.birth_date) as any
+            })
+
+            const created = await db.query.assessor.findFirst({ where: and(eq(assessorTable.user_id, data.user_id), eq(assessorTable.scheme_id, data.scheme_id)) });
+            if (!created) throw new NotFoundError('Assessor');
+            const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
+            const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, created.scheme_id) });
+            return this.formatAssessorResponse({ ...created, user: { ...user, role }, scheme } as any);
         }
 
         await db.insert(assessorTable).values({
@@ -92,35 +112,10 @@ export class AssessorService {
         });
         const created = await db.query.assessor.findFirst({ where: and(eq(assessorTable.user_id, data.user_id), eq(assessorTable.scheme_id, data.scheme_id)) });
         if (!created) throw new NotFoundError('Assessor');
-        const user = await db.query.user.findFirst({ where: eq(userTable.id, created.user_id) });
+        
         const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
         const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, created.scheme_id) });
         return this.formatAssessorResponse({ ...created, user: { ...user, role }, scheme } as any);
-    }
-
-    static async updateAssessor(id: number, data: AssessorRequest): Promise<AssessorResponse> {
-        const existing = await db.query.assessor.findFirst({ where: eq(assessorTable.id, id) });
-        if (!existing) {
-            throw new NotFoundError('Assessor');
-        }
-
-        await db.update(assessorTable)
-            .set({
-                user_id: data.user_id,
-                scheme_id: data.scheme_id,
-                no_reg_met: data.no_reg_met,
-                address: data.address,
-                phone_no: data.phone_no,
-                birth_date: new Date(data.birth_date) as any,
-            })
-            .where(eq(assessorTable.id, id));
-
-        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, id) });
-        if (!assessor) throw new NotFoundError('Assessor');
-        const user = await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) });
-        const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
-        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, assessor.scheme_id) });
-        return this.formatAssessorResponse({ ...assessor, user: { ...user, role }, scheme } as any);
     }
 
     static async deleteAssessor(id: number): Promise<void> {
@@ -139,55 +134,80 @@ export class AssessorService {
     }): Promise<any> {
         const { assessorId, bodyData, files } = params;
         const BASE_URL = "https://asessment24.site";
-
+        const UPLOAD_DIR = path.join(__dirname, `../../../../public/uploads/assessor/assessor-${assessorId}`);
+        
+        const requiredFields = ['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'];
         const fileData: Record<string, string> = {};
 
-        const fileArray = Array.isArray(files) ? files : [];
-        for (const file of fileArray) {
-            const fieldName = file.fieldname;
-            if (['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'].includes(fieldName)) {
-                fileData[fieldName] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
+        try {
+            const fileArray = Array.isArray(files) ? files : [];
+            if(fileArray.length < 5) {
+                throw new Error('File tidak boleh kurang dari 5');
             }
-        }
-
-        for (const key of Object.keys(bodyData || {})) {
-            if (['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'].includes(key) && bodyData[key]) {
-                fileData[key] = bodyData[key];
+    
+            for (const file of fileArray) {
+                if(requiredFields.includes(file.fieldname)) {
+                    fileData[file.filename] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
+                }
             }
-        }
+    
+            for (const key of Object.keys(bodyData || {})) {
+                if (requiredFields.includes(key) && bodyData[key]) {
+                    fileData[key] = bodyData[key];
+                }
+            }
 
-        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, assessorId) });
-        if (!assessor) throw new NotFoundError('Assessor');
-
-        const existingDetail = await db.query.assessorDetail.findFirst({
-            where: eq(assessorDetailTable.assessor_id, assessorId)
-        });
-
-        const detailData = {
-            assessor_id: assessorId,
-            tax_id_number: fileData.tax_id_number || bodyData.tax_id_number || '',
-            bank_book_cover: fileData.bank_book_cover || bodyData.bank_book_cover || '',
-            certificate: fileData.certificate || bodyData.certificate || '',
-            national_id: fileData.national_id || bodyData.national_id || '',
-            id_card: fileData.id_card || bodyData.id_card || ''
-        };
-
-        if (existingDetail) {
-            await db.update(assessorDetailTable)
-                .set(detailData)
-                .where(eq(assessorDetailTable.id, existingDetail.id));
-
-            const updated = await db.query.assessorDetail.findFirst({
-                where: eq(assessorDetailTable.id, existingDetail.id)
-            });
-            return updated;
-        } else {
-            await db.insert(assessorDetailTable).values(detailData);
-
-            const newDetail = await db.query.assessorDetail.findFirst({
+            for(const field of requiredFields) {
+                if(!fileData[field] && !bodyData[field]) {
+                    throw new ValidationError(`Field ${field} harus diisi`);
+                }
+            }
+    
+            const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, assessorId) });
+            if (!existingAssessor) {
+                throw new NotFoundError('Assessor');
+            }
+    
+            const existingDetail = await db.query.assessorDetail.findFirst({
                 where: eq(assessorDetailTable.assessor_id, assessorId)
             });
-            return newDetail;
+    
+            const detailData = {
+                assessor_id: assessorId,
+                tax_id_number: fileData.tax_id_number,
+                bank_book_cover: fileData.bank_book_cover,
+                certificate: fileData.certificate,
+                national_id: fileData.national_id,
+                id_card: fileData.id_card
+            };
+    
+            if (existingDetail) {
+                await db.update(assessorDetailTable)
+                    .set(detailData)
+                    .where(eq(assessorDetailTable.id, existingDetail.id));
+    
+                const updated = await db.query.assessorDetail.findFirst({
+                    where: eq(assessorDetailTable.id, existingDetail.id)
+                });
+
+                return updated;
+            } else {
+                await db.insert(assessorDetailTable).values(detailData);
+    
+                const created = await db.query.assessorDetail.findFirst({
+                    where: eq(assessorDetailTable.assessor_id, assessorId)
+                });
+    
+                return created;
+            }
+        } catch (error) {
+            await db.delete(assessorDetailTable).where(eq(assessorDetailTable.assessor_id, assessorId));
+
+            try {
+                await rm(UPLOAD_DIR, { recursive: true, force: true });
+            } catch (error) {
+                console.log(error);
+            }
         }
     }
 

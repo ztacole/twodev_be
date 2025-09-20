@@ -7,7 +7,7 @@ export interface AssessorResponse {
     address: string;
     phone_no: string;
     birth_date: Date;
-    no_reg_met: string
+    no_reg_met: string;
 }
 
 // Request Types
