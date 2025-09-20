@@ -92,10 +92,11 @@ class AssessorService {
             const a = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, id) });
             if (!a)
                 throw new error_1.NotFoundError('Assessor');
+            const doc = yield drizzle_1.db.query.assessorDetail.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, a.id) });
             const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, a.user_id) });
             const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) }) : null;
             const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, a.scheme_id) });
-            return this.formatAssessorResponse(Object.assign(Object.assign({}, a), { user: Object.assign(Object.assign({}, user), { role }), scheme }));
+            return Object.assign(Object.assign({}, this.formatAssessorResponse(Object.assign(Object.assign({}, a), { user: Object.assign(Object.assign({}, user), { role }), scheme }))), { documents: doc || null });
         });
     }
     static getAssessorByUserId(user_id) {
@@ -103,10 +104,11 @@ class AssessorService {
             const a = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, user_id) });
             if (!a)
                 throw new error_1.NotFoundError('Assessor');
+            const doc = yield drizzle_1.db.query.assessorDetail.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, a.id) });
             const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, a.user_id) });
             const role = user ? yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) }) : null;
             const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, a.scheme_id) });
-            return this.formatAssessorResponse(Object.assign(Object.assign({}, a), { user: Object.assign(Object.assign({}, user), { role }), scheme }));
+            return Object.assign(Object.assign({}, this.formatAssessorResponse(Object.assign(Object.assign({}, a), { user: Object.assign(Object.assign({}, user), { role }), scheme }))), { documents: doc || null });
         });
     }
     static createAssessor(data) {

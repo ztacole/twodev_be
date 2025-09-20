@@ -50,22 +50,30 @@ export class AssessorService {
         } as any));
     }
 
-    static async getAssessorById(id: number): Promise<AssessorResponse> {
+    static async getAssessorById(id: number): Promise<any> {
         const a = await db.query.assessor.findFirst({ where: eq(assessorTable.id, id) });
         if (!a) throw new NotFoundError('Assessor');
+        const doc = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, a.id) });
         const user = await db.query.user.findFirst({ where: eq(userTable.id, a.user_id) });
         const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
         const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, a.scheme_id) });
-        return this.formatAssessorResponse({ ...a, user: { ...user, role }, scheme } as any);
+        return {
+            ...this.formatAssessorResponse({ ...a, user: { ...user, role }, scheme } as any),
+            documents: doc || null
+        }
     }
 
-    static async getAssessorByUserId(user_id: number): Promise<AssessorResponse> {
+    static async getAssessorByUserId(user_id: number): Promise<any> {
         const a = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, user_id) });
         if (!a) throw new NotFoundError('Assessor');
+        const doc = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, a.id) });
         const user = await db.query.user.findFirst({ where: eq(userTable.id, a.user_id) });
         const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
         const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, a.scheme_id) });
-        return this.formatAssessorResponse({ ...a, user: { ...user, role }, scheme } as any);
+        return {
+            ...this.formatAssessorResponse({ ...a, user: { ...user, role }, scheme } as any),
+            documents: doc || null
+        }
     }
 
     static async createAssessor(data: AssessorRequest): Promise<AssessorResponse> {
