@@ -7,6 +7,7 @@ export enum Gender {
 export interface AssesseeResponse {
     id: number;
     user_id: number;
+    name: string;
     identity_number: string;
     birth_date: Date;
     birth_location: string;
@@ -18,6 +19,16 @@ export interface AssesseeResponse {
     address: string;
     postal_code?: string;
     educational_qualifications: string;
+    job?: {
+        id: number;
+        assessee_id: number;
+        institution_name: string;
+        address: string;
+        postal_code: string;
+        position: string;
+        phone_no: string;
+        job_email: string;
+    };
 }
 
 // Request Types

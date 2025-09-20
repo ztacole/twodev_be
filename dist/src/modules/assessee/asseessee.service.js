@@ -41,7 +41,26 @@ class AssesseeService {
         return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10) {
             var _a, _b;
             const offset = (page - 1) * limit;
-            const assessees = yield drizzle_1.db.select().from(schema_1.assessee).limit(limit).offset(offset);
+            const assessees = yield drizzle_1.db.select({
+                id: schema_1.assessee.id,
+                user_id: schema_1.assessee.user_id,
+                name: schema_1.user.full_name,
+                identity_number: schema_1.assessee.identity_number,
+                birth_date: schema_1.assessee.birth_date,
+                birth_location: schema_1.assessee.birth_location,
+                gender: schema_1.assessee.gender,
+                nationality: schema_1.assessee.nationality,
+                phone_no: schema_1.assessee.phone_no,
+                house_phone_no: schema_1.assessee.house_phone_no,
+                office_phone_no: schema_1.assessee.office_phone_no,
+                address: schema_1.assessee.address,
+                postal_code: schema_1.assessee.postal_code,
+                educational_qualifications: schema_1.assessee.educational_qualifications,
+                job: schema_1.assesseeJob
+            }).from(schema_1.assessee)
+                .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
+                .innerJoin(schema_1.assesseeJob, (0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, schema_1.assessee.id))
+                .limit(limit).offset(offset);
             const countRows = yield drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(*)` }).from(schema_1.assessee);
             const total = Number((_b = (_a = countRows === null || countRows === void 0 ? void 0 : countRows[0]) === null || _a === void 0 ? void 0 : _a.count) !== null && _b !== void 0 ? _b : 0);
             const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -50,10 +69,30 @@ class AssesseeService {
     }
     static getAssesseeById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, id) });
-            if (!assessee)
+            const assessee = yield drizzle_1.db.select({
+                id: schema_1.assessee.id,
+                user_id: schema_1.assessee.user_id,
+                name: schema_1.user.full_name,
+                identity_number: schema_1.assessee.identity_number,
+                birth_date: schema_1.assessee.birth_date,
+                birth_location: schema_1.assessee.birth_location,
+                gender: schema_1.assessee.gender,
+                nationality: schema_1.assessee.nationality,
+                phone_no: schema_1.assessee.phone_no,
+                house_phone_no: schema_1.assessee.house_phone_no,
+                office_phone_no: schema_1.assessee.office_phone_no,
+                address: schema_1.assessee.address,
+                postal_code: schema_1.assessee.postal_code,
+                educational_qualifications: schema_1.assessee.educational_qualifications,
+                job: schema_1.assesseeJob
+            }).from(schema_1.assessee)
+                .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
+                .innerJoin(schema_1.assesseeJob, (0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, schema_1.assessee.id))
+                .where((0, drizzle_orm_1.eq)(schema_1.assessee.id, id));
+            if (assessee.length === 0)
                 throw new error_1.NotFoundError('Assessee');
-            return this.formatAssesseeResponse(assessee);
+            const [assesseeData] = assessee;
+            return this.formatAssesseeResponse(assesseeData);
         });
     }
     static createAssessee(data) {
@@ -120,17 +159,19 @@ class AssesseeService {
         return {
             id: assessee.id,
             user_id: assessee.user_id,
-            identity_number: assessee.identityNumber,
+            name: assessee.user.full_name,
+            identity_number: assessee.identity_number,
             birth_date: assessee.birth_date,
-            birth_location: assessee.b_lrthLocation,
+            birth_location: assessee.birth_location,
             gender: assessee.gender,
             nationality: assessee.nationality,
-            phone_no: assessee.pho_neNo,
-            house_phone_no: assessee.ho_nsePhoneNo,
-            office_phone_no: assessee.of_nicePhoneNo,
+            phone_no: assessee.phone_no,
+            house_phone_no: assessee.house_phone_no,
+            office_phone_no: assessee.office_phone_no,
             address: assessee.address,
-            postal_code: assessee.p_cstalCode,
-            educational_qualifications: assessee.educationalQualifications,
+            postal_code: assessee.postal_code,
+            educational_qualifications: assessee.educational_qualifications,
+            job: assessee.job
         };
     }
 }

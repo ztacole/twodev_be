@@ -1,7 +1,7 @@
 import { db } from '../../config/drizzle';
 import { NotFoundError, DuplicateEntryError } from '../../common/error';
 import { AssesseeResponse, AssesseeRequest } from './asseessee.type';
-import { assessee as assesseeTable, user as userTable, role as roleTable } from '../../../drizzle/schema';
+import { assessee as assesseeTable, user as userTable, role as roleTable, assesseeJob } from '../../../drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
 import { PagingMeta } from '../../helper/type';
 
@@ -32,7 +32,26 @@ const translateGenderToId = (gender: string): 'LAKI-LAKI' | 'PEREMPUAN' => {
 export class AssesseeService {
     static async getAssessees(page: number = 1, limit: number = 10): Promise<{ data: AssesseeResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
-        const assessees = await db.select().from(assesseeTable).limit(limit).offset(offset);
+        const assessees = await db.select({
+            id: assesseeTable.id,
+            user_id: assesseeTable.user_id,
+            name: userTable.full_name,
+            identity_number: assesseeTable.identity_number,
+            birth_date: assesseeTable.birth_date,
+            birth_location: assesseeTable.birth_location,
+            gender: assesseeTable.gender,
+            nationality: assesseeTable.nationality,
+            phone_no: assesseeTable.phone_no,
+            house_phone_no: assesseeTable.house_phone_no,
+            office_phone_no: assesseeTable.office_phone_no,
+            address: assesseeTable.address,
+            postal_code: assesseeTable.postal_code,
+            educational_qualifications: assesseeTable.educational_qualifications,
+            job: assesseeJob
+        }).from(assesseeTable)
+            .leftJoin(userTable, eq(assesseeTable.user_id, userTable.id))
+            .innerJoin(assesseeJob, eq(assesseeJob.assessee_id, assesseeTable.id))
+            .limit(limit).offset(offset);
         const countRows = await db.select({ count: sql<number>`COUNT(*)` }).from(assesseeTable);
         const total = Number(countRows?.[0]?.count ?? 0);
         const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -40,9 +59,29 @@ export class AssesseeService {
     }
 
     static async getAssesseeById(id: number): Promise<AssesseeResponse> {
-        const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
-        if (!assessee) throw new NotFoundError('Assessee');
-        return this.formatAssesseeResponse(assessee);
+        const assessee = await db.select({
+            id: assesseeTable.id,
+            user_id: assesseeTable.user_id,
+            name: userTable.full_name,
+            identity_number: assesseeTable.identity_number,
+            birth_date: assesseeTable.birth_date,
+            birth_location: assesseeTable.birth_location,
+            gender: assesseeTable.gender,
+            nationality: assesseeTable.nationality,
+            phone_no: assesseeTable.phone_no,
+            house_phone_no: assesseeTable.house_phone_no,
+            office_phone_no: assesseeTable.office_phone_no,
+            address: assesseeTable.address,
+            postal_code: assesseeTable.postal_code,
+            educational_qualifications: assesseeTable.educational_qualifications,
+            job: assesseeJob
+        }).from(assesseeTable)
+            .leftJoin(userTable, eq(assesseeTable.user_id, userTable.id))
+            .innerJoin(assesseeJob, eq(assesseeJob.assessee_id, assesseeTable.id))
+            .where(eq(assesseeTable.id, id));
+        if (assessee.length === 0) throw new NotFoundError('Assessee');
+        const [assesseeData] = assessee;
+        return this.formatAssesseeResponse(assesseeData);
     }
 
     static async createAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
@@ -102,17 +141,19 @@ export class AssesseeService {
         return {
             id: assessee.id,
             user_id: assessee.user_id,
-            identity_number: assessee.identityNumber,
+            name: assessee.user.full_name,
+            identity_number: assessee.identity_number,
             birth_date: assessee.birth_date,
-            birth_location: assessee.b_lrthLocation,
+            birth_location: assessee.birth_location,
             gender: assessee.gender,
             nationality: assessee.nationality,
-            phone_no: assessee.pho_neNo,
-            house_phone_no: assessee.ho_nsePhoneNo,
-            office_phone_no: assessee.of_nicePhoneNo,
+            phone_no: assessee.phone_no,
+            house_phone_no: assessee.house_phone_no,
+            office_phone_no: assessee.office_phone_no,
             address: assessee.address,
-            postal_code: assessee.p_cstalCode,
-            educational_qualifications: assessee.educationalQualifications,
+            postal_code: assessee.postal_code,
+            educational_qualifications: assessee.educational_qualifications,
+            job: assessee.job
         };
     }
 }
