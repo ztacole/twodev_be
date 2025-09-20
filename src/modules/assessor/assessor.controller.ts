@@ -22,10 +22,18 @@ export class AssessorController {
             if (files.length > 0) {
                 const fs = require('fs');
                 const path = require('path');
+                const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
+                if (fs.existsSync(newDir)) {
+                    for (const fileName of fs.readdirSync(newDir)) {
+                        const filePath = path.join(newDir, fileName);
+                        try {
+                            fs.unlinkSync(filePath);
+                        } catch { }
+                    }
+                }
 
                 for (const file of files) {
                     const oldPath = path.join(process.cwd(), 'public/uploads/assessor/default', file.filename);
-                    const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
                     const newPath = path.join(newDir, file.filename);
 
                     if (!fs.existsSync(newDir)) {

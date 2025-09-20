@@ -58,18 +58,27 @@ APL1Controller.createOrUploadCertificateDocs = (0, async_handler_1.asyncHandler)
         });
     }
     const files = Array.isArray(req.files) ? req.files : [];
-    const result = yield apl_01_service_1.APL1Service.createOrUploadCertificate({
-        assessee_id: assesseeId,
-        assessor_id: assessorId,
-        assessment_id: assessmentId,
-        bodyData: req.body,
-        files
-    });
-    res.status(201).json({
-        success: true,
-        message: 'Data sertifikat dan file berhasil disimpan',
-        data: result
-    });
+    try {
+        const result = yield apl_01_service_1.APL1Service.createOrUploadCertificate({
+            assessee_id: assesseeId,
+            assessor_id: assessorId,
+            assessment_id: assessmentId,
+            bodyData: req.body,
+            files
+        });
+        res.status(201).json({
+            success: true,
+            message: 'Data sertifikat dan file berhasil disimpan',
+            data: result
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan dalam membuat sertifikat',
+            error: error.message
+        });
+    }
 }));
 APL1Controller.getAllResult = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const results = yield apl_01_service_1.APL1Service.getAllResultDoc();

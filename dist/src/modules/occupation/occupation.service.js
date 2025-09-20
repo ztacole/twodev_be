@@ -18,6 +18,8 @@ const exceljs_1 = __importDefault(require("exceljs"));
 const error_1 = require("../../common/error");
 const schema_1 = require("../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 class OccupationService {
     static getOccupations(schemeId) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -63,26 +65,31 @@ class OccupationService {
     }
     static updateOccupation(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            const existingOccupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, id) });
-            if (!existingOccupation) {
-                throw new error_1.NotFoundError('Occupation');
+            try {
+                const existingOccupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, id) });
+                if (!existingOccupation) {
+                    throw new error_1.NotFoundError('Occupation');
+                }
+                const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, data.scheme_id) });
+                if (!scheme) {
+                    throw new error_1.NotFoundError('Scheme');
+                }
+                const existingOccupationName = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.name, data.name) });
+                if (existingOccupationName && existingOccupationName.id !== id) {
+                    throw new error_1.DuplicateEntryError('Occupation name', data.name);
+                }
+                yield drizzle_1.db.update(schema_1.occupation)
+                    .set({ scheme_id: data.scheme_id, name: data.name })
+                    .where((0, drizzle_orm_1.eq)(schema_1.occupation.id, id));
+                const occupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, id) });
+                if (!occupation) {
+                    throw new error_1.NotFoundError('Occupation');
+                }
+                return occupation;
             }
-            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, data.scheme_id) });
-            if (!scheme) {
-                throw new error_1.NotFoundError('Scheme');
+            catch (error) {
+                throw new Error(error.message);
             }
-            const existingOccupationName = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.name, data.name) });
-            if (existingOccupationName && existingOccupationName.id !== id) {
-                throw new error_1.DuplicateEntryError('Occupation name', data.name);
-            }
-            yield drizzle_1.db.update(schema_1.occupation)
-                .set({ scheme_id: data.scheme_id, name: data.name })
-                .where((0, drizzle_orm_1.eq)(schema_1.occupation.id, id));
-            const occupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, id) });
-            if (!occupation) {
-                throw new error_1.NotFoundError('Occupation');
-            }
-            return occupation;
         });
     }
     static deleteOccupation(id) {
@@ -141,6 +148,16 @@ class OccupationService {
                 { width: 40 } // Okupasi
             ];
             return yield workbook.xlsx.writeBuffer();
+        });
+    }
+    static getUploadedPdf(id, schemaId, name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const filePath = path_1.default.join(__dirname, `../../../public/uploads/occupations/${id}_${schemaId}_${name}/${name}.pdf`);
+            if (!fs_1.default.existsSync(filePath)) {
+                throw new error_1.AppError(`File PDF tidak ditemukan di server`, 404);
+            }
+            const fileBuffer = yield fs_1.default.promises.readFile(filePath);
+            return fileBuffer;
         });
     }
 }

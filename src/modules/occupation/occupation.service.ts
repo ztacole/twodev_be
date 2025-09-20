@@ -143,7 +143,6 @@ export class OccupationService {
 
     static async getUploadedPdf(id: number, schemaId: number, name: string) {
         const filePath = path.join(__dirname, `../../../public/uploads/occupations/${id}_${schemaId}_${name}/${name}.pdf`);
-        console.log(filePath);
         if (!fs.existsSync(filePath)) {
             throw new AppError(`File PDF tidak ditemukan di server`, 404);
         }

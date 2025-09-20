@@ -9,7 +9,6 @@ router.get('/', assessor_controller_1.AssessorController.getAssessors);
 router.get('/user/status', assessor_controller_1.AssessorController.getAssessorUsers);
 router.get('/user/:userId', assessor_controller_1.AssessorController.getAssessorByUserId);
 router.get('/:id', assessor_controller_1.AssessorController.getAssessorById);
-router.put('/:id', upload_config_1.uploadAssessorDetail, assessor_controller_1.AssessorController.updateAssessor);
 router.delete('/:id', assessor_controller_1.AssessorController.deleteAssessor);
 router.get('/:assessorId/detail', assessor_controller_1.AssessorController.getAssessorDetail);
 router.get('/detail/all', assessor_controller_1.AssessorController.getAllAssessorDetails);

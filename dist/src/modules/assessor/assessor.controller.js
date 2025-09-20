@@ -33,9 +33,18 @@ AssessorController.createAssessor = (0, async_handler_1.asyncHandler)((req, res)
         if (files.length > 0) {
             const fs = require('fs');
             const path = require('path');
+            const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
+            if (fs.existsSync(newDir)) {
+                for (const fileName of fs.readdirSync(newDir)) {
+                    const filePath = path.join(newDir, fileName);
+                    try {
+                        fs.unlinkSync(filePath);
+                    }
+                    catch (_b) { }
+                }
+            }
             for (const file of files) {
                 const oldPath = path.join(process.cwd(), 'public/uploads/assessor/default', file.filename);
-                const newDir = path.join(process.cwd(), 'public/uploads/assessor', `assessor-${assessor.id}`);
                 const newPath = path.join(newDir, file.filename);
                 if (!fs.existsSync(newDir)) {
                     fs.mkdirSync(newDir, { recursive: true });
@@ -101,42 +110,6 @@ AssessorController.getAssessorByUserId = (0, async_handler_1.asyncHandler)((req,
         message: 'Data assessor berhasil diambil',
         data: assessor,
     });
-}));
-AssessorController.updateAssessor = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const files = Array.isArray(req.files) ? req.files : [];
-        const assessor = yield assessor_service_1.AssessorService.updateAssessor(Number(req.params.id), req.body);
-        if (files.length > 0) {
-            const detail = yield assessor_service_1.AssessorService.createOrUpdateAssessorDetail({
-                assessorId: Number(req.params.id),
-                bodyData: req.body,
-                files
-            });
-            res.json({
-                success: true,
-                message: 'Data assessor dan detail berhasil diubah',
-                data: {
-                    assessor,
-                    detail
-                }
-            });
-        }
-        else {
-            res.json({
-                success: true,
-                message: 'Data assessor berhasil diubah',
-                data: assessor,
-            });
-        }
-    }
-    catch (error) {
-        console.error('Update Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Terjadi kesalahan dalam mengubah assessor',
-            error: error.message
-        });
-    }
 }));
 AssessorController.deleteAssessor = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     yield assessor_service_1.AssessorService.deleteAssessor(Number(req.params.id));
