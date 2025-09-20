@@ -37,16 +37,35 @@ export class OccupationController {
     });
 
     static updateOccupation = asyncHandler(async (req: Request, res: Response) => {
-        const occupation = await OccupationService.updateOccupation(
-            Number(req.params.id),
-            req.body
-        );
+        try {
+            const file = req.file;
+            if (!file) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tidak ada file yang diunggah',
+                });
+            }
 
-        res.json({
-            success: true,
-            message: 'Occupation berhasil diperbarui',
-            data: occupation,
-        });
+            const occupation = await OccupationService.updateOccupation(
+                Number(req.params.id),
+                req.body
+            );
+
+            res.json({
+                success: true,
+                message: 'Occupation berhasil diperbarui',
+                data: {
+                    ...occupation,
+                    uploadedFile: file
+                },
+            });
+        } catch (error: any) {
+            res.status(500).json({
+                success: false,
+                message: 'Gagal memperbarui occupation',
+                error: error.message
+            });
+        }
     });
 
     static deleteOccupation = asyncHandler(async (req: Request, res: Response) => {
@@ -66,4 +85,23 @@ export class OccupationController {
 
         res.send(buffer);
     });
+
+    static getUploadedPdf = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const occupation = await OccupationService.getOccupationById(Number(req.params.id));
+            const occupationId = Number(req.params.id);
+            const schemaId = occupation.scheme.id;
+            const name = (occupation.name).replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+            const pdf = await OccupationService.getUploadedPdf(occupationId, schemaId, name);
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename=occupation-${name}.pdf`);
+            res.send(pdf);
+        } catch (error: any) {
+            res.status(500).json({
+                success: false,
+                message: 'Gagal mengambil PDF',
+                error: error.message
+            });
+        }
+    })
 }

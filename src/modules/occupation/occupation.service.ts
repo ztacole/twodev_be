@@ -1,9 +1,11 @@
 import { db } from '../../config/drizzle';
 import ExcelJS from 'exceljs';
 import { OccupationRequest, OccupationResponse } from './occupation.type';
-import { DuplicateEntryError, NotFoundError } from '../../common/error';
+import { AppError, DuplicateEntryError, NotFoundError } from '../../common/error';
 import { occupation as occupationTable, scheme as schemeTable } from '../../../drizzle/schema';
 import { and, desc, eq } from 'drizzle-orm';
+import path from 'path';
+import fs from 'fs';
 
 export class OccupationService {
     static async getOccupations(schemeId?: number): Promise<OccupationResponse[]> {
@@ -48,31 +50,36 @@ export class OccupationService {
     }
 
     static async updateOccupation(id: number, data: OccupationRequest) {
-        const existingOccupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, id) });
-        if (!existingOccupation) {
-            throw new NotFoundError('Occupation');
-        }
-        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, data.scheme_id) });
-        if (!scheme) {
-            throw new NotFoundError('Scheme');
-        }
+        try {
+            const existingOccupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, id) });
+            if (!existingOccupation) {
+                throw new NotFoundError('Occupation');
+            }
+            const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, data.scheme_id) });
+            if (!scheme) {
+                throw new NotFoundError('Scheme');
+            }
 
-        const existingOccupationName = await db.query.occupation.findFirst({ where: eq(occupationTable.name, data.name) });
-        if (existingOccupationName && existingOccupationName.id !== id) {
-            throw new DuplicateEntryError('Occupation name', data.name);
-        }
+            const existingOccupationName = await db.query.occupation.findFirst({ where: eq(occupationTable.name, data.name) });
+            if (existingOccupationName && existingOccupationName.id !== id) {
+                throw new DuplicateEntryError('Occupation name', data.name);
+            }
 
-        await db.update(occupationTable)
-            .set({ scheme_id: data.scheme_id, name: data.name })
-            .where(eq(occupationTable.id, id));
+            await db.update(occupationTable)
+                .set({ scheme_id: data.scheme_id, name: data.name })
+                .where(eq(occupationTable.id, id));
 
-        const occupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, id) });
-        if (!occupation) {
-            throw new NotFoundError('Occupation');
+            const occupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, id) });
+            if (!occupation) {
+                throw new NotFoundError('Occupation');
+            }
+
+            return occupation;
+        } catch (error: any) {
+            throw new Error(error.message);
         }
-        return occupation;
     }
-
+    
     static async deleteOccupation(id: number) {
         const existingOccupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, id) });
         if (!existingOccupation) {
@@ -132,5 +139,15 @@ export class OccupationService {
         ];
 
         return await workbook.xlsx.writeBuffer();
+    }
+
+    static async getUploadedPdf(id: number, schemaId: number, name: string) {
+        const filePath = path.join(__dirname, `../../../public/uploads/occupations/${id}_${schemaId}_${name}/${name}.pdf`);
+        console.log(filePath);
+        if (!fs.existsSync(filePath)) {
+            throw new AppError(`File PDF tidak ditemukan di server`, 404);
+        }
+        const fileBuffer = await fs.promises.readFile(filePath);
+        return fileBuffer;
     }
 }
