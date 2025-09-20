@@ -57,6 +57,8 @@ export const assessor = mysqlTable('assessor', {
     no_reg_met: varchar('no_reg_met', { length: 255 }).notNull(),
     address: varchar('address', { length: 255 }).notNull(),
     phone_no: varchar('phone_no', { length: 255 }).notNull(),
+    birth_location: varchar('birth_location', { length: 255 }).notNull(),
+    institution: varchar('institution', { length: 255 }).notNull(),
     birth_date: date('birth_date').notNull(),
     ...timestamps
 });

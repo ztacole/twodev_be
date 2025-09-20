@@ -8,73 +8,89 @@ import fs from 'fs';
 import path from 'path';
 import { PagingMeta } from '../../helper/type';
 import { count } from 'console';
+import { de } from '@faker-js/faker/.';
 
 export class AssessorService {
     static async getAssessors(page: number = 1, limit: number = 10): Promise<{ data: AssessorResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
-        const assessors = await db.select().from(assessorTable).limit(limit).offset(offset);
-        const userIds = assessors.map(a => a.user_id);
-        const schemeIds = assessors.map(a => a.scheme_id);
-        const users = userIds.length ? await db.select().from(userTable) : [];
-        const roles = await db.select().from(roleTable);
-        const schemes = schemeIds.length ? await db.select().from(schemeTable) : [];
-        const roleById = new Map(roles.map(r => [r.id, r]));
-        const userById = new Map(users.map(u => [u.id, u]));
-        const schemeById = new Map(schemes.map(s => [s.id, s]));
+        const assessors = await db.select({
+            id: assessorTable.id,
+            user_id: assessorTable.user_id,
+            scheme_id: assessorTable.scheme_id,
+            name: userTable.full_name,
+            birth_location: assessorTable.birth_location,
+            birth_date: assessorTable.birth_date,
+            no_reg_met: assessorTable.no_reg_met,
+            institution: assessorTable.institution,
+            address: assessorTable.address,
+            phone_no: assessorTable.phone_no,
+            scheme: schemeTable,
+            detail: assessorDetailTable
+        })
+        .from(assessorTable)
+        .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
+        .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
+        .leftJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+        .limit(limit)
+        .offset(offset);
 
-        const { sql } = await import('drizzle-orm');
         const countRows = await db.select({ count: sql<number>`COUNT(*)` }).from(assessorTable);
         const total = Number(countRows?.[0]?.count ?? 0);
         const totalPages = Math.max(1, Math.ceil(total / limit));
 
-        const data = assessors.map(a => this.formatAssessorResponse({
-            ...a,
-            user: { ...userById.get(a.user_id), role: roleById.get(userById.get(a.user_id)?.role_id as number) },
-            scheme: schemeById.get(a.scheme_id),
-        } as any));
+        const data = assessors.map(a => this.formatAssessorResponse(a));
 
         return { data, meta: { current_page: page, limit, total, total_pages: totalPages } };
     }
 
-    static async getAllAssessors(): Promise<AssessorResponse[]> {
-        const assessors = await db.select().from(assessorTable);
-        const users = await db.select().from(userTable);
-        const roles = await db.select().from(roleTable);
-        const schemes = await db.select().from(schemeTable);
-        const roleById = new Map(roles.map(r => [r.id, r]));
-        const userById = new Map(users.map(u => [u.id, u]));
-        const schemeById = new Map(schemes.map(s => [s.id, s]));
-        return assessors.map(a => this.formatAssessorResponse({
-            ...a,
-            user: { ...userById.get(a.user_id), role: roleById.get(userById.get(a.user_id)?.role_id as number) },
-            scheme: schemeById.get(a.scheme_id)
-        } as any));
-    }
-
     static async getAssessorById(id: number): Promise<any> {
-        const a = await db.query.assessor.findFirst({ where: eq(assessorTable.id, id) });
-        if (!a) throw new NotFoundError('Assessor');
-        const doc = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, a.id) });
-        const user = await db.query.user.findFirst({ where: eq(userTable.id, a.user_id) });
-        const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
-        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, a.scheme_id) });
-        return {
-            ...this.formatAssessorResponse({ ...a, user: { ...user, role }, scheme } as any),
-            documents: doc || null
-        }
+        const [assessor] = await db.select({
+            id: assessorTable.id,
+            user_id: assessorTable.user_id,
+            scheme_id: assessorTable.scheme_id,
+            name: userTable.full_name,
+            birth_location: assessorTable.birth_location,
+            birth_date: assessorTable.birth_date,
+            no_reg_met: assessorTable.no_reg_met,
+            institution: assessorTable.institution,
+            address: assessorTable.address,
+            phone_no: assessorTable.phone_no,
+            scheme: schemeTable,
+            detail: assessorDetailTable
+        })
+        .from(assessorTable)
+        .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
+        .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
+        .leftJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+        .where(eq(assessorTable.id, id));
+
+        if (!assessor) throw new NotFoundError('Assessor');
+        return this.formatAssessorResponse(assessor);
     }
 
     static async getAssessorByUserId(user_id: number): Promise<any> {
-        const a = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, user_id) });
-        if (!a) throw new NotFoundError('Assessor');
-        const doc = await db.query.assessorDetail.findFirst({ where: eq(assessorDetailTable.assessor_id, a.id) });
-        const user = await db.query.user.findFirst({ where: eq(userTable.id, a.user_id) });
-        const role = user ? await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) }) : null;
-        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, a.scheme_id) });
-        return {
-            ...this.formatAssessorResponse({ ...a, user: { ...user, role }, scheme } as any),
-            documents: doc || null
-        }
+        const [assessor] = await db.select({
+            id: assessorTable.id,
+            user_id: assessorTable.user_id,
+            scheme_id: assessorTable.scheme_id,
+            name: userTable.full_name,
+            birth_location: assessorTable.birth_location,
+            birth_date: assessorTable.birth_date,
+            no_reg_met: assessorTable.no_reg_met,
+            institution: assessorTable.institution,
+            address: assessorTable.address,
+            phone_no: assessorTable.phone_no,
+            scheme: schemeTable,
+            detail: assessorDetailTable
+        })
+        .from(assessorTable)
+        .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
+        .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
+        .leftJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+        .where(eq(assessorTable.user_id, user_id));
+
+        if (!assessor) throw new NotFoundError('Assessor');
+        return this.formatAssessorResponse(assessor);
     }
 
     static async createAssessor(data: AssessorRequest): Promise<AssessorResponse> {
@@ -106,8 +122,10 @@ export class AssessorService {
             user_id: data.user_id,
             scheme_id: data.scheme_id,
             no_reg_met: data.no_reg_met,
+            institution: data.institution,
             address: data.address,
             phone_no: data.phone_no,
+            birth_location: data.birth_location,
             birth_date: new Date(data.birth_date) as any,
         });
         const created = await db.query.assessor.findFirst({ where: and(eq(assessorTable.user_id, data.user_id), eq(assessorTable.scheme_id, data.scheme_id)) });
@@ -256,6 +274,7 @@ export class AssessorService {
         .from(userTable)
         .innerJoin(roleTable, eq(userTable.role_id, roleTable.id))
         .leftJoin(assessorTable, eq(userTable.id, assessorTable.user_id))
+        .leftJoin(assessorDetailTable, eq(assessorTable.id, assessorDetailTable.assessor_id))
         .where(eq(roleTable.name, 'Assessor'))
         .orderBy(asc(userTable.full_name), asc(userTable.created_at))
         .limit(limit)
@@ -292,12 +311,15 @@ export class AssessorService {
         return {
             id: assessor.id,
             user_id: assessor.user_id,
-            scheme_id: assessor.scheme_id,
-            name: assessor.user.full_name,
+            name: assessor.name,
+            birth_location: assessor.birth_location,
+            birth_date: assessor.birth_date,
+            no_reg_met: assessor.no_reg_met,
+            institution: assessor.institution,
             address: assessor.address,
             phone_no: assessor.phone_no,
-            birth_date: assessor.birth_date,
-            no_reg_met: assessor.no_reg_met
+            scheme: assessor.scheme,
+            detail: assessor.detail || null
         };
     }
 }
