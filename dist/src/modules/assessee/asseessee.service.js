@@ -159,7 +159,7 @@ class AssesseeService {
         return {
             id: assessee.id,
             user_id: assessee.user_id,
-            name: assessee.user.full_name,
+            name: assessee.name,
             identity_number: assessee.identity_number,
             birth_date: assessee.birth_date,
             birth_location: assessee.birth_location,
