@@ -50,19 +50,27 @@ export class APL1Controller {
 
         const files = Array.isArray(req.files) ? req.files : [];
 
-        const result = await APL1Service.createOrUploadCertificate({
-            assessee_id: assesseeId,
-            assessor_id: assessorId,
-            assessment_id: assessmentId,
-            bodyData: req.body,
-            files
-        });
-
-        res.status(201).json({
-            success: true,
-            message: 'Data sertifikat dan file berhasil disimpan',
-            data: result
-        });
+        try {
+            const result = await APL1Service.createOrUploadCertificate({
+                assessee_id: assesseeId,
+                assessor_id: assessorId,
+                assessment_id: assessmentId,
+                bodyData: req.body,
+                files
+            });
+    
+            res.status(201).json({
+                success: true,
+                message: 'Data sertifikat dan file berhasil disimpan',
+                data: result
+            });
+        } catch (error: any) {
+            res.status(500).json({
+                success: false,
+                message: 'Terjadi kesalahan dalam membuat sertifikat',
+                error: error.message
+            });
+        }
     });
 
     static getAllResult = asyncHandler(async (req: Request, res: Response) => {

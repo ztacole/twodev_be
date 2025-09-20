@@ -157,6 +157,9 @@ export class APL1Service {
             'family_card',
             'id_card',
         ];
+
+        if (canonicalFields.length !== 5) throw new NotFoundError('files');
+        
         const fieldMapping: Record<string, string> = {};
         for (const f of canonicalFields) {
             fieldMapping[f] = f;
