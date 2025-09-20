@@ -8,6 +8,7 @@ export interface AssesseeResponse {
     id: number;
     user_id: number;
     name: string;
+    email: string;
     identity_number: string;
     birth_date: Date;
     birth_location: string;
