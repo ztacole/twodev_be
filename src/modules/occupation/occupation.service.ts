@@ -105,7 +105,17 @@ export class OccupationService {
         }
     }
 
-    static async deleteOccupation(id: number) {
+    static async deleteOccupation(id: number, schemeId: number, name: string) {
+        const filePath = path.join(__dirname, `../../../public/uploads/occupations/${id}_${schemeId}_${name}`);
+        if (fs.existsSync(filePath)) {
+            const stat = fs.statSync(filePath);
+            if (stat.isDirectory()) {
+                fs.rmSync(filePath, { recursive: true, force: true });
+            } else if (stat.isFile()) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        
         const existingOccupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, id) });
         if (!existingOccupation) {
             throw new NotFoundError('Occupation');

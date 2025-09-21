@@ -69,7 +69,11 @@ OccupationController.updateOccupation = (0, async_handler_1.asyncHandler)((req, 
     }
 }));
 OccupationController.deleteOccupation = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const occupation = yield occupation_service_1.OccupationService.deleteOccupation(Number(req.params.id));
+    const getoccupation = yield occupation_service_1.OccupationService.getOccupationById(Number(req.params.id));
+    const occupationId = Number(req.params.id);
+    const schemaId = getoccupation.scheme.id;
+    const name = (0, string_1.cleanString)(getoccupation.name);
+    const occupation = yield occupation_service_1.OccupationService.deleteOccupation(occupationId, schemaId, name);
     res.json({
         success: true,
         message: 'Occupation berhasil dihapus',

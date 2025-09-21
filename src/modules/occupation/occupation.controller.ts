@@ -70,7 +70,12 @@ export class OccupationController {
     });
 
     static deleteOccupation = asyncHandler(async (req: Request, res: Response) => {
-        const occupation = await OccupationService.deleteOccupation(Number(req.params.id));
+        const getoccupation = await OccupationService.getOccupationById(Number(req.params.id));
+        const occupationId = Number(req.params.id);
+        const schemaId = getoccupation.scheme.id;
+        const name = cleanString(getoccupation.name);
+
+        const occupation = await OccupationService.deleteOccupation(occupationId, schemaId, name);
 
         res.json({
             success: true,

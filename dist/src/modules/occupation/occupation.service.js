@@ -115,8 +115,18 @@ class OccupationService {
             }
         });
     }
-    static deleteOccupation(id) {
+    static deleteOccupation(id, schemeId, name) {
         return __awaiter(this, void 0, void 0, function* () {
+            const filePath = path_1.default.join(__dirname, `../../../public/uploads/occupations/${id}_${schemeId}_${name}`);
+            if (fs_1.default.existsSync(filePath)) {
+                const stat = fs_1.default.statSync(filePath);
+                if (stat.isDirectory()) {
+                    fs_1.default.rmSync(filePath, { recursive: true, force: true });
+                }
+                else if (stat.isFile()) {
+                    fs_1.default.unlinkSync(filePath);
+                }
+            }
             const existingOccupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, id) });
             if (!existingOccupation) {
                 throw new error_1.NotFoundError('Occupation');
