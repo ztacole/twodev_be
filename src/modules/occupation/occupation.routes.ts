@@ -2,10 +2,7 @@ import { Router } from 'express';
 import { OccupationController } from './occupation.controller';
 import { createUploader } from '../../helper/upload.helper';
 import { adminMiddleware, adminOrAssessorMiddleware, authenticateToken } from '../../middleware/auth.middleware';
-
-function cleanString(str: string): string {
-  return str.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
-}
+import { cleanString } from '../../helper/string';
 
 const uploadPDF = createUploader({
   basePath: '../../public/uploads/occupations',

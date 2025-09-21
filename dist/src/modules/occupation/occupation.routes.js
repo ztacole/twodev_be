@@ -4,18 +4,16 @@ const express_1 = require("express");
 const occupation_controller_1 = require("./occupation.controller");
 const upload_helper_1 = require("../../helper/upload.helper");
 const auth_middleware_1 = require("../../middleware/auth.middleware");
-function cleanString(str) {
-    return str.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
-}
+const string_1 = require("../../helper/string");
 const uploadPDF = (0, upload_helper_1.createUploader)({
     basePath: '../../public/uploads/occupations',
     folderResolver: (req) => {
         const occupationId = req.params.id;
         const schemaId = req.body.scheme_id;
-        const name = cleanString(req.body.name);
+        const name = (0, string_1.cleanString)(req.body.name);
         return `${occupationId}_${schemaId}_${name}` || 'unknown';
     },
-    fileNameResolver: (req) => `${cleanString(req.body.name)}.pdf`,
+    fileNameResolver: (req) => `${(0, string_1.cleanString)(req.body.name)}.pdf`,
     allowedMimeTypes: ['application/pdf'],
     maxSizeMB: 20,
     cleanBeforeUpload: true

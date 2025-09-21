@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { OccupationService } from './occupation.service';
 import { OccupationRequest } from './occupation.type';
 import { asyncHandler } from '../../common/async.handler';
+import { cleanString } from '../../helper/string';
 
 export class OccupationController {
     static createOccupation = asyncHandler(async (req: Request, res: Response) => {
@@ -91,7 +92,7 @@ export class OccupationController {
             const occupation = await OccupationService.getOccupationById(Number(req.params.id));
             const occupationId = Number(req.params.id);
             const schemaId = occupation.scheme.id;
-            const name = (occupation.name).replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+            const name = cleanString(occupation.name);
             const pdf = await OccupationService.getUploadedPdf(occupationId, schemaId, name);
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=occupation-${name}.pdf`);

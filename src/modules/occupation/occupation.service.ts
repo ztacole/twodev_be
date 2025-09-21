@@ -3,9 +3,10 @@ import ExcelJS from 'exceljs';
 import { OccupationRequest, OccupationResponse } from './occupation.type';
 import { AppError, DuplicateEntryError, NotFoundError } from '../../common/error';
 import { occupation as occupationTable, scheme as schemeTable } from '../../../drizzle/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import path from 'path';
 import fs from 'fs';
+import { cleanString } from '../../helper/string';
 
 export class OccupationService {
     static async getOccupations(schemeId?: number): Promise<OccupationResponse[]> {
@@ -19,17 +20,41 @@ export class OccupationService {
         }).from(occupationTable)
             .leftJoin(schemeTable, eq(occupationTable.scheme_id, schemeTable.id))
             .where(schemeId ? eq(occupationTable.scheme_id, schemeId) : undefined)
-            .orderBy(desc(occupationTable.created_at));
+            .orderBy(asc(schemeTable.name));
+
+        for (const occ of occupations) {
+            let status = false;
+            const cleanName = cleanString(occ.name);
+            const filePath = path.join(__dirname, `../../../public/uploads/occupations/${occ.id}_${occ.scheme_id}_${cleanName}/${cleanName}.pdf`);
+            if (fs.existsSync(filePath)) status = true;
+            (occ as any).uploaded_file = status;
+        }
+
         return occupations as any;
     }
 
     static async getOccupationById(id: number): Promise<OccupationResponse> {
-        const occupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, id) });
+        const [occupation] = await db.select({
+            id: occupationTable.id,
+            scheme_id: occupationTable.scheme_id,
+            name: occupationTable.name,
+            created_at: occupationTable.created_at,
+            updated_at: occupationTable.updated_at,
+            scheme: schemeTable
+        }).from(occupationTable)
+            .leftJoin(schemeTable, eq(occupationTable.scheme_id, schemeTable.id))
+            .where(eq(occupationTable.id, id));
         if (!occupation) {
             throw new NotFoundError('Occupation');
         }
-        const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) });
-        return { ...occupation, scheme } as any;
+
+        let status = false;
+        const cleanName = cleanString(occupation.name);
+        const filePath = path.join(__dirname, `../../../public/uploads/occupations/${occupation.id}_${occupation.scheme_id}_${cleanName}/${cleanName}.pdf`);
+        if (fs.existsSync(filePath)) status = true;
+        (occupation as any).uploaded_file = status;
+
+        return occupation as any;
     }
 
     static async createOccupation(data: OccupationRequest) {
@@ -79,7 +104,7 @@ export class OccupationService {
             throw new Error(error.message);
         }
     }
-    
+
     static async deleteOccupation(id: number) {
         const existingOccupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, id) });
         if (!existingOccupation) {

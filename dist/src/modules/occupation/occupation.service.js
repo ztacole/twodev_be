@@ -20,6 +20,7 @@ const schema_1 = require("../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+const string_1 = require("../../helper/string");
 class OccupationService {
     static getOccupations(schemeId) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -33,18 +34,40 @@ class OccupationService {
             }).from(schema_1.occupation)
                 .leftJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, schema_1.scheme.id))
                 .where(schemeId ? (0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, schemeId) : undefined)
-                .orderBy((0, drizzle_orm_1.desc)(schema_1.occupation.created_at));
+                .orderBy((0, drizzle_orm_1.asc)(schema_1.scheme.name));
+            for (const occ of occupations) {
+                let status = false;
+                const cleanName = (0, string_1.cleanString)(occ.name);
+                const filePath = path_1.default.join(__dirname, `../../../public/uploads/occupations/${occ.id}_${occ.scheme_id}_${cleanName}/${cleanName}.pdf`);
+                if (fs_1.default.existsSync(filePath))
+                    status = true;
+                occ.uploaded_file = status;
+            }
             return occupations;
         });
     }
     static getOccupationById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const occupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, id) });
+            const [occupation] = yield drizzle_1.db.select({
+                id: schema_1.occupation.id,
+                scheme_id: schema_1.occupation.scheme_id,
+                name: schema_1.occupation.name,
+                created_at: schema_1.occupation.created_at,
+                updated_at: schema_1.occupation.updated_at,
+                scheme: schema_1.scheme
+            }).from(schema_1.occupation)
+                .leftJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, schema_1.scheme.id))
+                .where((0, drizzle_orm_1.eq)(schema_1.occupation.id, id));
             if (!occupation) {
                 throw new error_1.NotFoundError('Occupation');
             }
-            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id) });
-            return Object.assign(Object.assign({}, occupation), { scheme });
+            let status = false;
+            const cleanName = (0, string_1.cleanString)(occupation.name);
+            const filePath = path_1.default.join(__dirname, `../../../public/uploads/occupations/${occupation.id}_${occupation.scheme_id}_${cleanName}/${cleanName}.pdf`);
+            if (fs_1.default.existsSync(filePath))
+                status = true;
+            occupation.uploaded_file = status;
+            return occupation;
         });
     }
     static createOccupation(data) {

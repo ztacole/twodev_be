@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OccupationController = void 0;
 const occupation_service_1 = require("./occupation.service");
 const async_handler_1 = require("../../common/async.handler");
+const string_1 = require("../../helper/string");
 class OccupationController {
 }
 exports.OccupationController = OccupationController;
@@ -85,7 +86,7 @@ OccupationController.getUploadedPdf = (0, async_handler_1.asyncHandler)((req, re
         const occupation = yield occupation_service_1.OccupationService.getOccupationById(Number(req.params.id));
         const occupationId = Number(req.params.id);
         const schemaId = occupation.scheme.id;
-        const name = (occupation.name).replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+        const name = (0, string_1.cleanString)(occupation.name);
         const pdf = yield occupation_service_1.OccupationService.getUploadedPdf(occupationId, schemaId, name);
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=occupation-${name}.pdf`);
