@@ -138,7 +138,7 @@ class AssessorService {
             if (!assessor)
                 throw new error_1.NotFoundError('Assessor');
             // Pindahkan file dari folder default ke folder final setelah id diketahui
-            const newDir = path_1.default.join(__dirname, 'public/uploads/assessor', `assessor-${assessor.id}`);
+            const newDir = path_1.default.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessor.id}`);
             if (fs_1.default.existsSync(newDir)) {
                 for (const fileName of fs_1.default.readdirSync(newDir)) {
                     const filePath = path_1.default.join(newDir, fileName);
@@ -149,7 +149,7 @@ class AssessorService {
                 }
             }
             for (const file of files) {
-                const oldPath = path_1.default.join(__dirname, 'public/uploads/assessor/default', file.filename);
+                const oldPath = path_1.default.join(__dirname, '../../../public/uploads/assessor/default', file.filename);
                 const newPath = path_1.default.join(newDir, file.filename);
                 if (!fs_1.default.existsSync(newDir)) {
                     fs_1.default.mkdirSync(newDir, { recursive: true });
