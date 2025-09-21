@@ -20,14 +20,12 @@ const uploadPDF = createUploader({
 
 const router = Router();
 
-router.use(authenticateToken, adminMiddleware);
-
-router.post('/', OccupationController.createOccupation);
-router.get('/', OccupationController.getOccupations);
-router.get('/:id', OccupationController.getOccupationById);
-router.put('/:id', uploadPDF.single('pdf'), OccupationController.updateOccupation);
+router.post('/', authenticateToken, adminMiddleware, OccupationController.createOccupation);
+router.get('/', authenticateToken, adminMiddleware, OccupationController.getOccupations);
+router.get('/:id', authenticateToken, adminMiddleware, OccupationController.getOccupationById);
+router.put('/:id', authenticateToken, adminMiddleware, uploadPDF.single('pdf'), OccupationController.updateOccupation);
 router.get('/:id/pdf', OccupationController.getUploadedPdf);
-router.delete('/:id', OccupationController.deleteOccupation);
-router.get('/export/excel', OccupationController.exportOccupationsToExcel);
+router.delete('/:id', authenticateToken, adminMiddleware, OccupationController.deleteOccupation);
+router.get('/export/excel', authenticateToken, adminMiddleware, OccupationController.exportOccupationsToExcel);
 
 export default router;

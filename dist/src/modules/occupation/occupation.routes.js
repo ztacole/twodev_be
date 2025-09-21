@@ -19,12 +19,11 @@ const uploadPDF = (0, upload_helper_1.createUploader)({
     cleanBeforeUpload: true
 });
 const router = (0, express_1.Router)();
-router.use(auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware);
-router.post('/', occupation_controller_1.OccupationController.createOccupation);
-router.get('/', occupation_controller_1.OccupationController.getOccupations);
-router.get('/:id', occupation_controller_1.OccupationController.getOccupationById);
-router.put('/:id', uploadPDF.single('pdf'), occupation_controller_1.OccupationController.updateOccupation);
+router.post('/', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, occupation_controller_1.OccupationController.createOccupation);
+router.get('/', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, occupation_controller_1.OccupationController.getOccupations);
+router.get('/:id', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, occupation_controller_1.OccupationController.getOccupationById);
+router.put('/:id', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, uploadPDF.single('pdf'), occupation_controller_1.OccupationController.updateOccupation);
 router.get('/:id/pdf', occupation_controller_1.OccupationController.getUploadedPdf);
-router.delete('/:id', occupation_controller_1.OccupationController.deleteOccupation);
-router.get('/export/excel', occupation_controller_1.OccupationController.exportOccupationsToExcel);
+router.delete('/:id', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, occupation_controller_1.OccupationController.deleteOccupation);
+router.get('/export/excel', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, occupation_controller_1.OccupationController.exportOccupationsToExcel);
 exports.default = router;
