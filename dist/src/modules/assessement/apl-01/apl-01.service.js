@@ -19,16 +19,12 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.APL1Service = void 0;
 const error_1 = require("../../../common/error");
 const drizzle_1 = require("../../../config/drizzle");
 const schema_1 = require("../../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
-const fs_1 = __importDefault(require("fs"));
 const TUK_VALUES = {
     SEWAKTU: 'sewaktu',
     TEMPAT_KERJA: 'tempat_kerja',
@@ -144,21 +140,16 @@ class APL1Service {
             if (!assessment_id)
                 throw new error_1.ValidationError('assessment_id');
             const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
+            if (!existingAssessment)
+                throw new error_1.NotFoundError('Assessment');
             const existingAssessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, assessee_id) });
+            if (!existingAssessee)
+                throw new error_1.NotFoundError('Assessee');
             const existingAssessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, assessor_id) });
+            if (!existingAssessor)
+                throw new error_1.NotFoundError('Assessor');
             const BASE_URL = "https://asessment24.site/twodev";
             const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${assessment_id}`);
-            if (!existingAssessee || !existingAssessment || !existingAssessor) {
-                if (fs_1.default.existsSync(uploadPath)) {
-                    fs_1.default.rmSync(uploadPath, { recursive: true, force: true });
-                }
-                if (!existingAssessment)
-                    throw new error_1.NotFoundError('Assessment');
-                if (!existingAssessee)
-                    throw new error_1.NotFoundError('Assessee');
-                if (!existingAssessor)
-                    throw new error_1.NotFoundError('Assessor');
-            }
             const canonicalFields = [
                 'school_report_card',
                 'field_work_practice_certificate',

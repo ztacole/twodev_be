@@ -123,7 +123,7 @@ class IAO2Service {
                 if (existing) {
                     const folderPath = path_1.default.dirname(_filePath);
                     if (fs_1.default.existsSync(folderPath)) {
-                        fs_1.default.rmSync(folderPath, { recursive: true, force: true });
+                        fs_1.default.unlinkSync(path_1.default.join(folderPath, existing.file_name));
                     }
                     yield drizzle_1.db.update(schema_1.ia02Pdf)
                         .set({ file_name })

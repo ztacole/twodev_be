@@ -157,21 +157,16 @@ export class APL1Service {
     if (!assessment_id) throw new ValidationError('assessment_id');
 
     const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+    if (!existingAssessment) throw new NotFoundError('Assessment');
+
     const existingAssessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assessee_id) });
+    if (!existingAssessee) throw new NotFoundError('Assessee');
+
     const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessor.id, assessor_id) });
+    if (!existingAssessor) throw new NotFoundError('Assessor');
 
     const BASE_URL = "https://asessment24.site/twodev";
     const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${assessment_id}`);
-
-    if (!existingAssessee || !existingAssessment || !existingAssessor) {
-        if (fs.existsSync(uploadPath)) {
-            fs.rmSync(uploadPath, { recursive: true, force: true });
-        }
-
-        if (!existingAssessment) throw new NotFoundError('Assessment');
-        if (!existingAssessee) throw new NotFoundError('Assessee');
-        if (!existingAssessor) throw new NotFoundError('Assessor');
-    }
 
         const canonicalFields = [
             'school_report_card',
