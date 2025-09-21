@@ -2,8 +2,10 @@ import { Router } from "express";
 import { adminMiddleware, adminOrAssessorMiddleware, assesseeMiddleware, assessorMiddleware, authUpload } from '../../middleware/auth.middleware';
 import path from 'path';
 import fs from 'fs';
-import { upload as uploadCertificate } from "./apl-01/upload-config";
-import { uploadIA02 } from "./ia-02/upload-conifg";
+// import { upload as uploadCertificate } from "./apl-01/upload-config";
+// import { uploadIA02 } from "./ia-02/upload-conifg";
+import { createUploader } from '../../helper/upload.helper';
+import { cleanString } from '../../helper/string';
 import { APL02Controller } from "./apl-02/apl-02.controller";
 import { APL1Controller } from "./apl-01/apl-01.controller";
 import { IA01Controller } from "./ia-01/ia-01.controller";
@@ -17,6 +19,30 @@ import { AK03Controller } from "./ak-03/ak-03.controller";
 import { AK04Controller } from "./ak-04/ak-04.controller";
 import { AK05Controller } from "./ak-05/ak-05.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
+
+const uploadAPL01 = createUploader({
+    basePath: '../../public/uploads/apl-01',
+    folderResolver: (req) => {
+        const assesseeId = req.params?.assessee_id || req.body?.assessee_id || 'unknown';
+        const assessorId = req.params?.assessor_id || req.body?.assessor_id || 'unknown';
+        const assessmentId = req.params?.assessment_id || req.body?.assessment_id || 'unknown';
+        return `${assesseeId}_${assessorId}_${assessmentId}`;
+    },      
+    allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
+    maxSizeMB: 10,
+    cleanBeforeUpload: true
+})
+
+const uploadIA02 = createUploader({
+    basePath: '../../public/uploads/ia-02',
+    folderResolver: (req) => {
+        const { assessmentId } = req.params;
+        return `assessment-${assessmentId}` || 'unknown';
+    },
+    allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
+    maxSizeMB: 30,
+    cleanBeforeUpload: true
+})
 
 const router = Router();
 
@@ -42,7 +68,7 @@ router.get('/recap/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMid
 
 router.post('/apl-01/create-self-data', authenticateToken, assesseeMiddleware, APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', authenticateToken, assesseeMiddleware, 
-    uploadCertificate.any(), 
+    uploadAPL01.any(), 
     APL1Controller.createOrUploadCertificateDocs
 );
 router.get('/uploads/apl-01/:folder/:filename', authUpload, (req, res) => {

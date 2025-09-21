@@ -8,12 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IAO2Service = void 0;
 const error_1 = require("../../../common/error");
 const drizzle_1 = require("../../../config/drizzle");
 const schema_1 = require("../../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 class IAO2Service {
     static getIA02Groups(assessment_id) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -115,6 +120,12 @@ class IAO2Service {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const existing = yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id) });
+                if (!existing) {
+                    const folderPath = path_1.default.dirname(_filePath);
+                    if (fs_1.default.existsSync(folderPath)) {
+                        fs_1.default.rmSync(folderPath, { recursive: true, force: true });
+                    }
+                }
                 if (existing) {
                     yield drizzle_1.db.update(schema_1.ia02Pdf).set({ file_name: file_name }).where((0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id));
                     return yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id) });
