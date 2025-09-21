@@ -108,7 +108,7 @@ function formatUserResponse(user) {
             id: user.role.id,
             name: user.role.name,
         },
-        created_at: user.createdAt,
-        updated_at: user.updatedAt,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
     };
 }
