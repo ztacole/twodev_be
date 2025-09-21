@@ -3,7 +3,7 @@ import ExcelJS from 'exceljs';
 import { OccupationRequest, OccupationResponse } from './occupation.type';
 import { AppError, DuplicateEntryError, NotFoundError } from '../../common/error';
 import { occupation as occupationTable, scheme as schemeTable } from '../../../drizzle/schema';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import path from 'path';
 import fs from 'fs';
 import { cleanString } from '../../helper/string';
@@ -130,7 +130,7 @@ export class OccupationService {
             throw new NotFoundError('Occupations');
         }
         const scheme_ids = [...new Set(occupations.map(o => o.scheme_id))];
-        const schemes = scheme_ids.length ? await db.select().from(schemeTable).where(eq(schemeTable.id, scheme_ids[0])) : [];
+        const schemes = scheme_ids.length ? await db.select().from(schemeTable).where(inArray(schemeTable.id, scheme_ids)) : [];
         const schemeById = new Map(schemes.map(s => [s.id, s]));
 
         const workbook = new ExcelJS.Workbook();
