@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { adminMiddleware, authenticateToken } from '../../middleware/auth.middleware';
-const { RoleController } = require('./role.controller');
+import { RoleController } from './role.controller';
 
 const router = Router();
 
