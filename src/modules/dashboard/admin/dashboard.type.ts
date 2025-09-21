@@ -1,3 +1,9 @@
+export interface DashboardSummaryUser {
+  total_assessor: number;
+  total_assessee: number;
+  total_admin: number;
+}
+
 export interface DashboardSummary {
   totalSchemes: number;
   totalAssessments: number;

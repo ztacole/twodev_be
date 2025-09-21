@@ -61,19 +61,17 @@ class UserService {
             const countRows = yield drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(*)` }).from(schema_1.user);
             const total = Number((_b = (_a = countRows === null || countRows === void 0 ? void 0 : countRows[0]) === null || _a === void 0 ? void 0 : _a.count) !== null && _b !== void 0 ? _b : 0);
             const totalPages = Math.max(1, Math.ceil(total / limit));
-            const [schemes, assessments, userAssessor, userAssessee] = yield Promise.all([
-                drizzle_1.db.select().from(schema_1.scheme),
-                drizzle_1.db.select().from(schema_1.assessment),
+            const [userAdmin, userAssessor, userAssessee] = yield Promise.all([
+                drizzle_1.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.role_id, 1)),
                 drizzle_1.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.role_id, 2)),
                 drizzle_1.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.role_id, 3)),
             ]);
             return {
                 data: users.map((u) => formatUserResponse(u)),
                 summary: {
-                    totalSchemes: schemes.length,
-                    totalAssessments: assessments.length,
-                    totalAssessors: userAssessor.length,
-                    totalAssessees: userAssessee.length,
+                    total_admin: userAdmin.length,
+                    total_assessor: userAssessor.length,
+                    total_assessee: userAssessee.length
                 },
                 meta: {
                     current_page: page,

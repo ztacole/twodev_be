@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { user as userTable, role as roleTable, scheme as schemeTable, assessment as assessmentTable } from '../../../drizzle/schema';
 import { and, asc, eq, like, or, sql } from 'drizzle-orm';
 import { PagingMeta } from '../../helper/type';
-import { DashboardSummary } from '../dashboard/admin/dashboard.type';
+import { DashboardSummaryUser } from '../dashboard/admin/dashboard.type';
 
 export class UserService {
     static async createUser(data: CreateUserRequest): Promise<UserResponse> {
@@ -33,7 +33,7 @@ export class UserService {
     static async getUsers(page: number = 1, limit: number = 10, keyword?: string, role_name?: string): Promise<{
         data: UserResponse[]; 
         meta: PagingMeta;
-        summary: DashboardSummary;
+        summary: DashboardSummaryUser;
     }> {
         const offset = (page - 1) * limit;
 
@@ -63,10 +63,9 @@ export class UserService {
         const total = Number(countRows?.[0]?.count ?? 0);
         const totalPages = Math.max(1, Math.ceil(total / limit));
 
-        const [schemes, assessments, userAssessor, userAssessee] =
+        const [userAdmin, userAssessor, userAssessee] =
         await Promise.all([
-            db.select().from(schemeTable),
-            db.select().from(assessmentTable),
+            db.select().from(userTable).where(eq(userTable.role_id, 1)),
             db.select().from(userTable).where(eq(userTable.role_id, 2)),
             db.select().from(userTable).where(eq(userTable.role_id, 3)),
         ]);
@@ -74,10 +73,9 @@ export class UserService {
         return {
             data: users.map((u) => formatUserResponse(u)),
             summary: {
-                totalSchemes: schemes.length,
-                totalAssessments: assessments.length,
-                totalAssessors: userAssessor.length,
-                totalAssessees: userAssessee.length,
+                total_admin: userAdmin.length,
+                total_assessor: userAssessor.length,
+                total_assessee: userAssessee.length
             },
             meta: {
                 current_page: page,
