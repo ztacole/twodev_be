@@ -20,31 +20,31 @@ import { AK04Controller } from "./ak-04/ak-04.controller";
 import { AK05Controller } from "./ak-05/ak-05.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
 import { upload } from "./apl-01/upload-config";
-import { uploadIA02 } from "./ia-02/upload-conifg";
+// import { uploadIA02 } from "./ia-02/upload-conifg";
 
-// const uploadAPL01 = createUploader({
-//     basePath: '../../../public/uploads/apl-01',
-//     folderResolver: (req) => {
-//         const assesseeId = req.params?.assessee_id || req.body?.assessee_id || 'unknown';
-//         const assessorId = req.params?.assessor_id || req.body?.assessor_id || 'unknown';
-//         const assessmentId = req.params?.assessment_id || req.body?.assessment_id || 'unknown';
-//         return `${assesseeId}_${assessorId}_${assessmentId}`;
-//     },      
-//     allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
-//     maxSizeMB: 10,
-//     cleanBeforeUpload: true
-// })
+const uploadAPL01 = createUploader({
+    basePath: '../../public/uploads/apl-01',
+    folderResolver: (req) => {
+        const assesseeId = req.params?.assessee_id || req.body?.assessee_id || 'unknown';
+        const assessorId = req.params?.assessor_id || req.body?.assessor_id || 'unknown';
+        const assessmentId = req.params?.assessment_id || req.body?.assessment_id || 'unknown';
+        return `${assesseeId}_${assessorId}_${assessmentId}`;
+    },      
+    allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
+    maxSizeMB: 10,
+    cleanBeforeUpload: true
+})
 
-// const uploadIA02 = createUploader({
-//     basePath: path.join(__dirname, '../../../public/uploads/ia-02'),
-//     folderResolver: (req) => {
-//         const { assessmentId } = req.params;
-//         return `assessment-${assessmentId}` || 'unknown';
-//     },
-//     allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
-//     maxSizeMB: 30,
-//     cleanBeforeUpload: true
-// })
+const uploadIA02 = createUploader({
+    basePath: '../../public/uploads/ia-02',
+    folderResolver: (req) => {
+        const { assessmentId } = req.params;
+        return `assessment-${assessmentId}` || 'unknown';
+    },
+    allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
+    maxSizeMB: 30,
+    cleanBeforeUpload: true
+})
 
 const router = Router();
 
@@ -71,7 +71,7 @@ router.get('/recap/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMid
 
 router.post('/apl-01/create-self-data', authenticateToken, assesseeMiddleware, APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', authenticateToken, assesseeMiddleware, 
-    upload.any(), 
+    uploadAPL01.any(), 
     APL1Controller.createOrUploadCertificateDocs
 );
 router.get('/uploads/apl-01/:folder/:filename', authUpload, (req, res) => {

@@ -7,6 +7,9 @@ const express_1 = require("express");
 const auth_middleware_1 = require("../../middleware/auth.middleware");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+// import { upload as uploadCertificate } from "./apl-01/upload-config";
+// import { uploadIA02 } from "./ia-02/upload-conifg";
+const upload_helper_1 = require("../../helper/upload.helper");
 const apl_02_controller_1 = require("./apl-02/apl-02.controller");
 const apl_01_controller_1 = require("./apl-01/apl-01.controller");
 const ia_01_controller_1 = require("./ia-01/ia-01.controller");
@@ -20,30 +23,30 @@ const ak_03_controller_1 = require("./ak-03/ak-03.controller");
 const ak_04_controller_1 = require("./ak-04/ak-04.controller");
 const ak_05_controller_1 = require("./ak-05/ak-05.controller");
 const auth_middleware_2 = require("../../middleware/auth.middleware");
-const upload_config_1 = require("./apl-01/upload-config");
-const upload_conifg_1 = require("./ia-02/upload-conifg");
-// const uploadAPL01 = createUploader({
-//     basePath: '../../../public/uploads/apl-01',
-//     folderResolver: (req) => {
-//         const assesseeId = req.params?.assessee_id || req.body?.assessee_id || 'unknown';
-//         const assessorId = req.params?.assessor_id || req.body?.assessor_id || 'unknown';
-//         const assessmentId = req.params?.assessment_id || req.body?.assessment_id || 'unknown';
-//         return `${assesseeId}_${assessorId}_${assessmentId}`;
-//     },      
-//     allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
-//     maxSizeMB: 10,
-//     cleanBeforeUpload: true
-// })
-// const uploadIA02 = createUploader({
-//     basePath: path.join(__dirname, '../../../public/uploads/ia-02'),
-//     folderResolver: (req) => {
-//         const { assessmentId } = req.params;
-//         return `assessment-${assessmentId}` || 'unknown';
-//     },
-//     allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
-//     maxSizeMB: 30,
-//     cleanBeforeUpload: true
-// })
+// import { uploadIA02 } from "./ia-02/upload-conifg";
+const uploadAPL01 = (0, upload_helper_1.createUploader)({
+    basePath: '../../public/uploads/apl-01',
+    folderResolver: (req) => {
+        var _a, _b, _c, _d, _e, _f;
+        const assesseeId = ((_a = req.params) === null || _a === void 0 ? void 0 : _a.assessee_id) || ((_b = req.body) === null || _b === void 0 ? void 0 : _b.assessee_id) || 'unknown';
+        const assessorId = ((_c = req.params) === null || _c === void 0 ? void 0 : _c.assessor_id) || ((_d = req.body) === null || _d === void 0 ? void 0 : _d.assessor_id) || 'unknown';
+        const assessmentId = ((_e = req.params) === null || _e === void 0 ? void 0 : _e.assessment_id) || ((_f = req.body) === null || _f === void 0 ? void 0 : _f.assessment_id) || 'unknown';
+        return `${assesseeId}_${assessorId}_${assessmentId}`;
+    },
+    allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
+    maxSizeMB: 10,
+    cleanBeforeUpload: true
+});
+const uploadIA02 = (0, upload_helper_1.createUploader)({
+    basePath: '../../public/uploads/ia-02',
+    folderResolver: (req) => {
+        const { assessmentId } = req.params;
+        return `assessment-${assessmentId}` || 'unknown';
+    },
+    allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
+    maxSizeMB: 30,
+    cleanBeforeUpload: true
+});
 const router = (0, express_1.Router)();
 // Apply authentication middleware to all routes
 router.use(auth_middleware_2.authenticateToken);
@@ -62,7 +65,7 @@ router.get('/assessment-recapt/:scheduleDetailId', auth_middleware_2.authenticat
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssessmentRecaptForAdmin);
 router.get('/recap/:scheduleDetailId/pdf', auth_middleware_2.authenticateToken, auth_middleware_1.adminOrAssessorMiddleware, assessment_controller_1.AssessmentController.generateRecaptPdf);
 router.post('/apl-01/create-self-data', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, apl_01_controller_1.APL1Controller.createAssesseeAPL1);
-router.post('/apl-01/create-certificate-docs', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, upload_config_1.upload.any(), apl_01_controller_1.APL1Controller.createOrUploadCertificateDocs);
+router.post('/apl-01/create-certificate-docs', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, uploadAPL01.any(), apl_01_controller_1.APL1Controller.createOrUploadCertificateDocs);
 router.get('/uploads/apl-01/:folder/:filename', auth_middleware_1.authUpload, (req, res) => {
     const { folder, filename } = req.params;
     const filePath = path_1.default.join(__dirname, '../public/uploads/apl-01', folder, filename);
@@ -98,7 +101,7 @@ router.get('/ia-02/units/:assessmentId', ia_02_controller_1.IA02Controller.getIA
 router.put('/ia-02/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_02_controller_1.IA02Controller.approvedByAssessor);
 router.put('/ia-02/result/assessee/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ia_02_controller_1.IA02Controller.approvedByAssessee);
 router.get('/ia-02/result/:resultId', ia_02_controller_1.IA02Controller.getResultDetails);
-router.post('/ia-02/upload-pdf/:assessmentId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, upload_conifg_1.uploadIA02.single('pdf'), ia_02_controller_1.IA02Controller.uploadPdf);
+router.post('/ia-02/upload-pdf/:assessmentId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, uploadIA02.single('pdf'), ia_02_controller_1.IA02Controller.uploadPdf);
 router.get('/ia-02/pdf/:assessmentId', ia_02_controller_1.IA02Controller.getPdf);
 router.get('/ia-03/units/:resultId', ia_03_controller_1.IA03Controller.getIA03Groups);
 router.post('/ia-03/result/send', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_03_controller_1.IA03Controller.sendResult);
