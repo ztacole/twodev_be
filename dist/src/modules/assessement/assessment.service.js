@@ -621,61 +621,65 @@ class AssessmentService {
                 }
             }
             // === IA05 ===
-            const oldQ5s = yield drizzle_1.db.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, id));
-            const oldQ5Ids = new Set(oldQ5s.map(q => q.id));
-            const newQ5Ids = new Set((data.ia05_questions || []).filter(q => q.id).map(q => q.id));
-            for (const old of oldQ5s) {
-                if (!newQ5Ids.has(old.id)) {
-                    yield drizzle_1.db.delete(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, old.id));
-                    yield drizzle_1.db.delete(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.id, old.id));
-                }
-            }
-            for (const q of data.ia05_questions || []) {
-                let qId = q.id;
-                if (q.id) {
-                    yield drizzle_1.db.update(schema_1.ia05Question).set({ order: q.order, question: q.question }).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.id, q.id));
-                }
-                else {
-                    const [qRow] = yield drizzle_1.db.insert(schema_1.ia05Question).values({ assessment_id: id, order: q.order, question: q.question }).$returningId();
-                    qId = qRow.id;
-                }
-                if (!qId)
-                    continue;
-                // Options
-                const oldOpts = yield drizzle_1.db.select().from(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, qId));
-                const oldOptIds = new Set(oldOpts.map(o => o.id));
-                const newOptIds = new Set((q.options || []).filter(o => o.id).map(o => o.id));
-                for (const old of oldOpts) {
-                    if (!newOptIds.has(old.id)) {
-                        yield drizzle_1.db.delete(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.id, old.id));
+            if (data.ia05_questions) {
+                const oldQ5s = yield drizzle_1.db.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, id));
+                const oldQ5Ids = new Set(oldQ5s.map(q => q.id));
+                const newQ5Ids = new Set((data.ia05_questions || []).filter(q => q.id).map(q => q.id));
+                for (const old of oldQ5s) {
+                    if (!newQ5Ids.has(old.id)) {
+                        yield drizzle_1.db.delete(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, old.id));
+                        yield drizzle_1.db.delete(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.id, old.id));
                     }
                 }
-                for (const opt of q.options || []) {
-                    if (opt.id) {
-                        yield drizzle_1.db.update(schema_1.questionOption).set({ option: opt.option, is_answer: opt.is_answer }).where((0, drizzle_orm_1.eq)(schema_1.questionOption.id, opt.id));
+                for (const q of data.ia05_questions || []) {
+                    let qId = q.id;
+                    if (q.id) {
+                        yield drizzle_1.db.update(schema_1.ia05Question).set({ order: q.order, question: q.question }).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.id, q.id));
                     }
                     else {
-                        if (!qId)
-                            continue;
-                        yield drizzle_1.db.insert(schema_1.questionOption).values({ question_id: qId, option: opt.option, is_answer: opt.is_answer });
+                        const [qRow] = yield drizzle_1.db.insert(schema_1.ia05Question).values({ assessment_id: id, order: q.order, question: q.question }).$returningId();
+                        qId = qRow.id;
+                    }
+                    if (!qId)
+                        continue;
+                    // Options
+                    const oldOpts = yield drizzle_1.db.select().from(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, qId));
+                    const oldOptIds = new Set(oldOpts.map(o => o.id));
+                    const newOptIds = new Set((q.options || []).filter(o => o.id).map(o => o.id));
+                    for (const old of oldOpts) {
+                        if (!newOptIds.has(old.id)) {
+                            yield drizzle_1.db.delete(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.id, old.id));
+                        }
+                    }
+                    for (const opt of q.options || []) {
+                        if (opt.id) {
+                            yield drizzle_1.db.update(schema_1.questionOption).set({ option: opt.option, is_answer: opt.is_answer }).where((0, drizzle_orm_1.eq)(schema_1.questionOption.id, opt.id));
+                        }
+                        else {
+                            if (!qId)
+                                continue;
+                            yield drizzle_1.db.insert(schema_1.questionOption).values({ question_id: qId, option: opt.option, is_answer: opt.is_answer });
+                        }
                     }
                 }
             }
             // === IA07 ===
-            const oldQ7s = yield drizzle_1.db.select().from(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, id));
-            const oldQ7Ids = new Set(oldQ7s.map(q => q.id));
-            const newQ7Ids = new Set((data.ia07_questions || []).filter(q => q.id).map(q => q.id));
-            for (const old of oldQ7s) {
-                if (!newQ7Ids.has(old.id)) {
-                    yield drizzle_1.db.delete(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.id, old.id));
+            if (data.ia07_questions) {
+                const oldQ7s = yield drizzle_1.db.select().from(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, id));
+                const oldQ7Ids = new Set(oldQ7s.map(q => q.id));
+                const newQ7Ids = new Set((data.ia07_questions || []).filter(q => q.id).map(q => q.id));
+                for (const old of oldQ7s) {
+                    if (!newQ7Ids.has(old.id)) {
+                        yield drizzle_1.db.delete(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.id, old.id));
+                    }
                 }
-            }
-            for (const q of data.ia07_questions || []) {
-                if (q.id) {
-                    yield drizzle_1.db.update(schema_1.ia07Question).set({ question: q.question, answer_key: q.answer_key }).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.id, q.id));
-                }
-                else {
-                    yield drizzle_1.db.insert(schema_1.ia07Question).values({ assessment_id: id, question: q.question, answer_key: q.answer_key });
+                for (const q of data.ia07_questions || []) {
+                    if (q.id) {
+                        yield drizzle_1.db.update(schema_1.ia07Question).set({ question: q.question, answer_key: q.answer_key }).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.id, q.id));
+                    }
+                    else {
+                        yield drizzle_1.db.insert(schema_1.ia07Question).values({ assessment_id: id, question: q.question, answer_key: q.answer_key });
+                    }
                 }
             }
             return { id: id };

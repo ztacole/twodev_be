@@ -676,57 +676,61 @@ export class AssessmentService {
         }
 
         // === IA05 ===
-        const oldQ5s = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, id));
-        const oldQ5Ids = new Set(oldQ5s.map(q => q.id));
-        const newQ5Ids = new Set((data.ia05_questions || []).filter(q => q.id).map(q => q.id));
-        for (const old of oldQ5s) {
-            if (!newQ5Ids.has(old.id)) {
-                await db.delete(questionOptionTable).where(eq(questionOptionTable.question_id, old.id));
-                await db.delete(ia05QuestionTable).where(eq(ia05QuestionTable.id, old.id));
-            }
-        }
-        for (const q of data.ia05_questions || []) {
-            let qId = q.id;
-            if (q.id) {
-                await db.update(ia05QuestionTable).set({ order: q.order, question: q.question }).where(eq(ia05QuestionTable.id, q.id));
-            } else {
-                const [qRow] = await db.insert(ia05QuestionTable).values({ assessment_id: id, order: q.order, question: q.question }).$returningId();
-                qId = qRow.id;
-            }
-            if (!qId) continue;
-            // Options
-            const oldOpts = await db.select().from(questionOptionTable).where(eq(questionOptionTable.question_id, qId));
-            const oldOptIds = new Set(oldOpts.map(o => o.id));
-            const newOptIds = new Set((q.options || []).filter(o => o.id).map(o => o.id));
-            for (const old of oldOpts) {
-                if (!newOptIds.has(old.id)) {
-                    await db.delete(questionOptionTable).where(eq(questionOptionTable.id, old.id));
+        if (data.ia05_questions) {
+            const oldQ5s = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, id));
+            const oldQ5Ids = new Set(oldQ5s.map(q => q.id));
+            const newQ5Ids = new Set((data.ia05_questions || []).filter(q => q.id).map(q => q.id));
+            for (const old of oldQ5s) {
+                if (!newQ5Ids.has(old.id)) {
+                    await db.delete(questionOptionTable).where(eq(questionOptionTable.question_id, old.id));
+                    await db.delete(ia05QuestionTable).where(eq(ia05QuestionTable.id, old.id));
                 }
             }
-            for (const opt of q.options || []) {
-                if (opt.id) {
-                    await db.update(questionOptionTable).set({ option: opt.option, is_answer: opt.is_answer }).where(eq(questionOptionTable.id, opt.id));
+            for (const q of data.ia05_questions || []) {
+                let qId = q.id;
+                if (q.id) {
+                    await db.update(ia05QuestionTable).set({ order: q.order, question: q.question }).where(eq(ia05QuestionTable.id, q.id));
                 } else {
-                    if (!qId) continue;
-                    await db.insert(questionOptionTable).values({ question_id: qId, option: opt.option, is_answer: opt.is_answer });
+                    const [qRow] = await db.insert(ia05QuestionTable).values({ assessment_id: id, order: q.order, question: q.question }).$returningId();
+                    qId = qRow.id;
+                }
+                if (!qId) continue;
+                // Options
+                const oldOpts = await db.select().from(questionOptionTable).where(eq(questionOptionTable.question_id, qId));
+                const oldOptIds = new Set(oldOpts.map(o => o.id));
+                const newOptIds = new Set((q.options || []).filter(o => o.id).map(o => o.id));
+                for (const old of oldOpts) {
+                    if (!newOptIds.has(old.id)) {
+                        await db.delete(questionOptionTable).where(eq(questionOptionTable.id, old.id));
+                    }
+                }
+                for (const opt of q.options || []) {
+                    if (opt.id) {
+                        await db.update(questionOptionTable).set({ option: opt.option, is_answer: opt.is_answer }).where(eq(questionOptionTable.id, opt.id));
+                    } else {
+                        if (!qId) continue;
+                        await db.insert(questionOptionTable).values({ question_id: qId, option: opt.option, is_answer: opt.is_answer });
+                    }
                 }
             }
         }
 
         // === IA07 ===
-        const oldQ7s = await db.select().from(ia07QuestionTable).where(eq(ia07QuestionTable.assessment_id, id));
-        const oldQ7Ids = new Set(oldQ7s.map(q => q.id));
-        const newQ7Ids = new Set((data.ia07_questions || []).filter(q => q.id).map(q => q.id));
-        for (const old of oldQ7s) {
-            if (!newQ7Ids.has(old.id)) {
-                await db.delete(ia07QuestionTable).where(eq(ia07QuestionTable.id, old.id));
+        if (data.ia07_questions) {
+            const oldQ7s = await db.select().from(ia07QuestionTable).where(eq(ia07QuestionTable.assessment_id, id));
+            const oldQ7Ids = new Set(oldQ7s.map(q => q.id));
+            const newQ7Ids = new Set((data.ia07_questions || []).filter(q => q.id).map(q => q.id));
+            for (const old of oldQ7s) {
+                if (!newQ7Ids.has(old.id)) {
+                    await db.delete(ia07QuestionTable).where(eq(ia07QuestionTable.id, old.id));
+                }
             }
-        }
-        for (const q of data.ia07_questions || []) {
-            if (q.id) {
-                await db.update(ia07QuestionTable).set({ question: q.question, answer_key: q.answer_key }).where(eq(ia07QuestionTable.id, q.id));
-            } else {
-                await db.insert(ia07QuestionTable).values({ assessment_id: id, question: q.question, answer_key: q.answer_key });
+            for (const q of data.ia07_questions || []) {
+                if (q.id) {
+                    await db.update(ia07QuestionTable).set({ question: q.question, answer_key: q.answer_key }).where(eq(ia07QuestionTable.id, q.id));
+                } else {
+                    await db.insert(ia07QuestionTable).values({ assessment_id: id, question: q.question, answer_key: q.answer_key });
+                }
             }
         }
 
