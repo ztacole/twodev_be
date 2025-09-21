@@ -16,6 +16,8 @@ import {
     scheme as schemeTable,
 } from "../../../../drizzle/schema";
 import { eq } from "drizzle-orm";
+import fs from 'fs';
+import path from "path";
 
 export class IAO2Service {
     static async getIA02Groups(assessment_id: number): Promise<GroupIA02Response[]> {
@@ -111,6 +113,12 @@ export class IAO2Service {
     static async uploadPdf(assessment_id: number, _filePath: string, file_name: string) {
         try {
             const existing = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
+            if (!existing) {
+                const folderPath = path.dirname(_filePath);
+                if (fs.existsSync(folderPath)) {
+                    fs.rmSync(folderPath, { recursive: true, force: true });
+                }
+            }
             if (existing) {
                 await db.update(ia02PdfTable).set({ file_name: file_name }).where(eq(ia02PdfTable.assessment_id, assessment_id));
                 return await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
