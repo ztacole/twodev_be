@@ -35,6 +35,7 @@ UserController.getUsers = (0, async_handler_1.asyncHandler)((req, res) => __awai
         success: true,
         message: 'Daftar user berhasil diambil',
         data: result.data,
+        summary: result.summary,
         meta: result.meta
     });
 }));

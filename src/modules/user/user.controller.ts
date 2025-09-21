@@ -22,6 +22,7 @@ export class UserController {
             success: true,
             message: 'Daftar user berhasil diambil',
             data: result.data,
+            summary: result.summary,
             meta: result.meta
         });
     });
