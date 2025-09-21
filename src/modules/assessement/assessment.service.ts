@@ -782,49 +782,143 @@ export class AssessmentService {
         const assessment = await db.query.assessment.findFirst({
             where: eq(assessmentTable.id, id)
         });
+        if (!assessment) throw new NotFoundError('Assessment');
 
-        if (!assessment) {
-            throw new NotFoundError('Assessment');
-        }
-
-        // Get occupation and scheme manually (tanpa relations API)
+        // Get occupation and scheme
         const [occupation] = await db
-            .select()
+            .select({
+                id: occupationTable.id,
+                name: occupationTable.name,
+                scheme_id: occupationTable.scheme_id,
+                created_at: occupationTable.created_at,
+                updated_at: occupationTable.updated_at,
+                scheme: schemeTable
+            })
             .from(occupationTable)
+            .innerJoin(schemeTable, eq(schemeTable.id, occupationTable.scheme_id))
             .where(eq(occupationTable.id, assessment.occupation_id));
 
-        let scheme: any = null;
-        if (occupation) {
-            const [sc] = await db
-                .select()
-                .from(schemeTable)
-                .where(eq(schemeTable.id, (occupation as any).scheme_id));
-            scheme = sc ?? null;
-        }
+        // === UCAPL02 ===
+        const ucApl02sRaw = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, id));
+        const uc_apl02s = await Promise.all(
+            ucApl02sRaw.map(async (uc) => {
+                const elementsRaw = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
+                const elements = await Promise.all(
+                    elementsRaw.map(async (el) => {
+                        const details = await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, el.id));
+                        return {
+                            id: el.id,
+                            title: el.title,
+                            details: details.map((d) => ({ id: d.id, description: d.description }))
+                        };
+                    })
+                );
+                return {
+                    id: uc.id,
+                    unit_code: uc.unit_code,
+                    title: uc.title,
+                    elements
+                };
+            })
+        );
 
-        // Get all related data without complex relations
-        const ucApl02s = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, id));
-        const groupsIa01 = await db.select().from(groupIa01Table).where(eq(groupIa01Table.assessment_id, id));
-        const ia02Pdf = await db.select().from(ia02PdfTable).where(eq(ia02PdfTable.assessment_id, id));
-        const groupsIa03 = await db.select().from(groupIa03Table).where(eq(groupIa03Table.assessment_id, id));
-        const ia05Questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, id));
-        const ia07Questions = await db.select().from(ia07QuestionTable).where(eq(ia07QuestionTable.assessment_id, id));
+        // === GROUP IA01 ===
+        const groupsIa01Raw = await db.select().from(groupIa01Table).where(eq(groupIa01Table.assessment_id, id));
+        const groups_ia01 = await Promise.all(
+            groupsIa01Raw.map(async (group) => {
+                const unitsRaw = await db.select().from(ucIa01Table).where(eq(ucIa01Table.group_id, group.id));
+                const units = await Promise.all(
+                    unitsRaw.map(async (unit) => {
+                        const elementsRaw = await db.select().from(elementIaTable).where(eq(elementIaTable.uc_id, unit.id));
+                        const elements = await Promise.all(
+                            elementsRaw.map(async (el) => {
+                                const details = await db.select().from(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, el.id));
+                                return {
+                                    id: el.id,
+                                    title: el.title,
+                                    details: details.map((d) => ({ id: d.id, description: d.description, benchmark: d.benchmark }))
+                                };
+                            })
+                        );
+                        return {
+                            id: unit.id,
+                            unit_code: unit.unit_code,
+                            title: unit.title,
+                            elements
+                        };
+                    })
+                );
+                return {
+                    id: group.id,
+                    name: group.name,
+                    units
+                };
+            })
+        );
+
+        // === GROUP IA02 ===
+        const groupsIa02Raw = await db.select().from(groupIa02Table).where(eq(groupIa02Table.assessment_id, id));
+        const groups_ia02 = await Promise.all(
+            groupsIa02Raw.map(async (group) => {
+                const units = await db.select().from(ucIa02Table).where(eq(ucIa02Table.group_id, group.id));
+                const tools = await db.select().from(ia02ToolTable).where(eq(ia02ToolTable.group_id, group.id));
+                return {
+                    id: group.id,
+                    name: group.name,
+                    scenario: group.scenario,
+                    duration: group.duration,
+                    units: units.map((u) => ({ id: u.id, unit_code: u.unit_code, title: u.title })),
+                    tools: tools.map((t) => ({ id: t.id, name: t.name }))
+                };
+            })
+        );
+
+        // === GROUP IA03 ===
+        const groupsIa03Raw = await db.select().from(groupIa03Table).where(eq(groupIa03Table.assessment_id, id));
+        const groups_ia03 = await Promise.all(
+            groupsIa03Raw.map(async (group) => {
+                const units = await db.select().from(ucIa03Table).where(eq(ucIa03Table.group_id, group.id));
+                const qa_ia03 = await db.select().from(ia03QuestionTable).where(eq(ia03QuestionTable.group_id, group.id));
+                return {
+                    id: group.id,
+                    name: group.name,
+                    units: units.map((u) => ({ id: u.id, unit_code: u.unit_code, title: u.title })),
+                    qa_ia03: qa_ia03.map((q) => ({ id: q.id, question: q.question }))
+                };
+            })
+        );
+
+        // === IA05 ===
+        const ia05QuestionsRaw = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, id));
+        const ia05_questions = await Promise.all(
+            ia05QuestionsRaw.map(async (q) => {
+                const options = await db.select().from(questionOptionTable).where(eq(questionOptionTable.question_id, q.id));
+                return {
+                    id: q.id,
+                    order: q.order,
+                    question: q.question,
+                    options: options.map((o) => ({ id: o.id, option: o.option, is_answer: o.is_answer }))
+                };
+            })
+        );
+
+        // === IA07 ===
+        const ia07QuestionsRaw = await db.select().from(ia07QuestionTable).where(eq(ia07QuestionTable.assessment_id, id));
+        const ia07_questions = ia07QuestionsRaw.map((q) => ({ id: q.id, question: q.question, answer_key: q.answer_key }));
+
+        // === IA02 PDF ===
+        const [ia02_pdf] = await db.select().from(ia02PdfTable).where(eq(ia02PdfTable.assessment_id, id));
 
         return {
             id: assessment.id,
             code: assessment.code,
-            occupation: occupation
-                ? {
-                    ...(occupation as any),
-                    scheme,
-                }
-                : null,
-            uc_apl02s: ucApl02s as any,
-            groups_ia01: groupsIa01 as any,
-            ia02_pdf: ia02Pdf as any,
-            groups_ia03: groupsIa03 as any,
-            ia05_questions: ia05Questions as any,
-            ia07_questions: ia07Questions as any,
+            occupation: occupation,
+            uc_apl02s,
+            groups_ia01,
+            ia02_pdf,
+            groups_ia03,
+            ia05_questions,
+            ia07_questions,
         };
     }
 

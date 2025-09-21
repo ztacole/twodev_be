@@ -728,40 +728,119 @@ class AssessmentService {
             const assessment = yield drizzle_1.db.query.assessment.findFirst({
                 where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, id)
             });
-            if (!assessment) {
+            if (!assessment)
                 throw new error_1.NotFoundError('Assessment');
-            }
-            // Get occupation and scheme manually (tanpa relations API)
+            // Get occupation and scheme
             const [occupation] = yield drizzle_1.db
-                .select()
+                .select({
+                id: schema_1.occupation.id,
+                name: schema_1.occupation.name,
+                scheme_id: schema_1.occupation.scheme_id,
+                created_at: schema_1.occupation.created_at,
+                updated_at: schema_1.occupation.updated_at,
+                scheme: schema_1.scheme
+            })
                 .from(schema_1.occupation)
+                .innerJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.scheme.id, schema_1.occupation.scheme_id))
                 .where((0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id));
-            let scheme = null;
-            if (occupation) {
-                const [sc] = yield drizzle_1.db
-                    .select()
-                    .from(schema_1.scheme)
-                    .where((0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id));
-                scheme = sc !== null && sc !== void 0 ? sc : null;
-            }
-            // Get all related data without complex relations
-            const ucApl02s = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, id));
-            const groupsIa01 = yield drizzle_1.db.select().from(schema_1.groupIa01).where((0, drizzle_orm_1.eq)(schema_1.groupIa01.assessment_id, id));
-            const ia02Pdf = yield drizzle_1.db.select().from(schema_1.ia02Pdf).where((0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, id));
-            const groupsIa03 = yield drizzle_1.db.select().from(schema_1.groupIa03).where((0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, id));
-            const ia05Questions = yield drizzle_1.db.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, id));
-            const ia07Questions = yield drizzle_1.db.select().from(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, id));
+            // === UCAPL02 ===
+            const ucApl02sRaw = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, id));
+            const uc_apl02s = yield Promise.all(ucApl02sRaw.map((uc) => __awaiter(this, void 0, void 0, function* () {
+                const elementsRaw = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, uc.id));
+                const elements = yield Promise.all(elementsRaw.map((el) => __awaiter(this, void 0, void 0, function* () {
+                    const details = yield drizzle_1.db.select().from(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.element_id, el.id));
+                    return {
+                        id: el.id,
+                        title: el.title,
+                        details: details.map((d) => ({ id: d.id, description: d.description }))
+                    };
+                })));
+                return {
+                    id: uc.id,
+                    unit_code: uc.unit_code,
+                    title: uc.title,
+                    elements
+                };
+            })));
+            // === GROUP IA01 ===
+            const groupsIa01Raw = yield drizzle_1.db.select().from(schema_1.groupIa01).where((0, drizzle_orm_1.eq)(schema_1.groupIa01.assessment_id, id));
+            const groups_ia01 = yield Promise.all(groupsIa01Raw.map((group) => __awaiter(this, void 0, void 0, function* () {
+                const unitsRaw = yield drizzle_1.db.select().from(schema_1.ucIa01).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.group_id, group.id));
+                const units = yield Promise.all(unitsRaw.map((unit) => __awaiter(this, void 0, void 0, function* () {
+                    const elementsRaw = yield drizzle_1.db.select().from(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, unit.id));
+                    const elements = yield Promise.all(elementsRaw.map((el) => __awaiter(this, void 0, void 0, function* () {
+                        const details = yield drizzle_1.db.select().from(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.element_id, el.id));
+                        return {
+                            id: el.id,
+                            title: el.title,
+                            details: details.map((d) => ({ id: d.id, description: d.description, benchmark: d.benchmark }))
+                        };
+                    })));
+                    return {
+                        id: unit.id,
+                        unit_code: unit.unit_code,
+                        title: unit.title,
+                        elements
+                    };
+                })));
+                return {
+                    id: group.id,
+                    name: group.name,
+                    units
+                };
+            })));
+            // === GROUP IA02 ===
+            const groupsIa02Raw = yield drizzle_1.db.select().from(schema_1.groupIa02).where((0, drizzle_orm_1.eq)(schema_1.groupIa02.assessment_id, id));
+            const groups_ia02 = yield Promise.all(groupsIa02Raw.map((group) => __awaiter(this, void 0, void 0, function* () {
+                const units = yield drizzle_1.db.select().from(schema_1.ucIa02).where((0, drizzle_orm_1.eq)(schema_1.ucIa02.group_id, group.id));
+                const tools = yield drizzle_1.db.select().from(schema_1.ia02Tool).where((0, drizzle_orm_1.eq)(schema_1.ia02Tool.group_id, group.id));
+                return {
+                    id: group.id,
+                    name: group.name,
+                    scenario: group.scenario,
+                    duration: group.duration,
+                    units: units.map((u) => ({ id: u.id, unit_code: u.unit_code, title: u.title })),
+                    tools: tools.map((t) => ({ id: t.id, name: t.name }))
+                };
+            })));
+            // === GROUP IA03 ===
+            const groupsIa03Raw = yield drizzle_1.db.select().from(schema_1.groupIa03).where((0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, id));
+            const groups_ia03 = yield Promise.all(groupsIa03Raw.map((group) => __awaiter(this, void 0, void 0, function* () {
+                const units = yield drizzle_1.db.select().from(schema_1.ucIa03).where((0, drizzle_orm_1.eq)(schema_1.ucIa03.group_id, group.id));
+                const qa_ia03 = yield drizzle_1.db.select().from(schema_1.ia03Question).where((0, drizzle_orm_1.eq)(schema_1.ia03Question.group_id, group.id));
+                return {
+                    id: group.id,
+                    name: group.name,
+                    units: units.map((u) => ({ id: u.id, unit_code: u.unit_code, title: u.title })),
+                    qa_ia03: qa_ia03.map((q) => ({ id: q.id, question: q.question }))
+                };
+            })));
+            // === IA05 ===
+            const ia05QuestionsRaw = yield drizzle_1.db.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, id));
+            const ia05_questions = yield Promise.all(ia05QuestionsRaw.map((q) => __awaiter(this, void 0, void 0, function* () {
+                const options = yield drizzle_1.db.select().from(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, q.id));
+                return {
+                    id: q.id,
+                    order: q.order,
+                    question: q.question,
+                    options: options.map((o) => ({ id: o.id, option: o.option, is_answer: o.is_answer }))
+                };
+            })));
+            // === IA07 ===
+            const ia07QuestionsRaw = yield drizzle_1.db.select().from(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, id));
+            const ia07_questions = ia07QuestionsRaw.map((q) => ({ id: q.id, question: q.question, answer_key: q.answer_key }));
+            // === IA02 PDF ===
+            const [ia02_pdf] = yield drizzle_1.db.select().from(schema_1.ia02Pdf).where((0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, id));
             return {
                 id: assessment.id,
                 code: assessment.code,
-                occupation: occupation
-                    ? Object.assign(Object.assign({}, occupation), { scheme }) : null,
-                uc_apl02s: ucApl02s,
-                groups_ia01: groupsIa01,
-                ia02_pdf: ia02Pdf,
-                groups_ia03: groupsIa03,
-                ia05_questions: ia05Questions,
-                ia07_questions: ia07Questions,
+                occupation: occupation,
+                uc_apl02s,
+                groups_ia01,
+                ia02_pdf,
+                groups_ia03,
+                ia05_questions,
+                ia07_questions,
             };
         });
     }
