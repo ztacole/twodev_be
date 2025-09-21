@@ -98,10 +98,14 @@ export class AssessorService {
         files: any[]
     ): Promise<AssessorResponse> {
         const user = await db.query.user.findFirst({ where: eq(userTable.id, data.user_id) });
-        if (!user) throw new NotFoundError('User');
-
-        if (user?.role_id !== 2) {
-            throw new Error('User bukan assessor');
+        if (!user || user.role_id !== 2) {
+            for (const file of files) {
+                const oldPath = path.join(__dirname, '../../../public/uploads/assessor/default', file.filename);
+                if (fs.existsSync(oldPath)) {
+                    fs.unlinkSync(oldPath);
+                }
+            }
+            throw user ? new Error('User bukan assessor') : new NotFoundError('User');
         }
 
         let assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, data.user_id) });
@@ -127,6 +131,33 @@ export class AssessorService {
             assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, Number(id.id)) });
         }
         if (!assessor) throw new NotFoundError('Assessor');
+
+        if(data.name && data.email) {
+            try {
+                const userEmailAssessor = await db.query.user.findFirst({ where: eq(userTable.email, data.email) });
+
+                if(!userEmailAssessor) {
+                    await db.update(userTable).set({
+                        full_name: data.name,
+                        email: data.email
+                    })
+                    .where(eq(userTable.id, assessor.user_id));
+                } else {
+                    await db.update(userTable).set({
+                        full_name: data.name,
+                    })
+                    .where(eq(userTable.id, assessor.user_id));
+                }
+            } catch (error) {
+                for (const file of files) {
+                    const oldPath = path.join(__dirname, '../../../public/uploads/assessor/default', file.filename);
+                    if (fs.existsSync(oldPath)) {
+                        fs.unlinkSync(oldPath);
+                    }
+                }
+                throw error;
+            }
+        }
 
         // Pindahkan file dari folder default ke folder final setelah id diketahui
         const newDir = path.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessor.id}`);
@@ -367,7 +398,6 @@ export class AssessorService {
         return {
             id: assessor.id,
             user_id: assessor.user_id,
-            name: assessor.name,
             birth_location: assessor.birth_location,
             birth_date: assessor.birth_date,
             no_reg_met: assessor.no_reg_met,

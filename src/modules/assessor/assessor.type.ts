@@ -2,7 +2,6 @@
 export interface AssessorResponse {
     id: number;
     user_id: number;
-    name: string;
     birth_location: string;
     birth_date: Date;
     no_reg_met: string;
@@ -32,6 +31,8 @@ interface AssessorDetailResponse {
 // Request Types
 export interface AssessorRequest {
     user_id: number;
+    name?: string;
+    email?: string;
     birth_location: string;
     birth_date: Date | string;
     no_reg_met: string;

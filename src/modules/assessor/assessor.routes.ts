@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AssessorController } from './assessor.controller';
 import { uploadAssessorDetail } from './upload-config';
+import {  createUploader } from '../../helper/upload.helper';
 import { adminOrAssessorMiddleware, authenticateToken } from '../../middleware/auth.middleware';
 
 const router = Router();
