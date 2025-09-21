@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import { RoleService } from "./role.service";
 
 export class RoleController {
-    static getRoles(req: Request, res: Response) {
-        const roles = RoleService.getRoles();
+    static async getRoles(req: Request, res: Response) {
+        const roles = await RoleService.getRoles();
 
         res.json({
             success: true,

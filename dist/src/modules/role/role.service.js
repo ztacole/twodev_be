@@ -10,15 +10,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoleService = void 0;
-const schema_1 = require("../../../drizzle/schema");
 const drizzle_1 = require("../../config/drizzle");
 class RoleService {
     static getRoles() {
         return __awaiter(this, void 0, void 0, function* () {
-            const roles = yield drizzle_1.db.select({
-                id: schema_1.role.id,
-                name: schema_1.role.name
-            }).from(schema_1.role);
+            const roles = yield drizzle_1.db.query.role.findMany();
             return roles;
         });
     }
