@@ -107,10 +107,14 @@ class AssessorService {
     static createAssessor(data, files) {
         return __awaiter(this, void 0, void 0, function* () {
             const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, data.user_id) });
-            if (!user)
-                throw new error_1.NotFoundError('User');
-            if ((user === null || user === void 0 ? void 0 : user.role_id) !== 2) {
-                throw new Error('User bukan assessor');
+            if (!user || user.role_id !== 2) {
+                for (const file of files) {
+                    const oldPath = path_1.default.join(__dirname, '../../../public/uploads/assessor/default', file.filename);
+                    if (fs_1.default.existsSync(oldPath)) {
+                        fs_1.default.unlinkSync(oldPath);
+                    }
+                }
+                throw user ? new Error('User bukan assessor') : new error_1.NotFoundError('User');
             }
             let assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, data.user_id) });
             if (assessor) {
@@ -137,6 +141,40 @@ class AssessorService {
             }
             if (!assessor)
                 throw new error_1.NotFoundError('Assessor');
+            if (data.name && data.email) {
+                try {
+                    const userEmailAssessor = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.email, data.email) });
+                    if (!userEmailAssessor) {
+                        yield drizzle_1.db.update(schema_1.user).set({
+                            full_name: data.name,
+                            email: data.email
+                        })
+                            .where((0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id));
+                    }
+                    else if (userEmailAssessor.id !== assessor.user_id) {
+                        yield drizzle_1.db.update(schema_1.user).set({
+                            full_name: data.name,
+                            email: data.email
+                        })
+                            .where((0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id));
+                    }
+                    else if (userEmailAssessor.id === assessor.user_id) {
+                        yield drizzle_1.db.update(schema_1.user).set({
+                            full_name: data.name
+                        })
+                            .where((0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id));
+                    }
+                }
+                catch (error) {
+                    for (const file of files) {
+                        const oldPath = path_1.default.join(__dirname, '../../../public/uploads/assessor/default', file.filename);
+                        if (fs_1.default.existsSync(oldPath)) {
+                            fs_1.default.unlinkSync(oldPath);
+                        }
+                    }
+                    throw error;
+                }
+            }
             // Pindahkan file dari folder default ke folder final setelah id diketahui
             const newDir = path_1.default.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessor.id}`);
             if (fs_1.default.existsSync(newDir)) {
@@ -342,7 +380,6 @@ class AssessorService {
         return {
             id: assessor.id,
             user_id: assessor.user_id,
-            name: assessor.name,
             birth_location: assessor.birth_location,
             birth_date: assessor.birth_date,
             no_reg_met: assessor.no_reg_met,

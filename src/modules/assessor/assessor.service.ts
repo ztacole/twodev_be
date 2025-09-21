@@ -142,9 +142,15 @@ export class AssessorService {
                         email: data.email
                     })
                     .where(eq(userTable.id, assessor.user_id));
-                } else {
+                } else if (userEmailAssessor.id !== assessor.user_id) {
                     await db.update(userTable).set({
                         full_name: data.name,
+                        email: data.email
+                    })
+                    .where(eq(userTable.id, assessor.user_id));
+                } else if (userEmailAssessor.id === assessor.user_id) {
+                    await db.update(userTable).set({
+                        full_name: data.name
                     })
                     .where(eq(userTable.id, assessor.user_id));
                 }
