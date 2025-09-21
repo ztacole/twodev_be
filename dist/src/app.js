@@ -25,6 +25,7 @@ const schedule_routes_1 = __importDefault(require("./modules/schedule/schedule.r
 const assessor_routes_1 = __importDefault(require("./modules/assessor/assessor.routes"));
 const assessor_detail_routes_1 = __importDefault(require("./modules/assessor-detail/assessor-detail.routes"));
 const asseesee_routes_1 = __importDefault(require("./modules/assessee/asseesee.routes"));
+const role_routes_1 = __importDefault(require("./modules/role/role.routes"));
 // Public
 const public_routes_1 = __importDefault(require("./modules/public/public.routes"));
 app.use('/twodev/api/public', public_routes_1.default);
@@ -36,6 +37,7 @@ app.use('/twodev/api/uploads', uploads_routes_1.default);
 // Serve uploaded files (secured by auth for now)
 app.use('/twodev/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads')));
 // Modules
+app.use('/twodev/api/roles', role_routes_1.default);
 app.use('/twodev/api/users', user_routes_1.default);
 app.use('/twodev/api/auth', auth_routes_1.default);
 app.use('/twodev/api/dashboard', dashboard_routes_1.default);

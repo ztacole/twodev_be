@@ -25,6 +25,7 @@ import scheduleRoutes from './modules/schedule/schedule.routes';
 import assessorRoutes from './modules/assessor/assessor.routes';
 import assessorDetailRoutes from './modules/assessor-detail/assessor-detail.routes';
 import assesseeRoutes from './modules/assessee/asseesee.routes';
+import roleRoutes from './modules/role/role.routes';
 
 // Public
 import publicRoutes from './modules/public/public.routes';
@@ -39,6 +40,7 @@ app.use('/twodev/api/uploads', uploadsRoutes);
 app.use('/twodev/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Modules
+app.use('/twodev/api/roles', roleRoutes);
 app.use('/twodev/api/users', userRoutes);
 app.use('/twodev/api/auth', authRoutes);
 app.use('/twodev/api/dashboard', dashboardRoutes);
