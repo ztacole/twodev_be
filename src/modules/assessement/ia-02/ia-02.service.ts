@@ -116,7 +116,9 @@ export class IAO2Service {
             if (existing) {
                 const folderPath = path.dirname(_filePath);
                 if (fs.existsSync(folderPath)) {
-                    fs.unlinkSync(path.join(folderPath, existing.file_name));
+                    try {
+                        fs.unlinkSync(path.join(folderPath, existing.file_name));
+                    } catch {}
                 }
 
                 await db.update(ia02PdfTable)

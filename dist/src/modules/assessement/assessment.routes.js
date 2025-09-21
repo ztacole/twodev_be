@@ -24,7 +24,7 @@ const ak_04_controller_1 = require("./ak-04/ak-04.controller");
 const ak_05_controller_1 = require("./ak-05/ak-05.controller");
 const auth_middleware_2 = require("../../middleware/auth.middleware");
 const uploadAPL01 = (0, upload_helper_1.createUploader)({
-    basePath: '../../public/uploads/apl-01',
+    basePath: path_1.default.join(__dirname, '../../../public/uploads/apl-01'),
     folderResolver: (req) => {
         var _a, _b, _c, _d, _e, _f;
         const assesseeId = ((_a = req.params) === null || _a === void 0 ? void 0 : _a.assessee_id) || ((_b = req.body) === null || _b === void 0 ? void 0 : _b.assessee_id) || 'unknown';
@@ -37,7 +37,7 @@ const uploadAPL01 = (0, upload_helper_1.createUploader)({
     cleanBeforeUpload: true
 });
 const uploadIA02 = (0, upload_helper_1.createUploader)({
-    basePath: '../../public/uploads/ia-02',
+    basePath: path_1.default.join(__dirname, '../../../public/uploads/ia-02'),
     folderResolver: (req) => {
         const { assessmentId } = req.params;
         return `assessment-${assessmentId}` || 'unknown';

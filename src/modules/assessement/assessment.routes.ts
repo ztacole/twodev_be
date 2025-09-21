@@ -21,7 +21,7 @@ import { AK05Controller } from "./ak-05/ak-05.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
 
 const uploadAPL01 = createUploader({
-    basePath: '../../public/uploads/apl-01',
+    basePath: path.join( __dirname, '../../../public/uploads/apl-01'),
     folderResolver: (req) => {
         const assesseeId = req.params?.assessee_id || req.body?.assessee_id || 'unknown';
         const assessorId = req.params?.assessor_id || req.body?.assessor_id || 'unknown';
@@ -34,7 +34,7 @@ const uploadAPL01 = createUploader({
 })
 
 const uploadIA02 = createUploader({
-    basePath: '../../public/uploads/ia-02',
+    basePath: path.join(__dirname, '../../../public/uploads/ia-02'),
     folderResolver: (req) => {
         const { assessmentId } = req.params;
         return `assessment-${assessmentId}` || 'unknown';
