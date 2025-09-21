@@ -46,5 +46,5 @@ router.get('/verification/approved/:scheduleDetailId', auth_middleware_1.authent
 router.get('/verification/schedule-detail/:scheduleDetailId', auth_middleware_1.authenticateToken, verificationController.getByScheduleDetail);
 router.post('/verification/schedule-detail/:scheduleDetailId/approve', auth_middleware_1.authenticateToken, verificationController.approveByScheduleDetail);
 router.get('/verification/result/:resultId', auth_middleware_1.authenticateToken, verificationController.getDetail);
-router.post('/verification/result/:resultId/approve', auth_middleware_1.authenticateToken, verificationController.approve);
+router.post('/verification/:resultId/approve', auth_middleware_1.authenticateToken, verificationController.approve);
 exports.default = router;

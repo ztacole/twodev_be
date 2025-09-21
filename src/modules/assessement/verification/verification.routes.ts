@@ -16,6 +16,6 @@ router.get('/verification/schedule-detail/:scheduleDetailId', authenticateToken,
 router.post('/verification/schedule-detail/:scheduleDetailId/approve', authenticateToken, verificationController.approveByScheduleDetail);
 
 router.get('/verification/result/:resultId', authenticateToken, verificationController.getDetail);
-router.post('/verification/result/:resultId/approve', authenticateToken, verificationController.approve);
+router.post('/verification/:resultId/approve', authenticateToken, verificationController.approve);
 
 export default router;
