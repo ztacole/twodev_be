@@ -113,18 +113,23 @@ export class IAO2Service {
     static async uploadPdf(assessment_id: number, _filePath: string, file_name: string) {
         try {
             const existing = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
-            if (!existing) {
+            if (existing) {
                 const folderPath = path.dirname(_filePath);
                 if (fs.existsSync(folderPath)) {
                     fs.rmSync(folderPath, { recursive: true, force: true });
-                }
+                }    
+
+                await db.update(ia02PdfTable)
+                    .set({ file_name })
+                    .where(eq(ia02PdfTable.assessment_id, assessment_id));
+            } else {
+                await db.insert(ia02PdfTable).values({ assessment_id: assessment_id, file_name: file_name });
             }
-            if (existing) {
-                await db.update(ia02PdfTable).set({ file_name: file_name }).where(eq(ia02PdfTable.assessment_id, assessment_id));
-                return await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
-            }
-            await db.insert(ia02PdfTable).values({ assessment_id: assessment_id, file_name: file_name });
-            return await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
+
+            const updated = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
+            if (!updated) throw new NotFoundError('IA02 PDF');
+            
+            return updated;
         } catch (error: any) {
             throw new AppError(`Gagal mengunggah file PDF: ${error.message}`, 500);
         }

@@ -120,18 +120,22 @@ class IAO2Service {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const existing = yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id) });
-                if (!existing) {
+                if (existing) {
                     const folderPath = path_1.default.dirname(_filePath);
                     if (fs_1.default.existsSync(folderPath)) {
                         fs_1.default.rmSync(folderPath, { recursive: true, force: true });
                     }
+                    yield drizzle_1.db.update(schema_1.ia02Pdf)
+                        .set({ file_name })
+                        .where((0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id));
                 }
-                if (existing) {
-                    yield drizzle_1.db.update(schema_1.ia02Pdf).set({ file_name: file_name }).where((0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id));
-                    return yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id) });
+                else {
+                    yield drizzle_1.db.insert(schema_1.ia02Pdf).values({ assessment_id: assessment_id, file_name: file_name });
                 }
-                yield drizzle_1.db.insert(schema_1.ia02Pdf).values({ assessment_id: assessment_id, file_name: file_name });
-                return yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id) });
+                const updated = yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id) });
+                if (!updated)
+                    throw new error_1.NotFoundError('IA02 PDF');
+                return updated;
             }
             catch (error) {
                 throw new error_1.AppError(`Gagal mengunggah file PDF: ${error.message}`, 500);
