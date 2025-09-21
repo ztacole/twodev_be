@@ -15,7 +15,10 @@ const drizzle_1 = require("../../config/drizzle");
 class RoleService {
     static getRoles() {
         return __awaiter(this, void 0, void 0, function* () {
-            const roles = yield drizzle_1.db.select().from(schema_1.role);
+            const roles = yield drizzle_1.db.select({
+                id: schema_1.role.id,
+                name: schema_1.role.name
+            }).from(schema_1.role);
             return roles;
         });
     }
