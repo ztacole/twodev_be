@@ -51,6 +51,7 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_2.authenticateToken);
 router.post('/create', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.createAssessment);
 router.get('/', assessment_controller_1.AssessmentController.getAssessments);
+router.put('/:id', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.updateAssessment);
 router.get('/:id', assessment_controller_1.AssessmentController.getAssessmentById);
 router.delete('/:id', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', assessment_controller_1.AssessmentController.getAssessmentResultDetails);

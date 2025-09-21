@@ -1,6 +1,104 @@
+// Update types with id for all entities
+export interface UpdateAssessmentRequest {
+    scheme_id: number;
+    occupation_id: number;
+    code: string;
+    uc_apl02s: UpdateUCAPL02Request[];
+    groups_ia01: UpdateGroupIA01Request[];
+    groups_ia02?: UpdateGroupIA02Request[];
+    groups_ia03: UpdateGroupIA03Request[];
+    ia05_questions?: UpdateIA05QuestionRequest[];
+    ia07_questions?: UpdateIA07QuestionRequest[];
+}
+
+export interface UpdateUCAPL02Request {
+    id?: number;
+    unit_code: string;
+    title: string;
+    elements: UpdateElementAPL02Request[];
+}
+export interface UpdateElementAPL02Request {
+    id?: number;
+    title: string;
+    details: UpdateElementDetailsAPL02Request[];
+}
+export interface UpdateElementDetailsAPL02Request {
+    id?: number;
+    description: string;
+}
+
+export interface UpdateGroupIA01Request {
+    id?: number;
+    name: string;
+    units: UpdateUcIA01Request[];
+}
+export interface UpdateUcIA01Request {
+    id?: number;
+    unit_code: string;
+    title: string;
+    elements: UpdateElementIARequest[];
+}
+export interface UpdateElementIARequest {
+    id?: number;
+    title: string;
+    details: UpdateElementDetailsIARequest[];
+}
+export interface UpdateElementDetailsIARequest {
+    id?: number;
+    description: string;
+    benchmark: string;
+}
+
+export interface UpdateGroupIA02Request {
+    id?: number;
+    name: string;
+    scenario: string;
+    duration: number;
+    units: UpdateUcIARequest[];
+    tools: UpdateIA02ToolsRequest[];
+}
+export interface UpdateUcIARequest {
+    id?: number;
+    unit_code: string;
+    title: string;
+}
+export interface UpdateIA02ToolsRequest {
+    id?: number;
+    name: string;
+}
+
+export interface UpdateGroupIA03Request {
+    id?: number;
+    name: string;
+    units: UpdateUcIARequest[];
+    qa_ia03: UpdateIA03QuestionRequest[];
+}
+export interface UpdateIA03QuestionRequest {
+    id?: number;
+    question: string;
+}
+
+export interface UpdateIA05QuestionRequest {
+    id?: number;
+    order: number;
+    question: string;
+    options: UpdateIA05OptionRequest[];
+}
+export interface UpdateIA05OptionRequest {
+    id?: number;
+    option: string;
+    is_answer: boolean;
+}
+
+export interface UpdateIA07QuestionRequest {
+    id?: number;
+    question: string;
+    answer_key: string;
+}
+
 export interface AssessmentRequest {
     scheme_id: number;
-    occupation_name: string;
+    occupation_id: number;
     code: string;
     uc_apl02s: UCAPL02Request[];
     groups_ia01: GroupIA01Request[];
@@ -115,10 +213,15 @@ export interface AssessmentDetailsResponse {
     occupation: OccupationResponse;
     uc_apl02s: UCAPL02Response[];
     groups_ia01: GroupIA01Response[];
-    groups_ia02: GroupIA02Response[];
+    ia02_pdf: IA02PdfResponse;
     groups_ia03: GroupIA03Response[];
     ia05_questions: IA05QuestionResponse[];
     ia07_questions: IA07QuestionResponse[];
+}
+
+interface IA02PdfResponse {
+    id: number;
+    file_name: string;
 }
 
 interface UCAPL02Response {

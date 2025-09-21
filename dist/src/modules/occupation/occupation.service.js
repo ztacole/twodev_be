@@ -141,7 +141,7 @@ class OccupationService {
                 throw new error_1.NotFoundError('Occupations');
             }
             const scheme_ids = [...new Set(occupations.map(o => o.scheme_id))];
-            const schemes = scheme_ids.length ? yield drizzle_1.db.select().from(schema_1.scheme).where((0, drizzle_orm_1.eq)(schema_1.scheme.id, scheme_ids[0])) : [];
+            const schemes = scheme_ids.length ? yield drizzle_1.db.select().from(schema_1.scheme).where((0, drizzle_orm_1.inArray)(schema_1.scheme.id, scheme_ids)) : [];
             const schemeById = new Map(schemes.map(s => [s.id, s]));
             const workbook = new exceljs_1.default.Workbook();
             const worksheet = workbook.addWorksheet('Occupations');

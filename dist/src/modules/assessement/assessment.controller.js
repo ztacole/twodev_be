@@ -28,6 +28,22 @@ AssessmentController.createAssessment = (0, async_handler_1.asyncHandler)((req, 
         data: result,
     });
 }));
+AssessmentController.updateAssessment = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = Number(req.params.id);
+    if (!id) {
+        return res.status(400).json({
+            success: false,
+            message: "ID assessment harus diisi",
+        });
+    }
+    const data = req.body;
+    const result = yield assessment_service_1.AssessmentService.updateAssessment(id, data);
+    res.status(200).json({
+        success: true,
+        message: "Assessment berhasil diupdate",
+        data: result,
+    });
+}));
 AssessmentController.getAssessments = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield assessment_service_1.AssessmentService.getAssessments();
     res.status(200).json({

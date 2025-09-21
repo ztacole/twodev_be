@@ -51,6 +51,7 @@ router.use(authenticateToken);
 
 router.post('/create', authenticateToken, adminMiddleware, AssessmentController.createAssessment);
 router.get('/', AssessmentController.getAssessments);
+router.put('/:id', authenticateToken, adminMiddleware, AssessmentController.updateAssessment);
 router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', authenticateToken, adminMiddleware, AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);

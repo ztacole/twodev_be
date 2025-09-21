@@ -1,7 +1,7 @@
 import { AssessmentService } from "./assessment.service";
 import { asyncHandler } from "../../common/async.handler";
 import { Request, Response } from "express";
-import { AssessmentRequest } from "./assessment.type";
+import { AssessmentRequest, UpdateAssessmentRequest } from "./assessment.type";
 import { JwtPayload } from "jsonwebtoken";
 import { AssessorService } from "../assessor/assessor.service";
 import { AssessorResponse } from "../assessor/assessor.type";
@@ -14,6 +14,23 @@ export class AssessmentController {
         res.status(201).json({
             success: true,
             message: "Assessment berhasil dibuat",
+            data: result,
+        });
+    });
+
+    static updateAssessment = asyncHandler(async (req: Request, res: Response) => {
+        const id = Number(req.params.id);
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "ID assessment harus diisi",
+            });
+        }
+        const data: UpdateAssessmentRequest = req.body;
+        const result = await AssessmentService.updateAssessment(id, data);
+        res.status(200).json({
+            success: true,
+            message: "Assessment berhasil diupdate",
             data: result,
         });
     });
