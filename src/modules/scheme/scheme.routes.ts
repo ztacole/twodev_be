@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import { SchemeController } from './scheme.controller';
+import { adminMiddleware, adminOrAssessorMiddleware, authenticateToken } from '../../middleware/auth.middleware';
 
 const router = Router();
 
-router.post('/', SchemeController.createScheme);
-router.get('/', SchemeController.getSchemes);
-router.get('/:id', SchemeController.getSchemeById);
-router.put('/:id', SchemeController.updateScheme);
-router.delete('/:id', SchemeController.deleteScheme);
-router.get('/export/excel', SchemeController.exportSchemesToExcel);
+router.use(authenticateToken);
+
+router.post('/', authenticateToken, adminMiddleware, SchemeController.createScheme);
+router.get('/', authenticateToken, adminOrAssessorMiddleware, SchemeController.getSchemes);
+router.get('/:id', authenticateToken, adminOrAssessorMiddleware, SchemeController.getSchemeById);
+router.put('/:id', authenticateToken, adminMiddleware, SchemeController.updateScheme);
+router.delete('/:id', authenticateToken, adminMiddleware, SchemeController.deleteScheme);
+router.get('/export/excel', authenticateToken, adminMiddleware, SchemeController.exportSchemesToExcel);
 
 export default router;

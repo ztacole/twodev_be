@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { AssessorController } from './assessor.controller';
 import { uploadAssessorDetail } from './upload-config';
+import { adminOrAssessorMiddleware, authenticateToken } from '../../middleware/auth.middleware';
 
 const router = Router();
+
+router.use(authenticateToken, adminOrAssessorMiddleware);
 
 router.post('/', uploadAssessorDetail, AssessorController.createAssessor);
 router.get('/', AssessorController.getAssessors);

@@ -37,6 +37,7 @@ const express_1 = require("express");
 const verificationController = __importStar(require("./verification.controller"));
 const auth_middleware_1 = require("../../../middleware/auth.middleware");
 const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware);
 // admin-only endpoints (router mounted under /api/assessments)
 router.get('/verification/pending', auth_middleware_1.authenticateToken, verificationController.getPending);
 router.get('/verification/pending/:scheduleDetailId', auth_middleware_1.authenticateToken, verificationController.getPending);

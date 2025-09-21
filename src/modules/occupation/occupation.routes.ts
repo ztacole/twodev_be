@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { OccupationController } from './occupation.controller';
 import { createUploader } from '../../helper/upload.helper';
+import { adminMiddleware, adminOrAssessorMiddleware, authenticateToken } from '../../middleware/auth.middleware';
 
 function cleanString(str: string): string {
   return str.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
@@ -21,6 +22,8 @@ const uploadPDF = createUploader({
 })
 
 const router = Router();
+
+router.use(authenticateToken, adminMiddleware);
 
 router.post('/', OccupationController.createOccupation);
 router.get('/', OccupationController.getOccupations);

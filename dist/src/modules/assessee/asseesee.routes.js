@@ -2,7 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const asseesee_controller_1 = require("./asseesee.controller");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
 const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware);
 router.post('/', asseesee_controller_1.AssesseeController.createAssessee);
 router.get('/', asseesee_controller_1.AssesseeController.getAssessees);
 router.get('/:id', asseesee_controller_1.AssesseeController.getAssesseeById);

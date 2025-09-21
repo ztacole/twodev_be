@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import * as verificationController from './verification.controller';
-import { authenticateToken } from '../../../middleware/auth.middleware';
+import { adminMiddleware, authenticateToken } from '../../../middleware/auth.middleware';
 
 const router = Router();
+
+router.use(authenticateToken, adminMiddleware);
 
 // admin-only endpoints (router mounted under /api/assessments)
 router.get('/verification/pending', authenticateToken, verificationController.getPending);

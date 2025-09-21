@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const occupation_controller_1 = require("./occupation.controller");
 const upload_helper_1 = require("../../helper/upload.helper");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
 function cleanString(str) {
     return str.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
 }
@@ -20,6 +21,7 @@ const uploadPDF = (0, upload_helper_1.createUploader)({
     cleanBeforeUpload: true
 });
 const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware);
 router.post('/', occupation_controller_1.OccupationController.createOccupation);
 router.get('/', occupation_controller_1.OccupationController.getOccupations);
 router.get('/:id', occupation_controller_1.OccupationController.getOccupationById);
