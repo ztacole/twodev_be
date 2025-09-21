@@ -16,16 +16,17 @@ const drizzle_orm_1 = require("drizzle-orm");
 class DashboardService {
     static getSummary() {
         return __awaiter(this, void 0, void 0, function* () {
-            const [schemes, assessments, assessors, assessees] = yield Promise.all([
+            const [schemes, assessments] = yield Promise.all([
                 drizzle_1.db.select().from(schema_1.scheme),
                 drizzle_1.db.select().from(schema_1.assessment),
                 drizzle_1.db.select().from(schema_1.occupation),
-                drizzle_1.db.select().from(schema_1.assessee),
             ]);
+            const userAssessor = yield drizzle_1.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.role_id, 2));
+            const userAssessee = yield drizzle_1.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.role_id, 3));
             const totalSchemes = schemes.length;
             const totalAssessments = assessments.length;
-            const totalAssessors = assessors.length;
-            const totalAssessees = assessees.length;
+            const totalAssessors = userAssessor.length;
+            const totalAssessees = userAssessee.length;
             return {
                 totalSchemes,
                 totalAssessments,

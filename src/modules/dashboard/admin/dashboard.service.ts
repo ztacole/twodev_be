@@ -1,21 +1,23 @@
 import { db } from '../../../config/drizzle';
 import { DashboardSummary, DashboardSchedule, DashboardVerification } from './dashboard.type';
 import { NotFoundError } from '../../../common/error';
-import { assessment as assessmentTable, assessmentSchedule as scheduleTable, occupation as occupationTable, scheme as schemeTable, resultDoc as resultDocTable, assessee as assesseeTable } from '../../../../drizzle/schema';
+import { user as userTable, assessment as assessmentTable, assessmentSchedule as scheduleTable, occupation as occupationTable, scheme as schemeTable, resultDoc as resultDocTable, assessee as assesseeTable } from '../../../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 export class DashboardService {
   static async getSummary(): Promise<DashboardSummary> {
-    const [schemes, assessments, assessors, assessees] = await Promise.all([
+    const [schemes, assessments] = await Promise.all([
       db.select().from(schemeTable),
       db.select().from(assessmentTable),
       db.select().from(occupationTable),
-      db.select().from(assesseeTable),
     ]);
+    const userAssessor = await db.select().from(userTable).where(eq(userTable.role_id, 2));
+    const userAssessee = await db.select().from(userTable).where(eq(userTable.role_id, 3));
+    
     const totalSchemes = schemes.length;
     const totalAssessments = assessments.length;
-    const totalAssessors = assessors.length;
-    const totalAssessees = assessees.length;
+    const totalAssessors = userAssessor.length;
+    const totalAssessees = userAssessee.length;
 
     return {
       totalSchemes,
