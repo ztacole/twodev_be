@@ -404,6 +404,7 @@ export class AssessorService {
         return {
             id: assessor.id,
             user_id: assessor.user_id,
+            name: assessor.name,
             birth_location: assessor.birth_location,
             birth_date: assessor.birth_date,
             no_reg_met: assessor.no_reg_met,
