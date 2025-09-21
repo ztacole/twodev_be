@@ -82,7 +82,7 @@ router.get('/apl-01/result/docs/:resultId', apl_01_controller_1.APL1Controller.g
 router.get('/apl-02/units/:resultId', apl_02_controller_1.APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/:resultId/elements/:unitId', apl_02_controller_1.APL02Controller.getElementsByUnitId);
 router.post('/apl-02/result/send', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, apl_02_controller_1.APL02Controller.sendResult);
-router.post('/apl-02/result/send-header', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, apl_02_controller_1.APL02Controller.sendResultHeader);
+router.post('/apl-02/result/send-header', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, apl_02_controller_1.APL02Controller.sendResultHeader);
 router.get('/apl-02/result/units/:resultId', apl_02_controller_1.APL02Controller.getUnitsResult);
 router.get('/apl-02/result/units/:resultId/elements/:unitId', apl_02_controller_1.APL02Controller.getElementsResult);
 router.put('/apl-02/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, apl_02_controller_1.APL02Controller.approvedByAssessor);
