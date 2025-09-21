@@ -15,7 +15,9 @@ export class UserController {
     static getUsers = asyncHandler(async (req: Request, res: Response) => {
         const page = Math.max(1, Number(req.query.page) || 1);
         const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
-        const result = await UserService.getUsers(page, limit);
+        const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+        const role_name = req.query.role_name ? String(req.query.role_name) : undefined;
+        const result = await UserService.getUsers(page, limit, keyword, role_name);
         return res.status(200).json({
             success: true,
             message: 'Daftar user berhasil diambil',

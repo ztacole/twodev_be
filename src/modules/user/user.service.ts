@@ -3,7 +3,7 @@ import { DuplicateEntryError, NotFoundError } from '../../common/error';
 import { CreateUserRequest, UpdateUserRequest, UserResponse } from './user.type';
 import bcrypt from 'bcryptjs';
 import { user as userTable, role as roleTable } from '../../../drizzle/schema';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, like, or, sql } from 'drizzle-orm';
 import { PagingMeta } from '../../helper/type';
 
 export class UserService {
@@ -29,19 +29,37 @@ export class UserService {
         return formatUserResponse({ ...user, role });
     }
 
-    static async getUsers(page: number = 1, limit: number = 10): Promise<{ data: UserResponse[]; meta: PagingMeta }> {
+    static async getUsers(page: number = 1, limit: number = 10, keyword?: string, role_name?: string): Promise<{ data: UserResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
 
-        const users = await db.select().from(userTable).limit(limit).offset(offset);
-        const roles = await db.select().from(roleTable);
-        const roleById = new Map(roles.map(r => [r.id, r]));
+        const users = await db.select({
+            id: userTable.id,
+            full_name: userTable.full_name,
+            email: userTable.email,
+            role_id: userTable.role_id,
+            created_at: userTable.created_at,
+            updated_at: userTable.updated_at,
+            role: roleTable,
+        })
+            .from(userTable)
+            .leftJoin(roleTable, eq(userTable.role_id, roleTable.id))
+            .where(and(
+                or(
+                    keyword ? like(userTable.full_name, `%${keyword}%`) : undefined,
+                    keyword ? like(userTable.email, `%${keyword}%`) : undefined,
+                ),
+                role_name ? eq(roleTable.name, role_name) : undefined
+            ))
+            .orderBy(asc(roleTable.name), asc(userTable.full_name), asc(userTable.created_at))
+            .limit(limit)
+            .offset(offset);
 
         const countRows = await db.select({ count: sql<number>`COUNT(*)` }).from(userTable);
         const total = Number(countRows?.[0]?.count ?? 0);
         const totalPages = Math.max(1, Math.ceil(total / limit));
 
         return {
-            data: users.map(u => formatUserResponse({ ...u, role: roleById.get(u.role_id) })),
+            data: users.map(u => formatUserResponse(u)),
             meta: { current_page: page, limit, total, total_pages: totalPages }
         };
     }

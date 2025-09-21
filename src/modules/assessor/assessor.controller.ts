@@ -44,7 +44,8 @@ export class AssessorController {
     static getAssessors = asyncHandler(async (req: Request, res: Response) => {
         const page = Math.max(1, Number(req.query.page) || 1);
         const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
-        const result = await AssessorService.getAssessors(page, limit);
+        const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+        const result = await AssessorService.getAssessors(page, limit, keyword);
         return res.json({
             success: true,
             message: 'Data assessor berhasil diambil',
@@ -164,7 +165,8 @@ export class AssessorController {
         try {
             const page = Math.max(1, Number(req.query.page) || 1);
             const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
-            const users = await AssessorService.getAssessorUsers(page, limit);
+            const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+            const users = await AssessorService.getAssessorUsers(page, limit, keyword);
 
             res.status(200).json({
                 success: true,

@@ -2,7 +2,7 @@ import { db } from '../../config/drizzle';
 import { NotFoundError, DuplicateEntryError } from '../../common/error';
 import { AssesseeResponse, AssesseeRequest } from './asseessee.type';
 import { assessee as assesseeTable, user as userTable, role as roleTable, assesseeJob } from '../../../drizzle/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, like, or, sql } from 'drizzle-orm';
 import { PagingMeta } from '../../helper/type';
 
 const translateGenderToEn = (gender: string): 'male' | 'female' => {
@@ -30,7 +30,7 @@ const translateGenderToId = (gender: string): 'LAKI-LAKI' | 'PEREMPUAN' => {
 };
 
 export class AssesseeService {
-    static async getAssessees(page: number = 1, limit: number = 10): Promise<{ data: AssesseeResponse[]; meta: PagingMeta }> {
+    static async getAssessees(page: number = 1, limit: number = 10, keyword?: string): Promise<{ data: AssesseeResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
         const assessees = await db.select({
             id: assesseeTable.id,
@@ -52,6 +52,14 @@ export class AssesseeService {
         }).from(assesseeTable)
             .leftJoin(userTable, eq(assesseeTable.user_id, userTable.id))
             .innerJoin(assesseeJob, eq(assesseeJob.assessee_id, assesseeTable.id))
+            .where(
+                or(
+                    keyword ? like(userTable.full_name, `%${keyword}%`) : undefined,
+                    keyword ? like(userTable.email, `%${keyword}%`) : undefined,
+                    keyword ? like(assesseeTable.identity_number, `%${keyword}%`) : undefined,
+                    keyword ? like(assesseeTable.phone_no, `%${keyword}%`) : undefined
+                )
+            )
             .limit(limit).offset(offset);
         const countRows = await db.select({ count: sql<number>`COUNT(*)` }).from(assesseeTable);
         const total = Number(countRows?.[0]?.count ?? 0);

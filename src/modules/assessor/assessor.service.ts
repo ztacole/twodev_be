@@ -2,7 +2,7 @@ import { db } from '../../config/drizzle';
 import { NotFoundError, DuplicateEntryError, ValidationError } from '../../common/error';
 import { AssessorResponse, AssessorRequest } from './assessor.type';
 import { assessor as assessorTable, user as userTable, role as roleTable, scheme as schemeTable, assessorDetail as assessorDetailTable } from '../../../drizzle/schema';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, like, or, sql } from 'drizzle-orm';
 import { rm } from "fs/promises";
 import fs from 'fs';
 import path from 'path';
@@ -11,7 +11,7 @@ import { count } from 'console';
 import { de } from '@faker-js/faker/.';
 
 export class AssessorService {
-    static async getAssessors(page: number = 1, limit: number = 10): Promise<{ data: AssessorResponse[]; meta: PagingMeta }> {
+    static async getAssessors(page: number = 1, limit: number = 10, keyword?: string): Promise<{ data: AssessorResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
         const assessors = await db.select({
             id: assessorTable.id,
@@ -32,6 +32,12 @@ export class AssessorService {
             .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
             .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
             .innerJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+            .where(
+                or(
+                    keyword ? like(userTable.full_name, `%${keyword}%`) : undefined,
+                    keyword ? like(userTable.email, `%${keyword}%`) : undefined
+                )
+            )
             .limit(limit)
             .offset(offset);
 
@@ -135,27 +141,27 @@ export class AssessorService {
         }
         if (!assessor) throw new NotFoundError('Assessor');
 
-        if(data.name && data.email) {
+        if (data.name && data.email) {
             try {
                 const userEmailAssessor = await db.query.user.findFirst({ where: eq(userTable.email, data.email) });
 
-                if(!userEmailAssessor) {
+                if (!userEmailAssessor) {
                     await db.update(userTable).set({
                         full_name: data.name,
                         email: data.email
                     })
-                    .where(eq(userTable.id, assessor.user_id));
+                        .where(eq(userTable.id, assessor.user_id));
                 } else if (userEmailAssessor.id !== assessor.user_id) {
                     await db.update(userTable).set({
                         full_name: data.name,
                         email: data.email
                     })
-                    .where(eq(userTable.id, assessor.user_id));
+                        .where(eq(userTable.id, assessor.user_id));
                 } else if (userEmailAssessor.id === assessor.user_id) {
                     await db.update(userTable).set({
                         full_name: data.name
                     })
-                    .where(eq(userTable.id, assessor.user_id));
+                        .where(eq(userTable.id, assessor.user_id));
                 }
             } catch (error) {
                 for (const file of files) {
@@ -359,7 +365,7 @@ export class AssessorService {
         }));
     }
 
-    static async getAssessorUsers(page: number = 1, limit: number = 10): Promise<{ data: { id: number; full_name: string; email: string; role: string; status: string }[], meta: PagingMeta }> {
+    static async getAssessorUsers(page: number = 1, limit: number = 10, keyword?: string): Promise<{ data: { id: number; full_name: string; email: string; role: string; status: string }[], meta: PagingMeta }> {
         const offset = (page - 1) * limit;
         const users = await db.select({
             id: userTable.id,
@@ -372,7 +378,15 @@ export class AssessorService {
             .innerJoin(roleTable, eq(userTable.role_id, roleTable.id))
             .leftJoin(assessorTable, eq(userTable.id, assessorTable.user_id))
             .leftJoin(assessorDetailTable, eq(assessorTable.id, assessorDetailTable.assessor_id))
-            .where(eq(roleTable.name, 'Assessor'))
+            .where(
+                and(
+                    eq(roleTable.name, 'Assessor'),
+                    or(
+                        keyword ? like(userTable.full_name, `%${keyword}%`) : undefined,
+                        keyword ? like(userTable.email, `%${keyword}%`) : undefined
+                    )
+                )
+            )
             .orderBy(asc(userTable.full_name), asc(userTable.created_at))
             .limit(limit)
             .offset(offset);

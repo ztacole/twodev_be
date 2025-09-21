@@ -40,17 +40,29 @@ class UserService {
         });
     }
     static getUsers() {
-        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10) {
+        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10, keyword, role_name) {
             var _a, _b;
             const offset = (page - 1) * limit;
-            const users = yield drizzle_1.db.select().from(schema_1.user).limit(limit).offset(offset);
-            const roles = yield drizzle_1.db.select().from(schema_1.role);
-            const roleById = new Map(roles.map(r => [r.id, r]));
+            const users = yield drizzle_1.db.select({
+                id: schema_1.user.id,
+                full_name: schema_1.user.full_name,
+                email: schema_1.user.email,
+                role_id: schema_1.user.role_id,
+                created_at: schema_1.user.created_at,
+                updated_at: schema_1.user.updated_at,
+                role: schema_1.role,
+            })
+                .from(schema_1.user)
+                .leftJoin(schema_1.role, (0, drizzle_orm_1.eq)(schema_1.user.role_id, schema_1.role.id))
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.or)(keyword ? (0, drizzle_orm_1.like)(schema_1.user.full_name, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.user.email, `%${keyword}%`) : undefined), role_name ? (0, drizzle_orm_1.eq)(schema_1.role.name, role_name) : undefined))
+                .orderBy((0, drizzle_orm_1.asc)(schema_1.role.name), (0, drizzle_orm_1.asc)(schema_1.user.full_name), (0, drizzle_orm_1.asc)(schema_1.user.created_at))
+                .limit(limit)
+                .offset(offset);
             const countRows = yield drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(*)` }).from(schema_1.user);
             const total = Number((_b = (_a = countRows === null || countRows === void 0 ? void 0 : countRows[0]) === null || _a === void 0 ? void 0 : _a.count) !== null && _b !== void 0 ? _b : 0);
             const totalPages = Math.max(1, Math.ceil(total / limit));
             return {
-                data: users.map(u => formatUserResponse(Object.assign(Object.assign({}, u), { role: roleById.get(u.role_id) }))),
+                data: users.map(u => formatUserResponse(u)),
                 meta: { current_page: page, limit, total, total_pages: totalPages }
             };
         });

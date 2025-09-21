@@ -38,7 +38,7 @@ const translateGenderToId = (gender) => {
 };
 class AssesseeService {
     static getAssessees() {
-        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10) {
+        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10, keyword) {
             var _a, _b;
             const offset = (page - 1) * limit;
             const assessees = yield drizzle_1.db.select({
@@ -61,6 +61,7 @@ class AssesseeService {
             }).from(schema_1.assessee)
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
                 .innerJoin(schema_1.assesseeJob, (0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, schema_1.assessee.id))
+                .where((0, drizzle_orm_1.or)(keyword ? (0, drizzle_orm_1.like)(schema_1.user.full_name, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.user.email, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.assessee.identity_number, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.assessee.phone_no, `%${keyword}%`) : undefined))
                 .limit(limit).offset(offset);
             const countRows = yield drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(*)` }).from(schema_1.assessee);
             const total = Number((_b = (_a = countRows === null || countRows === void 0 ? void 0 : countRows[0]) === null || _a === void 0 ? void 0 : _a.count) !== null && _b !== void 0 ? _b : 0);

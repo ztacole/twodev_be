@@ -54,7 +54,8 @@ AssessorController.createAssessor = (0, async_handler_1.asyncHandler)((req, res)
 AssessorController.getAssessors = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
-    const result = yield assessor_service_1.AssessorService.getAssessors(page, limit);
+    const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+    const result = yield assessor_service_1.AssessorService.getAssessors(page, limit, keyword);
     return res.json({
         success: true,
         message: 'Data assessor berhasil diambil',
@@ -159,7 +160,8 @@ AssessorController.getAssessorUsers = (0, async_handler_1.asyncHandler)((req, re
     try {
         const page = Math.max(1, Number(req.query.page) || 1);
         const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
-        const users = yield assessor_service_1.AssessorService.getAssessorUsers(page, limit);
+        const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+        const users = yield assessor_service_1.AssessorService.getAssessorUsers(page, limit, keyword);
         res.status(200).json({
             success: true,
             message: 'Semua detail assessor berhasil diambil',

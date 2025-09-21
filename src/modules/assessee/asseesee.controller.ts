@@ -28,7 +28,8 @@ export class AssesseeController {
     static getAssessees = asyncHandler(async (req: Request, res: Response) => {
         const page = Math.max(1, Number(req.query.page) || 1);
         const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
-        const result = await AssesseeService.getAssessees(page, limit);
+        const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+        const result = await AssesseeService.getAssessees(page, limit, keyword);
         return res.json({
             success: true,
             message: 'Data assessee berhasil diambil',

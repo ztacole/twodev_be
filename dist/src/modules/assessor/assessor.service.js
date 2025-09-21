@@ -22,7 +22,7 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 class AssessorService {
     static getAssessors() {
-        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10) {
+        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10, keyword) {
             var _a, _b;
             const offset = (page - 1) * limit;
             const assessors = yield drizzle_1.db.select({
@@ -44,6 +44,7 @@ class AssessorService {
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, schema_1.user.id))
                 .innerJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, schema_1.scheme.id))
                 .innerJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
+                .where((0, drizzle_orm_1.or)(keyword ? (0, drizzle_orm_1.like)(schema_1.user.full_name, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.user.email, `%${keyword}%`) : undefined))
                 .limit(limit)
                 .offset(offset);
             const countRows = yield drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(*)` }).from(schema_1.assessor);
@@ -339,7 +340,7 @@ class AssessorService {
         });
     }
     static getAssessorUsers() {
-        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10) {
+        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10, keyword) {
             var _a, _b;
             const offset = (page - 1) * limit;
             const users = yield drizzle_1.db.select({
@@ -353,7 +354,7 @@ class AssessorService {
                 .innerJoin(schema_1.role, (0, drizzle_orm_1.eq)(schema_1.user.role_id, schema_1.role.id))
                 .leftJoin(schema_1.assessor, (0, drizzle_orm_1.eq)(schema_1.user.id, schema_1.assessor.user_id))
                 .leftJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessor.id, schema_1.assessorDetail.assessor_id))
-                .where((0, drizzle_orm_1.eq)(schema_1.role.name, 'Assessor'))
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.role.name, 'Assessor'), (0, drizzle_orm_1.or)(keyword ? (0, drizzle_orm_1.like)(schema_1.user.full_name, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.user.email, `%${keyword}%`) : undefined)))
                 .orderBy((0, drizzle_orm_1.asc)(schema_1.user.full_name), (0, drizzle_orm_1.asc)(schema_1.user.created_at))
                 .limit(limit)
                 .offset(offset);
