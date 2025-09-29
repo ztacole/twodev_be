@@ -61,9 +61,10 @@ import { eq, and, desc, asc, is, sql } from "drizzle-orm";
 import { AdminTab, AssesseeTab, AssessmentDetailsResponse, AssessmentRequest, AssessmentResponse, AssessorTab } from "./assessment.type";
 import { AssessorResponse } from "../assessor/assessor.type";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { embedQrCode } from "../../helper/pdfAssets.helper";
-import { drawParagraph, drawMixedParagraph } from "../../helper/pdfDraw.helper";
+import { embedQrCode, kopSurat } from "../../helper/pdfAssets.helper";
+import { drawParagraph, drawMixedParagraph, loadAndEmbedImage } from "../../helper/pdfDraw.helper";
 import { getAssessorUrl } from "../../helper/hashids";
+import path from 'path';
 
 export class AssessmentService {
 
@@ -1657,11 +1658,15 @@ export class AssessmentService {
         const iconFont = await pdfDoc.embedFont(StandardFonts.ZapfDingbats);
 
         let y = page.getHeight() - 50;
+
         const fontSizeSmall = 11;
 
         const lineGap = 4;
         const lLineGap = 12;
         const xlLineGap = 20;
+
+        // === HEADER ===
+        y = await kopSurat(pdfDoc, page);
 
         // === TITLE ===
         const headerText = [

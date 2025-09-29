@@ -1,8 +1,23 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.drawParagraph = drawParagraph;
 exports.drawMixedParagraph = drawMixedParagraph;
+exports.loadAndEmbedImage = loadAndEmbedImage;
 const pdf_lib_1 = require("pdf-lib");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 /**
  * Draws a paragraph of text with a single font.
  * The text is split into multiple lines if necessary.
@@ -179,4 +194,30 @@ function drawMixedParagraph(page, parts, startX, startY, size, color, maxWidth, 
         y -= lineHeight;
     });
     return y;
+}
+/**
+ * Loads an image from a file and embeds it into a PDF document.
+ * Supports PNG and JPG images.
+ *
+ * @param pdfDoc The PDF document instance to embed the image into.
+ * @param imagePath The absolute or relative path to the image file to load.
+ * @param type The type of the image to load. One of "png" or "jpg".
+ *
+ * @returns A PDFImage instance representing the embedded image,
+ *          which can be drawn on a PDF page using `page.drawImage`.
+ */
+function loadAndEmbedImage(pdfDoc, imagePath, type) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const absPath = path_1.default.resolve(imagePath);
+        if (!fs_1.default.existsSync(absPath)) {
+            throw new Error(`Image not found: ${absPath}`);
+        }
+        const imgBytes = yield fs_1.default.promises.readFile(absPath);
+        if (type === "png") {
+            return yield pdfDoc.embedPng(imgBytes);
+        }
+        else {
+            return yield pdfDoc.embedJpg(imgBytes);
+        }
+    });
 }

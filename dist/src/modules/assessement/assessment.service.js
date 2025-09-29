@@ -1558,6 +1558,8 @@ class AssessmentService {
             const lineGap = 4;
             const lLineGap = 12;
             const xlLineGap = 20;
+            // === HEADER ===
+            y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page);
             // === TITLE ===
             const headerText = [
                 "BERITA ACARA",

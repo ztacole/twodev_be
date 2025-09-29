@@ -1,4 +1,6 @@
-import { PDFPage, PDFFont, RGB, rgb, } from "pdf-lib";
+import { PDFPage, PDFFont, RGB, rgb, PDFDocument, PDFImage, } from "pdf-lib";
+import fs from 'fs';
+import path from 'path';
 
 // text alignment
 type TextAlign = 'left' | 'center' | 'right' | 'justify';
@@ -243,4 +245,35 @@ export function drawMixedParagraph(
   });
 
   return y;
+}
+
+/**
+ * Loads an image from a file and embeds it into a PDF document.
+ * Supports PNG and JPG images.
+ *
+ * @param pdfDoc The PDF document instance to embed the image into.
+ * @param imagePath The absolute or relative path to the image file to load.
+ * @param type The type of the image to load. One of "png" or "jpg".
+ *
+ * @returns A PDFImage instance representing the embedded image,
+ *          which can be drawn on a PDF page using `page.drawImage`.
+ */
+export async function loadAndEmbedImage(
+  pdfDoc: PDFDocument,
+  imagePath: string,
+  type: "png" | "jpg"
+): Promise<PDFImage> {
+  const absPath = path.resolve(imagePath);
+
+  if (!fs.existsSync(absPath)) {
+    throw new Error(`Image not found: ${absPath}`);
+  }
+
+  const imgBytes = await fs.promises.readFile(absPath);
+
+  if (type === "png") {
+    return await pdfDoc.embedPng(imgBytes);
+  } else {
+    return await pdfDoc.embedJpg(imgBytes);
+  }
 }
