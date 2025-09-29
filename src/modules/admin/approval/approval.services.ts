@@ -67,11 +67,28 @@ export const ApprovalService = {
     return created;
   },
 
-  async listApprovalRequests(user: JwtPayload) {
+  async listApprovalRequests(user: JwtPayload, scope: 'all' | 'to-approve' | 'requested-by-me' = 'all') {
     const admin = await db.query.admin.findFirst({ where: eq(adminTable.user_id, user.id) });
     if (!admin) throw new Error("Hanya admin yang dapat melihat approval request");
 
-    const requests = await db.query.approvalRequest.findMany({
+    if (scope === 'requested-by-me') {
+      return await db.query.approvalRequest.findMany({
+        where: (tbl, { eq: _eq }) => _eq(tbl.requester_admin_id, admin.id),
+        orderBy: (tbl, { desc }) => desc(tbl.created_at),
+      });
+    }
+
+    if (scope === 'to-approve') {
+      return await db.query.approvalRequest.findMany({
+        where: (tbl, { or, and, eq: _eq, not: _not }) => or(
+          and(_eq(tbl.approver_admin_id, admin.id), _eq(tbl.status, 'pending'), _eq(tbl.approved_by_first, false)),
+          and(_eq(tbl.second_approver_admin_id, admin.id), _eq(tbl.status, 'pending'), _eq(tbl.approved_by_second, false))
+        ),
+        orderBy: (tbl, { desc }) => desc(tbl.created_at),
+      });
+    }
+
+    return await db.query.approvalRequest.findMany({
       where: (tbl, { or, eq: _eq }) => or(
         _eq(tbl.requester_admin_id, admin.id),
         _eq(tbl.approver_admin_id, admin.id),
@@ -79,8 +96,6 @@ export const ApprovalService = {
       ),
       orderBy: (tbl, { desc }) => desc(tbl.created_at),
     });
-
-    return requests;
   },
 
   async resolveApprovalRequest(input: { id: number; user: JwtPayload; decision: 'approved' | 'rejected'; comment?: string | null; }) {
@@ -157,7 +172,7 @@ export const ApprovalService = {
               const targetDir = path.join(__dirname, `../../../public/uploads/occupations/${targetId}_${schemeId}_${cleanName}`);
               if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
               const finalPath = path.join(targetDir, `${cleanName}.pdf`);
-              try { fs.renameSync(tempFilePath, finalPath); } catch { try { fs.copyFileSync(tempFilePath, finalPath); fs.unlinkSync(tempFilePath); } catch {} }
+              try { fs.renameSync(tempFilePath, finalPath); } catch { try { fs.copyFileSync(tempFilePath, finalPath); fs.unlinkSync(tempFilePath); } catch { } }
             }
             break;
           }
