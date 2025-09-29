@@ -8,4 +8,25 @@ router.post("/apl01", authenticateToken, adminMiddleware, ApprovalController.app
 
 router.post("/competency", authenticateToken, adminMiddleware, ApprovalController.approveCompetency);
 
+// Approval request workflow
+router.post("/request", authenticateToken, adminMiddleware, ApprovalController.createApprovalRequest);
+router.post(
+  "/:id/approve",
+  authenticateToken,
+  adminMiddleware,
+  ApprovalController.approveRequest
+);
+router.post(
+  "/:id/reject",
+  authenticateToken,
+  adminMiddleware,
+  ApprovalController.rejectRequest
+);
+router.get(
+  "/requests",
+  authenticateToken,
+  adminMiddleware,
+  ApprovalController.listApprovalRequests
+);
+
 export default router;

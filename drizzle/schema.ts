@@ -488,12 +488,7 @@ export const userRelations = relations(user, ({ one, many }) => ({
     admin: one(admin)
 }));
 
-export const adminRelations = relations(admin, ({ one }) => ({
-    user: one(user, {
-        fields: [admin.user_id],
-        references: [user.id]
-    })
-}));
+// adminRelations moved below after approvalRequest table declaration
 
 export const schemeRelations = relations(scheme, ({ many }) => ({
     occupations: many(occupation),
@@ -936,4 +931,47 @@ export const resultIa07Relations = relations(resultIa07, ({ one }) => ({
         fields: [resultIa07.question_id],
         references: [ia07Question.id]
     })
+}));
+
+
+export const approvalRequest = mysqlTable('approval_request', {
+    id: int('id').primaryKey().autoincrement(),
+    requester_admin_id: int('requester_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    approver_admin_id: int('approver_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    second_approver_admin_id: int('second_approver_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    target_table: varchar('target_table', { length: 255 }).notNull(),
+    target_id: int('target_id').notNull(),
+    action: varchar('action', { length: 50 }).notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('pending'),
+    comment: text('comment'),
+    approved_at: timestamp('approved_at'),
+    approved_by_first_at: timestamp('approved_by_first_at'),
+    approved_by_second_at: timestamp('approved_by_second_at'),
+    approved_by_first: boolean('approved_by_first').notNull().default(false),
+    approved_by_second: boolean('approved_by_second').notNull().default(false),
+    ...timestamps
+});
+
+export const approvalRequestRelations = relations(approvalRequest, ({ one }) => ({
+    requester: one(admin, {
+        fields: [approvalRequest.requester_admin_id],
+        references: [admin.id]
+    }),
+    approver: one(admin, {
+        fields: [approvalRequest.approver_admin_id],
+        references: [admin.id]
+    }),
+    secondApprover: one(admin, {
+        fields: [approvalRequest.second_approver_admin_id],
+        references: [admin.id]
+    })
+}));
+
+export const adminRelations = relations(admin, ({ one, many }) => ({
+    user: one(user, {
+        fields: [admin.user_id],
+        references: [user.id]
+    }),
+    requestedApprovalRequests: many(approvalRequest, { relationName: 'requester' }),
+    receivedApprovalRequests: many(approvalRequest, { relationName: 'approver' })
 }));

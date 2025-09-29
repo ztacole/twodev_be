@@ -3,6 +3,7 @@ import { OccupationController } from './occupation.controller';
 import { createUploader } from '../../helper/upload.helper';
 import { adminMiddleware, adminOrAssessorMiddleware, authenticateToken } from '../../middleware/auth.middleware';
 import { cleanString } from '../../helper/string';
+import { requireApproval } from '../../middleware/approval.middleware';
 
 const uploadPDF = createUploader({
   basePath: '../../public/uploads/occupations',
@@ -25,7 +26,7 @@ router.get('/', authenticateToken, adminMiddleware, OccupationController.getOccu
 router.get('/:id', authenticateToken, adminMiddleware, OccupationController.getOccupationById);
 router.put('/:id', authenticateToken, adminMiddleware, uploadPDF.single('pdf'), OccupationController.updateOccupation);
 router.get('/:id/pdf', OccupationController.getUploadedPdf);
-router.delete('/:id', authenticateToken, adminMiddleware, OccupationController.deleteOccupation);
+router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('occupation'), OccupationController.deleteOccupation);
 router.get('/export/excel', authenticateToken, adminMiddleware, OccupationController.exportOccupationsToExcel);
 
 export default router;

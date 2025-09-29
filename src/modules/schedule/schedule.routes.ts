@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ScheduleController } from "./schedule.controller";
 import { adminMiddleware, adminOrAssesseeMiddleware, assesseeMiddleware, assessorMiddleware, authenticateToken } from "../../middleware/auth.middleware";
+import { requireApproval } from '../../middleware/approval.middleware';
 
 const router = Router();
 
@@ -12,8 +13,8 @@ router.get('/active-assessor', authenticateToken, assessorMiddleware, ScheduleCo
 router.get('/completed', authenticateToken, assesseeMiddleware, ScheduleController.getCompletedSchedules);
 router.get('/:id', ScheduleController.getScheduleById);
 router.post('/', authenticateToken, adminMiddleware, ScheduleController.createSchedule);
-router.put('/:id', authenticateToken, adminMiddleware, ScheduleController.updateSchedule);
-router.delete('/:id', authenticateToken, adminMiddleware, ScheduleController.deleteSchedule);
+router.put('/:id', authenticateToken, adminMiddleware, requireApproval('schedule'), ScheduleController.updateSchedule);
+router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('schedule'), ScheduleController.deleteSchedule);
 router.get('/export/excel', authenticateToken, adminMiddleware, ScheduleController.exportScheduleToExcel);
 
 export default router;
