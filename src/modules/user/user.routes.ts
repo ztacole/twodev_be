@@ -11,7 +11,7 @@ router.get('/', UserController.getUsers);
 router.get('/:page/:limit', UserController.getUsers);
 router.get('/:id', UserController.getUserById);
 router.post('/', UserController.createUser);
-router.put('/:id', requireApproval('user'));
+router.put('/:id', UserController.updateUser);
 router.delete('/:id', requireApproval('user'));
 
 export default router;

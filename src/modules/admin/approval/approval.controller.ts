@@ -85,8 +85,8 @@ export const ApprovalController = {
     try {
       const user = req.user as JwtPayload;
       const id = Number(req.params.id);
-      const { comment } = req.body as any;
-      const data = await ApprovalService.resolveApprovalRequest({ id, user, decision: 'rejected', comment: comment ?? null });
+      const comment = (req as any).body?.comment ?? null;
+      const data = await ApprovalService.resolveApprovalRequest({ id, user, decision: 'rejected', comment });
       res.json({ success: true, message: 'Approval request ditolak', data });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message || 'Gagal menolak approval request' });
@@ -96,7 +96,9 @@ export const ApprovalController = {
   async listApprovalRequests(req: Request, res: Response) {
     try {
       const user = req.user as JwtPayload;
-      const data = await ApprovalService.listApprovalRequests(user);
+      const scopeParam = (req.params.scope as string) || (req.query.scope as string) || 'all';
+      const scope = (['all','to-approve','requested-by-me'] as const).includes(scopeParam as any) ? (scopeParam as 'all'|'to-approve'|'requested-by-me') : 'all';
+      const data = await ApprovalService.listApprovalRequests(user, scope);
       res.json({ success: true, data });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message || 'Gagal mengambil daftar approval requests' });

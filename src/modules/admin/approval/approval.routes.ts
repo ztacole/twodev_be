@@ -8,7 +8,6 @@ router.post("/apl01", authenticateToken, adminMiddleware, ApprovalController.app
 
 router.post("/competency", authenticateToken, adminMiddleware, ApprovalController.approveCompetency);
 
-// Approval request workflow
 router.post("/request", authenticateToken, adminMiddleware, ApprovalController.createApprovalRequest);
 router.post(
   "/:id/approve",
@@ -21,6 +20,12 @@ router.post(
   authenticateToken,
   adminMiddleware,
   ApprovalController.rejectRequest
+);
+router.get(
+  "/requests/scope/:scope",
+  authenticateToken,
+  adminMiddleware,
+  ApprovalController.listApprovalRequests
 );
 router.get(
   "/requests",
