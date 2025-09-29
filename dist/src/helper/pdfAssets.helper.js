@@ -36,7 +36,7 @@ function embedQrCode(pdfDoc, data) {
 }
 function kopSurat(pdfDoc, page, options) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { imagePath = path_1.default.join(__dirname, "../../public/images/kop-surat.png"), type = "png", marginX = 40, marginTop = 100, height = 80, } = options || {};
+        const { imagePath = path_1.default.join(__dirname, "../../../public/images/kop-surat.png"), type = "png", marginX = 40, marginTop = 100, height = 80, } = options || {};
         const { width: pageWidth, height: pageHeight } = page.getSize();
         const icon = yield (0, pdfDraw_helper_1.loadAndEmbedImage)(pdfDoc, imagePath, type);
         const startY = pageHeight - marginTop;

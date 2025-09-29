@@ -68,3 +68,11 @@ IA01Controller.getResultDetails = (0, async_handler_1.asyncHandler)((req, res) =
     const result = yield ia_01_service_1.IA01Service.getResultDetails(resultId);
     res.status(200).json({ success: true, message: 'Hasil berhasil diambil', data: result });
 }));
+IA01Controller.getIncompleteCriterias = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const resultId = Number(req.params.resultId);
+    if (!resultId) {
+        return res.status(400).json({ success: false, message: 'Result ID is required' });
+    }
+    const incompleteCriterias = yield ia_01_service_1.IA01Service.getIncompleteCriterias(resultId);
+    res.status(200).json({ success: true, message: 'Hasil berhasil diambil', data: incompleteCriterias });
+}));
