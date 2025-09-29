@@ -1,6 +1,6 @@
 import type { JwtPayload } from "../../auth/auth.type";
 import { db } from "../../../config/drizzle";
-import { admin as adminTable, resultDoc as resultDocTable, result as resultTable, approvalRequest as approvalRequestTable, user as userTable } from "../../../../drizzle/schema";
+import { admin as adminTable, resultDoc as resultDocTable, result as resultTable, approvalRequest as approvalRequestTable, user as userTable, occupation as occupationTable } from "../../../../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 export const ApprovalService = {
@@ -137,6 +137,30 @@ export const ApprovalService = {
           case 'user':
             await db.update(userTable).set(changes).where(eq(userTable.id, targetId)).execute();
             break;
+          case 'occupation': {
+            // Move uploaded temp file to final location if present in comment JSON
+            const tempFilePath = (changes as any).tempFilePath;
+            const tempDestination = (changes as any).tempDestination;
+            const tempFileName = (changes as any).tempFileName;
+            const schemeId = (changes as any).scheme_id;
+            const name = (changes as any).name;
+
+            const updateFields: any = { ...changes };
+            delete updateFields.tempFilePath; delete updateFields.tempDestination; delete updateFields.tempFileName;
+            await db.update(occupationTable).set(updateFields).where(eq(occupationTable.id, targetId)).execute();
+
+            if (tempFilePath && schemeId && name) {
+              const { default: fs } = await import('fs');
+              const { default: path } = await import('path');
+              const clean = (s: string) => s.toString().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, '');
+              const cleanName = clean(name);
+              const targetDir = path.join(__dirname, `../../../public/uploads/occupations/${targetId}_${schemeId}_${cleanName}`);
+              if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+              const finalPath = path.join(targetDir, `${cleanName}.pdf`);
+              try { fs.renameSync(tempFilePath, finalPath); } catch { try { fs.copyFileSync(tempFilePath, finalPath); fs.unlinkSync(tempFilePath); } catch {} }
+            }
+            break;
+          }
           default:
             break;
         }

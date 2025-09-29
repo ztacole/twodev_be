@@ -21,7 +21,7 @@ export function requireApproval(targetTable: string) {
       const headers: any = (req as any).headers || {};
       const approverAdminRaw = body.approverAdminId ?? body.approver_admin_id ?? params.approverAdminId ?? params.approver_admin_id ?? query.approverAdminId ?? query.approver_admin_id ?? headers['x-approver-admin-id'];
       const secondApproverAdminRaw = body.secondApproverAdminId ?? body.second_approver_admin_id ?? params.secondApproverAdminId ?? params.second_approver_admin_id ?? query.secondApproverAdminId ?? query.second_approver_admin_id ?? headers['x-second-approver-admin-id'];
-      const comment = body.comment ?? params.comment ?? query.comment ?? headers['x-approval-comment'];
+      let comment = body.comment ?? params.comment ?? query.comment ?? headers['x-approval-comment'];
       const targetId = Number(
         req.params.id ?? req.body.id ??
         (req.params as any)?.assessmentId ?? (req.params as any)?.assessment_id ??
@@ -35,6 +35,34 @@ export function requireApproval(targetTable: string) {
       }
       if (!secondApproverAdminRaw || Number(secondApproverAdminRaw) === admin.id || Number(secondApproverAdminRaw) === Number(approverAdminRaw)) {
         return res.status(400).json({ success: false, message: 'Pilih admin lain (berbeda) sebagai approver kedua' });
+      }
+
+      // Validate approver existence in admin table to avoid FK constraint errors
+      const firstApprover = await db.query.admin.findFirst({ where: eq(adminTable.id, Number(approverAdminRaw)) });
+      if (!firstApprover) {
+        return res.status(400).json({ success: false, message: 'Approver pertama tidak ditemukan (admin.id tidak valid)' });
+      }
+      const secondApprover = await db.query.admin.findFirst({ where: eq(adminTable.id, Number(secondApproverAdminRaw)) });
+      if (!secondApprover) {
+        return res.status(400).json({ success: false, message: 'Approver kedua tidak ditemukan (admin.id tidak valid)' });
+      }
+
+      // For occupation update with multipart, capture temp file info to move on approve
+      if ((req as any).file && targetTable === 'occupation' && method !== 'DELETE') {
+        try {
+          const existing = comment ? JSON.parse(String(comment)) : {};
+          const merged = {
+            ...existing,
+            tempFilePath: (req as any).file.path,
+            tempDestination: (req as any).file.destination,
+            tempFileName: (req as any).file.filename,
+            name: body.name ?? existing.name,
+            scheme_id: body.scheme_id ? Number(body.scheme_id) : existing.scheme_id,
+          };
+          comment = JSON.stringify(merged);
+        } catch {
+          comment = JSON.stringify({ tempFilePath: (req as any).file.path, tempDestination: (req as any).file.destination, tempFileName: (req as any).file.filename, name: body.name, scheme_id: body.scheme_id ? Number(body.scheme_id) : undefined });
+        }
       }
 
       const insertResult = await db.insert(approvalRequestTable).values({
