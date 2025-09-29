@@ -10,7 +10,7 @@ router.use(authenticateToken, adminMiddleware);
 router.post('/', AssesseeController.createAssessee);
 router.get('/', AssesseeController.getAssessees);
 router.get('/:id', AssesseeController.getAssesseeById);
-router.put('/:id', requireApproval('assessee'), AssesseeController.updateAssessee);
+router.put('/:id', AssesseeController.updateAssessee);
 router.delete('/:id', requireApproval('assessee'), AssesseeController.deleteAssessee);
 
 export default router;

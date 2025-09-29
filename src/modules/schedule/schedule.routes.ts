@@ -13,7 +13,7 @@ router.get('/active-assessor', authenticateToken, assessorMiddleware, ScheduleCo
 router.get('/completed', authenticateToken, assesseeMiddleware, ScheduleController.getCompletedSchedules);
 router.get('/:id', ScheduleController.getScheduleById);
 router.post('/', authenticateToken, adminMiddleware, ScheduleController.createSchedule);
-router.put('/:id', authenticateToken, adminMiddleware, requireApproval('schedule'), ScheduleController.updateSchedule);
+router.put('/:id', authenticateToken, adminMiddleware, ScheduleController.updateSchedule);
 router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('schedule'), ScheduleController.deleteSchedule);
 router.get('/export/excel', authenticateToken, adminMiddleware, ScheduleController.exportScheduleToExcel);
 

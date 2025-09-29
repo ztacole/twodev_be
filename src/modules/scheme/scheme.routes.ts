@@ -10,7 +10,7 @@ router.use(authenticateToken);
 router.post('/', authenticateToken, adminMiddleware, SchemeController.createScheme);
 router.get('/', authenticateToken, adminOrAssessorMiddleware, SchemeController.getSchemes);
 router.get('/:id', authenticateToken, adminOrAssessorMiddleware, SchemeController.getSchemeById);
-router.put('/:id', authenticateToken, adminMiddleware, requireApproval('scheme'), SchemeController.updateScheme);
+router.put('/:id', authenticateToken, adminMiddleware, SchemeController.updateScheme);
 router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('scheme'), SchemeController.deleteScheme);
 router.get('/export/excel', authenticateToken, adminMiddleware, SchemeController.exportSchemesToExcel);
 
