@@ -21,6 +21,7 @@ import { AK05Controller } from "./ak-05/ak-05.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
 import { upload } from "./apl-01/upload-config";
 // import { uploadIA02 } from "./ia-02/upload-conifg";
+import { requireApproval } from '../../middleware/approval.middleware';
 
 const uploadAPL01 = createUploader({
     basePath: '../../public/uploads/apl-01',
@@ -53,9 +54,9 @@ router.use(authenticateToken);
 
 router.post('/create', authenticateToken, adminMiddleware, AssessmentController.createAssessment);
 router.get('/', AssessmentController.getAssessments);
-router.put('/:id', authenticateToken, adminMiddleware, AssessmentController.updateAssessment);
+router.put('/:id', authenticateToken, adminMiddleware, requireApproval('assessment'), AssessmentController.updateAssessment);
 router.get('/:id', AssessmentController.getAssessmentById);
-router.delete('/:id', authenticateToken, adminMiddleware, AssessmentController.deleteAssessment);
+router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('assessment'), AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
 
 router.get('/results/status/admin', authenticateToken, adminMiddleware, AssessmentController.getAssessmentResultsForAdmin);
