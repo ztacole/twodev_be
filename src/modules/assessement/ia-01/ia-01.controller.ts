@@ -62,4 +62,13 @@ export class IA01Controller {
         const result = await IA01Service.getResultDetails(resultId);
         res.status(200).json({ success: true, message: 'Hasil berhasil diambil', data: result });
     });
+
+    static getIncompleteCriterias = asyncHandler(async (req, res) => {
+        const resultId = Number(req.params.resultId);
+        if (!resultId) {
+            return res.status(400).json({ success: false, message: 'Result ID is required' });
+        }
+        const incompleteCriterias = await IA01Service.getIncompleteCriterias(resultId);
+        res.status(200).json({ success: true, message: 'Hasil berhasil diambil', data: incompleteCriterias });
+    });
 }
