@@ -108,6 +108,7 @@ router.post('/ia-01/result/send-header', authenticateToken, assessorMiddleware, 
 router.put('/ia-01/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, IA01Controller.approvedByAssessor);
 router.put('/ia-01/result/assessee/:resultId/approve', authenticateToken, assesseeMiddleware, IA01Controller.approvedByAssessee);
 router.get('/ia-01/result/:resultId', IA01Controller.getResultDetails);
+router.get('/ia-01/result/incomplete-criteria/:resultId', IA01Controller.getIncompleteCriterias);
 
 router.get('/ia-02/units/:assessmentId', IA02Controller.getIA02Groups);
 router.put('/ia-02/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, IA02Controller.approvedByAssessor);

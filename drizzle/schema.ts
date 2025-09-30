@@ -1,4 +1,4 @@
-import { mysqlTable, int, varchar, date, boolean, text, mysqlEnum, unique, timestamp } from 'drizzle-orm/mysql-core';
+import { mysqlTable, int, varchar, date, boolean, text, mysqlEnum, unique, timestamp, datetime } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { time } from 'console';
 
@@ -470,6 +470,25 @@ export const resultIa07 = mysqlTable('result_ia07', {
     header_id: int('header_id').notNull().references(() => resultIa07Header.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     question_id: int('question_id').notNull().references(() => ia07Question.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     approved: boolean('approved').notNull(),
+    ...timestamps,
+});
+
+
+export const approvalRequest = mysqlTable('approval_request', {
+    id: int('id').primaryKey().autoincrement(),
+    requester_admin_id: int('requester_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    approver_admin_id: int('approver_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    second_approver_admin_id: int('second_approver_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    target_table: varchar('target_table', { length: 255 }).notNull(),
+    target_id: int('target_id').notNull(),
+    action: varchar('action', { length: 50 }).notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('pending'),
+    comment: text('comment'),
+    approved_at: datetime('approved_at'),
+    approved_by_first_at: datetime('approved_by_first_at'),
+    approved_by_second_at: datetime('approved_by_second_at'),
+    approved_by_first: boolean('approved_by_first').notNull().default(false),
+    approved_by_second: boolean('approved_by_second').notNull().default(false),
     ...timestamps
 });
 
@@ -932,25 +951,6 @@ export const resultIa07Relations = relations(resultIa07, ({ one }) => ({
         references: [ia07Question.id]
     })
 }));
-
-
-export const approvalRequest = mysqlTable('approval_request', {
-    id: int('id').primaryKey().autoincrement(),
-    requester_admin_id: int('requester_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
-    approver_admin_id: int('approver_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
-    second_approver_admin_id: int('second_approver_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
-    target_table: varchar('target_table', { length: 255 }).notNull(),
-    target_id: int('target_id').notNull(),
-    action: varchar('action', { length: 50 }).notNull(),
-    status: varchar('status', { length: 50 }).notNull().default('pending'),
-    comment: text('comment'),
-    approved_at: timestamp('approved_at'),
-    approved_by_first_at: timestamp('approved_by_first_at'),
-    approved_by_second_at: timestamp('approved_by_second_at'),
-    approved_by_first: boolean('approved_by_first').notNull().default(false),
-    approved_by_second: boolean('approved_by_second').notNull().default(false),
-    ...timestamps
-});
 
 export const approvalRequestRelations = relations(approvalRequest, ({ one }) => ({
     requester: one(admin, {

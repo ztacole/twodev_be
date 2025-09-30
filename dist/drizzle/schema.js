@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resultIa05Header = exports.questionOption = exports.ia05Question = exports.resultIa03 = exports.resultIa03Header = exports.ia03Question = exports.resultIa02Header = exports.resultIa01 = exports.resultIa01Header = exports.ucIa03 = exports.groupIa03 = exports.ia02Pdf = exports.ia02Tool = exports.ucIa02 = exports.groupIa02 = exports.elementDetailsIa = exports.elementIa = exports.ucIa01 = exports.groupIa01 = exports.resultAk05 = exports.resultAk04 = exports.resultAk03 = exports.resultAk03Header = exports.ak02Evidence = exports.resultAk02 = exports.resultAk02Header = exports.resultAk01 = exports.resultAk01Header = exports.apl02Evidence = exports.resultApl02 = exports.resultApl02Header = exports.elementDetailsApl02 = exports.elementApl02 = exports.ucApl02 = exports.resultDoc = exports.result = exports.scheduleDetail = exports.assessmentSchedule = exports.assessment = exports.assesseeJob = exports.assessee = exports.assessorDetail = exports.assessor = exports.occupation = exports.scheme = exports.admin = exports.user = exports.role = exports.tukEnum = exports.genderEnum = void 0;
-exports.ia05QuestionRelations = exports.resultIa03Relations = exports.resultIa03HeaderRelations = exports.ia03QuestionRelations = exports.resultIa02HeaderRelations = exports.resultIa01Relations = exports.resultIa01HeaderRelations = exports.ucIa03Relations = exports.groupIa03Relations = exports.ia02PdfRelations = exports.ia02ToolRelations = exports.ucIa02Relations = exports.groupIa02Relations = exports.elementDetailsIaRelations = exports.elementIaRelations = exports.ucIa01Relations = exports.groupIa01Relations = exports.resultAk05Relations = exports.resultAk04Relations = exports.resultAk03Relations = exports.resultAk03HeaderRelations = exports.ak02EvidenceRelations = exports.resultAk02Relations = exports.resultAk02HeaderRelations = exports.resultAk01Relations = exports.resultAk01HeaderRelations = exports.apl02EvidenceRelations = exports.resultApl02Relations = exports.resultApl02HeaderRelations = exports.elementDetailsApl02Relations = exports.elementApl02Relations = exports.ucApl02Relations = exports.resultDocRelations = exports.resultRelations = exports.scheduleDetailRelations = exports.assessmentScheduleRelations = exports.assessmentRelations = exports.assesseeJobRelations = exports.assesseeRelations = exports.assessorDetailRelations = exports.assessorRelations = exports.occupationRelations = exports.schemeRelations = exports.adminRelations = exports.userRelations = exports.roleRelations = exports.resultIa07 = exports.resultIa07Header = exports.ia07Question = exports.resultIa05 = void 0;
-exports.resultIa07Relations = exports.resultIa07HeaderRelations = exports.ia07QuestionRelations = exports.resultIa05Relations = exports.resultIa05HeaderRelations = exports.questionOptionRelations = void 0;
+exports.ia05QuestionRelations = exports.resultIa03Relations = exports.resultIa03HeaderRelations = exports.ia03QuestionRelations = exports.resultIa02HeaderRelations = exports.resultIa01Relations = exports.resultIa01HeaderRelations = exports.ucIa03Relations = exports.groupIa03Relations = exports.ia02PdfRelations = exports.ia02ToolRelations = exports.ucIa02Relations = exports.groupIa02Relations = exports.elementDetailsIaRelations = exports.elementIaRelations = exports.ucIa01Relations = exports.groupIa01Relations = exports.resultAk05Relations = exports.resultAk04Relations = exports.resultAk03Relations = exports.resultAk03HeaderRelations = exports.ak02EvidenceRelations = exports.resultAk02Relations = exports.resultAk02HeaderRelations = exports.resultAk01Relations = exports.resultAk01HeaderRelations = exports.apl02EvidenceRelations = exports.resultApl02Relations = exports.resultApl02HeaderRelations = exports.elementDetailsApl02Relations = exports.elementApl02Relations = exports.ucApl02Relations = exports.resultDocRelations = exports.resultRelations = exports.scheduleDetailRelations = exports.assessmentScheduleRelations = exports.assessmentRelations = exports.assesseeJobRelations = exports.assesseeRelations = exports.assessorDetailRelations = exports.assessorRelations = exports.occupationRelations = exports.schemeRelations = exports.userRelations = exports.roleRelations = exports.approvalRequest = exports.resultIa07 = exports.resultIa07Header = exports.ia07Question = exports.resultIa05 = void 0;
+exports.adminRelations = exports.approvalRequestRelations = exports.resultIa07Relations = exports.resultIa07HeaderRelations = exports.ia07QuestionRelations = exports.resultIa05Relations = exports.resultIa05HeaderRelations = exports.questionOptionRelations = void 0;
 const mysql_core_1 = require("drizzle-orm/mysql-core");
 const drizzle_orm_1 = require("drizzle-orm");
 // ========= Enums =========
@@ -74,6 +74,7 @@ exports.resultIa05 = (0, mysql_core_1.mysqlTable)('result_ia05', Object.assign({
 exports.ia07Question = (0, mysql_core_1.mysqlTable)('ia07_question', Object.assign({ id: (0, mysql_core_1.int)('id').primaryKey().autoincrement(), assessment_id: (0, mysql_core_1.int)('assessment_id').notNull().references(() => exports.assessment.id, { onUpdate: 'cascade', onDelete: 'cascade' }), question: (0, mysql_core_1.text)('question').notNull(), answer_key: (0, mysql_core_1.text)('answer_key').notNull() }, timestamps));
 exports.resultIa07Header = (0, mysql_core_1.mysqlTable)('result_ia07_header', Object.assign({ id: (0, mysql_core_1.int)('id').primaryKey().autoincrement(), result_id: (0, mysql_core_1.int)('result_id').notNull().unique().references(() => exports.result.id, { onUpdate: 'cascade', onDelete: 'cascade' }), approved_assessee: (0, mysql_core_1.boolean)('approved_assessee').notNull(), approved_assessor: (0, mysql_core_1.boolean)('approved_assessor').notNull() }, timestamps));
 exports.resultIa07 = (0, mysql_core_1.mysqlTable)('result_ia07', Object.assign({ id: (0, mysql_core_1.int)('id').primaryKey().autoincrement(), header_id: (0, mysql_core_1.int)('header_id').notNull().references(() => exports.resultIa07Header.id, { onUpdate: 'cascade', onDelete: 'cascade' }), question_id: (0, mysql_core_1.int)('question_id').notNull().references(() => exports.ia07Question.id, { onUpdate: 'cascade', onDelete: 'cascade' }), approved: (0, mysql_core_1.boolean)('approved').notNull() }, timestamps));
+exports.approvalRequest = (0, mysql_core_1.mysqlTable)('approval_request', Object.assign({ id: (0, mysql_core_1.int)('id').primaryKey().autoincrement(), requester_admin_id: (0, mysql_core_1.int)('requester_admin_id').notNull().references(() => exports.admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }), approver_admin_id: (0, mysql_core_1.int)('approver_admin_id').notNull().references(() => exports.admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }), second_approver_admin_id: (0, mysql_core_1.int)('second_approver_admin_id').notNull().references(() => exports.admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }), target_table: (0, mysql_core_1.varchar)('target_table', { length: 255 }).notNull(), target_id: (0, mysql_core_1.int)('target_id').notNull(), action: (0, mysql_core_1.varchar)('action', { length: 50 }).notNull(), status: (0, mysql_core_1.varchar)('status', { length: 50 }).notNull().default('pending'), comment: (0, mysql_core_1.text)('comment'), approved_at: (0, mysql_core_1.datetime)('approved_at'), approved_by_first_at: (0, mysql_core_1.datetime)('approved_by_first_at'), approved_by_second_at: (0, mysql_core_1.datetime)('approved_by_second_at'), approved_by_first: (0, mysql_core_1.boolean)('approved_by_first').notNull().default(false), approved_by_second: (0, mysql_core_1.boolean)('approved_by_second').notNull().default(false) }, timestamps));
 // ========= Relations =========
 exports.roleRelations = (0, drizzle_orm_1.relations)(exports.role, ({ many }) => ({
     users: many(exports.user)
@@ -87,12 +88,7 @@ exports.userRelations = (0, drizzle_orm_1.relations)(exports.user, ({ one, many 
     assessor: one(exports.assessor),
     admin: one(exports.admin)
 }));
-exports.adminRelations = (0, drizzle_orm_1.relations)(exports.admin, ({ one }) => ({
-    user: one(exports.user, {
-        fields: [exports.admin.user_id],
-        references: [exports.user.id]
-    })
-}));
+// adminRelations moved below after approvalRequest table declaration
 exports.schemeRelations = (0, drizzle_orm_1.relations)(exports.scheme, ({ many }) => ({
     occupations: many(exports.occupation),
     assessors: many(exports.assessor)
@@ -486,4 +482,26 @@ exports.resultIa07Relations = (0, drizzle_orm_1.relations)(exports.resultIa07, (
         fields: [exports.resultIa07.question_id],
         references: [exports.ia07Question.id]
     })
+}));
+exports.approvalRequestRelations = (0, drizzle_orm_1.relations)(exports.approvalRequest, ({ one }) => ({
+    requester: one(exports.admin, {
+        fields: [exports.approvalRequest.requester_admin_id],
+        references: [exports.admin.id]
+    }),
+    approver: one(exports.admin, {
+        fields: [exports.approvalRequest.approver_admin_id],
+        references: [exports.admin.id]
+    }),
+    secondApprover: one(exports.admin, {
+        fields: [exports.approvalRequest.second_approver_admin_id],
+        references: [exports.admin.id]
+    })
+}));
+exports.adminRelations = (0, drizzle_orm_1.relations)(exports.admin, ({ one, many }) => ({
+    user: one(exports.user, {
+        fields: [exports.admin.user_id],
+        references: [exports.user.id]
+    }),
+    requestedApprovalRequests: many(exports.approvalRequest, { relationName: 'requester' }),
+    receivedApprovalRequests: many(exports.approvalRequest, { relationName: 'approver' })
 }));
