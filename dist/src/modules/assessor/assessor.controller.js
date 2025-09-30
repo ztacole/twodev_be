@@ -55,6 +55,14 @@ AssessorController.getAssessors = (0, async_handler_1.asyncHandler)((req, res) =
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
     const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+    if (!req.query.page || !req.query.limit) {
+        const result = yield assessor_service_1.AssessorService.getAllAssessors(keyword);
+        return res.json({
+            success: true,
+            message: 'Data assessor berhasil diambil',
+            data: result.data,
+        });
+    }
     const result = yield assessor_service_1.AssessorService.getAssessors(page, limit, keyword);
     return res.json({
         success: true,

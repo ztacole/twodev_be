@@ -54,6 +54,32 @@ class AssessorService {
             return { data, meta: { current_page: page, limit, total, total_pages: totalPages } };
         });
     }
+    static getAllAssessors(keyword) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const assessors = yield drizzle_1.db.select({
+                id: schema_1.assessor.id,
+                user_id: schema_1.assessor.user_id,
+                scheme_id: schema_1.assessor.scheme_id,
+                name: schema_1.user.full_name,
+                email: schema_1.user.email,
+                birth_location: schema_1.assessor.birth_location,
+                birth_date: schema_1.assessor.birth_date,
+                no_reg_met: schema_1.assessor.no_reg_met,
+                institution: schema_1.assessor.institution,
+                address: schema_1.assessor.address,
+                phone_no: schema_1.assessor.phone_no,
+                scheme: schema_1.scheme,
+                detail: schema_1.assessorDetail
+            })
+                .from(schema_1.assessor)
+                .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, schema_1.user.id))
+                .innerJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.assessor.scheme_id, schema_1.scheme.id))
+                .innerJoin(schema_1.assessorDetail, (0, drizzle_orm_1.eq)(schema_1.assessorDetail.assessor_id, schema_1.assessor.id))
+                .where((0, drizzle_orm_1.or)(keyword ? (0, drizzle_orm_1.like)(schema_1.user.full_name, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.user.email, `%${keyword}%`) : undefined));
+            const data = assessors.map(a => this.formatAssessorResponse(a));
+            return { data };
+        });
+    }
     static getAssessorById(id) {
         return __awaiter(this, void 0, void 0, function* () {
             const [assessor] = yield drizzle_1.db.select({

@@ -50,6 +50,39 @@ export class AssessorService {
         return { data, meta: { current_page: page, limit, total, total_pages: totalPages } };
     }
 
+    static async getAllAssessors(keyword?: string): Promise<{ data: AssessorResponse[] }> {
+        const assessors = await db.select({
+            id: assessorTable.id,
+            user_id: assessorTable.user_id,
+            scheme_id: assessorTable.scheme_id,
+            name: userTable.full_name,
+            email: userTable.email,
+            birth_location: assessorTable.birth_location,
+            birth_date: assessorTable.birth_date,
+            no_reg_met: assessorTable.no_reg_met,
+            institution: assessorTable.institution,
+            address: assessorTable.address,
+            phone_no: assessorTable.phone_no,
+            scheme: schemeTable,
+            detail: assessorDetailTable
+        })
+            .from(assessorTable)
+            .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
+            .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
+            .innerJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+            .where(
+                or(
+                    keyword ? like(userTable.full_name, `%${keyword}%`) : undefined,
+                    keyword ? like(userTable.email, `%${keyword}%`) : undefined
+                )
+            );
+    
+        const data = assessors.map(a => this.formatAssessorResponse(a));
+    
+        return { data };
+    }
+    
+
     static async getAssessorById(id: number): Promise<any> {
         const [assessor] = await db.select({
             id: assessorTable.id,

@@ -45,6 +45,14 @@ export class AssessorController {
         const page = Math.max(1, Number(req.query.page) || 1);
         const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
         const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
+        if(!req.query.page || !req.query.limit){
+            const result = await AssessorService.getAllAssessors(keyword);
+            return res.json({
+                success: true,
+                message: 'Data assessor berhasil diambil',
+                data: result.data,
+            });
+        }
         const result = await AssessorService.getAssessors(page, limit, keyword);
         return res.json({
             success: true,
