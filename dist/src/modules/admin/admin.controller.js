@@ -23,4 +23,24 @@ exports.AdminController = {
             return res.status(404).json({ success: false, message: 'Admin tidak ditemukan' });
         res.json({ success: true, message: 'Detail admin', data });
     })),
+    createAdmin: (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+        const { user_id, address, phone_no, birth_date } = req.body;
+        if (!user_id || !address || !phone_no || !birth_date) {
+            return res.status(400).json({
+                success: false,
+                message: 'user_id, address, phone_no, dan birth_date wajib diisi'
+            });
+        }
+        const data = yield admin_service_1.AdminService.createAdmin({
+            user_id,
+            address,
+            phone_no,
+            birth_date
+        });
+        res.status(201).json({
+            success: true,
+            message: 'Admin berhasil dibuat',
+            data
+        });
+    }))
 };

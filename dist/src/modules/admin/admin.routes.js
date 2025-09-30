@@ -7,4 +7,5 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware);
 router.get('/', admin_controller_1.AdminController.getAdmins);
 router.get('/:id', admin_controller_1.AdminController.getAdminById);
+router.post('/', admin_controller_1.AdminController.createAdmin);
 exports.default = router;

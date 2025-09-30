@@ -51,13 +51,38 @@ exports.ApprovalController = {
     },
     createApprovalRequest(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c;
+            var _a, _b, _c, _d, _e;
             try {
                 const user = req.user;
-                const { targetTable, targetId, action } = req.body;
-                const approverAdminRaw = (_a = req.body.approverAdminId) !== null && _a !== void 0 ? _a : req.body.approver_admin_id;
-                const secondApproverAdminRaw = (_b = req.body.secondApproverAdminId) !== null && _b !== void 0 ? _b : req.body.second_approver_admin_id;
-                const comment = (_c = req.body.comment) !== null && _c !== void 0 ? _c : null;
+                console.log('Request body:', req.body);
+                console.log('Request body type:', typeof req.body);
+                if (!req.body) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Request body tidak ditemukan. Pastikan Content-Type: application/json'
+                    });
+                }
+                const body = req.body;
+                const targetTable = (_a = body === null || body === void 0 ? void 0 : body.targetTable) !== null && _a !== void 0 ? _a : body === null || body === void 0 ? void 0 : body.target_table;
+                const targetId = (_b = body === null || body === void 0 ? void 0 : body.targetId) !== null && _b !== void 0 ? _b : body === null || body === void 0 ? void 0 : body.target_id;
+                const action = body === null || body === void 0 ? void 0 : body.action;
+                const approverAdminRaw = (_c = body === null || body === void 0 ? void 0 : body.approverAdminId) !== null && _c !== void 0 ? _c : body === null || body === void 0 ? void 0 : body.approver_admin_id;
+                const secondApproverAdminRaw = (_d = body === null || body === void 0 ? void 0 : body.secondApproverAdminId) !== null && _d !== void 0 ? _d : body === null || body === void 0 ? void 0 : body.second_approver_admin_id;
+                const comment = (_e = body === null || body === void 0 ? void 0 : body.comment) !== null && _e !== void 0 ? _e : null;
+                if (!targetTable || !targetId || !action || !approverAdminRaw || !secondApproverAdminRaw) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'targetTable/target_table, targetId/target_id, action, approverAdminId/approver_admin_id, dan secondApproverAdminId/second_approver_admin_id wajib diisi'
+                    });
+                }
+                console.log('Parsed values:', {
+                    targetTable,
+                    targetId: Number(targetId),
+                    action,
+                    approverAdminId: Number(approverAdminRaw),
+                    secondApproverAdminId: Number(secondApproverAdminRaw),
+                    comment
+                });
                 const data = yield approval_services_1.ApprovalService.createApprovalRequest({
                     user,
                     approverAdminId: Number(approverAdminRaw),

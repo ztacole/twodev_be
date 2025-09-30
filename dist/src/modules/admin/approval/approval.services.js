@@ -80,7 +80,7 @@ exports.ApprovalService = {
             if (!input.secondApproverAdminId || input.secondApproverAdminId === requester.id || input.secondApproverAdminId === input.approverAdminId) {
                 throw new Error("Pilih admin lain (berbeda) sebagai approver kedua");
             }
-            const insertResult = yield drizzle_1.db.insert(schema_1.approvalRequest).values({
+            yield drizzle_1.db.insert(schema_1.approvalRequest).values({
                 requester_admin_id: requester.id,
                 approver_admin_id: input.approverAdminId,
                 second_approver_admin_id: input.secondApproverAdminId,
@@ -94,8 +94,12 @@ exports.ApprovalService = {
                 approved_by_second_at: null,
             }).execute();
             const created = yield drizzle_1.db.query.approvalRequest.findFirst({
-                where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, Number(insertResult.insertId)),
+                where: (tbl, { eq, and }) => and(eq(tbl.requester_admin_id, requester.id), eq(tbl.approver_admin_id, input.approverAdminId), eq(tbl.second_approver_admin_id, input.secondApproverAdminId), eq(tbl.target_table, input.targetTable), eq(tbl.target_id, input.targetId), eq(tbl.action, input.action)),
+                orderBy: (tbl, { desc }) => desc(tbl.created_at),
             });
+            if (!created) {
+                throw new Error("Gagal mengambil approval request yang baru dibuat");
+            }
             return created;
         });
     },
