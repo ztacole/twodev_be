@@ -49,10 +49,41 @@ export const ApprovalController = {
   async createApprovalRequest(req: Request, res: Response) {
     try {
       const user = req.user as JwtPayload;
-      const { targetTable, targetId, action } = req.body;
-      const approverAdminRaw = (req.body as any).approverAdminId ?? (req.body as any).approver_admin_id;
-      const secondApproverAdminRaw = (req.body as any).secondApproverAdminId ?? (req.body as any).second_approver_admin_id;
-      const comment = (req.body as any).comment ?? null;
+      
+      console.log('Request body:', req.body);
+      console.log('Request body type:', typeof req.body);
+      
+      if (!req.body) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Request body tidak ditemukan. Pastikan Content-Type: application/json' 
+        });
+      }
+      
+      const body = req.body as any;
+      
+      const targetTable = body?.targetTable ?? body?.target_table;
+      const targetId = body?.targetId ?? body?.target_id;
+      const action = body?.action;
+      const approverAdminRaw = body?.approverAdminId ?? body?.approver_admin_id;
+      const secondApproverAdminRaw = body?.secondApproverAdminId ?? body?.second_approver_admin_id;
+      const comment = body?.comment ?? null;
+
+      if (!targetTable || !targetId || !action || !approverAdminRaw || !secondApproverAdminRaw) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'targetTable/target_table, targetId/target_id, action, approverAdminId/approver_admin_id, dan secondApproverAdminId/second_approver_admin_id wajib diisi' 
+        });
+      }
+
+      console.log('Parsed values:', {
+        targetTable,
+        targetId: Number(targetId),
+        action,
+        approverAdminId: Number(approverAdminRaw),
+        secondApproverAdminId: Number(secondApproverAdminRaw),
+        comment
+      });
 
       const data = await ApprovalService.createApprovalRequest({
         user,

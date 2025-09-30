@@ -46,7 +46,7 @@ export const ApprovalService = {
       throw new Error("Pilih admin lain (berbeda) sebagai approver kedua");
     }
 
-    const insertResult = await db.insert(approvalRequestTable).values({
+    await db.insert(approvalRequestTable).values({
       requester_admin_id: requester.id,
       approver_admin_id: input.approverAdminId,
       second_approver_admin_id: input.secondApproverAdminId,
@@ -61,8 +61,20 @@ export const ApprovalService = {
     }).execute();
 
     const created = await db.query.approvalRequest.findFirst({
-      where: eq(approvalRequestTable.id, Number((insertResult as any).insertId)),
+      where: (tbl, { eq, and }) => and(
+        eq(tbl.requester_admin_id, requester.id),
+        eq(tbl.approver_admin_id, input.approverAdminId),
+        eq(tbl.second_approver_admin_id, input.secondApproverAdminId),
+        eq(tbl.target_table, input.targetTable),
+        eq(tbl.target_id, input.targetId),
+        eq(tbl.action, input.action)
+      ),
+      orderBy: (tbl, { desc }) => desc(tbl.created_at),
     });
+
+    if (!created) {
+      throw new Error("Gagal mengambil approval request yang baru dibuat");
+    }
 
     return created;
   },

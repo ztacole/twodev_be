@@ -8,5 +8,6 @@ router.use(authenticateToken, adminMiddleware);
 
 router.get('/', AdminController.getAdmins);
 router.get('/:id', AdminController.getAdminById);
+router.post('/', AdminController.createAdmin);
 
 export default router;
