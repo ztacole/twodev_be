@@ -55,9 +55,6 @@ export function createUploader(options: UploadOptions) {
 
       try {
         if (!fs.existsSync(uploadPath)) {
-          if (fs.existsSync(uploadPath) && options.cleanBeforeUpload) {
-            fs.rmSync(uploadPath, { recursive: true, force: true });
-          }
           fs.mkdirSync(uploadPath, { recursive: true });          
         } else if (options.cleanBeforeUpload && !reqAny[cleanKey]) {
           for (const fileName of fs.readdirSync(uploadPath)) {
