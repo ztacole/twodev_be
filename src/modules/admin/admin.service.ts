@@ -26,19 +26,16 @@ export const AdminService = {
         phone_no: string;
         birth_date: string;
     }) {
-        // Check if user exists
         const existingUser = await db.query.user.findFirst({ where: eq(userTable.id, data.user_id) });
         if (!existingUser) {
             throw new Error('User tidak ditemukan');
         }
 
-        // Check if user already has admin record
         const existingAdmin = await db.query.admin.findFirst({ where: eq(adminTable.user_id, data.user_id) });
         if (existingAdmin) {
             throw new DuplicateEntryError('Admin', `User ID ${data.user_id}`);
         }
 
-        // Create admin record
         await db.insert(adminTable).values({
             user_id: data.user_id,
             address: data.address,
@@ -46,7 +43,6 @@ export const AdminService = {
             birth_date: new Date(data.birth_date),
         });
 
-        // Get the created admin with user data
         const admin = await db.query.admin.findFirst({ where: eq(adminTable.user_id, data.user_id) });
         if (!admin) {
             throw new Error('Gagal membuat admin');
@@ -56,6 +52,47 @@ export const AdminService = {
             ...admin,
             user: existingUser,
         };
+    },
+
+    async updateAdmin(id: number, data: {
+        address?: string;
+        phone_no?: string;
+        birth_date?: string;
+    }) {
+        const existingAdmin = await db.query.admin.findFirst({ where: eq(adminTable.id, id) });
+        if (!existingAdmin) {
+            throw new NotFoundError(`Admin dengan ID ${id}`);
+        }
+
+        const updateData: any = {};
+        if (data.address !== undefined) updateData.address = data.address;
+        if (data.phone_no !== undefined) updateData.phone_no = data.phone_no;
+        if (data.birth_date !== undefined) updateData.birth_date = new Date(data.birth_date);
+
+        // Update admin record
+        await db.update(adminTable).set(updateData).where(eq(adminTable.id, id));
+
+        // Get updated admin with user data
+        const updatedAdmin = await db.query.admin.findFirst({ where: eq(adminTable.id, id) });
+        const user = await db.query.user.findFirst({ where: eq(userTable.id, updatedAdmin!.user_id) });
+
+        return {
+            ...updatedAdmin,
+            user,
+        };
+    },
+
+    async deleteAdmin(id: number) {
+        // Check if admin exists
+        const existingAdmin = await db.query.admin.findFirst({ where: eq(adminTable.id, id) });
+        if (!existingAdmin) {
+            throw new NotFoundError(`Admin dengan ID ${id}`);
+        }
+
+        // Delete admin record
+        await db.delete(adminTable).where(eq(adminTable.id, id));
+
+        return { id, message: 'Admin berhasil dihapus' };
     },
 };
 

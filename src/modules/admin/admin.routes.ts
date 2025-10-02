@@ -9,5 +9,7 @@ router.use(authenticateToken, adminMiddleware);
 router.get('/', AdminController.getAdmins);
 router.get('/:id', AdminController.getAdminById);
 router.post('/', AdminController.createAdmin);
+router.put('/:id', AdminController.updateAdmin);
+router.delete('/:id', AdminController.deleteAdmin);
 
 export default router;
