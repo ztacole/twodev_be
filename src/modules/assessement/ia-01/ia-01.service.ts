@@ -141,10 +141,6 @@ export class IA01Service {
 
     await db.update(ia01HeaderTable).set({
       is_competent: data.is_competent,
-      group: data.group as any,
-      unit: data.unit as any,
-      element: data.element as any,
-      kuk: data.kuk as any,
     }).where(eq(ia01HeaderTable.id, header.id));
 
     const updated = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.id, header.id) });
@@ -164,10 +160,6 @@ export class IA01Service {
       approved_assessee: updated.approved_assessee,
       approved_assessor: updated.approved_assessor,
       is_competent: updated.is_competent,
-      group: updated.group,
-      unit: updated.unit,
-      element: updated.element,
-      kuk: updated.kuk,
     };
   }
 

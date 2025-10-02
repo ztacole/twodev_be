@@ -359,10 +359,6 @@ export const resultIa01Header = mysqlTable('result_ia01_header', {
     approved_assessee: boolean('approved_assessee').notNull(),
     approved_assessor: boolean('approved_assessor').notNull(),
     is_competent: boolean('is_competent').notNull(),
-    group: varchar('group', { length: 255 }),
-    unit: varchar('unit', { length: 255 }),
-    element: varchar('element', { length: 255 }),
-    kuk: varchar('kuk', { length: 255 }),
     ...timestamps
 });
 

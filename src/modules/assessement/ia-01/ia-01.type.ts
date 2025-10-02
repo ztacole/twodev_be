@@ -28,10 +28,6 @@ interface elementDetailsIAResponse {
 export interface AssessorApproveRequest {
     result_id: number;
     is_competent: boolean;
-    group?: string;
-    unit?: string;
-    element?: string;
-    kuk?: string;
 }
 
 export interface SendResultRequest {
