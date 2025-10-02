@@ -46,7 +46,7 @@ app.use('/twodev/api/users', userRoutes);
 app.use('/twodev/api/auth', authRoutes);
 app.use('/twodev/api/dashboard', dashboardRoutes);
 app.use('/twodev/api/approval', approvalRoutes);
-app.use('/twodev/api/admin', adminRoutes);
+app.use('/twodev/api/admins', adminRoutes);
 app.use('/twodev/api/occupations', occupationRoutes);
 app.use('/twodev/api/schemes', schemeRoutes);
 app.use('/twodev/api/assessor', assessorRoutes);
