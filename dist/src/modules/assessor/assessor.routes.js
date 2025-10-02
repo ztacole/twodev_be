@@ -12,6 +12,7 @@ router.get('/', assessor_controller_1.AssessorController.getAssessors);
 router.get('/user/status', assessor_controller_1.AssessorController.getAssessorUsers);
 router.get('/user/:userId', assessor_controller_1.AssessorController.getAssessorByUserId);
 router.get('/:id', assessor_controller_1.AssessorController.getAssessorById);
+router.put('/profile/me', upload_config_1.uploadAssessorDetail, assessor_controller_1.AssessorController.updateMyProfile); // Token-based update
 router.delete('/:id', (0, approval_middleware_1.requireApproval)('assessor'), assessor_controller_1.AssessorController.deleteAssessor);
 router.get('/:assessorId/detail', assessor_controller_1.AssessorController.getAssessorDetail);
 router.get('/detail/all', assessor_controller_1.AssessorController.getAllAssessorDetails);

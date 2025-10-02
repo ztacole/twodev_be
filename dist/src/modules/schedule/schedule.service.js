@@ -8,12 +8,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScheduleService = void 0;
 const error_1 = require("../../common/error");
 const drizzle_1 = require("../../config/drizzle");
 const schema_1 = require("../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const pdf_lib_1 = require("pdf-lib");
+const pdfAssets_helper_1 = require("../../helper/pdfAssets.helper");
+const pdfDraw_helper_1 = require("../../helper/pdfDraw.helper");
+const hashids_1 = require("../../helper/hashids");
+const date_helper_1 = require("../../helper/date.helper");
+const path_1 = __importDefault(require("path"));
+const assessor_service_1 = require("../assessor/assessor.service");
 class ScheduleService {
     static createSchedule(data) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -86,6 +96,14 @@ class ScheduleService {
             const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id) });
             if (!schedule) {
                 throw new error_1.NotFoundError('Schedule');
+            }
+            const scheduleDetail = yield drizzle_1.db.select().from(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, id));
+            if (!scheduleDetail) {
+                throw new error_1.NotFoundError('Schedule Detail');
+            }
+            const assessor = yield drizzle_1.db.select().from(schema_1.assessor).where((0, drizzle_orm_1.inArray)(schema_1.assessor.id, scheduleDetail.map(detail => detail.assessor_id)));
+            if (!assessor) {
+                throw new error_1.NotFoundError('Assessor');
             }
             return yield buildScheduleResponse(schedule, assessee);
         });
@@ -200,6 +218,97 @@ class ScheduleService {
             if (!detail)
                 throw new error_1.NotFoundError('Schedule Detail');
             return detail;
+        });
+    }
+    static generateLetterAssignment(_a) {
+        return __awaiter(this, arguments, void 0, function* ({ type, number, assigner_name, assessor_id, position, date, time, location, address }) {
+            // === Get Assessor ===
+            const assessor = yield assessor_service_1.AssessorService.getAssessorById(assessor_id);
+            const name = (assessor === null || assessor === void 0 ? void 0 : assessor.full_name) || "-";
+            const registration_number = (assessor === null || assessor === void 0 ? void 0 : assessor.no_reg_met) || "-";
+            const scheme = (assessor === null || assessor === void 0 ? void 0 : assessor.scheme_name) || "-";
+            // === Create a new PDF document ===
+            const pdfDoc = yield pdf_lib_1.PDFDocument.create();
+            const page = pdfDoc.addPage([612, 936]);
+            //  === Dates ===
+            const now = new Date();
+            const months = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            const day = now.getDate();
+            const month = months[now.getMonth()];
+            const year = now.getFullYear();
+            // === Fonts ===
+            const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
+            const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
+            const fontSizeSmall = 14;
+            let y = page.getHeight() - 50;
+            const l2LineGap = 8;
+            const lLineGap = 12;
+            const xlLineGap = 20;
+            // === Header ===
+            const image = "../../public/images/kop-surat.png";
+            y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page, image);
+            // === Title ===
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, "SURAT TUGAS", 40, y, fontBold, fontSizeSmall, "center", (0, pdf_lib_1.rgb)(0, 0, 0), undefined, undefined, true);
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, `Nomor : ${number || "-"}`, 40, y, font, fontSizeSmall, "center") - l2LineGap;
+            // === Body Identitas ===
+            const text1 = "Ketua " + assigner_name + " menugaskan kepada :";
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, text1, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+            y = (0, pdfDraw_helper_1.drawField)(page, "Nama", `${name || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+            y = (0, pdfDraw_helper_1.drawField)(page, "No. Reg", `${registration_number || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+            y = (0, pdfDraw_helper_1.drawField)(page, "Jabatan", `${position || "Asesor Kompetensi"}`, 40, y - l2LineGap, font, fontSizeSmall);
+            // === Conditional Part ===
+            if (type === "verifications") {
+                const textVerif = `Untuk dapat bertugas melakukan Verifikasi Persyaratan Teknis TUK dan Pra Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name} pada :`;
+                y = (0, pdfDraw_helper_1.drawParagraph)(page, textVerif, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+                if (Array.isArray(date)) {
+                    const daysStr = date.map(d => (0, date_helper_1.formatDay)(new Date(d))).join(", ").replace(/, ([^,]*)$/, " dan $1");
+                    const datesStr = (0, date_helper_1.formatDateRange)(date.map(d => new Date(d)));
+                    y = (0, pdfDraw_helper_1.drawField)(page, "Hari", daysStr, 40, y - l2LineGap, font, fontSizeSmall);
+                    y = (0, pdfDraw_helper_1.drawField)(page, "Tanggal", datesStr, 40, y - l2LineGap, font, fontSizeSmall);
+                }
+                else {
+                    y = (0, pdfDraw_helper_1.drawField)(page, "Hari/Tanggal", `${(0, date_helper_1.formatDay)(new Date(date))}, ${(0, date_helper_1.formatDate)(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
+                }
+                y = (0, pdfDraw_helper_1.drawField)(page, "Waktu", `${time || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+            }
+            else {
+                const textDefault = `Untuk dapat bertugas sebagai asesor Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name || "-"} pada :`;
+                y = (0, pdfDraw_helper_1.drawParagraph)(page, textDefault, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+                if (Array.isArray(date)) {
+                    const daysStr = date.map(d => (0, date_helper_1.formatDay)(new Date(d))).join(", ").replace(/, ([^,]*)$/, " dan $1");
+                    const datesStr = (0, date_helper_1.formatDateRange)(date.map(d => new Date(d)));
+                    y = (0, pdfDraw_helper_1.drawField)(page, "Hari", daysStr, 40, y - l2LineGap, font, fontSizeSmall);
+                    y = (0, pdfDraw_helper_1.drawField)(page, "Tanggal", datesStr, 40, y - l2LineGap, font, fontSizeSmall);
+                }
+                else {
+                    y = (0, pdfDraw_helper_1.drawField)(page, "Hari/Tanggal", `${(0, date_helper_1.formatDay)(new Date(date))}, ${(0, date_helper_1.formatDate)(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
+                }
+            }
+            y = (0, pdfDraw_helper_1.drawField)(page, "Skema Okupasi", scheme, 40, y - l2LineGap, font, fontSizeSmall);
+            y = (0, pdfDraw_helper_1.drawField)(page, "Tempat", `${location || "-"}\n${address || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+            // === Penutup ===
+            const text4 = `Demikian surat tugas ini untuk dilaksanakan dengan penuh tanggung jawab, dan atas kerja samanya kami sampaikan terima kasih.`;
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, text4, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+            // === SIGNATURE ===
+            const signatureX = 50;
+            let signatureY = y - 50;
+            const signatureWidth = 60;
+            const signatureDate = `Jakarta, ${day + " " + month + " " + year}`;
+            (0, pdfDraw_helper_1.drawParagraph)(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
+            (0, pdfDraw_helper_1.drawParagraph)(page, `${"Ketua " + assigner_name}`, signatureX, signatureY - 20, font, fontSizeSmall, "right");
+            signatureY -= 20;
+            const signatureNameLength = font.widthOfTextAtSize(assigner_name, fontSizeSmall);
+            const qrData = (0, hashids_1.getAssessorUrl)(1);
+            const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
+            page.drawImage(qrCode, { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth, height: signatureWidth });
+            const LSPIcon = path_1.default.join(__dirname, "../../../public/images/logo-lsp.png");
+            const LSPIconPath = yield (0, pdfDraw_helper_1.loadAndEmbedImage)(pdfDoc, LSPIcon, "png");
+            page.drawImage(LSPIconPath, { x: page.getWidth() - signatureWidth * 3 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth * 2, height: signatureWidth, opacity: 0.3 });
+            (0, pdfDraw_helper_1.drawParagraph)(page, `${assigner_name}`, signatureX, signatureY - 90, font, fontSizeSmall, "right");
+            return yield pdfDoc.save();
         });
     }
 }

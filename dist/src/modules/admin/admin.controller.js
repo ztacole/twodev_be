@@ -24,15 +24,18 @@ exports.AdminController = {
         res.json({ success: true, message: 'Detail admin', data });
     })),
     createAdmin: (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-        const { user_id, address, phone_no, birth_date } = req.body;
-        if (!user_id || !address || !phone_no || !birth_date) {
+        const { full_name, email, password, role_id, address, phone_no, birth_date } = req.body;
+        if (!full_name || !email || !password || !address || !phone_no || !birth_date) {
             return res.status(400).json({
                 success: false,
-                message: 'user_id, address, phone_no, dan birth_date wajib diisi'
+                message: 'full_name, email, password, address, phone_no, dan birth_date wajib diisi'
             });
         }
         const data = yield admin_service_1.AdminService.createAdmin({
-            user_id,
+            full_name,
+            email,
+            password,
+            role_id,
             address,
             phone_no,
             birth_date
@@ -45,14 +48,16 @@ exports.AdminController = {
     })),
     updateAdmin: (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const id = Number(req.params.id);
-        const { address, phone_no, birth_date } = req.body;
-        if (!address && !phone_no && !birth_date) {
+        const { full_name, email, address, phone_no, birth_date } = req.body;
+        if (!full_name && !email && !address && !phone_no && !birth_date) {
             return res.status(400).json({
                 success: false,
-                message: 'Minimal satu field (address, phone_no, atau birth_date) harus diisi'
+                message: 'Minimal satu field (full_name, email, address, phone_no, atau birth_date) harus diisi'
             });
         }
         const data = yield admin_service_1.AdminService.updateAdmin(id, {
+            full_name,
+            email,
             address,
             phone_no,
             birth_date
@@ -70,6 +75,36 @@ exports.AdminController = {
             success: true,
             message: data.message,
             data: { id: data.id }
+        });
+    })),
+    updateMyProfile: (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get user ID from token
+        const { full_name, email, password, address, phone_no, birth_date } = req.body;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: 'Token tidak valid atau user tidak ditemukan'
+            });
+        }
+        if (!full_name && !email && !password && !address && !phone_no && !birth_date) {
+            return res.status(400).json({
+                success: false,
+                message: 'Minimal satu field (full_name, email, password, address, phone_no, atau birth_date) harus diisi'
+            });
+        }
+        const data = yield admin_service_1.AdminService.updateAdminByUserId(userId, {
+            full_name,
+            email,
+            password,
+            address,
+            phone_no,
+            birth_date
+        });
+        res.json({
+            success: true,
+            message: 'Profil admin berhasil diperbarui',
+            data
         });
     }))
 };

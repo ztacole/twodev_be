@@ -185,3 +185,39 @@ AssessorController.getAssessorUsers = (0, async_handler_1.asyncHandler)((req, re
         });
     }
 }));
+AssessorController.updateMyProfile = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b;
+    const userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id; // Get user ID from token
+    const { full_name, email, password, scheme_id, birth_location, birth_date, no_reg_met, institution, address, phone_no } = req.body;
+    if (!userId) {
+        return res.status(401).json({
+            success: false,
+            message: 'Token tidak valid atau user tidak ditemukan'
+        });
+    }
+    if (!full_name && !email && !password && !scheme_id && !birth_location &&
+        !birth_date && !no_reg_met && !institution && !address && !phone_no) {
+        return res.status(400).json({
+            success: false,
+            message: 'Minimal satu field harus diisi untuk update'
+        });
+    }
+    const files = Array.isArray(req.files) ? req.files : [];
+    const data = yield assessor_service_1.AssessorService.updateAssessorByUserId(userId, {
+        full_name,
+        email,
+        password,
+        scheme_id,
+        birth_location,
+        birth_date,
+        no_reg_met,
+        institution,
+        address,
+        phone_no
+    }, files);
+    res.json({
+        success: true,
+        message: 'Profil assessor berhasil diperbarui',
+        data
+    });
+}));

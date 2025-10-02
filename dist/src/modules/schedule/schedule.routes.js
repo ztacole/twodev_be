@@ -15,4 +15,5 @@ router.post('/', auth_middleware_1.authenticateToken, auth_middleware_1.adminMid
 router.put('/:id', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, schedule_controller_1.ScheduleController.updateSchedule);
 router.delete('/:id', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, (0, approval_middleware_1.requireApproval)('schedule'), schedule_controller_1.ScheduleController.deleteSchedule);
 router.get('/export/excel', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, schedule_controller_1.ScheduleController.exportScheduleToExcel);
+router.post('/letter-assignment/pdf', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, schedule_controller_1.ScheduleController.generateLetterAssignment);
 exports.default = router;

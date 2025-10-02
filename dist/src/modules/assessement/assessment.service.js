@@ -1559,7 +1559,8 @@ class AssessmentService {
             const lLineGap = 12;
             const xlLineGap = 20;
             // === HEADER ===
-            y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page);
+            const image = "../../public/images/kop-surat.png";
+            y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page, image);
             // === TITLE ===
             const headerText = [
                 "BERITA ACARA",
@@ -1674,7 +1675,7 @@ class AssessmentService {
             const boxX = 50;
             let boxY = y - boxSize * 2 + 10 - 6;
             page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
-            (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY, font, fontSizeSmall);
+            (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar", boxX + boxSize + 5, boxY, font, fontSizeSmall);
             boxY -= lineGap;
             page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
             (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);

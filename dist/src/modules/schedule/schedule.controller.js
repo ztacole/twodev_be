@@ -166,3 +166,27 @@ ScheduleController.exportScheduleToExcel = (0, async_handler_1.asyncHandler)((re
     yield workbook.xlsx.write(res);
     res.end();
 }));
+ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { type } = req.query;
+        const body = req.body;
+        const letter = yield schedule_service_1.ScheduleService.generateLetterAssignment(Object.assign(Object.assign({}, body), { type: type }));
+        let filename = '';
+        if (type === 'verifications') {
+            filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
+        }
+        else {
+            filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
+        }
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}.pdf"`);
+        res.send(Buffer.from(letter));
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Terjadi kesalahan dalam menghasilkan PDF",
+            error: error.message
+        });
+    }
+}));
