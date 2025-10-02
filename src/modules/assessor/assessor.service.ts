@@ -2,13 +2,12 @@ import { db } from '../../config/drizzle';
 import { NotFoundError, DuplicateEntryError, ValidationError } from '../../common/error';
 import { AssessorResponse, AssessorRequest } from './assessor.type';
 import { assessor as assessorTable, user as userTable, role as roleTable, scheme as schemeTable, assessorDetail as assessorDetailTable } from '../../../drizzle/schema';
-import { and, asc, eq, like, or, sql } from 'drizzle-orm';
+import { and, asc, eq, like, or, sql, ne } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 import { rm } from "fs/promises";
 import fs from 'fs';
 import path from 'path';
 import { PagingMeta } from '../../helper/type';
-import { count } from 'console';
-import { de } from '@faker-js/faker/.';
 
 export class AssessorService {
     static async getAssessors(page: number = 1, limit: number = 10, keyword?: string): Promise<{ data: AssessorResponse[]; meta: PagingMeta }> {
@@ -238,14 +237,11 @@ export class AssessorService {
                 files
             });
 
-            console.log('Assessor detail created/updated successfully');
         } catch (error: any) {
             await db.delete(assessorTable).where(eq(assessorTable.id, assessor.id));
-            console.log('Error creating/updating assessor detail:', error.message);
             throw new Error(error.message);
         }
 
-        console.log('Assessor created/updated successfully');
 
         const [assessorResponse] = await db.select({
             id: assessorTable.id,
@@ -294,13 +290,15 @@ export class AssessorService {
 
         try {
             const fileArray = Array.isArray(files) ? files : [];
-            if (fileArray.length < 5) {
-                throw new ValidationError('File belum lengkap.');
-            }
 
+            // When creating (no existing detail), require all five files
+            const existingDetail = await db.query.assessorDetail.findFirst({
+                where: eq(assessorDetailTable.assessor_id, assessorId)
+            });
+
+            // Build fileData from uploaded files (moved to final dir) and/or bodyData overrides
             for (const file of fileArray) {
                 if (requiredFields.includes(file.fieldname)) {
-                    // File sudah dipindahkan ke folder final
                     fileData[file.fieldname] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
                 }
             }
@@ -311,9 +309,18 @@ export class AssessorService {
                 }
             }
 
-            for (const field of requiredFields) {
-                if (!fileData[field] && !bodyData[field]) {
-                    throw new ValidationError(`Field ${field} harus diisi`);
+            if (!existingDetail) {
+                for (const field of requiredFields) {
+                    if (!fileData[field]) {
+                        throw new ValidationError(`Field ${field} harus diisi`);
+                    }
+                }
+            } else {
+                for (const field of requiredFields) {
+                    if (!fileData[field]) {
+                        const existingValue = (existingDetail as any)[field];
+                        if (existingValue) fileData[field] = existingValue;
+                    }
                 }
             }
 
@@ -321,10 +328,6 @@ export class AssessorService {
             if (!existingAssessor) {
                 throw new NotFoundError('Assessor');
             }
-
-            const existingDetail = await db.query.assessorDetail.findFirst({
-                where: eq(assessorDetailTable.assessor_id, assessorId)
-            });
 
             const detailData = {
                 assessor_id: assessorId,
@@ -359,7 +362,6 @@ export class AssessorService {
             try {
                 await rm(UPLOAD_DIR, { recursive: true, force: true });
             } catch (error) {
-                console.log(error);
             }
             throw new Error(error.message);
         }
@@ -450,12 +452,136 @@ export class AssessorService {
         return { data: results, meta };
     }
 
+    static async updateAssessorByUserId(userId: number, data: {
+        full_name?: string;
+        email?: string;
+        password?: string;
+        scheme_id?: number;
+        birth_location?: string;
+        birth_date?: string;
+        no_reg_met?: string;
+        institution?: string;
+        address?: string;
+        phone_no?: string;
+    }, files: any[] = []): Promise<AssessorResponse> {
+        const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, userId) });
+        if (!existingAssessor) {
+            throw new NotFoundError(`Assessor dengan User ID ${userId}`);
+        }
+
+        const assessorUpdateData: any = {};
+        if (data.scheme_id !== undefined) assessorUpdateData.scheme_id = data.scheme_id;
+        if (data.birth_location !== undefined) assessorUpdateData.birth_location = data.birth_location;
+        if (data.birth_date !== undefined) assessorUpdateData.birth_date = new Date(data.birth_date);
+        if (data.no_reg_met !== undefined) assessorUpdateData.no_reg_met = data.no_reg_met;
+        if (data.institution !== undefined) assessorUpdateData.institution = data.institution;
+        if (data.address !== undefined) assessorUpdateData.address = data.address;
+        if (data.phone_no !== undefined) assessorUpdateData.phone_no = data.phone_no;
+
+        const userUpdateData: any = {};
+        if (data.full_name !== undefined) userUpdateData.full_name = data.full_name;
+        if (data.email !== undefined) {
+            const emailExists = await db.query.user.findFirst({ 
+                where: and(
+                    eq(userTable.email, data.email),
+                    ne(userTable.id, userId)
+                )
+            });
+            if (emailExists) {
+                throw new DuplicateEntryError('Email', data.email);
+            }
+            userUpdateData.email = data.email;
+        }
+        if (data.password !== undefined) {
+            userUpdateData.password = await bcrypt.hash(data.password, 10);
+        }
+
+        if (Object.keys(assessorUpdateData).length > 0) {
+            await db.update(assessorTable).set(assessorUpdateData).where(eq(assessorTable.user_id, userId));
+        }
+
+        if (Object.keys(userUpdateData).length > 0) {
+            await db.update(userTable).set(userUpdateData).where(eq(userTable.id, userId));
+        }
+
+        if (files && files.length > 0) {
+            const assessorId = existingAssessor.id;
+            const targetDir = path.join(__dirname, '../../../public/uploads/assessor', `assessor-${assessorId}`);
+            
+            if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir, { recursive: true });
+            }
+
+            const existingDetail = await db.query.assessorDetail.findFirst({
+                where: eq(assessorDetailTable.assessor_id, assessorId)
+            });
+
+            for (const file of files) {
+                const fieldName = file.fieldname as keyof typeof existingDetail | string;
+
+                try {
+                    const previousUrl = (existingDetail as any)?.[fieldName];
+                    if (typeof previousUrl === 'string' && previousUrl.length > 0) {
+                        const previousFileName = previousUrl.split('/').pop();
+                        if (previousFileName) {
+                            const previousPath = path.join(targetDir, previousFileName);
+                            if (fs.existsSync(previousPath)) {
+                                fs.unlinkSync(previousPath);
+                            }
+                        }
+                    }
+                } catch {}
+
+                const oldPath = path.join(__dirname, '../../../public/uploads/assessor/default', file.filename);
+                const newPath = path.join(targetDir, file.filename);
+
+                if (fs.existsSync(oldPath)) {
+                    fs.renameSync(oldPath, newPath);
+                }
+            }
+
+            try {
+                await this.createOrUpdateAssessorDetail({
+                    assessorId: assessorId,
+                    bodyData: data,
+                    files
+                });
+            } catch (error: any) {
+            }
+        }
+
+        const [updatedAssessor] = await db.select({
+            id: assessorTable.id,
+            user_id: assessorTable.user_id,
+            scheme_id: assessorTable.scheme_id,
+            name: userTable.full_name,
+            email: userTable.email,
+            birth_location: assessorTable.birth_location,
+            birth_date: assessorTable.birth_date,
+            no_reg_met: assessorTable.no_reg_met,
+            institution: assessorTable.institution,
+            address: assessorTable.address,
+            phone_no: assessorTable.phone_no,
+            created_at: assessorTable.created_at,
+            updated_at: assessorTable.updated_at,
+            scheme: schemeTable,
+            detail: assessorDetailTable
+        })
+        .from(assessorTable)
+        .leftJoin(userTable, eq(assessorTable.user_id, userTable.id))
+        .innerJoin(schemeTable, eq(assessorTable.scheme_id, schemeTable.id))
+        .leftJoin(assessorDetailTable, eq(assessorDetailTable.assessor_id, assessorTable.id))
+        .where(eq(assessorTable.user_id, userId));
+
+        return this.formatAssessorResponse(updatedAssessor);
+    }
 
     private static formatAssessorResponse(assessor: any): AssessorResponse {
         return {
             id: assessor.id,
             user_id: assessor.user_id,
-            name: assessor.name,
+            scheme_id: assessor.scheme_id,
+            full_name: assessor.name,
             email: assessor.email,
             birth_location: assessor.birth_location,
             birth_date: assessor.birth_date,
@@ -463,8 +589,15 @@ export class AssessorService {
             institution: assessor.institution,
             address: assessor.address,
             phone_no: assessor.phone_no,
-            scheme: assessor.scheme,
-            detail: assessor.detail || null
+            created_at: assessor.created_at,
+            updated_at: assessor.updated_at,
+            scheme_code: assessor.scheme?.code,
+            scheme_name: assessor.scheme?.name,
+            tax_id_number: assessor.detail?.tax_id_number,
+            bank_book_cover: assessor.detail?.bank_book_cover,
+            certificate: assessor.detail?.certificate,
+            id_card: assessor.detail?.id_card,
+            national_id: assessor.detail?.national_id
         };
     }
 }

@@ -10,6 +10,7 @@ router.get('/', AdminController.getAdmins);
 router.get('/:id', AdminController.getAdminById);
 router.post('/', AdminController.createAdmin);
 router.put('/:id', AdminController.updateAdmin);
+router.put('/profile/me', AdminController.updateMyProfile); // Token-based update
 router.delete('/:id', AdminController.deleteAdmin);
 
 export default router;

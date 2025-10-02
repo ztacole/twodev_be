@@ -14,6 +14,7 @@ router.get('/', AssessorController.getAssessors);
 router.get('/user/status', AssessorController.getAssessorUsers);
 router.get('/user/:userId', AssessorController.getAssessorByUserId);
 router.get('/:id', AssessorController.getAssessorById);
+router.put('/profile/me', uploadAssessorDetail, AssessorController.updateMyProfile); // Token-based update
 router.delete('/:id', requireApproval('assessor'), AssessorController.deleteAssessor);
 
 router.get('/:assessorId/detail', AssessorController.getAssessorDetail);
