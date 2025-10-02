@@ -2,7 +2,7 @@ import { db } from '../../../config/drizzle';
 import { DashboardSummary, DashboardSchedule, DashboardVerification } from './dashboard.type';
 import { NotFoundError } from '../../../common/error';
 import { user as userTable, assessment as assessmentTable, assessmentSchedule as scheduleTable, occupation as occupationTable, scheme as schemeTable, resultDoc as resultDocTable, assessee as assesseeTable } from '../../../../drizzle/schema';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
 export class DashboardService {
   static async getSummary(): Promise<DashboardSummary> {
@@ -28,7 +28,7 @@ export class DashboardService {
   }
 
   static async getSchedules(): Promise<DashboardSchedule[]> {
-    const schedules = await db.select().from(scheduleTable);
+    const schedules = await db.select().from(scheduleTable).orderBy(asc(scheduleTable.start_date)).limit(5);
     return Promise.all(schedules.map(async (s) => {
       const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, s.assessment_id) });
       const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
@@ -45,7 +45,7 @@ export class DashboardService {
   }
 
   static async getVerificationDocs(): Promise<DashboardVerification[]> {
-    const docs = await db.select().from(resultDocTable);
+    const docs = await db.select().from(resultDocTable).orderBy(asc(resultDocTable.created_at)).limit(5);
 
     return docs.map((d) => ({
       id: d.id,

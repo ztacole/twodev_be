@@ -37,7 +37,7 @@ class DashboardService {
     }
     static getSchedules() {
         return __awaiter(this, void 0, void 0, function* () {
-            const schedules = yield drizzle_1.db.select().from(schema_1.assessmentSchedule);
+            const schedules = yield drizzle_1.db.select().from(schema_1.assessmentSchedule).orderBy((0, drizzle_orm_1.asc)(schema_1.assessmentSchedule.start_date)).limit(5);
             return Promise.all(schedules.map((s) => __awaiter(this, void 0, void 0, function* () {
                 const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, s.assessment_id) });
                 const occupation = assessment ? yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id) }) : null;
@@ -55,7 +55,7 @@ class DashboardService {
     }
     static getVerificationDocs() {
         return __awaiter(this, void 0, void 0, function* () {
-            const docs = yield drizzle_1.db.select().from(schema_1.resultDoc);
+            const docs = yield drizzle_1.db.select().from(schema_1.resultDoc).orderBy((0, drizzle_orm_1.asc)(schema_1.resultDoc.created_at)).limit(5);
             return docs.map((d) => ({
                 id: d.id,
                 result_id: d.result_id,
