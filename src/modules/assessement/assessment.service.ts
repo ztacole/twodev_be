@@ -64,7 +64,6 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { embedQrCode, kopSurat } from "../../helper/pdfAssets.helper";
 import { drawParagraph, drawMixedParagraph, loadAndEmbedImage } from "../../helper/pdfDraw.helper";
 import { getAssessorUrl } from "../../helper/hashids";
-import path from 'path';
 
 export class AssessmentService {
 
@@ -1666,7 +1665,8 @@ export class AssessmentService {
         const xlLineGap = 20;
 
         // === HEADER ===
-        y = await kopSurat(pdfDoc, page);
+        const image = "../../public/images/kop-surat.png";
+        y = await kopSurat(pdfDoc, page, image);
 
         // === TITLE ===
         const headerText = [
@@ -1800,7 +1800,7 @@ export class AssessmentService {
         let boxY = y - boxSize * 2 + 10 - 6;
 
         page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: rgb(0, 0, 0), borderWidth: 1, color: rgb(1, 1, 1) });
-        drawParagraph(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY, font, fontSizeSmall);
+        drawParagraph(page, "Tertib dan lancar", boxX + boxSize + 5, boxY, font, fontSizeSmall);
         boxY -= lineGap;
         page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: rgb(0, 0, 0), borderWidth: 1, color: rgb(1, 1, 1) });
         drawParagraph(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);

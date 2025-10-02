@@ -69,3 +69,14 @@ export interface updateScheduleRequest {
     start_date: string;
     end_date: string;
 }
+export interface LetterAssignmentRequest {
+    type: "assignments" | "verifications";
+    number: string;
+    assigner_name: string;
+    assessor_id: number;
+    position: string;
+    date: Date | Date[];
+    time?: string;
+    location?: string;
+    address?: string;
+}

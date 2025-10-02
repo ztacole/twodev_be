@@ -24,6 +24,7 @@ export async function embedQrCode(
 export async function kopSurat(
   pdfDoc: PDFDocument,
   page: PDFPage,
+  image: string,
   options?: {
     imagePath?: string;
     type?: "png" | "jpg";
@@ -33,7 +34,7 @@ export async function kopSurat(
   }
 ): Promise<number> {
   const {
-    imagePath = path.join(__dirname, "../../../public/images/kop-surat.png"),
+    imagePath = path.join(__dirname, image),
     type = "png",
     marginX = 40,
     marginTop = 100,

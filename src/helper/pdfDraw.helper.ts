@@ -20,6 +20,7 @@ type TextAlign = 'left' | 'center' | 'right' | 'justify';
  * @param color The color of the text.
  * @param maxWidth The maximum width of the text before it wraps to a new line. If not provided, the text will wrap at the edge of the page.
  * @param lineHeight The height of each line of text. If not provided, it defaults to the font size plus 4.
+ * @param underline If true, the text will be underlined.
  *
  * @returns The y-coordinate of the position after the last line of text has been drawn.
  */
@@ -33,7 +34,8 @@ export function drawParagraph(
   align: TextAlign = "left",
   color: RGB = rgb(0, 0, 0),
   maxWidth?: number,
-  lineHeight: number = size + 4
+  lineHeight: number = size + 4,
+  underline: boolean = false
 ): number {
   const { width } = page.getSize();
   const usableWidth = maxWidth ?? width - startX * 2;
@@ -51,6 +53,26 @@ export function drawParagraph(
     // Jika panjang kalimat melebihi lebar halaman → turun baris
     if (testWidth > usableWidth && line) {
       drawLine(page, line, startX, y, font, size, align, color, usableWidth, width);
+
+      if (underline) {
+        const textWidth = font.widthOfTextAtSize(line, size);
+        let underlineX = startX;
+      
+        if (align === "center") {
+          underlineX = startX + (usableWidth - textWidth) / 2;
+        } else if (align === "right") {
+          underlineX = startX + (usableWidth - textWidth);
+        }
+      
+        const underlineY = y - 2;
+        page.drawLine({
+          start: { x: underlineX, y: underlineY },
+          end: { x: underlineX + textWidth, y: underlineY },
+          thickness: 0.5,
+          color,
+        });
+      }
+
       y -= lineHeight;
       line = words[i] ?? "";
     } else {
@@ -58,8 +80,9 @@ export function drawParagraph(
     }
   }
 
-  // Baris terakhir → tidak justify
   if (line) {
+    const effectiveAlign = align === "justify" ? "left" : align;
+  
     drawLine(
       page,
       line,
@@ -67,11 +90,31 @@ export function drawParagraph(
       y,
       font,
       size,
-      align === "justify" ? "left" : align,
+      effectiveAlign,
       color,
       usableWidth,
       width
     );
+  
+    if (underline) {
+      const textWidth = font.widthOfTextAtSize(line, size);
+      let underlineX = startX;
+  
+      if (effectiveAlign === "center") {
+        underlineX = startX + (usableWidth - textWidth) / 2;
+      } else if (effectiveAlign === "right") {
+        underlineX = startX + (usableWidth - textWidth);
+      }
+  
+      const underlineY = y - 2;
+      page.drawLine({
+        start: { x: underlineX, y: underlineY },
+        end: { x: underlineX + textWidth, y: underlineY },
+        thickness: 1,
+        color,
+      });
+    }
+  
     y -= lineHeight;
   }
 
@@ -277,3 +320,72 @@ export async function loadAndEmbedImage(
     return await pdfDoc.embedJpg(imgBytes);
   }
 }
+
+/**
+ * Draws a form field with a label and value.
+ * The label is drawn on the left side of the field,
+ * and the value is drawn on the right side.
+ * The value can be a single line of text or a multi-line block of text.
+ * The text is drawn with the provided font and size.
+ * The height of each line of text is calculated as the font size plus 4.
+ * The x-coordinate of the starting position is used to draw the label and value.
+ * The y-coordinate of the starting position is used to draw the first line of text.
+ * The function returns the y-coordinate of the position after the last line of text has been drawn.
+ *
+ * @param page The PDF page to draw the field on.
+ * @param label The label of the field.
+ * @param value The value of the field.
+ * @param startX The x-coordinate of the starting position.
+ * @param y The y-coordinate of the starting position.
+ * @param font The font to use for drawing the text.
+ * @param size The size of the font.
+ * @param labelWidth The width of the label in pixels. Defaults to 110.
+ * @param gap The gap between the label and value in pixels. Defaults to 8.
+ * @param lineHeight The height of each line of text in pixels. Defaults to the font size plus 4.
+ * @returns The y-coordinate of the position after the last line of text has been drawn.
+ */
+export function drawField(
+  page: PDFPage,
+  label: string,
+  value: string,
+  startX: number,
+  y: number,
+  font: PDFFont,
+  size: number,
+  labelWidth: number = 110,
+  gap: number = 8,
+  lineHeight: number = size + 4
+): number {
+  page.drawText(label, {
+    x: startX,
+    y,
+    size,
+    font,
+    color: rgb(0, 0, 0),
+  });
+
+  const colonX = startX + labelWidth + 2;
+  page.drawText(":", {
+    x: colonX,
+    y,
+    size,
+    font,
+    color: rgb(0, 0, 0),
+  });
+
+  const valueX = colonX + gap;
+  const lines = value.split("\n");
+
+  lines.forEach((line, idx) => {
+    page.drawText(line, {
+      x: valueX,
+      y: y - (idx * lineHeight),
+      size,
+      font,
+      color: rgb(0, 0, 0),
+    });
+  });
+
+  return y - (lines.length * lineHeight);
+}
+

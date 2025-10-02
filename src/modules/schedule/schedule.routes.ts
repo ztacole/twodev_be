@@ -16,5 +16,6 @@ router.post('/', authenticateToken, adminMiddleware, ScheduleController.createSc
 router.put('/:id', authenticateToken, adminMiddleware, ScheduleController.updateSchedule);
 router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('schedule'), ScheduleController.deleteSchedule);
 router.get('/export/excel', authenticateToken, adminMiddleware, ScheduleController.exportScheduleToExcel);
+router.post('/letter-assignment/pdf', authenticateToken, adminMiddleware, ScheduleController.generateLetterAssignment);
 
 export default router;

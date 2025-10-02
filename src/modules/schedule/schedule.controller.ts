@@ -3,7 +3,7 @@ import { ScheduleService } from "./schedule.service";
 import ExcelJS from 'exceljs';
 import { asyncHandler } from "../../common/async.handler";
 import { JwtPayload } from "jsonwebtoken";
-import { updateScheduleRequest } from "./schedule.type";
+import { LetterAssignmentRequest, updateScheduleRequest } from "./schedule.type";
 export class ScheduleController {
     static createSchedule = asyncHandler(async (req: Request, res: Response) => {
         const schedule = await ScheduleService.createSchedule(req.body);
@@ -175,4 +175,36 @@ export class ScheduleController {
         await workbook.xlsx.write(res);
         res.end();
     });
+
+    static generateLetterAssignment = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const { type } = req.query;
+            const body: LetterAssignmentRequest = req.body;
+        
+            const letter = await ScheduleService.generateLetterAssignment({
+                ...body,
+                type: type as 'assignments' | 'verifications'
+            });
+        
+            let filename = '';
+            if (type === 'verifications') {
+                filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
+            } else {
+                filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
+            }
+        
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="${filename}.pdf"`
+            );
+            res.send(Buffer.from(letter));
+            } catch (error: any) {
+            res.status(500).json({
+                success: false,
+                message: "Terjadi kesalahan dalam menghasilkan PDF",
+                error: error.message
+            });
+        }
+    });      
 }

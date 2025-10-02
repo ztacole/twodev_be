@@ -22,7 +22,14 @@ import {
     resultAk05 as resultAk05Table,
 } from '../../../drizzle/schema';
 import { and, between, eq, gte, inArray, lte } from 'drizzle-orm';
-import { ActiveScheduleResponse, DetailResponse, ScheduleRequest, ScheduleResponse, updateScheduleRequest } from './schedule.type';
+import { ActiveScheduleResponse, DetailResponse, LetterAssignmentRequest, ScheduleRequest, ScheduleResponse, updateScheduleRequest } from './schedule.type';
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { embedQrCode, kopSurat } from "../../helper/pdfAssets.helper";
+import { drawParagraph, drawMixedParagraph, loadAndEmbedImage, drawField } from "../../helper/pdfDraw.helper";
+import { getAssessorUrl } from "../../helper/hashids";
+import { formatDate, formatDateRange, formatDay } from '../../helper/date.helper';
+import path from 'path';
+import { AssessorService } from '../assessor/assessor.service';
 
 export class ScheduleService {
     static async createSchedule(data: ScheduleRequest): Promise<ScheduleResponse> {
@@ -97,6 +104,15 @@ export class ScheduleService {
         const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, id) });
         if (!schedule) {
             throw new NotFoundError('Schedule');
+        }
+        const scheduleDetail = await db.select().from(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, id));
+        if (!scheduleDetail) {
+            throw new NotFoundError('Schedule Detail');
+        }
+
+        const assessor = await db.select().from(assessorTable).where(inArray(assessorTable.id, scheduleDetail.map(detail => detail.assessor_id)));
+        if (!assessor) {
+            throw new NotFoundError('Assessor');
         }
 
         return await buildScheduleResponse(schedule, assessee as any);
@@ -216,6 +232,128 @@ export class ScheduleService {
         if (!detail) throw new NotFoundError('Schedule Detail');
         return detail;
     }
+
+    static async generateLetterAssignment({
+        type,
+        number,
+        assigner_name,
+        assessor_id,
+        position,
+        date,
+        time,
+        location,
+        address
+    }: LetterAssignmentRequest) {
+        // === Get Assessor ===
+        const assessor = await AssessorService.getAssessorById(assessor_id);
+        const name = assessor?.full_name || "-";
+        const registration_number = assessor?.no_reg_met || "-";
+        const scheme = assessor?.scheme_name || "-";
+
+        // === Create a new PDF document ===
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([612, 936]);
+
+        //  === Dates ===
+        const now = new Date();
+        const months = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+
+        const day = now.getDate();
+        const month = months[now.getMonth()];
+        const year = now.getFullYear();
+
+        // === Fonts ===
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const fontSizeSmall = 14;
+
+        let y = page.getHeight() - 50;
+        const l2LineGap = 8;
+        const lLineGap = 12;
+        const xlLineGap = 20;
+
+        // === Header ===
+        const image = "../../public/images/kop-surat.png";
+        y = await kopSurat(pdfDoc, page, image);
+
+        // === Title ===
+        y = drawParagraph(page, "SURAT TUGAS", 40, y, fontBold, fontSizeSmall, "center", rgb(0, 0, 0), undefined, undefined, true);
+        y = drawParagraph(page, `Nomor : ${number || "-"}`, 40, y, font, fontSizeSmall, "center") - l2LineGap;
+
+        // === Body Identitas ===
+        const text1 = "Ketua " + assigner_name + " menugaskan kepada :";
+        y = drawParagraph(page, text1, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+
+        y = drawField(page, "Nama", `${name || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+        y = drawField(page, "No. Reg", `${registration_number || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+        y = drawField(page, "Jabatan", `${position || "Asesor Kompetensi"}`, 40, y - l2LineGap, font, fontSizeSmall);
+
+        // === Conditional Part ===
+        if (type === "verifications") {
+            const textVerif = `Untuk dapat bertugas melakukan Verifikasi Persyaratan Teknis TUK dan Pra Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name} pada :`;
+            y = drawParagraph(page, textVerif, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+
+            if (Array.isArray(date)) {
+                const daysStr = date.map(d => formatDay(new Date(d))).join(", ").replace(/, ([^,]*)$/, " dan $1");
+                const datesStr = formatDateRange(date.map(d => new Date(d)));
+
+                y = drawField(page, "Hari", daysStr, 40, y - l2LineGap, font, fontSizeSmall);
+                y = drawField(page, "Tanggal", datesStr, 40, y - l2LineGap, font, fontSizeSmall);
+            } else {
+                y = drawField(page, "Hari/Tanggal", `${formatDay(new Date(date))}, ${formatDate(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
+            }
+            y = drawField(page, "Waktu", `${time || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+        } else {
+            const textDefault = `Untuk dapat bertugas sebagai asesor Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name || "-"} pada :`;
+            y = drawParagraph(page, textDefault, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+
+            if (Array.isArray(date)) {
+                const daysStr = date.map(d => formatDay(new Date(d))).join(", ").replace(/, ([^,]*)$/, " dan $1");
+                const datesStr = formatDateRange(date.map(d => new Date(d)));
+
+                y = drawField(page, "Hari", daysStr, 40, y - l2LineGap, font, fontSizeSmall);
+                y = drawField(page, "Tanggal", datesStr, 40, y - l2LineGap, font, fontSizeSmall);
+            } else {
+                y = drawField(page, "Hari/Tanggal", `${formatDay(new Date(date))}, ${formatDate(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
+            }
+        }
+
+        y = drawField(page, "Skema Okupasi", scheme, 40, y - l2LineGap, font, fontSizeSmall);
+        y = drawField(page, "Tempat", `${location || "-"}\n${address || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+
+        // === Penutup ===
+        const text4 = `Demikian surat tugas ini untuk dilaksanakan dengan penuh tanggung jawab, dan atas kerja samanya kami sampaikan terima kasih.`;
+        y = drawParagraph(page, text4, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+
+        // === SIGNATURE ===
+        const signatureX = 50;
+        let signatureY = y - 50;
+        const signatureWidth = 60;
+
+        const signatureDate = `Jakarta, ${day + " " + month + " " + year}`;
+        drawParagraph(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
+        drawParagraph(page, `${"Ketua " + assigner_name}`, signatureX, signatureY - 20, font, fontSizeSmall, "right");
+        signatureY -= 20;
+
+        const signatureNameLength = font.widthOfTextAtSize(assigner_name, fontSizeSmall);
+        const qrData = getAssessorUrl(1);
+        const qrCode = await embedQrCode(pdfDoc, qrData);
+        page.drawImage(qrCode,
+            { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth, height: signatureWidth }
+        );
+        
+        const LSPIcon = path.join(__dirname, "../../../public/images/logo-lsp.png");
+        const LSPIconPath = await loadAndEmbedImage(pdfDoc, LSPIcon, "png");
+        page.drawImage(LSPIconPath,
+            { x: page.getWidth() - signatureWidth * 3 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth * 2, height: signatureWidth, opacity: 0.3 }
+        )
+        drawParagraph(page, `${assigner_name}`, signatureX, signatureY - 90, font, fontSizeSmall, "right");
+
+        return await pdfDoc.save();
+    }
 }
 
 interface Assessee {
@@ -265,7 +403,6 @@ async function buildScheduleResponse(schedule: any, user: Assessee[] | null = nu
         schedule_details: detailed,
     } as any;
 }
-
 async function buildActiveScheduleResponse(result: any): Promise<DetailResponse> {
     const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
     const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
