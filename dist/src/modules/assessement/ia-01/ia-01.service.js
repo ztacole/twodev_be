@@ -142,10 +142,6 @@ class IA01Service {
                 throw new error_1.NotFoundError('IA01 header');
             yield drizzle_1.db.update(schema_1.resultIa01Header).set({
                 is_competent: data.is_competent,
-                group: data.group,
-                unit: data.unit,
-                element: data.element,
-                kuk: data.kuk,
             }).where((0, drizzle_orm_1.eq)(schema_1.resultIa01Header.id, header.id));
             const updated = yield drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.id, header.id) });
             if (!updated)
@@ -163,10 +159,6 @@ class IA01Service {
                 approved_assessee: updated.approved_assessee,
                 approved_assessor: updated.approved_assessor,
                 is_competent: updated.is_competent,
-                group: updated.group,
-                unit: updated.unit,
-                element: updated.element,
-                kuk: updated.kuk,
             };
         });
     }

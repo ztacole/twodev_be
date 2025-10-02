@@ -42,5 +42,34 @@ exports.AdminController = {
             message: 'Admin berhasil dibuat',
             data
         });
+    })),
+    updateAdmin: (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+        const id = Number(req.params.id);
+        const { address, phone_no, birth_date } = req.body;
+        if (!address && !phone_no && !birth_date) {
+            return res.status(400).json({
+                success: false,
+                message: 'Minimal satu field (address, phone_no, atau birth_date) harus diisi'
+            });
+        }
+        const data = yield admin_service_1.AdminService.updateAdmin(id, {
+            address,
+            phone_no,
+            birth_date
+        });
+        res.json({
+            success: true,
+            message: 'Admin berhasil diperbarui',
+            data
+        });
+    })),
+    deleteAdmin: (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+        const id = Number(req.params.id);
+        const data = yield admin_service_1.AdminService.deleteAdmin(id);
+        res.json({
+            success: true,
+            message: data.message,
+            data: { id: data.id }
+        });
     }))
 };

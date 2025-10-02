@@ -37,9 +37,6 @@ function createUploader(options) {
             const cleanKey = `__uploadCleaned_${options.basePath}`;
             try {
                 if (!fs_1.default.existsSync(uploadPath)) {
-                    if (fs_1.default.existsSync(uploadPath) && options.cleanBeforeUpload) {
-                        fs_1.default.rmSync(uploadPath, { recursive: true, force: true });
-                    }
                     fs_1.default.mkdirSync(uploadPath, { recursive: true });
                 }
                 else if (options.cleanBeforeUpload && !reqAny[cleanKey]) {

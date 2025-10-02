@@ -43,7 +43,7 @@ app.use('/twodev/api/users', user_routes_1.default);
 app.use('/twodev/api/auth', auth_routes_1.default);
 app.use('/twodev/api/dashboard', dashboard_routes_1.default);
 app.use('/twodev/api/approval', approval_routes_1.default);
-app.use('/twodev/api/admins', admin_routes_1.default);
+app.use('/twodev/api/admin', admin_routes_1.default);
 app.use('/twodev/api/occupations', occupation_routes_1.default);
 app.use('/twodev/api/schemes', scheme_routes_1.default);
 app.use('/twodev/api/assessor', assessor_routes_1.default);

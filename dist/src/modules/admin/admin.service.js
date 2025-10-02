@@ -32,29 +32,58 @@ exports.AdminService = {
     },
     createAdmin(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            // Check if user exists
             const existingUser = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, data.user_id) });
             if (!existingUser) {
                 throw new Error('User tidak ditemukan');
             }
-            // Check if user already has admin record
             const existingAdmin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, data.user_id) });
             if (existingAdmin) {
                 throw new error_1.DuplicateEntryError('Admin', `User ID ${data.user_id}`);
             }
-            // Create admin record
             yield drizzle_1.db.insert(schema_1.admin).values({
                 user_id: data.user_id,
                 address: data.address,
                 phone_no: data.phone_no,
                 birth_date: new Date(data.birth_date),
             });
-            // Get the created admin with user data
             const admin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, data.user_id) });
             if (!admin) {
                 throw new Error('Gagal membuat admin');
             }
             return Object.assign(Object.assign({}, admin), { user: existingUser });
+        });
+    },
+    updateAdmin(id, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existingAdmin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.id, id) });
+            if (!existingAdmin) {
+                throw new error_1.NotFoundError(`Admin dengan ID ${id}`);
+            }
+            const updateData = {};
+            if (data.address !== undefined)
+                updateData.address = data.address;
+            if (data.phone_no !== undefined)
+                updateData.phone_no = data.phone_no;
+            if (data.birth_date !== undefined)
+                updateData.birth_date = new Date(data.birth_date);
+            // Update admin record
+            yield drizzle_1.db.update(schema_1.admin).set(updateData).where((0, drizzle_orm_1.eq)(schema_1.admin.id, id));
+            // Get updated admin with user data
+            const updatedAdmin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.id, id) });
+            const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, updatedAdmin.user_id) });
+            return Object.assign(Object.assign({}, updatedAdmin), { user });
+        });
+    },
+    deleteAdmin(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Check if admin exists
+            const existingAdmin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.id, id) });
+            if (!existingAdmin) {
+                throw new error_1.NotFoundError(`Admin dengan ID ${id}`);
+            }
+            // Delete admin record
+            yield drizzle_1.db.delete(schema_1.admin).where((0, drizzle_orm_1.eq)(schema_1.admin.id, id));
+            return { id, message: 'Admin berhasil dihapus' };
         });
     },
 };
