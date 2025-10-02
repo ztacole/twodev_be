@@ -35,5 +35,40 @@ export const AdminController = {
             message: 'Admin berhasil dibuat', 
             data 
         });
+    }),
+
+    updateAdmin: asyncHandler(async (req: Request, res: Response) => {
+        const id = Number(req.params.id);
+        const { address, phone_no, birth_date } = req.body;
+
+        if (!address && !phone_no && !birth_date) {
+            return res.status(400).json({
+                success: false,
+                message: 'Minimal satu field (address, phone_no, atau birth_date) harus diisi'
+            });
+        }
+
+        const data = await AdminService.updateAdmin(id, {
+            address,
+            phone_no,
+            birth_date
+        });
+
+        res.json({
+            success: true,
+            message: 'Admin berhasil diperbarui',
+            data
+        });
+    }),
+
+    deleteAdmin: asyncHandler(async (req: Request, res: Response) => {
+        const id = Number(req.params.id);
+        const data = await AdminService.deleteAdmin(id);
+
+        res.json({
+            success: true,
+            message: data.message,
+            data: { id: data.id }
+        });
     })
 };
