@@ -61,6 +61,7 @@ export interface ScheduleRequest {
 }
 
 export interface ScheduleDetailRequest {
+    id?: number;
     assessor_id: number;
     location: string;
 }
@@ -68,7 +69,9 @@ export interface ScheduleDetailRequest {
 export interface updateScheduleRequest {
     start_date: string;
     end_date: string;
+    schedule_details?: ScheduleDetailRequest[];
 }
+
 export interface LetterAssignmentRequest {
     type: "assignments" | "verifications";
     number: string;

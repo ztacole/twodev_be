@@ -61,10 +61,43 @@ class ScheduleService {
             if (!existing) {
                 throw new error_1.NotFoundError('Schedule');
             }
-            yield drizzle_1.db.update(schema_1.assessmentSchedule).set({
-                start_date: new Date(data.start_date),
-                end_date: new Date(data.end_date),
-            }).where((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id));
+            yield drizzle_1.db.transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+                // Update schedule main fields
+                yield tx.update(schema_1.assessmentSchedule).set({
+                    start_date: new Date(data.start_date),
+                    end_date: new Date(data.end_date),
+                }).where((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id));
+                // If details not provided, skip details handling
+                if (!data.schedule_details)
+                    return;
+                // Fetch existing details for this schedule
+                const existingDetails = yield tx.select().from(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, id));
+                const existingIds = new Set(existingDetails.map(d => d.id));
+                const incomingIds = [];
+                for (const det of data.schedule_details) {
+                    if (det.id && existingIds.has(det.id)) {
+                        // Update existing detail
+                        yield tx.update(schema_1.scheduleDetail).set({
+                            assessor_id: det.assessor_id,
+                            location: det.location,
+                        }).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.id, det.id));
+                        incomingIds.push(det.id);
+                    }
+                    else {
+                        // Insert new detail
+                        yield tx.insert(schema_1.scheduleDetail).values({
+                            schedule_id: id,
+                            assessor_id: det.assessor_id,
+                            location: det.location,
+                        });
+                    }
+                }
+                // Delete details that exist but not present in incoming payload
+                const idsToRemove = existingDetails.map(d => d.id).filter(idVal => !incomingIds.includes(idVal));
+                if (idsToRemove.length > 0) {
+                    yield tx.delete(schema_1.scheduleDetail).where((0, drizzle_orm_1.inArray)(schema_1.scheduleDetail.id, idsToRemove));
+                }
+            }));
             const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id) });
             if (!schedule)
                 throw new error_1.NotFoundError('Schedule');

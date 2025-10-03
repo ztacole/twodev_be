@@ -70,10 +70,45 @@ export class ScheduleService {
             throw new NotFoundError('Schedule');
         }
 
-        await db.update(scheduleTable).set({
-            start_date: new Date(data.start_date),
-            end_date: new Date(data.end_date),
-        }).where(eq(scheduleTable.id, id));
+        await db.transaction(async (tx) => {
+            // Update schedule main fields
+            await tx.update(scheduleTable).set({
+                start_date: new Date(data.start_date),
+                end_date: new Date(data.end_date),
+            }).where(eq(scheduleTable.id, id));
+
+            // If details not provided, skip details handling
+            if (!data.schedule_details) return;
+
+            // Fetch existing details for this schedule
+            const existingDetails = await tx.select().from(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, id));
+            const existingIds = new Set(existingDetails.map(d => d.id));
+
+            const incomingIds: number[] = [];
+            for (const det of data.schedule_details) {
+                if (det.id && existingIds.has(det.id)) {
+                    // Update existing detail
+                    await tx.update(scheduleDetailTable).set({
+                        assessor_id: det.assessor_id,
+                        location: det.location,
+                    }).where(eq(scheduleDetailTable.id, det.id));
+                    incomingIds.push(det.id);
+                } else {
+                    // Insert new detail
+                    await tx.insert(scheduleDetailTable).values({
+                        schedule_id: id,
+                        assessor_id: det.assessor_id,
+                        location: det.location,
+                    });
+                }
+            }
+
+            // Delete details that exist but not present in incoming payload
+            const idsToRemove = existingDetails.map(d => d.id).filter(idVal => !incomingIds.includes(idVal));
+            if (idsToRemove.length > 0) {
+                await tx.delete(scheduleDetailTable).where(inArray(scheduleDetailTable.id, idsToRemove));
+            }
+        });
 
         const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, id) });
         if (!schedule) throw new NotFoundError('Schedule');
@@ -344,7 +379,7 @@ export class ScheduleService {
         page.drawImage(qrCode,
             { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth, height: signatureWidth }
         );
-        
+
         const LSPIcon = path.join(__dirname, "../../../public/images/logo-lsp.png");
         const LSPIconPath = await loadAndEmbedImage(pdfDoc, LSPIcon, "png");
         page.drawImage(LSPIconPath,
