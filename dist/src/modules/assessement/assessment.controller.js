@@ -251,9 +251,15 @@ AssessmentController.generateRecaptPdf = (0, async_handler_1.asyncHandler)((req,
             });
         }
         const data = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+        if (data.assessment.assessees.length > 15) {
+            return res.status(400).json({
+                success: false,
+                message: "Jumlah assessee melebihi batas maksimal untuk di-generate PDF (15 orang)",
+            });
+        }
         const pdfBytes = yield assessment_service_1.AssessmentService.generateRecaptPDF(data.assessment);
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `attachment; filename=berita-acara-${scheduleDetailId}.pdf`);
+        res.setHeader("Content-Disposition", "attachment; filename=\"BERITA ACARA HASIL REKOMENDASI PENILAIAN.pdf\"");
         res.send(Buffer.from(pdfBytes));
     }
     catch (error) {
@@ -269,7 +275,7 @@ AssessmentController.generateRecaptPdfForAdmin = (0, async_handler_1.asyncHandle
     if (!scheduleDetailId) {
         return res.status(400).json({
             success: false,
-            message: "Schedule ID dan Assessor ID harus diisi",
+            message: "Schedule ID ID harus diisi",
         });
     }
     const assessorId = Number(req.params.assessorId);
@@ -287,6 +293,12 @@ AssessmentController.generateRecaptPdfForAdmin = (0, async_handler_1.asyncHandle
         });
     }
     const data = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+    if (data.assessment.assessees.length > 15) {
+        return res.status(400).json({
+            success: false,
+            message: "Jumlah assessee melebihi batas maksimal untuk di-generate PDF (15 orang)",
+        });
+    }
     const pdfBytes = yield assessment_service_1.AssessmentService.generateRecaptPDF(data.assessment);
     const safe = (str) => str.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_");
     const code = safe(data.assessment.code);
@@ -300,4 +312,47 @@ AssessmentController.generateRecaptPdfForAdmin = (0, async_handler_1.asyncHandle
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename=rekap-${code}-${assessorName}-${startDate}_sampai_${endDate}.pdf`);
     res.send(Buffer.from(pdfBytes));
+}));
+AssessmentController.generateUkkEvaluationPdf = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const scheduleDetailId = Number(req.params.scheduleDetailId);
+        if (!scheduleDetailId) {
+            return res.status(400).json({
+                success: false,
+                message: "Schedule ID dan Assessor ID harus diisi",
+            });
+        }
+        const schedule = yield schedule_service_1.ScheduleService.getScheduleDetailById(scheduleDetailId);
+        if (!schedule) {
+            return res.status(404).json({
+                success: false,
+                message: "Jadwal tidak ditemukan",
+            });
+        }
+        const assessor = yield assessor_service_1.AssessorService.getAssessorById(schedule.assessor_id);
+        if (!assessor) {
+            return res.status(404).json({
+                success: false,
+                message: "Assessor tidak ditemukan",
+            });
+        }
+        const data = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
+        if (data.assessment.assessees.length > 15) {
+            return res.status(400).json({
+                success: false,
+                message: "Jumlah assessee melebihi batas maksimal untuk di-generate PDF (15 orang)",
+            });
+        }
+        const pdfBytes = yield assessment_service_1.AssessmentService.generateUkkEvaluationPdf(data.assessment);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "attachment; filename=\"FORM PENILAIAN UKK.pdf\"");
+        res.send(Buffer.from(pdfBytes));
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Terjadi kesalahan dalam menghasilkan PDF",
+            error: error.message
+        });
+    }
 }));

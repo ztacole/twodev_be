@@ -21,6 +21,21 @@ export async function embedQrCode(
   return await pdfDoc.embedPng(qrImageBytes);
 }
 
+/**
+ * Draws a Kop Surat image on a PDF page.
+ *
+ * @param pdfDoc The PDF document instance to draw on.
+ * @param page The PDF page to draw on.
+ * @param image The path to the image file to draw.
+ * @param options An options object with the following properties:
+ *   - imagePath: The absolute path to the image file.
+ *   - type: The type of the image file. One of "png" or "jpg".
+ *   - marginX: The x-coordinate of the starting position of the image.
+ *   - marginTop: The y-coordinate of the starting position of the image.
+ *   - height: The height of the image in pixels.
+ *
+ * @returns A promise that resolves to the y-coordinate of the position after the last line of text has been drawn.
+ */
 export async function kopSurat(
   pdfDoc: PDFDocument,
   page: PDFPage,

@@ -69,6 +69,7 @@ router.get('/navigation/admin/:resultId', authenticateToken, adminMiddleware, As
 router.get('/assessment-recapt/:scheduleDetailId', authenticateToken, assessorMiddleware, AssessmentController.getAssessmentRecapt);
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssessmentRecaptForAdmin);
 router.get('/recap/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMiddleware, AssessmentController.generateRecaptPdf);
+router.get('/ukk-evaluation/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMiddleware, AssessmentController.generateUkkEvaluationPdf);
 
 router.post('/apl-01/create-self-data', authenticateToken, assesseeMiddleware, APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', authenticateToken, assesseeMiddleware, 

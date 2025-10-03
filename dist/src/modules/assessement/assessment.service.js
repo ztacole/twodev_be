@@ -1670,7 +1670,7 @@ class AssessmentService {
             });
             y = currentY;
             // === NOTE ===
-            (0, pdfDraw_helper_1.drawParagraph)(page, "Selama pelaksanaan rekomendasi telah terjadi hal penting sebagai berikut :", 50, y, font, fontSizeSmall);
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, "Selama pelaksanaan rekomendasi telah terjadi hal penting sebagai berikut :", 50, y, font, fontSizeSmall) + lLineGap;
             const boxSize = 12;
             const boxX = 50;
             let boxY = y - boxSize * 2 + 10 - 6;
@@ -1682,7 +1682,7 @@ class AssessmentService {
             boxY -= lineGap;
             (0, pdfDraw_helper_1.drawParagraph)(page, "catatan : ...........................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
             (0, pdfDraw_helper_1.drawParagraph)(page, "................................................................................................................................................................", 50, boxY - boxSize * 3, font, fontSizeSmall);
-            y = boxY - boxSize * 4;
+            y = boxY - boxSize * 4 - lineGap;
             (0, pdfDraw_helper_1.drawParagraph)(page, "Demikianlah, berita acara ini dibuat sesuai dengan kejadian yang sebenernya, untuk digunakan sebagaimana mestinya.", 50, y, font, fontSizeSmall);
             // === SIGNATURE ===
             const signatureX = 50;
@@ -1699,6 +1699,216 @@ class AssessmentService {
             page.drawImage(qrCode, { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth });
             const pdfBytes = yield pdfDoc.save();
             return pdfBytes;
+        });
+    }
+    static generateUkkEvaluationPdf(assessment) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // === Create a new PDF document ===
+            const pdfDoc = yield pdf_lib_1.PDFDocument.create();
+            const page = pdfDoc.addPage([612, 936]);
+            //  === Dates ===
+            const now = new Date();
+            const months = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            const day = now.getDate();
+            const month = months[now.getMonth()];
+            const year = now.getFullYear();
+            // === Fonts ===
+            const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
+            const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
+            const iconFont = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.ZapfDingbats);
+            const fontSizeSmall = 11;
+            let y = page.getHeight() - 50;
+            const l2LineGap = 8;
+            const lLineGap = 12;
+            const xlLineGap = 20;
+            // === Header ===
+            const image = "../../public/images/kop-surat-lsp-smkn24j.png";
+            y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page, image);
+            // === TITLE ===
+            const headerText = [
+                "FORM PENILAIAN",
+                "UJI KOMPETENSI KEAHLIAN",
+            ];
+            headerText.forEach(text => {
+                y = (0, pdfDraw_helper_1.drawParagraph)(page, text, 40, y, fontBold, fontSizeSmall, "center");
+            });
+            y -= xlLineGap;
+            // === TABLE CONTENT ===
+            const tableData = assessment.assessees.map((assessee, index) => ({
+                no: index + 1,
+                name: assessee.name,
+            }));
+            const tableTop = y + 7;
+            const rowHeight = 25;
+            const colWidths = [30, 260, 75, 75, 75];
+            const headerColor = (0, pdf_lib_1.rgb)(1, 0.95, 0.7);
+            let x = 50;
+            // === Column No ===
+            page.drawRectangle({
+                x, y: tableTop - rowHeight * 3 + 12,
+                width: colWidths[0], height: rowHeight * 4 - 23,
+                color: headerColor, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1
+            });
+            page.drawText("No", {
+                x: x + colWidths[0] / 2 - 8,
+                y: tableTop - rowHeight - 3,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            x += colWidths[0];
+            // === Column Nama Peserta ===
+            page.drawRectangle({
+                x, y: tableTop - rowHeight * 3 + 12,
+                width: colWidths[1], height: rowHeight * 4 - 23,
+                color: headerColor, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1
+            });
+            page.drawText("Nama Peserta", {
+                x: x + colWidths[1] / 2 - 40,
+                y: tableTop - rowHeight - 3,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            x += colWidths[1];
+            // === Kolom Gabungan Rekomendasi (K, BK, SK) ===
+            page.drawRectangle({
+                x, y: tableTop - rowHeight * 2 + 11,
+                width: colWidths[2] + colWidths[3] + colWidths[4],
+                height: rowHeight * 3 - 22,
+                color: headerColor, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1
+            });
+            page.drawText("SKOR PENILAIAN", { x: x + (colWidths[2] + colWidths[3] + colWidths[4]) / 2 - 45, y: tableTop - 3, size: fontSizeSmall, font: fontBold });
+            page.drawText("BUTCHER COMMIS", { x: x + (colWidths[2] + colWidths[3] + colWidths[4]) / 2 - 50, y: tableTop - rowHeight + 9, size: fontSizeSmall, font: fontBold });
+            // === Subkolom BK ===
+            page.drawRectangle({
+                x, y: tableTop - rowHeight * 3 + 12,
+                width: colWidths[2],
+                height: rowHeight * 2 - 9,
+                color: headerColor,
+                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                borderWidth: 1
+            });
+            page.drawText("< 85", {
+                x: x + colWidths[2] / 2 - 10,
+                y: tableTop - rowHeight * 2 + 16,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            page.drawText("Belum", {
+                x: x + colWidths[2] / 2 - 14,
+                y: tableTop - rowHeight * 2 + 4,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            page.drawText("Kompeten", {
+                x: x + colWidths[2] / 2 - 24,
+                y: tableTop - rowHeight * 2 - 8,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            // === Subkolom K ===
+            page.drawRectangle({
+                x: x + colWidths[2],
+                y: tableTop - rowHeight * 3 + 12,
+                width: colWidths[3],
+                height: rowHeight * 2 - 9,
+                color: headerColor,
+                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                borderWidth: 1
+            });
+            page.drawText("86-90", {
+                x: x + colWidths[2] + colWidths[3] / 2 - 10,
+                y: tableTop - rowHeight * 2 + 16,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            page.drawText("Kompeten", {
+                x: x + colWidths[2] + colWidths[3] / 2 - 24,
+                y: tableTop - rowHeight * 2 - 8,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            // === Subkolom SK ===
+            page.drawRectangle({
+                x: x + colWidths[2] + colWidths[3],
+                y: tableTop - rowHeight * 3 + 12,
+                width: colWidths[4],
+                height: rowHeight * 2 - 9,
+                color: headerColor,
+                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                borderWidth: 1
+            });
+            page.drawText("91-100 ", {
+                x: x + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 15,
+                y: tableTop - rowHeight * 2 + 16,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            page.drawText("Sangat", {
+                x: x + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 14,
+                y: tableTop - rowHeight * 2 + 4,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            page.drawText("Kompeten", {
+                x: x + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 24,
+                y: tableTop - rowHeight * 2 - 8,
+                size: fontSizeSmall,
+                font: fontBold
+            });
+            let currentY = tableTop - rowHeight * 4 + 12;
+            // === TABLE CONTENT ===
+            tableData.forEach(row => {
+                let x = 50;
+                page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
+                x += colWidths[0];
+                page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
+                x += colWidths[1];
+                page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                page.drawText('', { x: x + colWidths[2] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+                x += colWidths[2];
+                page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                page.drawText('', { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+                x += colWidths[3];
+                page.drawRectangle({ x, y: currentY, width: colWidths[4], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                page.drawText('', { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+                currentY -= rowHeight;
+            });
+            y = currentY;
+            // === NOTE ===
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, "Selama pelaksanaan uji kompetensi keahlian telah terjadi hal penting sebagai berikut :", 50, y, font, fontSizeSmall) + lLineGap;
+            const boxSize = 12;
+            const boxX = 50;
+            let boxY = y - boxSize * 2 + 10 - 6;
+            page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
+            (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar", boxX + boxSize + 5, boxY, font, fontSizeSmall);
+            boxY -= l2LineGap;
+            page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
+            (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);
+            boxY -= l2LineGap;
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, "catatan : .......................................................................................................................................................", boxX, boxY - boxSize * 2, font, fontSizeSmall);
+            boxY -= l2LineGap;
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, "......................................................................................................................................................................", boxX, boxY - boxSize * 3, font, fontSizeSmall);
+            (0, pdfDraw_helper_1.drawParagraph)(page, "Demikian, form penilaian ini dibuat sesuai dengan kejadian yang sebenarnya, untuk digunakan sebagaimana mestinya.", 50, y, font, fontSizeSmall);
+            // === SIGNATURE ===
+            const signatureX = 50;
+            let signatureY = y - 50;
+            const signatureWidth = 60;
+            const signatureDate = `Jakarta, ${day + " " + month + " " + year}`;
+            const assessor_name = assessment.schedule.assessor.full_name;
+            const signatureNameLength = font.widthOfTextAtSize(assessor_name, fontSizeSmall);
+            (0, pdfDraw_helper_1.drawParagraph)(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, `Assessor`, signatureX + (signatureNameLength / 2) - (signatureWidth / 2), signatureY - 15, font, fontSizeSmall, "right");
+            signatureY -= 20;
+            const qrData = (0, hashids_1.getAssessorUrl)(assessment.schedule.assessor.id);
+            const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
+            page.drawImage(qrCode, { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth });
+            (0, pdfDraw_helper_1.drawParagraph)(page, `${assessor_name}`, signatureX, signatureY - signatureWidth - 12, font, fontSizeSmall, "right");
+            return yield pdfDoc.save();
         });
     }
 }
