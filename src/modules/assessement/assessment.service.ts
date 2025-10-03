@@ -1665,7 +1665,7 @@ export class AssessmentService {
         const xlLineGap = 20;
 
         // === HEADER ===
-        const image = "../../public/images/kop-surat.png";
+        const image = "../../public/images/kop-surat-lsp-smkn24j.png";
         y = await kopSurat(pdfDoc, page, image);
 
         // === TITLE ===

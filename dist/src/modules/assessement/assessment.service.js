@@ -1559,7 +1559,7 @@ class AssessmentService {
             const lLineGap = 12;
             const xlLineGap = 20;
             // === HEADER ===
-            const image = "../../public/images/kop-surat.png";
+            const image = "../../public/images/kop-surat-lsp-smkn24j.png";
             y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page, image);
             // === TITLE ===
             const headerText = [

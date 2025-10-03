@@ -248,7 +248,7 @@ class ScheduleService {
             const lLineGap = 12;
             const xlLineGap = 20;
             // === Header ===
-            const image = "../../public/images/kop-surat.png";
+            const image = "../../public/images/kop-surat-lsp-smkn24j.png";
             y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page, image);
             // === Title ===
             y = (0, pdfDraw_helper_1.drawParagraph)(page, "SURAT TUGAS", 40, y, fontBold, fontSizeSmall, "center", (0, pdf_lib_1.rgb)(0, 0, 0), undefined, undefined, true);

@@ -10,4 +10,5 @@ node_modules
 
 /public/uploads
 
-/dist/public
+/dist/public/*
+!/dist/public/images
