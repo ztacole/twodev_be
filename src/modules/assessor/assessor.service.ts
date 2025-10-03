@@ -580,8 +580,7 @@ export class AssessorService {
         return {
             id: assessor.id,
             user_id: assessor.user_id,
-            scheme_id: assessor.scheme_id,
-            full_name: assessor.name,
+            name: assessor.name,
             email: assessor.email,
             birth_location: assessor.birth_location,
             birth_date: assessor.birth_date,
@@ -589,15 +588,8 @@ export class AssessorService {
             institution: assessor.institution,
             address: assessor.address,
             phone_no: assessor.phone_no,
-            created_at: assessor.created_at,
-            updated_at: assessor.updated_at,
-            scheme_code: assessor.scheme?.code,
-            scheme_name: assessor.scheme?.name,
-            tax_id_number: assessor.detail?.tax_id_number,
-            bank_book_cover: assessor.detail?.bank_book_cover,
-            certificate: assessor.detail?.certificate,
-            id_card: assessor.detail?.id_card,
-            national_id: assessor.detail?.national_id
+            scheme: assessor.scheme,
+            detail: assessor.detail || null
         };
     }
 }

@@ -521,12 +521,10 @@ class AssessorService {
         });
     }
     static formatAssessorResponse(assessor) {
-        var _a, _b, _c, _d, _e, _f, _g;
         return {
             id: assessor.id,
             user_id: assessor.user_id,
-            scheme_id: assessor.scheme_id,
-            full_name: assessor.name,
+            name: assessor.name,
             email: assessor.email,
             birth_location: assessor.birth_location,
             birth_date: assessor.birth_date,
@@ -534,15 +532,8 @@ class AssessorService {
             institution: assessor.institution,
             address: assessor.address,
             phone_no: assessor.phone_no,
-            created_at: assessor.created_at,
-            updated_at: assessor.updated_at,
-            scheme_code: (_a = assessor.scheme) === null || _a === void 0 ? void 0 : _a.code,
-            scheme_name: (_b = assessor.scheme) === null || _b === void 0 ? void 0 : _b.name,
-            tax_id_number: (_c = assessor.detail) === null || _c === void 0 ? void 0 : _c.tax_id_number,
-            bank_book_cover: (_d = assessor.detail) === null || _d === void 0 ? void 0 : _d.bank_book_cover,
-            certificate: (_e = assessor.detail) === null || _e === void 0 ? void 0 : _e.certificate,
-            id_card: (_f = assessor.detail) === null || _f === void 0 ? void 0 : _f.id_card,
-            national_id: (_g = assessor.detail) === null || _g === void 0 ? void 0 : _g.national_id
+            scheme: assessor.scheme,
+            detail: assessor.detail || null
         };
     }
 }

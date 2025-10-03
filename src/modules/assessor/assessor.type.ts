@@ -2,8 +2,7 @@
 export interface AssessorResponse {
     id: number;
     user_id: number;
-    scheme_id: number;
-    full_name: string;
+    name: string;
     email: string;
     birth_location: string;
     birth_date: Date;
@@ -11,15 +10,8 @@ export interface AssessorResponse {
     institution: string;
     address: string;
     phone_no: string;
-    created_at?: Date;
-    updated_at?: Date;
-    scheme_code?: string;
-    scheme_name?: string;
-    tax_id_number?: string;
-    bank_book_cover?: string;
-    certificate?: string;
-    id_card?: string;
-    national_id?: string;
+    scheme: SchemeResponse;
+    detail?: AssessorDetailResponse;
 }
 
 interface SchemeResponse {
