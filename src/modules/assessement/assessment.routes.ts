@@ -18,6 +18,7 @@ import { AK02Controller } from "./ak-02/ak-02.controller";
 import { AK03Controller } from "./ak-03/ak-03.controller";
 import { AK04Controller } from "./ak-04/ak-04.controller";
 import { AK05Controller } from "./ak-05/ak-05.controller";
+import { ResultPdfController } from "./result-pdf/result-pdf.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
 import { upload } from "./apl-01/upload-config";
 // import { uploadIA02 } from "./ia-02/upload-conifg";
@@ -58,6 +59,9 @@ router.put('/:id', authenticateToken, adminMiddleware, AssessmentController.upda
 router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('assessment'), AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
+
+// RESULT PDF
+//-- Route Example: /api/assessments/result/:resultId/APL01/export --//
 
 router.get('/results/status/admin', authenticateToken, adminMiddleware, AssessmentController.getAssessmentResultsForAdmin);
 router.get('/results/status/admin/assessees/:assessmentId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssesseesByAssessmentAndAssessor);
