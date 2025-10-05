@@ -1,68 +1,112 @@
-import { DuplicateEntryError, NotFoundError } from "../../../common/error";
-import { db } from "../../../config/drizzle";
+import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from "pdf-lib";
+import fs from "fs";
+import path from "path";
+import { kopSurat } from "../../../helper/pdfAssets.helper";
+import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
+import { IA01Service } from "../ia-01/ia-01.service";
+import { createNewPage, drawCertificateLayout, drawElementLayout, drawTable, drawUnitGroupLayout, drawUnitLayout } from "./helper";
 
-import {
-    user as userTable,
-    assessment as assessmentTable,
-    occupation as occupationTable,
-    scheme as schemeTable,
-    assessmentSchedule as assessmentScheduleTable,
-    scheduleDetail as scheduleDetailTable,
-    ucApl02 as ucApl02Table,
-    elementApl02 as elementApl02Table,
-    elementDetailsApl02 as elementDetailsApl02Table,
-    groupIa01 as groupIa01Table,
-    groupIa02 as groupIa02Table,
-    groupIa03 as groupIa03Table,
-    ucIa01 as ucIa01Table,
-    ucIa02 as ucIa02Table,
-    ucIa03 as ucIa03Table,
-    elementIa as elementIaTable,
-    elementDetailsIa as elementDetailsIaTable,
-    ia02Tool as ia02ToolTable,
-    ia03Question as ia03QuestionTable,
-    ia05Question as ia05QuestionTable,
-    ia07Question as ia07QuestionTable,
-    questionOption as questionOptionTable,
-    result as resultTable,
-    assessor as assessorTable,
-    assessee as assesseeTable,
-    resultDoc as resultDocTable,
-    resultApl02Header as resultApl02HeaderTable,
-    resultIa01Header as resultIa01HeaderTable,
-    resultIa02Header as resultIa02HeaderTable,
-    resultIa03Header as resultIa03HeaderTable,
-    resultIa05Header as resultIa05HeaderTable,
-    resultIa07Header as resultIa07HeaderTable,
-    resultAk01Header as resultAk01HeaderTable,
-    resultAk02Header as resultAk02HeaderTable,
-    resultAk03Header as resultAk03HeaderTable,
-    resultAk04 as resultAk04Table,
-    resultAk05 as resultAk05Table,
-    ia02Pdf as ia02PdfTable,
-    assessee,
-    resultIa01Header,
-    resultIa02Header,
-    resultIa03Header,
-    resultIa05Header,
-    resultAk01Header,
-    resultAk02Header,
-    resultAk03Header,
-    resultAk04,
-    resultAk05,
-    assessor,
-    resultIa07Header,
-    scheduleDetail,
-    resultApl02,
-    resultIa01,
-    resultIa05,
-} from "../../../../drizzle/schema";
-import { eq, and, desc, asc, is, sql } from "drizzle-orm";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { embedQrCode, kopSurat } from "../../../helper/pdfAssets.helper";
-import { drawParagraph, drawMixedParagraph, loadAndEmbedImage } from "../../../helper/pdfDraw.helper";
-import { getAssessorUrl } from "../../../helper/hashids";
+interface ChecklistData {
+    schemaTitle: string;
+    schemaNumber: string;
+    tuk: string;
+    assessor: string;
+    assessee: string;
+    date: string;
+    pekerjaan: {
+        title: string;
+        unit: {
+            kodeUnit: string;
+            judulUnit: string;
+            elemen: {
+                no: number;
+                elemen: string;
+                kriteria: string[];
+                standar: string;
+                ya: boolean;
+                tidak: boolean;
+            }[];
+        }[];
+    }[];
+}
+
+const headerImage = "../../public/images/kop-surat-lsp-smkn24j.png";
 
 export class ResultPdfService {
-    
+    static async generateIA01(resultId: number) {
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
+
+        const resultDetails = await IA01Service.getResultDetails(resultId);
+
+        const groups: GroupIA01Response[] = await IA01Service.getIA01Groups(resultId);
+
+        // ==== TITLE ====
+        page.drawText(
+            "FR.IA.01.CL - CEKLIS OBSERVASI AKTIVITAS DI TEMPAT KERJA ATAU TEMPAT KERJA SIMULASI",
+            { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 }
+        );
+        y -= 30;
+
+        // ==== INFO SKEMA ====
+        const info = [
+            ["Judul", ":", resultDetails?.assessment?.occupation?.name ?? "-"],
+            ["Nomor", ":", resultDetails?.assessment?.code ?? "-"],
+            ["TUK", ":", resultDetails?.tuk ?? "-"],
+            ["Nama Assesor", ":", resultDetails?.assessor?.name ?? "-"],
+            ["Nama Asesi", ":", resultDetails?.assessee?.name ?? "-"],
+            ["Tanggal", ":", resultDetails?.created_at?.toLocaleString() ?? "-"],
+        ];
+        y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+        y -= 40;
+
+        // ==== LOOP GROUPS ====
+        for (let i = 0; i < groups.length; i++) {
+            const group = groups[i];
+
+            if (y < 150) {
+                ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+            }
+            
+            y = await drawUnitGroupLayout(page, i, group, 40, y, 20, font, fontBold);
+            y -= 20;
+
+            // Loop unit
+            for (const unit of group.units) {
+                // Ambil elemen dan detail dari unit
+                y = await drawUnitLayout(page, i, unit.unit_code, unit.title, 40, y, 20, font, fontBold);
+                y -= 20;
+
+                const elements = await IA01Service.getElementsByUnitId(resultId, unit.id);
+
+                // const header = [["No", "Elemen", "Kriteria Unjuk Kerja", "Standar", "Ya", "Tidak"]];
+                // const rows: string[][] = [];
+
+                // elements.forEach((el, elIdx) => {
+                //     el.details.forEach((detail, detIdx) => {
+                //         rows.push([
+                //             `${elIdx + 1}.${detIdx + 1}`,
+                //             el.title,
+                //             detail.description,
+                //             detail.benchmark,
+                //             detail.result?.is_competent ? "V" : "",
+                //             detail.result && !detail.result.is_competent ? "V" : "",
+                //         ]);
+                //     });
+                // });
+
+                if (y < 150) {
+                    ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+                }
+
+                y = await drawElementLayout(page, elements, 40, y, font, fontBold);
+                y -= 20;
+            }
+        }
+
+        return await pdfDoc.save();
+    }
 }

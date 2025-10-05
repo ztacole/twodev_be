@@ -3,5 +3,15 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../../common/async.handler";
 
 export class ResultPdfController {
-    
+    static generateIA01 = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+
+        const pdfBytes = await ResultPdfService.generateIA01(resultId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            "attachment; filename=\"IA-01.pdf\""
+        );
+        res.send(Buffer.from(pdfBytes));
+    })
 }
