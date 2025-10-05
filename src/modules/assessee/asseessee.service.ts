@@ -87,12 +87,20 @@ export class AssesseeService {
             job: assesseeJob
         }).from(assesseeTable)
             .leftJoin(userTable, eq(assesseeTable.user_id, userTable.id))
-            .innerJoin(assesseeJob, eq(assesseeJob.assessee_id, assesseeTable.id))
+            .leftJoin(assesseeJob, eq(assesseeJob.assessee_id, assesseeTable.id))
             .where(eq(assesseeTable.id, id));
+        
         if (assessee.length === 0) throw new NotFoundError('Assessee');
-        const [assesseeData] = assessee;
+        
+        // If you expect multiple jobs, you might want to aggregate them
+        const assesseeData = {
+            ...assessee[0],
+            jobs: assessee.map(row => row.job).filter(job => job !== null)
+        };
+        
         return this.formatAssesseeResponse(assesseeData);
     }
+    
 
     static async createAssessee(data: AssesseeRequest): Promise<AssesseeResponse> {
         const existing = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, data.user_id) });
