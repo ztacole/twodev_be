@@ -4,6 +4,8 @@ import ExcelJS from 'exceljs';
 import { asyncHandler } from "../../common/async.handler";
 import { JwtPayload } from "jsonwebtoken";
 import { LetterAssignmentRequest, updateScheduleRequest } from "./schedule.type";
+import { AssessmentService } from "../assessement/assessment.service";
+import { APL02Service } from "../assessement/apl-02/apl-02.service";
 export class ScheduleController {
     static createSchedule = asyncHandler(async (req: Request, res: Response) => {
         const schedule = await ScheduleService.createSchedule(req.body);
@@ -180,17 +182,47 @@ export class ScheduleController {
         try {
             const { type } = req.query;
             const body: LetterAssignmentRequest = req.body;
+            const assessment_id = Number(req.body.assessment_id);
+            const result_id = Number(req.body.result_id);            
+
+            const data_assessment = await AssessmentService.getAssessmentById(assessment_id);
+            if(!data_assessment) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Assessment tidak ditemukan"
+                });
+            }
+            const data_result = await APL02Service.getUnitsAPL02(result_id);
+            if(!data_result) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Hasil assessment tidak ditemukan"
+                });
+            }
         
-            const letter = await ScheduleService.generateLetterAssignment({
-                ...body,
-                type: type as 'assignments' | 'verifications'
-            });
-        
+            let letter: any;
             let filename = '';
-            if (type === 'verifications') {
+            if (type !== 'assessor') {
+                letter = await ScheduleService.generateLetterAssignment({
+                    ...body,
+                    type: type as 'assignments' | 'verifications'
+                });
+
+                if(type === 'verifications') {
+                    filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
+                } else if(type === 'assignments') {
+                    filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
+                }
                 filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
-            } else {
+            } else if(type === 'assessor') {
+                letter = await ScheduleService.generateLetterAssignmentAssessor(data_assessment, data_result, body);
                 filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
+            } else {
+                res.status(400).json({
+                    success: false,
+                    message: "Tipe surat tugas tidak valid. Gunakan 'assignments', 'verifications', atau 'assessor'."
+                });
+                return;
             }
         
             res.setHeader("Content-Type", "application/pdf");
