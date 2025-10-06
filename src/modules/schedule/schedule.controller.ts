@@ -182,23 +182,6 @@ export class ScheduleController {
         try {
             const { type } = req.query;
             const body: LetterAssignmentRequest = req.body;
-            const assessment_id = Number(req.body.assessment_id);
-            const result_id = Number(req.body.result_id);            
-
-            const data_assessment = await AssessmentService.getAssessmentById(assessment_id);
-            if(!data_assessment) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Assessment tidak ditemukan"
-                });
-            }
-            const data_result = await APL02Service.getUnitsAPL02(result_id);
-            if(!data_result) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Hasil assessment tidak ditemukan"
-                });
-            }
         
             let letter: any;
             let filename = '';
@@ -215,6 +198,24 @@ export class ScheduleController {
                 }
                 filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
             } else if(type === 'assessor') {
+                const assessment_id = Number(req.body.assessment_id);
+                const result_id = Number(req.body.result_id);
+
+                const data_assessment = await AssessmentService.getAssessmentById(assessment_id);
+                if (!data_assessment) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Assessment tidak ditemukan"
+                    });
+                }
+                const data_result = await APL02Service.getUnitsAPL02(result_id);
+                if (!data_result) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Hasil assessment tidak ditemukan"
+                    });
+                }
+                
                 letter = await ScheduleService.generateLetterAssignmentAssessor(data_assessment, data_result, body);
                 filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
             } else {
