@@ -342,6 +342,9 @@ export async function loadAndEmbedImage(
  * @param labelWidth The width of the label in pixels. Defaults to 110.
  * @param gap The gap between the label and value in pixels. Defaults to 8.
  * @param lineHeight The height of each line of text in pixels. Defaults to the font size plus 4.
+ * @param color The color of the text.
+ * @param align The alignment of the text. One of "left", "right", "center", or "justify".
+ * @param maxWidth The maximum width of the text before it wraps to a new line. If not provided, the text will wrap at the edge of the page.
  * @returns The y-coordinate of the position after the last line of text has been drawn.
  */
 export function drawField(
@@ -354,38 +357,52 @@ export function drawField(
   size: number,
   labelWidth: number = 110,
   gap: number = 8,
-  lineHeight: number = size + 4
+  lineHeight: number = size + 4,
+  color: RGB = rgb(0, 0, 0),
+  align: TextAlign = "left",
+  maxWidth?: number
 ): number {
+  const { width } = page.getSize();
+
   page.drawText(label, {
     x: startX,
     y,
     size,
     font,
-    color: rgb(0, 0, 0),
+    color,
   });
 
   const colonX = startX + labelWidth + 2;
-  page.drawText(":", {
-    x: colonX,
-    y,
-    size,
-    font,
-    color: rgb(0, 0, 0),
-  });
-
-  const valueX = colonX + gap;
-  const lines = value.split("\n");
-
-  lines.forEach((line, idx) => {
-    page.drawText(line, {
-      x: valueX,
-      y: y - (idx * lineHeight),
+  if(label !== '') {
+    page.drawText(":", {
+      x: colonX,
+      y,
       size,
       font,
-      color: rgb(0, 0, 0),
+      color,
     });
-  });
+  }
 
-  return y - (lines.length * lineHeight);
+  const valueX = colonX + gap;
+  const usableWidth = maxWidth ?? width - valueX - 40
+
+  const lines = value.split("\n");
+  let currentY = y;
+
+  for (const line of lines) {
+    currentY = drawParagraph(
+      page,
+      line.trim(),
+      valueX,
+      currentY,
+      font,
+      size,
+      align,
+      color,
+      usableWidth,
+      lineHeight
+    );
+  }
+
+  return currentY;
 }
-

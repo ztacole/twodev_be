@@ -23,13 +23,14 @@ import {
 } from '../../../drizzle/schema';
 import { and, between, eq, gte, inArray, lte } from 'drizzle-orm';
 import { ActiveScheduleResponse, DetailResponse, LetterAssignmentRequest, ScheduleRequest, ScheduleResponse, updateScheduleRequest } from './schedule.type';
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFFont, PDFPage, RGB, StandardFonts, drawLine, drawRectangle, rgb } from "pdf-lib";
 import { embedQrCode, kopSurat } from "../../helper/pdfAssets.helper";
 import { drawParagraph, drawMixedParagraph, loadAndEmbedImage, drawField } from "../../helper/pdfDraw.helper";
 import { getAssessorUrl } from "../../helper/hashids";
-import { formatDate, formatDateRange, formatDay } from '../../helper/date.helper';
+import { formatDate, formatDateRange, formatDateRangeSD, formatDay, formatTimeRange } from '../../helper/date.helper';
 import path from 'path';
 import { AssessorService } from '../assessor/assessor.service';
+import { sign } from 'crypto';
 
 export class ScheduleService {
     static async createSchedule(data: ScheduleRequest): Promise<ScheduleResponse> {
@@ -281,9 +282,9 @@ export class ScheduleService {
     }: LetterAssignmentRequest) {
         // === Get Assessor ===
         const assessor = await AssessorService.getAssessorById(assessor_id);
-        const name = assessor?.full_name || "-";
+        const name = assessor?.name || "-";
         const registration_number = assessor?.no_reg_met || "-";
-        const scheme = assessor?.scheme_name || "-";
+        const scheme = assessor?.scheme.name || "-";
 
         // === Create a new PDF document ===
         const pdfDoc = await PDFDocument.create();
@@ -316,7 +317,7 @@ export class ScheduleService {
 
         // === Title ===
         y = drawParagraph(page, "SURAT TUGAS", 40, y, fontBold, fontSizeSmall, "center", rgb(0, 0, 0), undefined, undefined, true);
-        y = drawParagraph(page, `Nomor : ${number || "-"}`, 40, y, font, fontSizeSmall, "center") - l2LineGap;
+        y = drawParagraph(page, `No : ${number || "-"}`, 40, y, font, fontSizeSmall, "center") - l2LineGap;
 
         // === Body Identitas ===
         const text1 = "Ketua " + assigner_name + " menugaskan kepada :";
@@ -340,8 +341,8 @@ export class ScheduleService {
             } else {
                 y = drawField(page, "Hari/Tanggal", `${formatDay(new Date(date))}, ${formatDate(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
             }
-            y = drawField(page, "Waktu", `${time || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
-        } else {
+            y = drawField(page, "Waktu", `${time ? `${time} WIB s.d Selesai` : "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+        } else if (type === "assignments") {
             const textDefault = `Untuk dapat bertugas sebagai asesor Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name || "-"} pada :`;
             y = drawParagraph(page, textDefault, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
 
@@ -354,6 +355,8 @@ export class ScheduleService {
             } else {
                 y = drawField(page, "Hari/Tanggal", `${formatDay(new Date(date))}, ${formatDate(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
             }
+        } else {
+            throw new Error("Tipe surat tugas tidak valid");
         }
 
         y = drawField(page, "Skema Okupasi", scheme, 40, y - l2LineGap, font, fontSizeSmall);
@@ -373,8 +376,8 @@ export class ScheduleService {
         drawParagraph(page, `${"Ketua " + assigner_name}`, signatureX, signatureY - 20, font, fontSizeSmall, "right");
         signatureY -= 20;
 
-        const signatureNameLength = font.widthOfTextAtSize(assigner_name, fontSizeSmall);
-        const qrData = getAssessorUrl(1);
+        const signatureNameLength = font.widthOfTextAtSize(assigner_name || "-", fontSizeSmall);
+        const qrData = getAssessorUrl(assessor_id);
         const qrCode = await embedQrCode(pdfDoc, qrData);
         page.drawImage(qrCode,
             { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth, height: signatureWidth }
@@ -387,8 +390,229 @@ export class ScheduleService {
         )
         drawParagraph(page, `${assigner_name}`, signatureX, signatureY - 90, font, fontSizeSmall, "right");
 
-        return await pdfDoc.save();
+        const pdfBytes = await pdfDoc.save();
+        return pdfBytes;
     }
+
+    static async generateLetterAssignmentAssessor(
+        data_assessment: any,
+        data_result: any,
+        params: LetterAssignmentRequest
+    ) {
+        const {
+            number,
+            LSP_name,
+            assigner_name,
+            assessor_id,
+            work_unit,
+            activity_name,
+            date,
+            time,
+            tuk,
+            location,
+            address,
+            issued_in,
+        } = params;
+
+        // === Get Assessor ===
+        const assessor = await AssessorService.getAssessorById(assessor_id);
+        const name = assessor?.name || "-";
+        const registration_number = assessor?.no_reg_met || "-";
+        const scheme = assessor?.scheme.name || "-";
+
+        // === Date & Time Formatting ===
+        const now = new Date();
+        const months = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+        const formattedDate = formatDateRangeSD((Array.isArray(date) ? date : [date]).map(d => new Date(d)));
+        const formattedTime =
+            typeof time === "string"
+                ? formatTimeRange({ start: time.split("-")[0].trim(), end: time.split("-")[1].trim() })
+                : formatTimeRange(time);
+
+        // === PDF SETUP ===
+        const pdfDoc = await PDFDocument.create();
+        const [page1, page2, page3] = [pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936])];
+
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const color = rgb(0, 0, 0);
+
+        const FONTS = { xSmall: 7, small: 11, medium: 14, large: 16 };
+        const GAPS = { s: 8, m: 12, l: 20 };
+        let y = page1.getHeight() - 50;
+
+        // === PAGE 1 ===
+        y = await kopSurat(pdfDoc, page1, "../../public/images/kop-surat-lsp-smkn24j.png");
+
+        // Title & Header
+        y = drawParagraph(page1, "SURAT TUGAS", 40, y, fontBold, FONTS.large, "center", color, undefined, undefined, true);
+        y = drawParagraph(page1, `Nomor : ${number}`, 40, y, fontBold, FONTS.small, "center") - GAPS.s;
+
+        y = drawParagraph(page1, "Tentang", 40, y, fontBold, FONTS.small, "center");
+        y = drawParagraph(page1, "Pelaksanaan Uji Sertifikasi Kompetensi", 40, y, fontBold, FONTS.small, "center") - GAPS.m;
+
+        // === Body ===
+        const textPertimbangan = [
+            `1. Berdasarkan Keputusan Rapat Pengurus ${LSP_name}, tentang pelaksanaan Uji Sertifikasi Kompetensi tahun ${now.getFullYear()} bagi peserta Uji Sertifikasi Kompetensi.`,
+            `2. Bahwa dalam rangka pelaksanaan Uji Sertifikasi Kompetensi tersebut, dibutuhkan Asesor Kompetensi sebagai penguji.`,
+        ].join("\n");
+
+        y = drawField(page1, "Pertimbangan", textPertimbangan, 40, y, fontBold, FONTS.small);
+        y = drawField(page1, "Dasar", `Surat Keputusan Ketua ${LSP_name}`, 40, y, fontBold, FONTS.small) - GAPS.m;
+
+        // === Asesor Info ===
+        y = drawParagraph(page1, "Menugaskan", 40, y + GAPS.m, fontBold, FONTS.small, "center");
+        y = drawField(page1, "Nama", name, 40, y, fontBold, FONTS.small);
+        y = drawField(page1, "Nomor Registrasi", registration_number, 40, y, fontBold, FONTS.small);
+        y = drawField(page1, "Unit Kerja", work_unit || "-", 40, y, fontBold, FONTS.small);
+
+        // === Detail Kegiatan ===
+        const intro = `1. Melaksanakan tugas sebagai Asesor Penguji pada pelaksanaan Uji Sertifikasi Kompetensi Lembaga Sertifikasi Profesi Pihak I ${location} yang akan dilaksanakan sebagai berikut:`;
+        y = drawField(page1, "Untuk", intro, 40, y, fontBold, FONTS.small, 110, 8, 14, color, "justify", page1.getWidth() / 2 + 70);
+
+        const details = [
+            { label: "     Nama Kegiatan", value: activity_name },
+            { label: "     Skema", value: scheme },
+            { label: "     Tanggal", value: formattedDate },
+            { label: "     Pukul", value: formattedTime },
+            { label: "     TUK", value: tuk },
+            { label: "     Sekolah", value: location },
+            { label: "     Alamat", value: address },
+        ];
+        for (const { label, value } of details) {
+            y = drawField(page1, label, value, 160, y - 4, fontBold, FONTS.small);
+        }
+
+        const outro = [
+            "2. Melakukan verifikasi data Asesi sesuai dengan Dokumen yang dipersyaratkan;",
+            "3. Menyelesaikan laporan kegiatan paling lambat pada Jumat, 02 Mei 2025;",
+            "4. Melaksanakan tugas ini dengan sebaik-baiknya dan penuh tanggung jawab.",
+        ].join("\n");
+        y = drawField(page1, "", outro, 40, y, fontBold, FONTS.small) - GAPS.m;
+
+        // === Signature ===
+        const signatureY = await drawSignatureSection(y, page1);
+
+        // === Tembusan ===
+        y = signatureY - 10;
+        ["Tembusan :", "1. Para penanggung jawab", "2. Tempat Uji Kompetensi", "3. Arsip"].forEach((line, i) => {
+            drawParagraph(page1, line, 40 + (i > 0 ? 20 : 0), y - GAPS.m * i, fontBold, FONTS.small, "left");
+        });
+
+        // === PAGE 2 ===
+        y = await kopSurat(pdfDoc, page2, "../../public/images/kop-surat-lsp-smkn24j.png");
+        y -= 20;
+        drawAttachment(y, page2);
+        y -= 40;
+
+        drawSchemeTableHeader(page2, y, data_assessment, fontBold, FONTS.small, color);
+        y -= 85;
+
+        drawUnitTable(page2, y, data_result, font, fontBold, FONTS.small, color);
+
+        return await pdfDoc.save();
+
+        // === HELPER FUNCTIONS ===
+
+        async function drawSignatureSection(yStart: number, page: PDFPage) {
+            const signatureX = page.getWidth() / 2 + 70;
+            let signatureY = yStart - 20;
+            const signatureWidth = 65;
+
+            signatureY = drawParagraph(page, `Dikeluarkan di : ${issued_in || "Jakarta"}`, signatureX, signatureY, fontBold, FONTS.small, "left", undefined, 240);
+            signatureY = drawParagraph(page, `Pada tanggal   : ${now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear()}`, signatureX, signatureY, fontBold, FONTS.small, "left", undefined, 240);
+            signatureY = drawParagraph(page, `Ketua`, signatureX + 65, signatureY - 4, fontBold, FONTS.small, "left", undefined, 240);
+
+            signatureY -= 50;
+            const qrData = getAssessorUrl(assessor_id);
+            const qrCode = await embedQrCode(pdfDoc, qrData);
+            page.drawImage(qrCode, { x: signatureX, y: signatureY - 4, width: signatureWidth, height: signatureWidth });
+
+            signatureY = drawParagraph(
+                page,
+                `Tanda tangan digital ${assigner_name} Ketua ${LSP_name} untuk dokumen dengan No: ${number} Tanggal: ${now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear()}`,
+                signatureX + 70,
+                signatureY + 54,
+                fontBold,
+                FONTS.xSmall,
+                "justify",
+                undefined,
+                110
+            );
+            signatureY = drawParagraph(page, `${assigner_name}`, signatureX + 36, signatureY - 18, fontBold, FONTS.xSmall, "left", undefined, 200);
+
+            return signatureY;
+        };
+
+        async function drawAttachment(yStart: number, page: PDFPage) {
+            drawParagraph(page, "Lampiran Surat Tugas", page.getWidth() / 2 + 60, yStart, font, FONTS.small, "left", undefined, 260);
+            drawParagraph(page, `Nomor      : ${number}`, page.getWidth() / 2 + 60, yStart - GAPS.m, font, FONTS.small, "left", undefined, 260);
+            drawParagraph(page, `Tanggal    : ${now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear()}`, page.getWidth() / 2 + 60, yStart - GAPS.m * 2, font, FONTS.small, "left", undefined, 260);
+        }
+
+        function drawSchemeTableHeader(page: PDFPage, y: number, data: any, fontBold: PDFFont, fontSize: number, color: RGB) {
+            const w = page.getWidth() - 80;
+            const x = 40;
+
+            page.drawRectangle({ x, y: y - 60, width: 90, height: 60, borderColor: color, borderWidth: 1 });
+            let yText = y - 15;
+            yText = drawParagraph(page2, "SKEMA", 50, yText - 4, fontBold, fontSize, "left", undefined, 80);
+            yText = drawParagraph(page2, "SERTIFIKASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+            yText = drawParagraph(page2, "OKUPASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+
+            ["JUDUL", "NOMOR"].forEach((text, i) => {
+                const yOffset = y - 30 * (i + 1);
+                page.drawRectangle({ x: 130, y: yOffset, width: 80, height: 30, borderColor: color, borderWidth: 1 });
+                drawParagraph(page, text, 142, yOffset + 10, fontBold, fontSize);
+                drawParagraph(page, ":", 198, yOffset + 10, fontBold, fontSize);
+            });
+
+            ["name", "code"].forEach((field, i) => {
+                page.drawRectangle({
+                    x: 190,
+                    y: y - 30 * (i + 1),
+                    width: w - 150,
+                    height: 30,
+                    borderColor: color,
+                    borderWidth: 1,
+                });
+                const value = field === "name" ? data?.occupation?.name?.toUpperCase() : data?.code || "-";
+                drawParagraph(page, value, 215, y - 20 - 30 * i, fontBold, fontSize);
+            });
+        }
+
+        function drawUnitTable(page: PDFPage, y: number, data: any[], font: PDFFont, fontBold: PDFFont, fontSize: number, color: RGB) {
+            const x = 40;
+            const width = page.getWidth() - 80;
+            const rowHeight = 20;
+            const col = { no: 30, code: 120, title: width - 150 };
+
+            // Header
+            page.drawRectangle({ x, y: y - rowHeight, width, height: rowHeight, borderColor: color, borderWidth: 1 });
+            page.drawRectangle({ x: x + col.no, y: y - rowHeight, width: col.code, height: rowHeight, borderColor: color, borderWidth: 1 });
+            page.drawRectangle({ x: x + col.no + col.code, y: y - rowHeight, width: col.title, height: rowHeight, borderColor: color, borderWidth: 1 });
+
+            drawParagraph(page, "NO", x + 10, y - 15, fontBold, fontSize);
+            drawParagraph(page, "KODE UNIT", x + col.no + 10, y - 15, fontBold, fontSize);
+            drawParagraph(page, "JUDUL UNIT", x + col.no + col.code + 10, y - 15, fontBold, fontSize);
+
+            // Rows
+            data.forEach((result, i) => {
+                const rowY = y - rowHeight - (i + 1) * rowHeight;
+                page.drawRectangle({ x, y: rowY, width, height: rowHeight, borderColor: color, borderWidth: 1 });
+                page.drawLine({ start: { x: x + col.no, y: rowY }, end: { x: x + col.no, y: rowY + rowHeight }, thickness: 1, color });
+                page.drawLine({ start: { x: x + col.no + col.code, y: rowY }, end: { x: x + col.no + col.code, y: rowY + rowHeight }, thickness: 1, color });
+
+                drawParagraph(page, `${i + 1}`, x + 10, rowY + 5, font, fontSize);
+                drawParagraph(page, `${result?.unit_code || "-"}`, x + col.no + 10, rowY + 5, font, fontSize);
+                drawParagraph(page, `${result?.title || "-"}`, x + col.no + col.code + 10, rowY + 5, font, fontSize);
+            });
+        }
+    }
+      
 }
 
 interface Assessee {

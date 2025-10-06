@@ -73,13 +73,18 @@ export interface updateScheduleRequest {
 }
 
 export interface LetterAssignmentRequest {
-    type: "assignments" | "verifications";
+    type: "assignments" | "verifications" | "assessor";
     number: string;
-    assigner_name: string;
+    LSP_name?: string;
+    assigner_name?: string;
     assessor_id: number;
+    work_unit?: string;
+    activity_name?: string;
+    tuk?: string;
     position: string;
     date: Date | Date[];
-    time?: string;
+    time?: { start?: string; end?: string } | string;
     location?: string;
     address?: string;
+    issued_in?: string;
 }
