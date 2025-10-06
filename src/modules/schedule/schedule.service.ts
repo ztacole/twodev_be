@@ -559,9 +559,9 @@ export class ScheduleService {
 
             page.drawRectangle({ x, y: y - 60, width: 90, height: 60, borderColor: color, borderWidth: 1 });
             let yText = y - 15;
-            yText = drawParagraph(page2, "SKEMA", 50, yText - 4, fontBold, fontSize, "left", undefined, 80);
-            yText = drawParagraph(page2, "SERTIFIKASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
-            yText = drawParagraph(page2, "OKUPASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+            yText = drawParagraph(page, "SKEMA", 50, yText - 4, fontBold, fontSize, "left", undefined, 80);
+            yText = drawParagraph(page, "SERTIFIKASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+            yText = drawParagraph(page, "OKUPASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
 
             ["JUDUL", "NOMOR"].forEach((text, i) => {
                 const yOffset = y - 30 * (i + 1);
