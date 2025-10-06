@@ -34,6 +34,7 @@ import {
 } from './apl-01.type';
 import { w } from '@faker-js/faker/dist/airline-CLphikKp';
 import fs from 'fs';
+import { AssessmentService } from '../assessment.service';
 
 const TUK_VALUES = {
     SEWAKTU: 'sewaktu',
@@ -413,10 +414,13 @@ export class APL1Service {
         if (assesseeJobs.length === 0) throw new NotFoundError('Assessee Jobs');
         const assesseeJob = assesseeJobs[0];
 
+        const assessment = await AssessmentService.getAssessmentById(result.assessment_id);
+
         return {
             ...(assessee as any),
             full_name: user?.full_name,
             job: assesseeJob,
+            assessment: assessment,
         } as AssesseeResponse;
     }
 
