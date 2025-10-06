@@ -3,10 +3,10 @@ export interface GroupIA01Response {
     id: number;
     assessment_id: number;
     name: string;
-    units: ucIAResponse[];
+    units: UcIAResponse[];
 }
 
-interface ucIAResponse {
+export interface UcIAResponse {
     id: number;
     unit_code: string;
     title: string;
