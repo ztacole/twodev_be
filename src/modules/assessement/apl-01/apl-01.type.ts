@@ -1,3 +1,5 @@
+import { AssessmentDetailsResponse } from "../assessment.type";
+
 // Response
 interface AssesseeJobResponse {
     id: number;
@@ -26,6 +28,7 @@ interface AssesseeResponse {
     postal_code: string;
     educational_qualifications: string;
     job: AssesseeJobResponse;
+    assessment: AssessmentDetailsResponse;
 }
 
 interface CertificateDocsResponse {

@@ -84,19 +84,16 @@ exports.AdminService = {
     },
     createAdmin(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            const existingUser = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.email, data.email) });
-            if (existingUser) {
-                throw new error_1.DuplicateEntryError('Email', data.email);
+            const existingUser = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, data.user_id) });
+            if (!existingUser) {
+                throw new error_1.NotFoundError(`User dengan ID ${data.user_id}`);
             }
-            const hashedPassword = yield bcryptjs_1.default.hash(data.password, 10);
-            const [userId] = yield drizzle_1.db.insert(schema_1.user).values({
-                full_name: data.full_name,
-                email: data.email,
-                password: hashedPassword,
-                role_id: data.role_id || 1,
-            }).$returningId();
+            const existingAdmin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, data.user_id) });
+            if (existingAdmin) {
+                throw new error_1.DuplicateEntryError('Admin', `User ID ${data.user_id}`);
+            }
             yield drizzle_1.db.insert(schema_1.admin).values({
-                user_id: userId.id,
+                user_id: data.user_id,
                 address: data.address,
                 phone_no: data.phone_no,
                 birth_date: new Date(data.birth_date),
@@ -115,7 +112,7 @@ exports.AdminService = {
             })
                 .from(schema_1.admin)
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.admin.user_id, schema_1.user.id))
-                .where((0, drizzle_orm_1.eq)(schema_1.admin.user_id, userId.id));
+                .where((0, drizzle_orm_1.eq)(schema_1.admin.user_id, data.user_id));
             if (!admin) {
                 throw new Error('Gagal membuat admin');
             }

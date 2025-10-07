@@ -15,20 +15,17 @@ export const AdminController = {
     }),
 
     createAdmin: asyncHandler(async (req: Request, res: Response) => {
-        const { full_name, email, password, role_id, address, phone_no, birth_date } = req.body;
+        const { user_id, address, phone_no, birth_date } = req.body;
         
-        if (!full_name || !email || !password || !address || !phone_no || !birth_date) {
+        if (!user_id || !address || !phone_no || !birth_date) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'full_name, email, password, address, phone_no, dan birth_date wajib diisi' 
+                message: 'user_id, address, phone_no, dan birth_date wajib diisi' 
             });
         }
 
         const data = await AdminService.createAdmin({ 
-            full_name,
-            email,
-            password,
-            role_id,
+            user_id,
             address, 
             phone_no, 
             birth_date 

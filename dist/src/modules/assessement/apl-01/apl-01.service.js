@@ -25,6 +25,7 @@ const error_1 = require("../../../common/error");
 const drizzle_1 = require("../../../config/drizzle");
 const schema_1 = require("../../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const assessment_service_1 = require("../assessment.service");
 const TUK_VALUES = {
     SEWAKTU: 'sewaktu',
     TEMPAT_KERJA: 'tempat_kerja',
@@ -377,7 +378,8 @@ class APL1Service {
             if (assesseeJobs.length === 0)
                 throw new error_1.NotFoundError('Assessee Jobs');
             const assesseeJob = assesseeJobs[0];
-            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob });
+            const assessment = yield assessment_service_1.AssessmentService.getAssessmentById(result.assessment_id);
+            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob, assessment: assessment });
         });
     }
     static getResultDocsByResultId(result_id) {

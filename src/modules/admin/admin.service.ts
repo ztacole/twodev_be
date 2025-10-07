@@ -69,30 +69,23 @@ export const AdminService = {
     },
 
     async createAdmin(data: {
-        full_name: string;
-        email: string;
-        password: string;
-        role_id?: number;
+        user_id: number;
         address: string;
         phone_no: string;
         birth_date: string;
     }) {
-        const existingUser = await db.query.user.findFirst({ where: eq(userTable.email, data.email) });
-        if (existingUser) {
-            throw new DuplicateEntryError('Email', data.email);
+        const existingUser = await db.query.user.findFirst({ where: eq(userTable.id, data.user_id) });
+        if (!existingUser) {
+            throw new NotFoundError(`User dengan ID ${data.user_id}`);
         }
 
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-
-        const [userId] = await db.insert(userTable).values({
-            full_name: data.full_name,
-            email: data.email,
-            password: hashedPassword,
-            role_id: data.role_id || 1,
-        }).$returningId();
+        const existingAdmin = await db.query.admin.findFirst({ where: eq(adminTable.user_id, data.user_id) });
+        if (existingAdmin) {
+            throw new DuplicateEntryError('Admin', `User ID ${data.user_id}`);
+        }
 
         await db.insert(adminTable).values({
-            user_id: userId.id,
+            user_id: data.user_id,
             address: data.address,
             phone_no: data.phone_no,
             birth_date: new Date(data.birth_date),
@@ -112,7 +105,7 @@ export const AdminService = {
         })
         .from(adminTable)
         .leftJoin(userTable, eq(adminTable.user_id, userTable.id))
-        .where(eq(adminTable.user_id, userId.id));
+        .where(eq(adminTable.user_id, data.user_id));
         
         if (!admin) {
             throw new Error('Gagal membuat admin');

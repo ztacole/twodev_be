@@ -199,7 +199,6 @@ export class ScheduleController {
                 filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
             } else if(type === 'assessor') {
                 const assessment_id = Number(req.body.assessment_id);
-                const result_id = Number(req.body.result_id);
 
                 const data_assessment = await AssessmentService.getAssessmentById(assessment_id);
                 if (!data_assessment) {
@@ -208,7 +207,7 @@ export class ScheduleController {
                         message: "Assessment tidak ditemukan"
                     });
                 }
-                const data_result = await APL02Service.getUnitsAPL02(result_id);
+                const data_result = await APL02Service.getUnitsWithoutResult(assessment_id);
                 if (!data_result) {
                     return res.status(404).json({
                         success: false,

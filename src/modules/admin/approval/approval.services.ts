@@ -1,6 +1,6 @@
 import type { JwtPayload } from "../../auth/auth.type";
 import { db } from "../../../config/drizzle";
-import { admin as adminTable, resultDoc as resultDocTable, result as resultTable, approvalRequest as approvalRequestTable, user as userTable, occupation as occupationTable } from "../../../../drizzle/schema";
+import { admin as adminTable, resultDoc as resultDocTable, result as resultTable, approvalRequest as approvalRequestTable, user as userTable, occupation as occupationTable, scheme as schemeTable, assessmentSchedule as scheduleTable, scheduleDetail as scheduleDetailTable, assessment as assessmentTable } from "../../../../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 export const ApprovalService = {
@@ -198,6 +198,53 @@ export const ApprovalService = {
           case 'user':
             await db.delete(userTable).where(eq(userTable.id, targetId)).execute();
             break;
+          case 'occupation': {
+            const occupation = await db.query.occupation.findFirst({ where: eq(occupationTable.id, targetId) });
+            if (occupation) {
+              const { default: fs } = await import('fs');
+              const { default: path } = await import('path');
+              const clean = (s: string) => s.toString().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, '');
+              const cleanName = clean(occupation.name);
+              const filePath = path.join(__dirname, `../../../public/uploads/occupations/${occupation.id}_${occupation.scheme_id}_${cleanName}`);
+              if (fs.existsSync(filePath)) {
+                const stat = fs.statSync(filePath);
+                if (stat.isDirectory()) {
+                  fs.rmSync(filePath, { recursive: true, force: true });
+                } else if (stat.isFile()) {
+                  fs.unlinkSync(filePath);
+                }
+              }
+              await db.delete(occupationTable).where(eq(occupationTable.id, targetId)).execute();
+            }
+            break;
+          }
+          case 'scheme': {
+            const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, targetId) });
+            if (scheme) {
+              await db.delete(schemeTable).where(eq(schemeTable.id, targetId)).execute();
+            }
+            break;
+          }
+          case 'schedule': {
+            const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, targetId) });
+            if (schedule) {
+              await db.delete(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, targetId)).execute();
+              await db.delete(scheduleTable).where(eq(scheduleTable.id, targetId)).execute();
+            }
+            break;
+          }
+          case 'assessment': {
+            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, targetId) });
+            if (assessment) {
+              const schedules = await db.query.assessmentSchedule.findMany({ where: eq(scheduleTable.assessment_id, targetId) });
+              for (const schedule of schedules) {
+                await db.delete(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, schedule.id)).execute();
+              }
+              await db.delete(scheduleTable).where(eq(scheduleTable.assessment_id, targetId)).execute();
+              await db.delete(assessmentTable).where(eq(assessmentTable.id, targetId)).execute();
+            }
+            break;
+          }
           default:
             break;
         }
