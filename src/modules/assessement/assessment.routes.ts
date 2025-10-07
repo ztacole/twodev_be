@@ -61,7 +61,8 @@ router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('asses
 router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
 
 // RESULT PDF
-//-- Route Example: /api/assessments/result/:resultId/APL01/export --//
+//-- Route Example: /ia-01/result/:resultId/export --//
+//-- Put it at the bottom of the routes --//
 
 router.get('/results/status/admin', authenticateToken, adminMiddleware, AssessmentController.getAssessmentResultsForAdmin);
 router.get('/results/status/admin/assessees/:assessmentId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssesseesByAssessmentAndAssessor);
@@ -113,6 +114,7 @@ router.post('/ia-01/result/send-header', authenticateToken, assessorMiddleware, 
 router.put('/ia-01/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, IA01Controller.approvedByAssessor);
 router.put('/ia-01/result/assessee/:resultId/approve', authenticateToken, assesseeMiddleware, IA01Controller.approvedByAssessee);
 router.get('/ia-01/result/:resultId', IA01Controller.getResultDetails);
+router.get('/ia-01/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateIA01);
 router.get('/ia-01/result/incomplete-criteria/:resultId', IA01Controller.getIncompleteCriterias);
 
 router.get('/ia-02/units/:assessmentId', IA02Controller.getIA02Groups);
