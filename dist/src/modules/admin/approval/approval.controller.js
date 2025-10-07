@@ -15,7 +15,6 @@ exports.ApprovalController = {
     approveApl01(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log("REQ BODY:", req.body);
                 const user = req.user;
                 const { docId } = req.body;
                 const result = yield approval_services_1.ApprovalService.approveApl01Document(Number(docId), user);
@@ -51,11 +50,9 @@ exports.ApprovalController = {
     },
     createApprovalRequest(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e;
+            var _a, _b, _c, _d;
             try {
                 const user = req.user;
-                console.log('Request body:', req.body);
-                console.log('Request body type:', typeof req.body);
                 if (!req.body) {
                     return res.status(400).json({
                         success: false,
@@ -67,26 +64,16 @@ exports.ApprovalController = {
                 const targetId = (_b = body === null || body === void 0 ? void 0 : body.targetId) !== null && _b !== void 0 ? _b : body === null || body === void 0 ? void 0 : body.target_id;
                 const action = body === null || body === void 0 ? void 0 : body.action;
                 const approverAdminRaw = (_c = body === null || body === void 0 ? void 0 : body.approverAdminId) !== null && _c !== void 0 ? _c : body === null || body === void 0 ? void 0 : body.approver_admin_id;
-                const secondApproverAdminRaw = (_d = body === null || body === void 0 ? void 0 : body.secondApproverAdminId) !== null && _d !== void 0 ? _d : body === null || body === void 0 ? void 0 : body.second_approver_admin_id;
-                const comment = (_e = body === null || body === void 0 ? void 0 : body.comment) !== null && _e !== void 0 ? _e : null;
-                if (!targetTable || !targetId || !action || !approverAdminRaw || !secondApproverAdminRaw) {
+                const comment = (_d = body === null || body === void 0 ? void 0 : body.comment) !== null && _d !== void 0 ? _d : null;
+                if (!targetTable || !targetId || !action || !approverAdminRaw) {
                     return res.status(400).json({
                         success: false,
-                        message: 'targetTable/target_table, targetId/target_id, action, approverAdminId/approver_admin_id, dan secondApproverAdminId/second_approver_admin_id wajib diisi'
+                        message: 'targetTable/target_table, targetId/target_id, action, dan approverAdminId/approver_admin_id wajib diisi'
                     });
                 }
-                console.log('Parsed values:', {
-                    targetTable,
-                    targetId: Number(targetId),
-                    action,
-                    approverAdminId: Number(approverAdminRaw),
-                    secondApproverAdminId: Number(secondApproverAdminRaw),
-                    comment
-                });
                 const data = yield approval_services_1.ApprovalService.createApprovalRequest({
                     user,
                     approverAdminId: Number(approverAdminRaw),
-                    secondApproverAdminId: Number(secondApproverAdminRaw),
                     targetTable,
                     targetId: Number(targetId),
                     action,

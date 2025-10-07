@@ -70,31 +70,67 @@ exports.ApprovalService = {
     },
     createApprovalRequest(input) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
+            var _a, _b, _c, _d;
             const requester = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, input.user.id) });
             if (!requester)
                 throw new Error("Hanya admin yang dapat membuat approval request");
             if (!input.approverAdminId || input.approverAdminId === requester.id) {
-                throw new Error("Pilih admin lain sebagai approver pertama");
+                throw new Error("Pilih admin lain sebagai approver");
             }
-            if (!input.secondApproverAdminId || input.secondApproverAdminId === requester.id || input.secondApproverAdminId === input.approverAdminId) {
-                throw new Error("Pilih admin lain (berbeda) sebagai approver kedua");
+            const approverExists = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.id, input.approverAdminId) });
+            if (!approverExists) {
+                throw new Error("Approver tidak ditemukan (admin.id tidak valid)");
             }
+            if (!approverExists.can_approve) {
+                throw new Error("Approver ini tidak memiliki izin approve");
+            }
+            let targetName = null;
+            const targetTableLower = (input.targetTable || '').toLowerCase();
+            try {
+                switch (targetTableLower) {
+                    case 'user': {
+                        const u = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, input.targetId) });
+                        targetName = (_a = u === null || u === void 0 ? void 0 : u.full_name) !== null && _a !== void 0 ? _a : null;
+                        break;
+                    }
+                    case 'occupation': {
+                        const o = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, input.targetId) });
+                        targetName = (_b = o === null || o === void 0 ? void 0 : o.name) !== null && _b !== void 0 ? _b : null;
+                        break;
+                    }
+                    case 'scheme': {
+                        const s = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, input.targetId) });
+                        targetName = s ? (s.code || s.name) : null;
+                        break;
+                    }
+                    case 'assessment': {
+                        const a = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, input.targetId) });
+                        targetName = (_c = a === null || a === void 0 ? void 0 : a.code) !== null && _c !== void 0 ? _c : null;
+                        break;
+                    }
+                    case 'schedule': {
+                        const sch = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, input.targetId) });
+                        targetName = sch ? `Schedule-${input.targetId}` : null;
+                        break;
+                    }
+                    default:
+                        targetName = null;
+                }
+            }
+            catch (_e) { }
             yield drizzle_1.db.insert(schema_1.approvalRequest).values({
                 requester_admin_id: requester.id,
                 approver_admin_id: input.approverAdminId,
-                second_approver_admin_id: input.secondApproverAdminId,
                 target_table: input.targetTable,
                 target_id: input.targetId,
+                target_name: targetName,
                 action: input.action,
                 status: 'pending',
-                comment: (_a = input.comment) !== null && _a !== void 0 ? _a : null,
+                comment: (_d = input.comment) !== null && _d !== void 0 ? _d : null,
                 approved_at: null,
-                approved_by_first_at: null,
-                approved_by_second_at: null,
             }).execute();
             const created = yield drizzle_1.db.query.approvalRequest.findFirst({
-                where: (tbl, { eq, and }) => and(eq(tbl.requester_admin_id, requester.id), eq(tbl.approver_admin_id, input.approverAdminId), eq(tbl.second_approver_admin_id, input.secondApproverAdminId), eq(tbl.target_table, input.targetTable), eq(tbl.target_id, input.targetId), eq(tbl.action, input.action)),
+                where: (tbl, { eq, and }) => and(eq(tbl.requester_admin_id, requester.id), eq(tbl.approver_admin_id, input.approverAdminId), eq(tbl.target_table, input.targetTable), eq(tbl.target_id, input.targetId), eq(tbl.action, input.action)),
                 orderBy: (tbl, { desc }) => desc(tbl.created_at),
             });
             if (!created) {
@@ -116,19 +152,19 @@ exports.ApprovalService = {
             }
             if (scope === 'to-approve') {
                 return yield drizzle_1.db.query.approvalRequest.findMany({
-                    where: (tbl, { or, and, eq: _eq, not: _not }) => or(and(_eq(tbl.approver_admin_id, admin.id), _eq(tbl.status, 'pending'), _eq(tbl.approved_by_first, false)), and(_eq(tbl.second_approver_admin_id, admin.id), _eq(tbl.status, 'pending'), _eq(tbl.approved_by_second, false))),
+                    where: (tbl, { and, eq: _eq }) => and(_eq(tbl.approver_admin_id, admin.id), _eq(tbl.status, 'pending')),
                     orderBy: (tbl, { desc }) => desc(tbl.created_at),
                 });
             }
             return yield drizzle_1.db.query.approvalRequest.findMany({
-                where: (tbl, { or, eq: _eq }) => or(_eq(tbl.requester_admin_id, admin.id), _eq(tbl.approver_admin_id, admin.id), _eq(tbl.second_approver_admin_id, admin.id)),
+                where: (tbl, { or, eq: _eq }) => or(_eq(tbl.requester_admin_id, admin.id), _eq(tbl.approver_admin_id, admin.id)),
                 orderBy: (tbl, { desc }) => desc(tbl.created_at),
             });
         });
     },
     resolveApprovalRequest(input) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d;
+            var _a, _b, _c;
             const admin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, input.user.id) });
             if (!admin)
                 throw new Error("Hanya admin yang dapat memproses approval request");
@@ -138,32 +174,17 @@ exports.ApprovalService = {
             if (request.status === 'rejected' || request.status === 'approved')
                 throw new Error("Approval request sudah diproses");
             const isFirstApprover = request.approver_admin_id === admin.id;
-            const isSecondApprover = request.second_approver_admin_id === admin.id;
-            if (!isFirstApprover && !isSecondApprover)
+            if (!isFirstApprover)
                 throw new Error("Anda bukan approver untuk request ini");
             if (input.decision === 'approved') {
-                if (isFirstApprover && !request.approved_by_first) {
-                    yield drizzle_1.db.update(schema_1.approvalRequest).set({
-                        approved_by_first: true,
-                        approved_by_first_at: new Date(),
-                        comment: (_a = input.comment) !== null && _a !== void 0 ? _a : request.comment,
-                    }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
-                }
-                if (isSecondApprover && !request.approved_by_second) {
-                    yield drizzle_1.db.update(schema_1.approvalRequest).set({
-                        approved_by_second: true,
-                        approved_by_second_at: new Date(),
-                        comment: (_b = input.comment) !== null && _b !== void 0 ? _b : request.comment,
-                    }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
-                }
+                yield drizzle_1.db.update(schema_1.approvalRequest).set({
+                    status: 'approved',
+                    approved_at: new Date(),
+                    comment: (_a = input.comment) !== null && _a !== void 0 ? _a : request.comment,
+                }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
                 const refreshed = yield drizzle_1.db.query.approvalRequest.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id) });
                 if (!refreshed)
                     throw new Error("Approval request tidak ditemukan setelah update");
-                const bothApproved = Boolean(refreshed.approved_by_first) && Boolean(refreshed.approved_by_second);
-                if (!bothApproved) {
-                    yield drizzle_1.db.update(schema_1.approvalRequest).set({ status: 'pending' }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
-                    return yield drizzle_1.db.query.approvalRequest.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id) });
-                }
                 const action = (refreshed.action || '').toLowerCase();
                 const targetTable = (refreshed.target_table || '').toLowerCase();
                 const targetId = refreshed.target_id;
@@ -183,7 +204,6 @@ exports.ApprovalService = {
                             yield drizzle_1.db.update(schema_1.user).set(changes).where((0, drizzle_orm_1.eq)(schema_1.user.id, targetId)).execute();
                             break;
                         case 'occupation': {
-                            // Move uploaded temp file to final location if present in comment JSON
                             const tempFilePath = changes.tempFilePath;
                             const tempDestination = changes.tempDestination;
                             const tempFileName = changes.tempFileName;
@@ -223,7 +243,16 @@ exports.ApprovalService = {
                 const applyDelete = () => __awaiter(this, void 0, void 0, function* () {
                     switch (targetTable) {
                         case 'user':
-                            yield drizzle_1.db.delete(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.id, targetId)).execute();
+                            {
+                                const existingUser = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, targetId) });
+                                if (!existingUser)
+                                    return;
+                                yield drizzle_1.db.delete(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.id, targetId)).execute();
+                                const afterDelete = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, targetId) });
+                                if (afterDelete) {
+                                    throw new Error('Gagal menghapus user target');
+                                }
+                            }
                             break;
                         case 'occupation': {
                             const occupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, targetId) });
@@ -285,22 +314,20 @@ exports.ApprovalService = {
                 }
             }
             const current = yield drizzle_1.db.query.approvalRequest.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id) });
-            const bothApprovedNow = current && current.approved_by_first && current.approved_by_second;
             if (input.decision === 'rejected') {
                 yield drizzle_1.db.update(schema_1.approvalRequest).set({
                     status: 'rejected',
-                    comment: (_c = input.comment) !== null && _c !== void 0 ? _c : request.comment,
-                }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
-            }
-            else if (bothApprovedNow) {
-                yield drizzle_1.db.update(schema_1.approvalRequest).set({
-                    status: 'approved',
-                    comment: (_d = input.comment) !== null && _d !== void 0 ? _d : request.comment,
-                    approved_at: new Date(),
+                    comment: (_b = input.comment) !== null && _b !== void 0 ? _b : request.comment,
                 }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
             }
             else {
-                yield drizzle_1.db.update(schema_1.approvalRequest).set({ status: 'pending' }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
+                if (!current || current.status !== 'approved') {
+                    yield drizzle_1.db.update(schema_1.approvalRequest).set({
+                        status: 'approved',
+                        comment: (_c = input.comment) !== null && _c !== void 0 ? _c : request.comment,
+                        approved_at: new Date(),
+                    }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
+                }
             }
             const updated = yield drizzle_1.db.query.approvalRequest.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id) });
             return updated;
