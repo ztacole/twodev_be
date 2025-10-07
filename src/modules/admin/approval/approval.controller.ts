@@ -13,7 +13,6 @@ declare global {
 export const ApprovalController = {
   async approveApl01(req: Request, res: Response) {
     try {
-      console.log("REQ BODY:", req.body);
       const user = req.user as JwtPayload;
       const { docId } = req.body;
 
@@ -49,46 +48,32 @@ export const ApprovalController = {
   async createApprovalRequest(req: Request, res: Response) {
     try {
       const user = req.user as JwtPayload;
-      
-      console.log('Request body:', req.body);
-      console.log('Request body type:', typeof req.body);
-      
+
       if (!req.body) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Request body tidak ditemukan. Pastikan Content-Type: application/json' 
+        return res.status(400).json({
+          success: false,
+          message: 'Request body tidak ditemukan. Pastikan Content-Type: application/json'
         });
       }
-      
+
       const body = req.body as any;
-      
+
       const targetTable = body?.targetTable ?? body?.target_table;
       const targetId = body?.targetId ?? body?.target_id;
       const action = body?.action;
       const approverAdminRaw = body?.approverAdminId ?? body?.approver_admin_id;
-      const secondApproverAdminRaw = body?.secondApproverAdminId ?? body?.second_approver_admin_id;
       const comment = body?.comment ?? null;
 
-      if (!targetTable || !targetId || !action || !approverAdminRaw || !secondApproverAdminRaw) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'targetTable/target_table, targetId/target_id, action, approverAdminId/approver_admin_id, dan secondApproverAdminId/second_approver_admin_id wajib diisi' 
+      if (!targetTable || !targetId || !action || !approverAdminRaw) {
+        return res.status(400).json({
+          success: false,
+          message: 'targetTable/target_table, targetId/target_id, action, dan approverAdminId/approver_admin_id wajib diisi'
         });
       }
-
-      console.log('Parsed values:', {
-        targetTable,
-        targetId: Number(targetId),
-        action,
-        approverAdminId: Number(approverAdminRaw),
-        secondApproverAdminId: Number(secondApproverAdminRaw),
-        comment
-      });
 
       const data = await ApprovalService.createApprovalRequest({
         user,
         approverAdminId: Number(approverAdminRaw),
-        secondApproverAdminId: Number(secondApproverAdminRaw),
         targetTable,
         targetId: Number(targetId),
         action,
@@ -128,7 +113,7 @@ export const ApprovalController = {
     try {
       const user = req.user as JwtPayload;
       const scopeParam = (req.params.scope as string) || (req.query.scope as string) || 'all';
-      const scope = (['all','to-approve','requested-by-me'] as const).includes(scopeParam as any) ? (scopeParam as 'all'|'to-approve'|'requested-by-me') : 'all';
+      const scope = (['all', 'to-approve', 'requested-by-me'] as const).includes(scopeParam as any) ? (scopeParam as 'all' | 'to-approve' | 'requested-by-me') : 'all';
       const data = await ApprovalService.listApprovalRequests(user, scope);
       res.json({ success: true, data });
     } catch (error: any) {

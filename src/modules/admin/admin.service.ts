@@ -12,6 +12,7 @@ export const AdminService = {
             address: adminTable.address,
             phone_no: adminTable.phone_no,
             birth_date: adminTable.birth_date,
+            can_approve: adminTable.can_approve,
             created_at: adminTable.created_at,
             updated_at: adminTable.updated_at,
             full_name: userTable.full_name,
@@ -27,6 +28,7 @@ export const AdminService = {
             address: r.address,
             phone_no: r.phone_no,
             birth_date: r.birth_date,
+            can_approve: r.can_approve,
             created_at: r.created_at,
             updated_at: r.updated_at,
             full_name: r.full_name,
@@ -42,6 +44,7 @@ export const AdminService = {
             address: adminTable.address,
             phone_no: adminTable.phone_no,
             birth_date: adminTable.birth_date,
+            can_approve: adminTable.can_approve,
             created_at: adminTable.created_at,
             updated_at: adminTable.updated_at,
             full_name: userTable.full_name,
@@ -60,6 +63,7 @@ export const AdminService = {
             address: row.address,
             phone_no: row.phone_no,
             birth_date: row.birth_date,
+            can_approve: row.can_approve,
             created_at: row.created_at,
             updated_at: row.updated_at,
             full_name: row.full_name,
@@ -73,6 +77,7 @@ export const AdminService = {
         address: string;
         phone_no: string;
         birth_date: string;
+        can_approve?: boolean;
     }) {
         const existingUser = await db.query.user.findFirst({ where: eq(userTable.id, data.user_id) });
         if (!existingUser) {
@@ -89,6 +94,7 @@ export const AdminService = {
             address: data.address,
             phone_no: data.phone_no,
             birth_date: new Date(data.birth_date),
+            can_approve: data.can_approve ?? false,
         });
 
         const [admin] = await db.select({
@@ -97,6 +103,7 @@ export const AdminService = {
             address: adminTable.address,
             phone_no: adminTable.phone_no,
             birth_date: adminTable.birth_date,
+            can_approve: adminTable.can_approve,
             created_at: adminTable.created_at,
             updated_at: adminTable.updated_at,
             full_name: userTable.full_name,
@@ -117,6 +124,7 @@ export const AdminService = {
             address: admin.address,
             phone_no: admin.phone_no,
             birth_date: admin.birth_date,
+            can_approve: admin.can_approve,
             created_at: admin.created_at,
             updated_at: admin.updated_at,
             full_name: admin.full_name,
@@ -131,6 +139,7 @@ export const AdminService = {
         address?: string;
         phone_no?: string;
         birth_date?: string;
+        can_approve?: boolean;
     }) {
         const existingAdmin = await db.query.admin.findFirst({ where: eq(adminTable.id, id) });
         if (!existingAdmin) {
@@ -141,6 +150,7 @@ export const AdminService = {
         if (data.address !== undefined) adminUpdateData.address = data.address;
         if (data.phone_no !== undefined) adminUpdateData.phone_no = data.phone_no;
         if (data.birth_date !== undefined) adminUpdateData.birth_date = new Date(data.birth_date);
+        if (data.can_approve !== undefined) adminUpdateData.can_approve = data.can_approve;
 
         const userUpdateData: any = {};
         if (data.full_name !== undefined) userUpdateData.full_name = data.full_name;
@@ -171,6 +181,7 @@ export const AdminService = {
             address: adminTable.address,
             phone_no: adminTable.phone_no,
             birth_date: adminTable.birth_date,
+            can_approve: adminTable.can_approve,
             created_at: adminTable.created_at,
             updated_at: adminTable.updated_at,
             full_name: userTable.full_name,
@@ -187,6 +198,7 @@ export const AdminService = {
             address: updatedAdmin.address,
             phone_no: updatedAdmin.phone_no,
             birth_date: updatedAdmin.birth_date,
+            can_approve: updatedAdmin.can_approve,
             created_at: updatedAdmin.created_at,
             updated_at: updatedAdmin.updated_at,
             full_name: updatedAdmin.full_name,
@@ -213,6 +225,7 @@ export const AdminService = {
         address?: string;
         phone_no?: string;
         birth_date?: string;
+        can_approve?: boolean;
     }) {
         const existingAdmin = await db.query.admin.findFirst({ where: eq(adminTable.user_id, userId) });
         if (!existingAdmin) {
@@ -223,6 +236,7 @@ export const AdminService = {
         if (data.address !== undefined) adminUpdateData.address = data.address;
         if (data.phone_no !== undefined) adminUpdateData.phone_no = data.phone_no;
         if (data.birth_date !== undefined) adminUpdateData.birth_date = new Date(data.birth_date);
+        if (data.can_approve !== undefined) adminUpdateData.can_approve = data.can_approve;
 
         const userUpdateData: any = {};
         if (data.full_name !== undefined) userUpdateData.full_name = data.full_name;
@@ -256,6 +270,7 @@ export const AdminService = {
             address: adminTable.address,
             phone_no: adminTable.phone_no,
             birth_date: adminTable.birth_date,
+            can_approve: adminTable.can_approve,
             created_at: adminTable.created_at,
             updated_at: adminTable.updated_at,
             full_name: userTable.full_name,
@@ -272,6 +287,7 @@ export const AdminService = {
             address: updatedAdmin.address,
             phone_no: updatedAdmin.phone_no,
             birth_date: updatedAdmin.birth_date,
+            can_approve: updatedAdmin.can_approve,
             created_at: updatedAdmin.created_at,
             updated_at: updatedAdmin.updated_at,
             full_name: updatedAdmin.full_name,

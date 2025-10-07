@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import type { JwtPayload } from '../modules/auth/auth.type';
 import { db } from '../config/drizzle';
-import { admin as adminTable, approvalRequest as approvalRequestTable } from '../../drizzle/schema';
+import { admin as adminTable, approvalRequest as approvalRequestTable, user as userTable, occupation as occupationTable, scheme as schemeTable, assessment as assessmentTable, assessmentSchedule as scheduleTable } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 export function requireApproval(targetTable: string) {
@@ -20,7 +20,6 @@ export function requireApproval(targetTable: string) {
       const query: any = (req as any).query || {};
       const headers: any = (req as any).headers || {};
       const approverAdminRaw = body.approverAdminId ?? body.approver_admin_id ?? params.approverAdminId ?? params.approver_admin_id ?? query.approverAdminId ?? query.approver_admin_id ?? headers['x-approver-admin-id'];
-      const secondApproverAdminRaw = body.secondApproverAdminId ?? body.second_approver_admin_id ?? params.secondApproverAdminId ?? params.second_approver_admin_id ?? query.secondApproverAdminId ?? query.second_approver_admin_id ?? headers['x-second-approver-admin-id'];
       let comment = body.comment ?? params.comment ?? query.comment ?? headers['x-approval-comment'];
       const targetId = Number(
         req.params.id ?? req.body.id ??
@@ -30,24 +29,19 @@ export function requireApproval(targetTable: string) {
       if (!Number.isFinite(targetId) || targetId <= 0) {
         return res.status(400).json({ success: false, message: 'Target id wajib diisi dan valid' });
       }
-      if (!approverAdminRaw || Number(approverAdminRaw) === admin.id) {
-        return res.status(400).json({ success: false, message: 'Pilih admin lain sebagai approver pertama' });
-      }
-      if (!secondApproverAdminRaw || Number(secondApproverAdminRaw) === admin.id || Number(secondApproverAdminRaw) === Number(approverAdminRaw)) {
-        return res.status(400).json({ success: false, message: 'Pilih admin lain (berbeda) sebagai approver kedua' });
+      const approverAdminId = Number(approverAdminRaw);
+      if (!approverAdminId || approverAdminId === admin.id) {
+        return res.status(400).json({ success: false, message: 'Pilih admin lain sebagai approver' });
       }
 
-      // Validate approver existence in admin table to avoid FK constraint errors
-      const firstApprover = await db.query.admin.findFirst({ where: eq(adminTable.id, Number(approverAdminRaw)) });
+      const firstApprover = await db.query.admin.findFirst({ where: eq(adminTable.id, approverAdminId) });
       if (!firstApprover) {
         return res.status(400).json({ success: false, message: 'Approver pertama tidak ditemukan (admin.id tidak valid)' });
       }
-      const secondApprover = await db.query.admin.findFirst({ where: eq(adminTable.id, Number(secondApproverAdminRaw)) });
-      if (!secondApprover) {
-        return res.status(400).json({ success: false, message: 'Approver kedua tidak ditemukan (admin.id tidak valid)' });
+      if (!firstApprover.can_approve) {
+        return res.status(400).json({ success: false, message: 'Approver ini tidak memiliki izin approve' });
       }
 
-      // For occupation update with multipart, capture temp file info to move on approve
       if ((req as any).file && targetTable === 'occupation' && method !== 'DELETE') {
         try {
           const existing = comment ? JSON.parse(String(comment)) : {};
@@ -65,12 +59,45 @@ export function requireApproval(targetTable: string) {
         }
       }
 
+      let targetName: string | null = null;
+      try {
+        switch (targetTable) {
+          case 'user': {
+            const u = await db.query.user.findFirst({ where: eq(userTable.id, targetId) });
+            targetName = u?.full_name ?? null;
+            break;
+          }
+          case 'occupation': {
+            const o = await db.query.occupation.findFirst({ where: eq(occupationTable.id, targetId) });
+            targetName = o?.name ?? null;
+            break;
+          }
+          case 'scheme': {
+            const s = await db.query.scheme.findFirst({ where: eq(schemeTable.id, targetId) });
+            targetName = s ? (s.code || s.name) : null;
+            break;
+          }
+          case 'assessment': {
+            const a = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, targetId) });
+            targetName = a?.code ?? null;
+            break;
+          }
+          case 'schedule': {
+            const sch = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, targetId) });
+            targetName = sch ? `Schedule-${targetId}` : null;
+            break;
+          }
+          default:
+            targetName = null;
+        }
+      } catch { }
+
       const insertResult = await db.insert(approvalRequestTable).values({
         requester_admin_id: admin.id,
-        approver_admin_id: Number(approverAdminRaw),
-        second_approver_admin_id: Number(secondApproverAdminRaw),
+        approver_admin_id: approverAdminId,
         target_table: targetTable,
         target_id: targetId,
+        target_name: targetName ?? null,
         action: method === 'DELETE' ? 'delete' : 'update',
         status: 'pending',
         comment: comment ?? null,
@@ -84,7 +111,7 @@ export function requireApproval(targetTable: string) {
         created = await db.query.approvalRequest.findFirst({
           where: (t, { and, eq: _eq }) => and(
             _eq(t.requester_admin_id, admin.id),
-            _eq(t.approver_admin_id, Number(approverAdminRaw)),
+            _eq(t.approver_admin_id, approverAdminId),
             _eq(t.target_table, targetTable),
             _eq(t.target_id, targetId),
             _eq(t.status, 'pending')

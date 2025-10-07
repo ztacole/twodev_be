@@ -15,7 +15,7 @@ export const AdminController = {
     }),
 
     createAdmin: asyncHandler(async (req: Request, res: Response) => {
-        const { user_id, address, phone_no, birth_date } = req.body;
+        const { user_id, address, phone_no, birth_date, can_approve } = req.body;
         
         if (!user_id || !address || !phone_no || !birth_date) {
             return res.status(400).json({ 
@@ -28,7 +28,8 @@ export const AdminController = {
             user_id,
             address, 
             phone_no, 
-            birth_date 
+            birth_date,
+            can_approve: can_approve === undefined ? undefined : Boolean(Number(can_approve)) 
         });
         res.status(201).json({ 
             success: true, 
@@ -39,12 +40,12 @@ export const AdminController = {
 
     updateAdmin: asyncHandler(async (req: Request, res: Response) => {
         const id = Number(req.params.id);
-        const { full_name, email, address, phone_no, birth_date } = req.body;
+        const { full_name, email, address, phone_no, birth_date, can_approve } = req.body;
 
-        if (!full_name && !email && !address && !phone_no && !birth_date) {
+        if (!full_name && !email && !address && !phone_no && !birth_date && can_approve === undefined) {
             return res.status(400).json({
                 success: false,
-                message: 'Minimal satu field (full_name, email, address, phone_no, atau birth_date) harus diisi'
+                message: 'Minimal satu field (full_name, email, address, phone_no, birth_date, atau can_approve) harus diisi'
             });
         }
 
@@ -53,7 +54,8 @@ export const AdminController = {
             email,
             address,
             phone_no,
-            birth_date
+            birth_date,
+            can_approve: can_approve === undefined ? undefined : Boolean(Number(can_approve))
         });
 
         res.json({

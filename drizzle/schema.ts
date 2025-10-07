@@ -32,6 +32,7 @@ export const admin = mysqlTable('admin', {
     address: varchar('address', { length: 255 }).notNull(),
     phone_no: varchar('phone_no', { length: 255 }).notNull(),
     birth_date: date('birth_date').notNull(),
+    can_approve: boolean('can_approve').notNull().default(false),
     ...timestamps
 });
 
@@ -474,17 +475,13 @@ export const approvalRequest = mysqlTable('approval_request', {
     id: int('id').primaryKey().autoincrement(),
     requester_admin_id: int('requester_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     approver_admin_id: int('approver_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
-    second_approver_admin_id: int('second_approver_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     target_table: varchar('target_table', { length: 255 }).notNull(),
     target_id: int('target_id').notNull(),
+    target_name: varchar('target_name', { length: 255 }),
     action: varchar('action', { length: 50 }).notNull(),
     status: varchar('status', { length: 50 }).notNull().default('pending'),
     comment: text('comment'),
     approved_at: datetime('approved_at'),
-    approved_by_first_at: datetime('approved_by_first_at'),
-    approved_by_second_at: datetime('approved_by_second_at'),
-    approved_by_first: boolean('approved_by_first').notNull().default(false),
-    approved_by_second: boolean('approved_by_second').notNull().default(false),
     ...timestamps
 });
 
@@ -955,10 +952,6 @@ export const approvalRequestRelations = relations(approvalRequest, ({ one }) => 
     }),
     approver: one(admin, {
         fields: [approvalRequest.approver_admin_id],
-        references: [admin.id]
-    }),
-    secondApprover: one(admin, {
-        fields: [approvalRequest.second_approver_admin_id],
         references: [admin.id]
     })
 }));
