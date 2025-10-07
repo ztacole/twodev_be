@@ -1,6 +1,6 @@
 import Hashids from "hashids";
 
-export const hashids = new Hashids(process.env.HASH_SALT, 64);
+export const hashids = new Hashids(process.env.HASH_SALT, 32);
 
 export const getAssesseeUrl = (id: number) => {
 	const encodedId = hashids.encode(id);
