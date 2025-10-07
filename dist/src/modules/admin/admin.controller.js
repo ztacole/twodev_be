@@ -24,18 +24,15 @@ exports.AdminController = {
         res.json({ success: true, message: 'Detail admin', data });
     })),
     createAdmin: (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-        const { full_name, email, password, role_id, address, phone_no, birth_date } = req.body;
-        if (!full_name || !email || !password || !address || !phone_no || !birth_date) {
+        const { user_id, address, phone_no, birth_date } = req.body;
+        if (!user_id || !address || !phone_no || !birth_date) {
             return res.status(400).json({
                 success: false,
-                message: 'full_name, email, password, address, phone_no, dan birth_date wajib diisi'
+                message: 'user_id, address, phone_no, dan birth_date wajib diisi'
             });
         }
         const data = yield admin_service_1.AdminService.createAdmin({
-            full_name,
-            email,
-            password,
-            role_id,
+            user_id,
             address,
             phone_no,
             birth_date

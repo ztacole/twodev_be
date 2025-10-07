@@ -225,6 +225,54 @@ exports.ApprovalService = {
                         case 'user':
                             yield drizzle_1.db.delete(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.id, targetId)).execute();
                             break;
+                        case 'occupation': {
+                            const occupation = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, targetId) });
+                            if (occupation) {
+                                const { default: fs } = yield Promise.resolve().then(() => __importStar(require('fs')));
+                                const { default: path } = yield Promise.resolve().then(() => __importStar(require('path')));
+                                const clean = (s) => s.toString().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, '');
+                                const cleanName = clean(occupation.name);
+                                const filePath = path.join(__dirname, `../../../public/uploads/occupations/${occupation.id}_${occupation.scheme_id}_${cleanName}`);
+                                if (fs.existsSync(filePath)) {
+                                    const stat = fs.statSync(filePath);
+                                    if (stat.isDirectory()) {
+                                        fs.rmSync(filePath, { recursive: true, force: true });
+                                    }
+                                    else if (stat.isFile()) {
+                                        fs.unlinkSync(filePath);
+                                    }
+                                }
+                                yield drizzle_1.db.delete(schema_1.occupation).where((0, drizzle_orm_1.eq)(schema_1.occupation.id, targetId)).execute();
+                            }
+                            break;
+                        }
+                        case 'scheme': {
+                            const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, targetId) });
+                            if (scheme) {
+                                yield drizzle_1.db.delete(schema_1.scheme).where((0, drizzle_orm_1.eq)(schema_1.scheme.id, targetId)).execute();
+                            }
+                            break;
+                        }
+                        case 'schedule': {
+                            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, targetId) });
+                            if (schedule) {
+                                yield drizzle_1.db.delete(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, targetId)).execute();
+                                yield drizzle_1.db.delete(schema_1.assessmentSchedule).where((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, targetId)).execute();
+                            }
+                            break;
+                        }
+                        case 'assessment': {
+                            const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, targetId) });
+                            if (assessment) {
+                                const schedules = yield drizzle_1.db.query.assessmentSchedule.findMany({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, targetId) });
+                                for (const schedule of schedules) {
+                                    yield drizzle_1.db.delete(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, schedule.id)).execute();
+                                }
+                                yield drizzle_1.db.delete(schema_1.assessmentSchedule).where((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, targetId)).execute();
+                                yield drizzle_1.db.delete(schema_1.assessment).where((0, drizzle_orm_1.eq)(schema_1.assessment.id, targetId)).execute();
+                            }
+                            break;
+                        }
                         default:
                             break;
                     }
