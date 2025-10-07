@@ -5,6 +5,18 @@ import { result as resultTable, resultApl02Header as apl02HeaderTable, resultApl
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 
 export class APL02Service {
+  static async getUnitsWithoutResult(assessment_id: number): Promise<any[]> {
+    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+
+    if (!existingAssessment) {
+      throw new NotFoundError('Assessment');
+    }
+
+    const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, assessment_id));
+
+    return unitCompetencies;
+  }
+
   static async getUnitsAPL02(result_id: number): Promise<any[]> {
     const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
 

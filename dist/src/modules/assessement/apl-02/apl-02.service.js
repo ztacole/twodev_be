@@ -15,6 +15,16 @@ const drizzle_1 = require("../../../config/drizzle");
 const schema_1 = require("../../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 class APL02Service {
+    static getUnitsWithoutResult(assessment_id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
+            if (!existingAssessment) {
+                throw new error_1.NotFoundError('Assessment');
+            }
+            const unitCompetencies = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, assessment_id));
+            return unitCompetencies;
+        });
+    }
     static getUnitsAPL02(result_id) {
         return __awaiter(this, void 0, void 0, function* () {
             const existingResult = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });

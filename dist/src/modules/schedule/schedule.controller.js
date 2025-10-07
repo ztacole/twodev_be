@@ -186,7 +186,6 @@ ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)(
         }
         else if (type === 'assessor') {
             const assessment_id = Number(req.body.assessment_id);
-            const result_id = Number(req.body.result_id);
             const data_assessment = yield assessment_service_1.AssessmentService.getAssessmentById(assessment_id);
             if (!data_assessment) {
                 return res.status(404).json({
@@ -194,7 +193,7 @@ ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)(
                     message: "Assessment tidak ditemukan"
                 });
             }
-            const data_result = yield apl_02_service_1.APL02Service.getUnitsAPL02(result_id);
+            const data_result = yield apl_02_service_1.APL02Service.getUnitsWithoutResult(assessment_id);
             if (!data_result) {
                 return res.status(404).json({
                     success: false,
