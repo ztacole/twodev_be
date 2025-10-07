@@ -257,9 +257,9 @@ class ScheduleService {
         return __awaiter(this, arguments, void 0, function* ({ type, number, assigner_name, assessor_id, position, date, time, location, address }) {
             // === Get Assessor ===
             const assessor = yield assessor_service_1.AssessorService.getAssessorById(assessor_id);
-            const name = (assessor === null || assessor === void 0 ? void 0 : assessor.full_name) || "-";
+            const name = (assessor === null || assessor === void 0 ? void 0 : assessor.name) || "-";
             const registration_number = (assessor === null || assessor === void 0 ? void 0 : assessor.no_reg_met) || "-";
-            const scheme = (assessor === null || assessor === void 0 ? void 0 : assessor.scheme_name) || "-";
+            const scheme = (assessor === null || assessor === void 0 ? void 0 : assessor.scheme.name) || "-";
             // === Create a new PDF document ===
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
             const page = pdfDoc.addPage([612, 936]);
@@ -285,7 +285,7 @@ class ScheduleService {
             y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page, image);
             // === Title ===
             y = (0, pdfDraw_helper_1.drawParagraph)(page, "SURAT TUGAS", 40, y, fontBold, fontSizeSmall, "center", (0, pdf_lib_1.rgb)(0, 0, 0), undefined, undefined, true);
-            y = (0, pdfDraw_helper_1.drawParagraph)(page, `Nomor : ${number || "-"}`, 40, y, font, fontSizeSmall, "center") - l2LineGap;
+            y = (0, pdfDraw_helper_1.drawParagraph)(page, `No : ${number || "-"}`, 40, y, font, fontSizeSmall, "center") - l2LineGap;
             // === Body Identitas ===
             const text1 = "Ketua " + assigner_name + " menugaskan kepada :";
             y = (0, pdfDraw_helper_1.drawParagraph)(page, text1, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
@@ -305,9 +305,9 @@ class ScheduleService {
                 else {
                     y = (0, pdfDraw_helper_1.drawField)(page, "Hari/Tanggal", `${(0, date_helper_1.formatDay)(new Date(date))}, ${(0, date_helper_1.formatDate)(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
                 }
-                y = (0, pdfDraw_helper_1.drawField)(page, "Waktu", `${time || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+                y = (0, pdfDraw_helper_1.drawField)(page, "Waktu", `${time ? `${time} WIB s.d Selesai` : "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
             }
-            else {
+            else if (type === "assignments") {
                 const textDefault = `Untuk dapat bertugas sebagai asesor Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name || "-"} pada :`;
                 y = (0, pdfDraw_helper_1.drawParagraph)(page, textDefault, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
                 if (Array.isArray(date)) {
@@ -319,6 +319,9 @@ class ScheduleService {
                 else {
                     y = (0, pdfDraw_helper_1.drawField)(page, "Hari/Tanggal", `${(0, date_helper_1.formatDay)(new Date(date))}, ${(0, date_helper_1.formatDate)(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
                 }
+            }
+            else {
+                throw new Error("Tipe surat tugas tidak valid");
             }
             y = (0, pdfDraw_helper_1.drawField)(page, "Skema Okupasi", scheme, 40, y - l2LineGap, font, fontSizeSmall);
             y = (0, pdfDraw_helper_1.drawField)(page, "Tempat", `${location || "-"}\n${address || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
@@ -333,15 +336,178 @@ class ScheduleService {
             (0, pdfDraw_helper_1.drawParagraph)(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
             (0, pdfDraw_helper_1.drawParagraph)(page, `${"Ketua " + assigner_name}`, signatureX, signatureY - 20, font, fontSizeSmall, "right");
             signatureY -= 20;
-            const signatureNameLength = font.widthOfTextAtSize(assigner_name, fontSizeSmall);
-            const qrData = (0, hashids_1.getAssessorUrl)(1);
+            const signatureNameLength = font.widthOfTextAtSize(assigner_name || "-", fontSizeSmall);
+            const qrData = (0, hashids_1.getAssessorUrl)(assessor_id);
             const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
             page.drawImage(qrCode, { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth, height: signatureWidth });
             const LSPIcon = path_1.default.join(__dirname, "../../../public/images/logo-lsp.png");
             const LSPIconPath = yield (0, pdfDraw_helper_1.loadAndEmbedImage)(pdfDoc, LSPIcon, "png");
             page.drawImage(LSPIconPath, { x: page.getWidth() - signatureWidth * 3 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth * 2, height: signatureWidth, opacity: 0.3 });
             (0, pdfDraw_helper_1.drawParagraph)(page, `${assigner_name}`, signatureX, signatureY - 90, font, fontSizeSmall, "right");
+            const pdfBytes = yield pdfDoc.save();
+            return pdfBytes;
+        });
+    }
+    static generateLetterAssignmentAssessor(data_assessment, data_result, params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { number, LSP_name, assigner_name, assessor_id, work_unit, activity_name, date, time, tuk, location, address, issued_in, } = params;
+            // === Get Assessor ===
+            const assessor = yield assessor_service_1.AssessorService.getAssessorById(assessor_id);
+            const name = (assessor === null || assessor === void 0 ? void 0 : assessor.name) || "-";
+            const registration_number = (assessor === null || assessor === void 0 ? void 0 : assessor.no_reg_met) || "-";
+            const scheme = (assessor === null || assessor === void 0 ? void 0 : assessor.scheme.name) || "-";
+            // === Date & Time Formatting ===
+            const now = new Date();
+            const months = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            const formattedDate = (0, date_helper_1.formatDateRangeSD)((Array.isArray(date) ? date : [date]).map(d => new Date(d)));
+            const formattedTime = typeof time === "string"
+                ? (0, date_helper_1.formatTimeRange)({ start: time.split("-")[0].trim(), end: time.split("-")[1].trim() })
+                : (0, date_helper_1.formatTimeRange)(time);
+            // === PDF SETUP ===
+            const pdfDoc = yield pdf_lib_1.PDFDocument.create();
+            const [page1, page2, page3] = [pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936])];
+            const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
+            const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
+            const color = (0, pdf_lib_1.rgb)(0, 0, 0);
+            const FONTS = { xSmall: 7, small: 11, medium: 14, large: 16 };
+            const GAPS = { s: 8, m: 12, l: 20 };
+            let y = page1.getHeight() - 50;
+            // === PAGE 1 ===
+            y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page1, "../../public/images/kop-surat-lsp-smkn24j.png");
+            // Title & Header
+            y = (0, pdfDraw_helper_1.drawParagraph)(page1, "SURAT TUGAS", 40, y, fontBold, FONTS.large, "center", color, undefined, undefined, true);
+            y = (0, pdfDraw_helper_1.drawParagraph)(page1, `Nomor : ${number}`, 40, y, fontBold, FONTS.small, "center") - GAPS.s;
+            y = (0, pdfDraw_helper_1.drawParagraph)(page1, "Tentang", 40, y, fontBold, FONTS.small, "center");
+            y = (0, pdfDraw_helper_1.drawParagraph)(page1, "Pelaksanaan Uji Sertifikasi Kompetensi", 40, y, fontBold, FONTS.small, "center") - GAPS.m;
+            // === Body ===
+            const textPertimbangan = [
+                `1. Berdasarkan Keputusan Rapat Pengurus ${LSP_name}, tentang pelaksanaan Uji Sertifikasi Kompetensi tahun ${now.getFullYear()} bagi peserta Uji Sertifikasi Kompetensi.`,
+                `2. Bahwa dalam rangka pelaksanaan Uji Sertifikasi Kompetensi tersebut, dibutuhkan Asesor Kompetensi sebagai penguji.`,
+            ].join("\n");
+            y = (0, pdfDraw_helper_1.drawField)(page1, "Pertimbangan", textPertimbangan, 40, y, fontBold, FONTS.small);
+            y = (0, pdfDraw_helper_1.drawField)(page1, "Dasar", `Surat Keputusan Ketua ${LSP_name}`, 40, y, fontBold, FONTS.small) - GAPS.m;
+            // === Asesor Info ===
+            y = (0, pdfDraw_helper_1.drawParagraph)(page1, "Menugaskan", 40, y + GAPS.m, fontBold, FONTS.small, "center");
+            y = (0, pdfDraw_helper_1.drawField)(page1, "Nama", name, 40, y, fontBold, FONTS.small);
+            y = (0, pdfDraw_helper_1.drawField)(page1, "Nomor Registrasi", registration_number, 40, y, fontBold, FONTS.small);
+            y = (0, pdfDraw_helper_1.drawField)(page1, "Unit Kerja", work_unit || "-", 40, y, fontBold, FONTS.small);
+            // === Detail Kegiatan ===
+            const intro = `1. Melaksanakan tugas sebagai Asesor Penguji pada pelaksanaan Uji Sertifikasi Kompetensi Lembaga Sertifikasi Profesi Pihak I ${location} yang akan dilaksanakan sebagai berikut:`;
+            y = (0, pdfDraw_helper_1.drawField)(page1, "Untuk", intro, 40, y, fontBold, FONTS.small, 110, 8, 14, color, "justify", page1.getWidth() / 2 + 70);
+            const details = [
+                { label: "     Nama Kegiatan", value: activity_name },
+                { label: "     Skema", value: scheme },
+                { label: "     Tanggal", value: formattedDate },
+                { label: "     Pukul", value: formattedTime },
+                { label: "     TUK", value: tuk },
+                { label: "     Sekolah", value: location },
+                { label: "     Alamat", value: address },
+            ];
+            for (const { label, value } of details) {
+                y = (0, pdfDraw_helper_1.drawField)(page1, label, value, 160, y - 4, fontBold, FONTS.small);
+            }
+            const outro = [
+                "2. Melakukan verifikasi data Asesi sesuai dengan Dokumen yang dipersyaratkan;",
+                "3. Menyelesaikan laporan kegiatan paling lambat pada Jumat, 02 Mei 2025;",
+                "4. Melaksanakan tugas ini dengan sebaik-baiknya dan penuh tanggung jawab.",
+            ].join("\n");
+            y = (0, pdfDraw_helper_1.drawField)(page1, "", outro, 40, y, fontBold, FONTS.small) - GAPS.m;
+            // === Signature ===
+            const signatureY = yield drawSignatureSection(y, page1);
+            // === Tembusan ===
+            y = signatureY - 10;
+            ["Tembusan :", "1. Para penanggung jawab", "2. Tempat Uji Kompetensi", "3. Arsip"].forEach((line, i) => {
+                (0, pdfDraw_helper_1.drawParagraph)(page1, line, 40 + (i > 0 ? 20 : 0), y - GAPS.m * i, fontBold, FONTS.small, "left");
+            });
+            // === PAGE 2 ===
+            y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page2, "../../public/images/kop-surat-lsp-smkn24j.png");
+            y -= 20;
+            drawAttachment(y, page2);
+            y -= 40;
+            drawSchemeTableHeader(page2, y, data_assessment, fontBold, FONTS.small, color);
+            y -= 85;
+            drawUnitTable(page2, y, data_result, font, fontBold, FONTS.small, color);
             return yield pdfDoc.save();
+            // === HELPER FUNCTIONS ===
+            function drawSignatureSection(yStart, page) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    const signatureX = page.getWidth() / 2 + 70;
+                    let signatureY = yStart - 20;
+                    const signatureWidth = 65;
+                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Dikeluarkan di : ${issued_in || "Jakarta"}`, signatureX, signatureY, fontBold, FONTS.small, "left", undefined, 240);
+                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Pada tanggal   : ${now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear()}`, signatureX, signatureY, fontBold, FONTS.small, "left", undefined, 240);
+                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Ketua`, signatureX + 65, signatureY - 4, fontBold, FONTS.small, "left", undefined, 240);
+                    signatureY -= 50;
+                    const qrData = (0, hashids_1.getAssessorUrl)(assessor_id);
+                    const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
+                    page.drawImage(qrCode, { x: signatureX, y: signatureY - 4, width: signatureWidth, height: signatureWidth });
+                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Tanda tangan digital ${assigner_name} Ketua ${LSP_name} untuk dokumen dengan No: ${number} Tanggal: ${now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear()}`, signatureX + 70, signatureY + 54, fontBold, FONTS.xSmall, "justify", undefined, 110);
+                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `${assigner_name}`, signatureX + 36, signatureY - 18, fontBold, FONTS.xSmall, "left", undefined, 200);
+                    return signatureY;
+                });
+            }
+            ;
+            function drawAttachment(yStart, page) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    (0, pdfDraw_helper_1.drawParagraph)(page, "Lampiran Surat Tugas", page.getWidth() / 2 + 60, yStart, font, FONTS.small, "left", undefined, 260);
+                    (0, pdfDraw_helper_1.drawParagraph)(page, `Nomor      : ${number}`, page.getWidth() / 2 + 60, yStart - GAPS.m, font, FONTS.small, "left", undefined, 260);
+                    (0, pdfDraw_helper_1.drawParagraph)(page, `Tanggal    : ${now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear()}`, page.getWidth() / 2 + 60, yStart - GAPS.m * 2, font, FONTS.small, "left", undefined, 260);
+                });
+            }
+            function drawSchemeTableHeader(page, y, data, fontBold, fontSize, color) {
+                const w = page.getWidth() - 80;
+                const x = 40;
+                page.drawRectangle({ x, y: y - 60, width: 90, height: 60, borderColor: color, borderWidth: 1 });
+                let yText = y - 15;
+                yText = (0, pdfDraw_helper_1.drawParagraph)(page2, "SKEMA", 50, yText - 4, fontBold, fontSize, "left", undefined, 80);
+                yText = (0, pdfDraw_helper_1.drawParagraph)(page2, "SERTIFIKASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+                yText = (0, pdfDraw_helper_1.drawParagraph)(page2, "OKUPASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+                ["JUDUL", "NOMOR"].forEach((text, i) => {
+                    const yOffset = y - 30 * (i + 1);
+                    page.drawRectangle({ x: 130, y: yOffset, width: 80, height: 30, borderColor: color, borderWidth: 1 });
+                    (0, pdfDraw_helper_1.drawParagraph)(page, text, 142, yOffset + 10, fontBold, fontSize);
+                    (0, pdfDraw_helper_1.drawParagraph)(page, ":", 198, yOffset + 10, fontBold, fontSize);
+                });
+                ["name", "code"].forEach((field, i) => {
+                    var _a, _b;
+                    page.drawRectangle({
+                        x: 190,
+                        y: y - 30 * (i + 1),
+                        width: w - 150,
+                        height: 30,
+                        borderColor: color,
+                        borderWidth: 1,
+                    });
+                    const value = field === "name" ? (_b = (_a = data === null || data === void 0 ? void 0 : data.occupation) === null || _a === void 0 ? void 0 : _a.name) === null || _b === void 0 ? void 0 : _b.toUpperCase() : (data === null || data === void 0 ? void 0 : data.code) || "-";
+                    (0, pdfDraw_helper_1.drawParagraph)(page, value, 215, y - 20 - 30 * i, fontBold, fontSize);
+                });
+            }
+            function drawUnitTable(page, y, data, font, fontBold, fontSize, color) {
+                const x = 40;
+                const width = page.getWidth() - 80;
+                const rowHeight = 20;
+                const col = { no: 30, code: 120, title: width - 150 };
+                // Header
+                page.drawRectangle({ x, y: y - rowHeight, width, height: rowHeight, borderColor: color, borderWidth: 1 });
+                page.drawRectangle({ x: x + col.no, y: y - rowHeight, width: col.code, height: rowHeight, borderColor: color, borderWidth: 1 });
+                page.drawRectangle({ x: x + col.no + col.code, y: y - rowHeight, width: col.title, height: rowHeight, borderColor: color, borderWidth: 1 });
+                (0, pdfDraw_helper_1.drawParagraph)(page, "NO", x + 10, y - 15, fontBold, fontSize);
+                (0, pdfDraw_helper_1.drawParagraph)(page, "KODE UNIT", x + col.no + 10, y - 15, fontBold, fontSize);
+                (0, pdfDraw_helper_1.drawParagraph)(page, "JUDUL UNIT", x + col.no + col.code + 10, y - 15, fontBold, fontSize);
+                // Rows
+                data.forEach((result, i) => {
+                    const rowY = y - rowHeight - (i + 1) * rowHeight;
+                    page.drawRectangle({ x, y: rowY, width, height: rowHeight, borderColor: color, borderWidth: 1 });
+                    page.drawLine({ start: { x: x + col.no, y: rowY }, end: { x: x + col.no, y: rowY + rowHeight }, thickness: 1, color });
+                    page.drawLine({ start: { x: x + col.no + col.code, y: rowY }, end: { x: x + col.no + col.code, y: rowY + rowHeight }, thickness: 1, color });
+                    (0, pdfDraw_helper_1.drawParagraph)(page, `${i + 1}`, x + 10, rowY + 5, font, fontSize);
+                    (0, pdfDraw_helper_1.drawParagraph)(page, `${(result === null || result === void 0 ? void 0 : result.unit_code) || "-"}`, x + col.no + 10, rowY + 5, font, fontSize);
+                    (0, pdfDraw_helper_1.drawParagraph)(page, `${(result === null || result === void 0 ? void 0 : result.title) || "-"}`, x + col.no + col.code + 10, rowY + 5, font, fontSize);
+                });
+            }
         });
     }
 }

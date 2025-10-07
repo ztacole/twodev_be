@@ -90,11 +90,12 @@ class AssesseeService {
                 job: schema_1.assesseeJob
             }).from(schema_1.assessee)
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
-                .innerJoin(schema_1.assesseeJob, (0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, schema_1.assessee.id))
+                .leftJoin(schema_1.assesseeJob, (0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, schema_1.assessee.id))
                 .where((0, drizzle_orm_1.eq)(schema_1.assessee.id, id));
             if (assessee.length === 0)
                 throw new error_1.NotFoundError('Assessee');
-            const [assesseeData] = assessee;
+            // If you expect multiple jobs, you might want to aggregate them
+            const assesseeData = Object.assign(Object.assign({}, assessee[0]), { jobs: assessee.map(row => row.job).filter(job => job !== null) });
             return this.formatAssesseeResponse(assesseeData);
         });
     }

@@ -57,6 +57,8 @@ router.put('/:id', auth_middleware_2.authenticateToken, auth_middleware_1.adminM
 router.get('/:id', assessment_controller_1.AssessmentController.getAssessmentById);
 router.delete('/:id', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, (0, approval_middleware_1.requireApproval)('assessment'), assessment_controller_1.AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', assessment_controller_1.AssessmentController.getAssessmentResultDetails);
+// RESULT PDF
+//-- Route Example: /api/assessments/result/:resultId/APL01/export --//
 router.get('/results/status/admin', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssessmentResultsForAdmin);
 router.get('/results/status/admin/assessees/:assessmentId/:assessorId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssesseesByAssessmentAndAssessor);
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, assessment_controller_1.AssessmentController.getNavigationAssessee);
