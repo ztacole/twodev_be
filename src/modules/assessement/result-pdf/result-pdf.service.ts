@@ -4,7 +4,8 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCertificateLayout, drawElementLayout, drawTable, drawUnitGroupLayout, drawUnitLayout } from "./helper";
+import { createNewPage, drawCertificateLayout, drawElementLayout, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout } from "./helper";
+import { formatDate, formatDay } from "../../../helper/date.helper";
 
 interface ChecklistData {
     schemaTitle: string;
@@ -58,10 +59,9 @@ export class ResultPdfService {
             ["TUK", ":", resultDetails?.tuk ?? "-"],
             ["Nama Assesor", ":", resultDetails?.assessor?.name ?? "-"],
             ["Nama Asesi", ":", resultDetails?.assessee?.name ?? "-"],
-            ["Tanggal", ":", resultDetails?.created_at?.toLocaleString() ?? "-"],
+            ["Tanggal", ":", resultDetails?.assessment?.created_at ? `${formatDay(resultDetails.assessment.created_at)}, ${formatDate(resultDetails.assessment.created_at)}` : "-"],
         ];
         y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
-        y -= 40;
 
         // ==== LOOP GROUPS ====
         for (let i = 0; i < groups.length; i++) {
@@ -70,42 +70,28 @@ export class ResultPdfService {
             if (y < 150) {
                 ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
             }
-            
+
             y = await drawUnitGroupLayout(page, i, group, 40, y, 20, font, fontBold);
-            y -= 20;
 
             // Loop unit
+            let unitIdx = 0;
             for (const unit of group.units) {
-                // Ambil elemen dan detail dari unit
-                y = await drawUnitLayout(page, i, unit.unit_code, unit.title, 40, y, 20, font, fontBold);
+                y -= 20;
+                y = await drawUnitLayout(page, ++unitIdx, unit.unit_code, unit.title, 40, y, 20, font, fontBold);
                 y -= 20;
 
                 const elements = await IA01Service.getElementsByUnitId(resultId, unit.id);
-
-                // const header = [["No", "Elemen", "Kriteria Unjuk Kerja", "Standar", "Ya", "Tidak"]];
-                // const rows: string[][] = [];
-
-                // elements.forEach((el, elIdx) => {
-                //     el.details.forEach((detail, detIdx) => {
-                //         rows.push([
-                //             `${elIdx + 1}.${detIdx + 1}`,
-                //             el.title,
-                //             detail.description,
-                //             detail.benchmark,
-                //             detail.result?.is_competent ? "V" : "",
-                //             detail.result && !detail.result.is_competent ? "V" : "",
-                //         ]);
-                //     });
-                // });
 
                 if (y < 150) {
                     ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
                 }
 
                 y = await drawElementLayout(page, elements, 40, y, font, fontBold);
-                y -= 20;
             }
         }
+        
+        ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        y = await drawFeedbackIA01(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
         return await pdfDoc.save();
     }
