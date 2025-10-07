@@ -15,7 +15,7 @@ const schema_1 = require("../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 function requireApproval(targetTable) {
     return (req, res, next) => __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
         try {
             const user = req.user;
             const admin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, user.id) });
@@ -52,7 +52,7 @@ function requireApproval(targetTable) {
                     const merged = Object.assign(Object.assign({}, existing), { tempFilePath: req.file.path, tempDestination: req.file.destination, tempFileName: req.file.filename, name: (_u = body.name) !== null && _u !== void 0 ? _u : existing.name, scheme_id: body.scheme_id ? Number(body.scheme_id) : existing.scheme_id });
                     comment = JSON.stringify(merged);
                 }
-                catch (_y) {
+                catch (_z) {
                     comment = JSON.stringify({ tempFilePath: req.file.path, tempDestination: req.file.destination, tempFileName: req.file.filename, name: body.name, scheme_id: body.scheme_id ? Number(body.scheme_id) : undefined });
                 }
             }
@@ -81,14 +81,24 @@ function requireApproval(targetTable) {
                     }
                     case 'schedule': {
                         const sch = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, targetId) });
-                        targetName = sch ? `Schedule-${targetId}` : null;
+                        if (sch) {
+                            const asmt = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, sch.assessment_id) });
+                            const occ = asmt ? yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, asmt.occupation_id) }) : null;
+                            const fmt = (d) => d instanceof Date ? d.toISOString().slice(0, 10) : new Date(d).toISOString().slice(0, 10);
+                            const start = sch.start_date ? fmt(sch.start_date) : '';
+                            const end = sch.end_date ? fmt(sch.end_date) : '';
+                            targetName = `${(_y = occ === null || occ === void 0 ? void 0 : occ.name) !== null && _y !== void 0 ? _y : 'Schedule'} — ${start} s/d ${end}`;
+                        }
+                        else {
+                            targetName = null;
+                        }
                         break;
                     }
                     default:
                         targetName = null;
                 }
             }
-            catch (_z) { }
+            catch (_0) { }
             const insertResult = yield drizzle_1.db.insert(schema_1.approvalRequest).values({
                 requester_admin_id: admin.id,
                 approver_admin_id: approverAdminId,

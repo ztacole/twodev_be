@@ -70,7 +70,7 @@ exports.ApprovalService = {
     },
     createApprovalRequest(input) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d;
+            var _a, _b, _c, _d, _e;
             const requester = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, input.user.id) });
             if (!requester)
                 throw new Error("Hanya admin yang dapat membuat approval request");
@@ -110,14 +110,24 @@ exports.ApprovalService = {
                     }
                     case 'schedule': {
                         const sch = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, input.targetId) });
-                        targetName = sch ? `Schedule-${input.targetId}` : null;
+                        if (sch) {
+                            const asmt = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, sch.assessment_id) });
+                            const occ = asmt ? yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, asmt.occupation_id) }) : null;
+                            const fmt = (d) => d instanceof Date ? d.toISOString().slice(0, 10) : new Date(d).toISOString().slice(0, 10);
+                            const start = sch.start_date ? fmt(sch.start_date) : '';
+                            const end = sch.end_date ? fmt(sch.end_date) : '';
+                            targetName = `${(_d = occ === null || occ === void 0 ? void 0 : occ.name) !== null && _d !== void 0 ? _d : 'Schedule'} — ${start} s/d ${end}`;
+                        }
+                        else {
+                            targetName = null;
+                        }
                         break;
                     }
                     default:
                         targetName = null;
                 }
             }
-            catch (_e) { }
+            catch (_f) { }
             yield drizzle_1.db.insert(schema_1.approvalRequest).values({
                 requester_admin_id: requester.id,
                 approver_admin_id: input.approverAdminId,
@@ -126,7 +136,7 @@ exports.ApprovalService = {
                 target_name: targetName,
                 action: input.action,
                 status: 'pending',
-                comment: (_d = input.comment) !== null && _d !== void 0 ? _d : null,
+                comment: (_e = input.comment) !== null && _e !== void 0 ? _e : null,
                 approved_at: null,
             }).execute();
             const created = yield drizzle_1.db.query.approvalRequest.findFirst({
