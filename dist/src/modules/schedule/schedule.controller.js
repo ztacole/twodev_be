@@ -17,6 +17,8 @@ exports.ScheduleController = void 0;
 const schedule_service_1 = require("./schedule.service");
 const exceljs_1 = __importDefault(require("exceljs"));
 const async_handler_1 = require("../../common/async.handler");
+const assessment_service_1 = require("../assessement/assessment.service");
+const apl_02_service_1 = require("../assessement/apl-02/apl-02.service");
 class ScheduleController {
 }
 exports.ScheduleController = ScheduleController;
@@ -170,13 +172,44 @@ ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)(
     try {
         const { type } = req.query;
         const body = req.body;
-        const letter = yield schedule_service_1.ScheduleService.generateLetterAssignment(Object.assign(Object.assign({}, body), { type: type }));
+        let letter;
         let filename = '';
-        if (type === 'verifications') {
+        if (type !== 'assessor') {
+            letter = yield schedule_service_1.ScheduleService.generateLetterAssignment(Object.assign(Object.assign({}, body), { type: type }));
+            if (type === 'verifications') {
+                filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
+            }
+            else if (type === 'assignments') {
+                filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
+            }
             filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
         }
-        else {
+        else if (type === 'assessor') {
+            const assessment_id = Number(req.body.assessment_id);
+            const result_id = Number(req.body.result_id);
+            const data_assessment = yield assessment_service_1.AssessmentService.getAssessmentById(assessment_id);
+            if (!data_assessment) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Assessment tidak ditemukan"
+                });
+            }
+            const data_result = yield apl_02_service_1.APL02Service.getUnitsAPL02(result_id);
+            if (!data_result) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Hasil assessment tidak ditemukan"
+                });
+            }
+            letter = yield schedule_service_1.ScheduleService.generateLetterAssignmentAssessor(data_assessment, data_result, body);
             filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
+        }
+        else {
+            res.status(400).json({
+                success: false,
+                message: "Tipe surat tugas tidak valid. Gunakan 'assignments', 'verifications', atau 'assessor'."
+            });
+            return;
         }
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", `attachment; filename="${filename}.pdf"`);
