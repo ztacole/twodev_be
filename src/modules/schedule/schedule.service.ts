@@ -422,6 +422,7 @@ export class ScheduleService {
 
         // === Date & Time Formatting ===
         const now = new Date();
+        const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
         const months = [
             "Januari", "Februari", "Maret", "April", "Mei", "Juni",
             "Juli", "Agustus", "September", "Oktober", "November", "Desember"
@@ -431,6 +432,8 @@ export class ScheduleService {
             typeof time === "string"
                 ? formatTimeRange({ start: time.split("-")[0].trim(), end: time.split("-")[1].trim() })
                 : formatTimeRange(time);
+        const lastDate = Array.isArray(date) ? new Date(Math.max(...date.map(d => new Date(d).getTime()))) : new Date(date);
+        const formattedEndDate = `${days[lastDate.getDay()]}, ${lastDate.getDate()} ${months[lastDate.getMonth()]} ${lastDate.getFullYear()}`;
 
         // === PDF SETUP ===
         const pdfDoc = await PDFDocument.create();
@@ -487,9 +490,9 @@ export class ScheduleService {
         }
 
         const outro = [
-            "2. Melakukan verifikasi data Asesi sesuai dengan Dokumen yang dipersyaratkan;",
-            "3. Menyelesaikan laporan kegiatan paling lambat pada Jumat, 02 Mei 2025;",
-            "4. Melaksanakan tugas ini dengan sebaik-baiknya dan penuh tanggung jawab.",
+            `2. Melakukan verifikasi data Asesi sesuai dengan Dokumen yang dipersyaratkan;`,
+            `3. Menyelesaikan laporan kegiatan paling lambat pada ${formattedEndDate};`,
+            `4. Melaksanakan tugas ini dengan sebaik-baiknya dan penuh tanggung jawab.`,
         ].join("\n");
         y = drawField(page1, "", outro, 40, y, fontBold, FONTS.small) - GAPS.m;
 
