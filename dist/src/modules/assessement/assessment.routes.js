@@ -22,6 +22,7 @@ const ak_02_controller_1 = require("./ak-02/ak-02.controller");
 const ak_03_controller_1 = require("./ak-03/ak-03.controller");
 const ak_04_controller_1 = require("./ak-04/ak-04.controller");
 const ak_05_controller_1 = require("./ak-05/ak-05.controller");
+const result_pdf_controller_1 = require("./result-pdf/result-pdf.controller");
 const auth_middleware_2 = require("../../middleware/auth.middleware");
 // import { uploadIA02 } from "./ia-02/upload-conifg";
 const approval_middleware_1 = require("../../middleware/approval.middleware");
@@ -58,7 +59,8 @@ router.get('/:id', assessment_controller_1.AssessmentController.getAssessmentByI
 router.delete('/:id', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, (0, approval_middleware_1.requireApproval)('assessment'), assessment_controller_1.AssessmentController.deleteAssessment);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', assessment_controller_1.AssessmentController.getAssessmentResultDetails);
 // RESULT PDF
-//-- Route Example: /api/assessments/result/:resultId/APL01/export --//
+//-- Route Example: /ia-01/result/:resultId/export --//
+//-- Put it at the bottom of the routes --//
 router.get('/results/status/admin', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssessmentResultsForAdmin);
 router.get('/results/status/admin/assessees/:assessmentId/:assessorId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssesseesByAssessmentAndAssessor);
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, assessment_controller_1.AssessmentController.getNavigationAssessee);
@@ -101,6 +103,7 @@ router.post('/ia-01/result/send-header', auth_middleware_2.authenticateToken, au
 router.put('/ia-01/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_01_controller_1.IA01Controller.approvedByAssessor);
 router.put('/ia-01/result/assessee/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ia_01_controller_1.IA01Controller.approvedByAssessee);
 router.get('/ia-01/result/:resultId', ia_01_controller_1.IA01Controller.getResultDetails);
+router.get('/ia-01/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateIA01);
 router.get('/ia-01/result/incomplete-criteria/:resultId', ia_01_controller_1.IA01Controller.getIncompleteCriterias);
 router.get('/ia-02/units/:assessmentId', ia_02_controller_1.IA02Controller.getIA02Groups);
 router.put('/ia-02/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_02_controller_1.IA02Controller.approvedByAssessor);

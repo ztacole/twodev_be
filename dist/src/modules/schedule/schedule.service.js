@@ -358,6 +358,7 @@ class ScheduleService {
             const scheme = (assessor === null || assessor === void 0 ? void 0 : assessor.scheme.name) || "-";
             // === Date & Time Formatting ===
             const now = new Date();
+            const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
             const months = [
                 "Januari", "Februari", "Maret", "April", "Mei", "Juni",
                 "Juli", "Agustus", "September", "Oktober", "November", "Desember"
@@ -366,6 +367,8 @@ class ScheduleService {
             const formattedTime = typeof time === "string"
                 ? (0, date_helper_1.formatTimeRange)({ start: time.split("-")[0].trim(), end: time.split("-")[1].trim() })
                 : (0, date_helper_1.formatTimeRange)(time);
+            const lastDate = Array.isArray(date) ? new Date(Math.max(...date.map(d => new Date(d).getTime()))) : new Date(date);
+            const formattedEndDate = `${days[lastDate.getDay()]}, ${lastDate.getDate()} ${months[lastDate.getMonth()]} ${lastDate.getFullYear()}`;
             // === PDF SETUP ===
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
             const [page1, page2, page3] = [pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936])];
@@ -410,9 +413,9 @@ class ScheduleService {
                 y = (0, pdfDraw_helper_1.drawField)(page1, label, value, 160, y - 4, fontBold, FONTS.small);
             }
             const outro = [
-                "2. Melakukan verifikasi data Asesi sesuai dengan Dokumen yang dipersyaratkan;",
-                "3. Menyelesaikan laporan kegiatan paling lambat pada Jumat, 02 Mei 2025;",
-                "4. Melaksanakan tugas ini dengan sebaik-baiknya dan penuh tanggung jawab.",
+                `2. Melakukan verifikasi data Asesi sesuai dengan Dokumen yang dipersyaratkan;`,
+                `3. Menyelesaikan laporan kegiatan paling lambat pada ${formattedEndDate};`,
+                `4. Melaksanakan tugas ini dengan sebaik-baiknya dan penuh tanggung jawab.`,
             ].join("\n");
             y = (0, pdfDraw_helper_1.drawField)(page1, "", outro, 40, y, fontBold, FONTS.small) - GAPS.m;
             // === Signature ===
@@ -462,9 +465,9 @@ class ScheduleService {
                 const x = 40;
                 page.drawRectangle({ x, y: y - 60, width: 90, height: 60, borderColor: color, borderWidth: 1 });
                 let yText = y - 15;
-                yText = (0, pdfDraw_helper_1.drawParagraph)(page2, "SKEMA", 50, yText - 4, fontBold, fontSize, "left", undefined, 80);
-                yText = (0, pdfDraw_helper_1.drawParagraph)(page2, "SERTIFIKASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
-                yText = (0, pdfDraw_helper_1.drawParagraph)(page2, "OKUPASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+                yText = (0, pdfDraw_helper_1.drawParagraph)(page, "SKEMA", 50, yText - 4, fontBold, fontSize, "left", undefined, 80);
+                yText = (0, pdfDraw_helper_1.drawParagraph)(page, "SERTIFIKASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+                yText = (0, pdfDraw_helper_1.drawParagraph)(page, "OKUPASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
                 ["JUDUL", "NOMOR"].forEach((text, i) => {
                     const yOffset = y - 30 * (i + 1);
                     page.drawRectangle({ x: 130, y: yOffset, width: 80, height: 30, borderColor: color, borderWidth: 1 });
