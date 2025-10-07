@@ -259,26 +259,26 @@ function drawUnitGroupLayout(page, index, group, startX, startY, rowHeight, font
         page.drawText(`KELOMPOK PEKERJAAN ${index + 1}`, { x: 40, y: y, size: 11, font: fontBold });
         y -= 12;
         // Header
-        let headerX = startX;
-        const w = 160;
-        page.drawRectangle({
-            x: headerX,
-            y: y - rowHeight * (group.units.length + 1),
-            width: w,
-            height: rowHeight * (group.units.length + 1),
-            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
-            borderWidth: 1,
-        });
-        const align = "center";
-        const titleY = y - rowHeight * (group.units.length + 1) / 2 + rowHeight * (group.units.length + 1) / (group.units.length % 2 === 0 ? 6 : 4);
-        drawCellText(page, group.name, headerX, titleY, w, rowHeight * (group.units.length + 1), fontBold, 9, align);
-        headerX += w;
+        const headerY = y;
+        const headerWidth = 160;
+        const headerX = startX + headerWidth;
         // Tabel unit
         const unitHeader = [["No", "Kode Unit", "Judul Unit"]];
         const unitRows = group.units.map((u, idx) => [String(idx + 1), u.unit_code, u.title]);
         const mergedData = [...unitHeader, ...unitRows];
         const colWidths = [20, 110, 230];
         y = yield drawTable(page, mergedData, colWidths, headerX, y, rowHeight, font, fontBold);
+        page.drawRectangle({
+            x: startX,
+            y: headerY - rowHeight * (group.units.length + 1),
+            width: headerWidth,
+            height: rowHeight * (group.units.length + 1),
+            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+            borderWidth: 1,
+        });
+        const align = "center";
+        const titleY = headerY - rowHeight * (group.units.length + 1) / 2 + rowHeight * (group.units.length + 1) / (group.units.length % 2 === 0 ? 6 : 4);
+        drawCellText(page, group.name, startX, titleY, headerWidth, rowHeight * (group.units.length + 1), fontBold, 9, align);
         return y;
     });
 }
@@ -456,7 +456,7 @@ function drawElementLayout(page, elements, startX, startY, font, fontBold) {
                         }
                         if (line)
                             lines.push(line);
-                        return Math.max(lines.length * (9 + 4) + 6, rowHeight);
+                        return Math.max(lines.length * (9 + 4) + 6, rowHeight) + 10;
                     });
                     return detailsHeights.reduce((a, b) => a + b, 0);
                 }
