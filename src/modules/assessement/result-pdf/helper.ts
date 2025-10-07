@@ -312,15 +312,15 @@ async function drawUnitGroupLayout(
     
     page.drawRectangle({
         x: startX,
-        y: headerY - rowHeight * (group.units.length + 1),
+        y: y - (y - headerY),
         width: headerWidth,
-        height: rowHeight * (group.units.length + 1),
+        height: y - headerY,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
     });
     const align = "center"
     const titleY = headerY - rowHeight * (group.units.length + 1) / 2 + rowHeight * (group.units.length + 1) / (group.units.length % 2 === 0 ? 6 : 4)
-    drawCellText(page, group.name, startX, titleY, headerWidth, rowHeight * (group.units.length + 1), fontBold, 9, align);
+    drawCellText(page, group.name, startX, titleY, headerWidth, y - headerY, fontBold, 9, align);
 
     return y;
 }
