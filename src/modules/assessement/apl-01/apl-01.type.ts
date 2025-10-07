@@ -1,4 +1,4 @@
-import { AssessmentResponse } from "../assessment.type";
+import { AssessmentDetailsResponse } from "../assessment.type";
 
 // Response
 interface AssesseeJobResponse {
@@ -28,7 +28,7 @@ interface AssesseeResponse {
     postal_code: string;
     educational_qualifications: string;
     job: AssesseeJobResponse;
-    assessment: AssessmentResponse;
+    assessment: AssessmentDetailsResponse;
 }
 
 interface CertificateDocsResponse {
