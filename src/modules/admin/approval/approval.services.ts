@@ -75,7 +75,16 @@ export const ApprovalService = {
         }
         case 'schedule': {
           const sch = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, input.targetId) });
-          targetName = sch ? `Schedule-${input.targetId}` : null;
+          if (sch) {
+            const asmt = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, sch.assessment_id) });
+            const occ = asmt ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, asmt.occupation_id) }) : null;
+            const fmt = (d: any) => d instanceof Date ? d.toISOString().slice(0,10) : new Date(d as any).toISOString().slice(0,10);
+            const start = sch.start_date ? fmt(sch.start_date as any) : '';
+            const end = sch.end_date ? fmt(sch.end_date as any) : '';
+            targetName = `${occ?.name ?? 'Schedule'} — ${start} s/d ${end}`;
+          } else {
+            targetName = null;
+          }
           break;
         }
         default:
