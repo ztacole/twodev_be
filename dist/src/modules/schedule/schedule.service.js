@@ -474,7 +474,7 @@ class ScheduleService {
                 return __awaiter(this, void 0, void 0, function* () {
                     const x = 40;
                     const width = page.getWidth() - 80;
-                    const rowHeight = 20;
+                    const rowHeight = 24;
                     const colWidths = [30, 120, width - 150];
                     const colData = [["NO", "KODE UNIT", "JUDUL UNIT"]];
                     data.map((data, idx) => {

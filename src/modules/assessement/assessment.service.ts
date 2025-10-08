@@ -1962,7 +1962,7 @@ export class AssessmentService {
                 return [`${idx + 1}.`, assessee.assessee_name, assessee.score < 85 && assessee.score >= 0 ? assessee.score.toString() : assessee.score < 0 ? "" : "", assessee.score >= 85 && assessee.score <= 90 ? assessee.score.toString() : "", assessee.score > 90 ? assessee.score.toString() : ""];
             }) ?? [];
             for (let i = 0; i < (data.length <= 12 ? 12 : data.length); i++) {
-                let row = [`${i + 1}.`, '', '', '', ''];
+                let row = [`${i + 1}.`, 'N/A', 'N/A', 'N/A', 'N/A'];
                 try {
                     row = data[i];
                 } catch {}

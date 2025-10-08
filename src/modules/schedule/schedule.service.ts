@@ -567,7 +567,7 @@ export class ScheduleService {
         async function drawUnitTable(page: PDFPage, y: number, data: any[], font: PDFFont, fontBold: PDFFont, fontSize: number, color: RGB) {
             const x = 40;
             const width = page.getWidth() - 80;
-            const rowHeight = 20;
+            const rowHeight = 24;
             const colWidths = [30, 120, width - 150 ];
             const colData = [["NO", "KODE UNIT", "JUDUL UNIT"]];
 
