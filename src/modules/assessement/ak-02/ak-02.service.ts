@@ -111,6 +111,7 @@ export class AK02Service {
       tuk: result.tuk,
       is_competent: result.is_competent,
       created_at: result.created_at,
+      updated_at: result.updated_at,
       ak02_headers: {
         id: header.id,
         is_competent: header.is_competent,

@@ -26,4 +26,16 @@ export class ResultPdfController {
         );
         res.send(Buffer.from(pdfBytes));
     });
+    
+    static generateAK02 = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+
+        const pdfBytes = await ResultPdfService.generateAK02(resultId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            "attachment; filename=\"AK-02.pdf\""
+        );
+        res.send(Buffer.from(pdfBytes));
+    })
 }
