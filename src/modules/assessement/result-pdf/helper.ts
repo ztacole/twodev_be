@@ -418,7 +418,7 @@ async function drawElementLayout(
     fontBold: PDFFont
 ): Promise<number> {
     const colWidths = [20, 110, 170, 90, 65, 65]; // Lebar kolom sesuai gambar
-    const rowHeight = 25;
+    const rowHeight = 20;
     let y = startY;
 
     // === DRAW HEADER ===
@@ -502,26 +502,31 @@ async function drawElementLayout(
         element.details.map((detail: any) => detail.description),
         element.details[0].benchmark,
         element.details.map((detail: any) => detail.result?.is_competent ? "Ya" : "Tidak"),
-        element.details.map((detail: any) => detail.result?.evaluation),
+        element.details.map((detail: any) => detail.result?.evaluation ?? "-"),
     ]);
     for (let i = 0; i < data.length; i++) {
         const row = data[i];
         let x = startX;
         let maxRowHeight = rowHeight;
-        let detailsHeights: number[] = [];
+        const detailsHeights: number[][] = [];
 
-        // ukur tinggi maksimum row (karena ada teks wrap)
+        // Hitung tinggi per cell
         const cellHeights = row.map((cell: any, idx: number) => {
             if (Array.isArray(cell)) {
-                detailsHeights = cell.map((detail: any) => {
-                    const safeCellArr = detail ?? ""; // fallback
-                    const words = safeCellArr.split(" ");
+                const heights = cell.map((detail: any) => {
+                    const safeText = detail ?? "";
+                    const words = safeText.split(" ");
                     let line = "";
                     let lines: string[] = [];
+
                     for (const word of words) {
                         const testLine = line ? line + " " + word : word;
+                        const maxWidth = (idx === 4)
+                            ? colWidths[idx] / 2 - 8
+                            : colWidths[idx] - 8;
                         const testWidth = font.widthOfTextAtSize(testLine, 9);
-                        if (testWidth > ((idx === 4) ? colWidths[idx] / 2 - 8 : colWidths[idx] - 8)) {
+
+                        if (testWidth > maxWidth) {
                             lines.push(line);
                             line = word;
                         } else {
@@ -529,15 +534,18 @@ async function drawElementLayout(
                         }
                     }
                     if (line) lines.push(line);
-                    return lines.length * (9 + 4) + 6, rowHeight + 10;
-                })
+                    return Math.max(lines.length * (9 + 4) + 6, rowHeight);
+                });
 
-                return detailsHeights.reduce((a: number, b: number) => a + b, 0);
+                detailsHeights.push(heights);
+                const totalHeight = heights.reduce((a, b) => a + b, 0);
+                return totalHeight;
             } else {
-                const safeCell = cell ?? ""; // fallback
+                const safeCell = cell ?? "";
                 const words = safeCell.split(" ");
                 let line = "";
                 let lines: string[] = [];
+
                 for (const word of words) {
                     const testLine = line ? line + " " + word : word;
                     const testWidth = font.widthOfTextAtSize(testLine, 9);
@@ -553,11 +561,27 @@ async function drawElementLayout(
             }
         });
 
-        maxRowHeight = Math.max(rowHeight, ...cellHeights);
+        // Hitung tinggi sejajar untuk setiap baris detail
+        const detailCount = Math.max(...detailsHeights.map(h => h.length));
+        const detailRowHeights: number[] = [];
 
-        // draw cell
+        for (let d = 0; d < detailCount; d++) {
+            const maxHeight = Math.max(
+                rowHeight,
+                ...detailsHeights.map(h => h[d] ?? rowHeight)
+            );
+            detailRowHeights.push(maxHeight);
+        }
+
+        maxRowHeight = Math.max(
+            rowHeight,
+            detailRowHeights.reduce((a, b) => a + b, 0)
+        );
+
         row.forEach((cell: any, idx: number) => {
             const w = colWidths[idx];
+            const align = idx === 3 || idx === 4 ? "center" : "left";
+
             page.drawRectangle({
                 x,
                 y: y - maxRowHeight,
@@ -566,52 +590,38 @@ async function drawElementLayout(
                 borderColor: rgb(0, 0, 0),
                 borderWidth: 1,
             });
-            const align = idx === 3 || idx === 4 ? "center" : "left";
+
             if (Array.isArray(cell)) {
-                let persistanceY = y;
+                let currentY = y;
+
                 cell.forEach((detail: any, detIdx: number) => {
+                    const detailHeight = detailRowHeights[detIdx];
                     if (idx === 4) {
-                        let persistanceX = x;
-                        let detailPersistanceY = persistanceY;
-                        const persistanceW = w / 2;
-                        page.drawRectangle({
-                            x: persistanceX,
-                            y: detailPersistanceY - detailsHeights[detIdx],
-                            width: persistanceW,
-                            height: detailsHeights[detIdx],
-                            borderColor: rgb(0, 0, 0),
-                            borderWidth: 1,
-                        });
-                        drawCellText(page, detail === "Ya" ? "V" : "", persistanceX, detailPersistanceY, persistanceW, detailsHeights[detIdx], font, 9, align);
-                        persistanceX += persistanceW;
-                        page.drawRectangle({
-                            x: persistanceX,
-                            y: detailPersistanceY - detailsHeights[detIdx],
-                            width: persistanceW,
-                            height: detailsHeights[detIdx],
-                            borderColor: rgb(0, 0, 0),
-                            borderWidth: 1,
-                        });
-                        drawCellText(page, detail === "Tidak" ? "V" : "", persistanceX, detailPersistanceY, persistanceW, detailsHeights[detIdx], font, 9, align);
-                        detailPersistanceY -= detailsHeights[detIdx];
+                        // Kolom hasil (Ya/Tidak) dibagi dua
+                        let colX = x;
+                        const halfW = w / 2;
+                        page.drawRectangle({ x: colX, y: currentY - detailHeight, width: halfW, height: detailHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+                        drawCellText(page, detail === "Ya" ? "V" : "", colX, currentY, halfW, detailHeight, font, 9, align);
+
+                        colX += halfW;
+                        page.drawRectangle({ x: colX, y: currentY - detailHeight, width: halfW, height: detailHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+                        drawCellText(page, detail === "Tidak" ? "V" : "", colX, currentY, halfW, detailHeight, font, 9, align);
+                    } else {
+                        page.drawRectangle({ x, y: currentY - detailHeight, width: w, height: detailHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+                        drawCellText(page, detail, x, currentY, w, detailHeight, font, 9, align);
                     }
-                    page.drawRectangle({
-                        x,
-                        y: y - detailsHeights[detIdx],
-                        width: w,
-                        height: detailsHeights[detIdx],
-                        borderColor: rgb(0, 0, 0),
-                        borderWidth: 1,
-                    });
-                    if (idx !== 4) drawCellText(page, detail, x, persistanceY, w, detailsHeights[detIdx], font, 9, align);
-                    persistanceY -= detailsHeights[detIdx];
+                    currentY -= detailHeight;
                 });
-            } else drawCellText(page, cell, x, y, w, maxRowHeight, font, 9, align);
+            } else {
+                drawCellText(page, cell, x, y, w, maxRowHeight, font, 9, align);
+            }
+
             x += w;
         });
 
         y -= maxRowHeight;
     }
+
 
     return y;
 }
@@ -789,7 +799,7 @@ async function drawFeedbackIA01(
         borderWidth: 1,
     })
 
-    if (!data.ia01_header.approved_assessee) {
+    if (data.ia01_header.approved_assessee) {
         const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
         page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
     }
@@ -882,7 +892,7 @@ async function drawFeedbackIA01(
         borderWidth: 1,
     })
 
-    if (!data.ia01_header.approved_assessee) {
+    if (data.ia01_header.approved_assessee) {
         const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
         page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
     }

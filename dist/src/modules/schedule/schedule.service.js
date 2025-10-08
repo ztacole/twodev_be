@@ -8,9 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScheduleService = void 0;
 const error_1 = require("../../common/error");
@@ -22,8 +19,6 @@ const pdfAssets_helper_1 = require("../../helper/pdfAssets.helper");
 const pdfDraw_helper_1 = require("../../helper/pdfDraw.helper");
 const hashids_1 = require("../../helper/hashids");
 const date_helper_1 = require("../../helper/date.helper");
-const path_1 = __importDefault(require("path"));
-const assessor_service_1 = require("../assessor/assessor.service");
 class ScheduleService {
     static createSchedule(data) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -120,25 +115,13 @@ class ScheduleService {
             return Promise.all(schedules.map(s => buildScheduleResponse(s)));
         });
     }
-    static getScheduleById(id, user) {
+    static getScheduleById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const assessee = yield drizzle_1.db.select().from(schema_1.assessee).where((0, drizzle_orm_1.eq)(schema_1.assessee.user_id, user.id));
-            if (!assessee) {
-                throw new error_1.NotFoundError('Assessee');
-            }
             const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, id) });
             if (!schedule) {
                 throw new error_1.NotFoundError('Schedule');
             }
-            const scheduleDetail = yield drizzle_1.db.select().from(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, id));
-            if (!scheduleDetail) {
-                throw new error_1.NotFoundError('Schedule Detail');
-            }
-            const assessor = yield drizzle_1.db.select().from(schema_1.assessor).where((0, drizzle_orm_1.inArray)(schema_1.assessor.id, scheduleDetail.map(detail => detail.assessor_id)));
-            if (!assessor) {
-                throw new error_1.NotFoundError('Assessor');
-            }
-            return yield buildScheduleResponse(schedule, assessee);
+            return yield buildScheduleResponse(schedule);
         });
     }
     static getActiveSchedules(user) {
@@ -253,122 +236,120 @@ class ScheduleService {
             return detail;
         });
     }
-    static generateLetterAssignment(_a) {
-        return __awaiter(this, arguments, void 0, function* ({ type, number, assigner_name, assessor_id, position, date, time, location, address }) {
-            // === Get Assessor ===
-            const assessor = yield assessor_service_1.AssessorService.getAssessorById(assessor_id);
-            const name = (assessor === null || assessor === void 0 ? void 0 : assessor.name) || "-";
-            const registration_number = (assessor === null || assessor === void 0 ? void 0 : assessor.no_reg_met) || "-";
-            const scheme = (assessor === null || assessor === void 0 ? void 0 : assessor.scheme.name) || "-";
-            // === Create a new PDF document ===
-            const pdfDoc = yield pdf_lib_1.PDFDocument.create();
-            const page = pdfDoc.addPage([612, 936]);
-            //  === Dates ===
-            const now = new Date();
-            const months = [
-                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-            ];
-            const day = now.getDate();
-            const month = months[now.getMonth()];
-            const year = now.getFullYear();
-            // === Fonts ===
-            const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
-            const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
-            const fontSizeSmall = 14;
-            let y = page.getHeight() - 50;
-            const l2LineGap = 8;
-            const lLineGap = 12;
-            const xlLineGap = 20;
-            // === Header ===
-            const image = "../../public/images/kop-surat-lsp-smkn24j.png";
-            y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page, image);
-            // === Title ===
-            y = (0, pdfDraw_helper_1.drawParagraph)(page, "SURAT TUGAS", 40, y, fontBold, fontSizeSmall, "center", (0, pdf_lib_1.rgb)(0, 0, 0), undefined, undefined, true);
-            y = (0, pdfDraw_helper_1.drawParagraph)(page, `No : ${number || "-"}`, 40, y, font, fontSizeSmall, "center") - l2LineGap;
-            // === Body Identitas ===
-            const text1 = "Ketua " + assigner_name + " menugaskan kepada :";
-            y = (0, pdfDraw_helper_1.drawParagraph)(page, text1, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
-            y = (0, pdfDraw_helper_1.drawField)(page, "Nama", `${name || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
-            y = (0, pdfDraw_helper_1.drawField)(page, "No. Reg", `${registration_number || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
-            y = (0, pdfDraw_helper_1.drawField)(page, "Jabatan", `${position || "Asesor Kompetensi"}`, 40, y - l2LineGap, font, fontSizeSmall);
-            // === Conditional Part ===
-            if (type === "verifications") {
-                const textVerif = `Untuk dapat bertugas melakukan Verifikasi Persyaratan Teknis TUK dan Pra Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name} pada :`;
-                y = (0, pdfDraw_helper_1.drawParagraph)(page, textVerif, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
-                if (Array.isArray(date)) {
-                    const daysStr = date.map(d => (0, date_helper_1.formatDay)(new Date(d))).join(", ").replace(/, ([^,]*)$/, " dan $1");
-                    const datesStr = (0, date_helper_1.formatDateRange)(date.map(d => new Date(d)));
-                    y = (0, pdfDraw_helper_1.drawField)(page, "Hari", daysStr, 40, y - l2LineGap, font, fontSizeSmall);
-                    y = (0, pdfDraw_helper_1.drawField)(page, "Tanggal", datesStr, 40, y - l2LineGap, font, fontSizeSmall);
-                }
-                else {
-                    y = (0, pdfDraw_helper_1.drawField)(page, "Hari/Tanggal", `${(0, date_helper_1.formatDay)(new Date(date))}, ${(0, date_helper_1.formatDate)(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
-                }
-                y = (0, pdfDraw_helper_1.drawField)(page, "Waktu", `${time ? `${time} WIB s.d Selesai` : "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
-            }
-            else if (type === "assignments") {
-                const textDefault = `Untuk dapat bertugas sebagai asesor Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name || "-"} pada :`;
-                y = (0, pdfDraw_helper_1.drawParagraph)(page, textDefault, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
-                if (Array.isArray(date)) {
-                    const daysStr = date.map(d => (0, date_helper_1.formatDay)(new Date(d))).join(", ").replace(/, ([^,]*)$/, " dan $1");
-                    const datesStr = (0, date_helper_1.formatDateRange)(date.map(d => new Date(d)));
-                    y = (0, pdfDraw_helper_1.drawField)(page, "Hari", daysStr, 40, y - l2LineGap, font, fontSizeSmall);
-                    y = (0, pdfDraw_helper_1.drawField)(page, "Tanggal", datesStr, 40, y - l2LineGap, font, fontSizeSmall);
-                }
-                else {
-                    y = (0, pdfDraw_helper_1.drawField)(page, "Hari/Tanggal", `${(0, date_helper_1.formatDay)(new Date(date))}, ${(0, date_helper_1.formatDate)(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
-                }
-            }
-            else {
-                throw new Error("Tipe surat tugas tidak valid");
-            }
-            y = (0, pdfDraw_helper_1.drawField)(page, "Skema Okupasi", scheme, 40, y - l2LineGap, font, fontSizeSmall);
-            y = (0, pdfDraw_helper_1.drawField)(page, "Tempat", `${location || "-"}\n${address || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
-            // === Penutup ===
-            const text4 = `Demikian surat tugas ini untuk dilaksanakan dengan penuh tanggung jawab, dan atas kerja samanya kami sampaikan terima kasih.`;
-            y = (0, pdfDraw_helper_1.drawParagraph)(page, text4, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
-            // === SIGNATURE ===
-            const signatureX = 50;
-            let signatureY = y - 50;
-            const signatureWidth = 60;
-            const signatureDate = `Jakarta, ${day + " " + month + " " + year}`;
-            (0, pdfDraw_helper_1.drawParagraph)(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
-            (0, pdfDraw_helper_1.drawParagraph)(page, `${"Ketua " + assigner_name}`, signatureX, signatureY - 20, font, fontSizeSmall, "right");
-            signatureY -= 20;
-            const signatureNameLength = font.widthOfTextAtSize(assigner_name || "-", fontSizeSmall);
-            const qrData = (0, hashids_1.getAssessorUrl)(assessor_id);
-            const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
-            page.drawImage(qrCode, { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth, height: signatureWidth });
-            const LSPIcon = path_1.default.join(__dirname, "../../../public/images/logo-lsp.png");
-            const LSPIconPath = yield (0, pdfDraw_helper_1.loadAndEmbedImage)(pdfDoc, LSPIcon, "png");
-            page.drawImage(LSPIconPath, { x: page.getWidth() - signatureWidth * 3 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth * 2, height: signatureWidth, opacity: 0.3 });
-            (0, pdfDraw_helper_1.drawParagraph)(page, `${assigner_name}`, signatureX, signatureY - 90, font, fontSizeSmall, "right");
-            const pdfBytes = yield pdfDoc.save();
-            return pdfBytes;
-        });
-    }
-    static generateLetterAssignmentAssessor(data_assessment, data_result, params) {
+    // static async generateLetterAssignment({
+    //     type,
+    //     number,
+    //     assigner_name,
+    //     assessor_id,
+    //     position,
+    //     date,
+    //     time,
+    //     location,
+    //     address
+    // }: LetterAssignmentRequest) {
+    //     // === Get Assessor ===
+    //     const assessor = await AssessorService.getAssessorById(assessor_id);
+    //     const name = assessor?.name || "-";
+    //     const registration_number = assessor?.no_reg_met || "-";
+    //     const scheme = assessor?.scheme.name || "-";
+    //     // === Create a new PDF document ===
+    //     const pdfDoc = await PDFDocument.create();
+    //     const page = pdfDoc.addPage([612, 936]);
+    //     //  === Dates ===
+    //     const now = new Date();
+    //     const months = [
+    //         "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    //         "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    //     ];
+    //     const day = now.getDate();
+    //     const month = months[now.getMonth()];
+    //     const year = now.getFullYear();
+    //     // === Fonts ===
+    //     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    //     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    //     const fontSizeSmall = 14;
+    //     let y = page.getHeight() - 50;
+    //     const l2LineGap = 8;
+    //     const lLineGap = 12;
+    //     const xlLineGap = 20;
+    //     // === Header ===
+    //     const image = "../../public/images/kop-surat-lsp-smkn24j.png";
+    //     y = await kopSurat(pdfDoc, page, image);
+    //     // === Title ===
+    //     y = drawParagraph(page, "SURAT TUGAS", 40, y, fontBold, fontSizeSmall, "center", rgb(0, 0, 0), undefined, undefined, true);
+    //     y = drawParagraph(page, `No : ${number || "-"}`, 40, y, font, fontSizeSmall, "center") - l2LineGap;
+    //     // === Body Identitas ===
+    //     const text1 = "Ketua " + assigner_name + " menugaskan kepada :";
+    //     y = drawParagraph(page, text1, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+    //     y = drawField(page, "Nama", `${name || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+    //     y = drawField(page, "No. Reg", `${registration_number || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+    //     y = drawField(page, "Jabatan", `${position || "Asesor Kompetensi"}`, 40, y - l2LineGap, font, fontSizeSmall);
+    //     // === Conditional Part ===
+    //     if (type === "verifications") {
+    //         const textVerif = `Untuk dapat bertugas melakukan Verifikasi Persyaratan Teknis TUK dan Pra Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name} pada :`;
+    //         y = drawParagraph(page, textVerif, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+    //         if (Array.isArray(date)) {
+    //             const daysStr = date.map(d => formatDay(new Date(d))).join(", ").replace(/, ([^,]*)$/, " dan $1");
+    //             const datesStr = formatDateRange(date.map(d => new Date(d)));
+    //             y = drawField(page, "Hari", daysStr, 40, y - l2LineGap, font, fontSizeSmall);
+    //             y = drawField(page, "Tanggal", datesStr, 40, y - l2LineGap, font, fontSizeSmall);
+    //         } else {
+    //             y = drawField(page, "Hari/Tanggal", `${formatDay(new Date(date))}, ${formatDate(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
+    //         }
+    //         y = drawField(page, "Waktu", `${time ? `${time} WIB s.d Selesai` : "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+    //     } else if (type === "assignments") {
+    //         const textDefault = `Untuk dapat bertugas sebagai asesor Uji Kompetensi Keahlian yang akan dilaksanakan oleh ${assigner_name || "-"} pada :`;
+    //         y = drawParagraph(page, textDefault, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+    //         if (Array.isArray(date)) {
+    //             const daysStr = date.map(d => formatDay(new Date(d))).join(", ").replace(/, ([^,]*)$/, " dan $1");
+    //             const datesStr = formatDateRange(date.map(d => new Date(d)));
+    //             y = drawField(page, "Hari", daysStr, 40, y - l2LineGap, font, fontSizeSmall);
+    //             y = drawField(page, "Tanggal", datesStr, 40, y - l2LineGap, font, fontSizeSmall);
+    //         } else {
+    //             y = drawField(page, "Hari/Tanggal", `${formatDay(new Date(date))}, ${formatDate(new Date(date))}`, 40, y - l2LineGap, font, fontSizeSmall);
+    //         }
+    //     } else {
+    //         throw new Error("Tipe surat tugas tidak valid");
+    //     }
+    //     y = drawField(page, "Skema Okupasi", scheme, 40, y - l2LineGap, font, fontSizeSmall);
+    //     y = drawField(page, "Tempat", `${location || "-"}\n${address || "-"}`, 40, y - l2LineGap, font, fontSizeSmall);
+    //     // === Penutup ===
+    //     const text4 = `Demikian surat tugas ini untuk dilaksanakan dengan penuh tanggung jawab, dan atas kerja samanya kami sampaikan terima kasih.`;
+    //     y = drawParagraph(page, text4, 40, y - xlLineGap, font, fontSizeSmall, "left") - lLineGap;
+    //     // === SIGNATURE ===
+    //     const signatureX = 50;
+    //     let signatureY = y - 50;
+    //     const signatureWidth = 60;
+    //     const signatureDate = `Jakarta, ${day + " " + month + " " + year}`;
+    //     drawParagraph(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
+    //     drawParagraph(page, `${"Ketua " + assigner_name}`, signatureX, signatureY - 20, font, fontSizeSmall, "right");
+    //     signatureY -= 20;
+    //     const signatureNameLength = font.widthOfTextAtSize(assigner_name || "-", fontSizeSmall);
+    //     const qrData = getAssessorUrl(assessor_id);
+    //     const qrCode = await embedQrCode(pdfDoc, qrData);
+    //     page.drawImage(qrCode,
+    //         { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth, height: signatureWidth }
+    //     );
+    //     const LSPIcon = path.join(__dirname, "../../../public/images/logo-lsp.png");
+    //     const LSPIconPath = await loadAndEmbedImage(pdfDoc, LSPIcon, "png");
+    //     page.drawImage(LSPIconPath,
+    //         { x: page.getWidth() - signatureWidth * 3 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth - 12, width: signatureWidth * 2, height: signatureWidth, opacity: 0.3 }
+    //     )
+    //     drawParagraph(page, `${assigner_name}`, signatureX, signatureY - 90, font, fontSizeSmall, "right");
+    //     const pdfBytes = await pdfDoc.save();
+    //     return pdfBytes;
+    // }
+    static generateLetterAssignmentAssessor(data_assessment, data_schedule, data_schedule_details, data_assessor, data_result, params) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { number, LSP_name, assigner_name, assessor_id, work_unit, activity_name, date, time, tuk, location, address, issued_in, } = params;
-            // === Get Assessor ===
-            const assessor = yield assessor_service_1.AssessorService.getAssessorById(assessor_id);
-            const name = (assessor === null || assessor === void 0 ? void 0 : assessor.name) || "-";
-            const registration_number = (assessor === null || assessor === void 0 ? void 0 : assessor.no_reg_met) || "-";
-            const scheme = (assessor === null || assessor === void 0 ? void 0 : assessor.scheme.name) || "-";
+            const { number, LSP_name = 'LSP SMKN 24 Jakarta', assigner_name, work_unit = 'SMK Negeri 24', activity_name, location = `SMK Negeri 24 Jakarta`, address = `Jl. Bambu Hitam No.3, RT.3/RW.1, Bambu Apus, Cipayung, Jakarta Timur`, issued_in = `Jakarta`, } = params;
             // === Date & Time Formatting ===
             const now = new Date();
-            const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-            const months = [
-                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-            ];
-            const formattedDate = (0, date_helper_1.formatDateRangeSD)((Array.isArray(date) ? date : [date]).map(d => new Date(d)));
-            const formattedTime = typeof time === "string"
-                ? (0, date_helper_1.formatTimeRange)({ start: time.split("-")[0].trim(), end: time.split("-")[1].trim() })
-                : (0, date_helper_1.formatTimeRange)(time);
-            const lastDate = Array.isArray(date) ? new Date(Math.max(...date.map(d => new Date(d).getTime()))) : new Date(date);
-            const formattedEndDate = `${days[lastDate.getDay()]}, ${lastDate.getDate()} ${months[lastDate.getMonth()]} ${lastDate.getFullYear()}`;
+            const start = new Date(data_schedule.start_date);
+            const end = new Date(data_schedule.end_date);
+            const formattedDate = (0, date_helper_1.formatDateRangeSD)([start, end], true);
+            const formattedTime = (0, date_helper_1.formatTimeRange)(start, end, true);
+            const formattedEndDate = `${(0, date_helper_1.formatDay)(end, true)}, ${(0, date_helper_1.formatDate)(end, true)}`;
+            console.log({ start, end, formattedDate, formattedTime, formattedEndDate });
             // === PDF SETUP ===
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
             const [page1, page2, page3] = [pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936])];
@@ -394,18 +375,18 @@ class ScheduleService {
             y = (0, pdfDraw_helper_1.drawField)(page1, "Dasar", `Surat Keputusan Ketua ${LSP_name}`, 40, y, fontBold, FONTS.small) - GAPS.m;
             // === Asesor Info ===
             y = (0, pdfDraw_helper_1.drawParagraph)(page1, "Menugaskan", 40, y + GAPS.m, fontBold, FONTS.small, "center");
-            y = (0, pdfDraw_helper_1.drawField)(page1, "Nama", name, 40, y, fontBold, FONTS.small);
-            y = (0, pdfDraw_helper_1.drawField)(page1, "Nomor Registrasi", registration_number, 40, y, fontBold, FONTS.small);
+            y = (0, pdfDraw_helper_1.drawField)(page1, "Nama", data_assessor.name, 40, y, fontBold, FONTS.small);
+            y = (0, pdfDraw_helper_1.drawField)(page1, "Nomor Registrasi", data_assessor.no_reg_met, 40, y, fontBold, FONTS.small);
             y = (0, pdfDraw_helper_1.drawField)(page1, "Unit Kerja", work_unit || "-", 40, y, fontBold, FONTS.small);
             // === Detail Kegiatan ===
             const intro = `1. Melaksanakan tugas sebagai Asesor Penguji pada pelaksanaan Uji Sertifikasi Kompetensi Lembaga Sertifikasi Profesi Pihak I ${location} yang akan dilaksanakan sebagai berikut:`;
             y = (0, pdfDraw_helper_1.drawField)(page1, "Untuk", intro, 40, y, fontBold, FONTS.small, 110, 8, 14, color, "justify", page1.getWidth() / 2 + 70);
             const details = [
                 { label: "     Nama Kegiatan", value: activity_name },
-                { label: "     Skema", value: scheme },
+                { label: "     Skema", value: data_assessor.scheme.name },
                 { label: "     Tanggal", value: formattedDate },
                 { label: "     Pukul", value: formattedTime },
-                { label: "     TUK", value: tuk },
+                { label: "     TUK", value: data_schedule_details.location },
                 { label: "     Sekolah", value: location },
                 { label: "     Alamat", value: address },
             ];
@@ -441,13 +422,13 @@ class ScheduleService {
                     let signatureY = yStart - 20;
                     const signatureWidth = 65;
                     signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Dikeluarkan di : ${issued_in || "Jakarta"}`, signatureX, signatureY, fontBold, FONTS.small, "left", undefined, 240);
-                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Pada tanggal   : ${now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear()}`, signatureX, signatureY, fontBold, FONTS.small, "left", undefined, 240);
+                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Pada tanggal   : ${(0, date_helper_1.formatDate)(now)}`, signatureX, signatureY, fontBold, FONTS.small, "left", undefined, 240);
                     signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Ketua`, signatureX + 65, signatureY - 4, fontBold, FONTS.small, "left", undefined, 240);
                     signatureY -= 50;
-                    const qrData = (0, hashids_1.getAssessorUrl)(assessor_id);
+                    const qrData = (0, hashids_1.getAssessorUrl)(data_schedule_details.assessor_id);
                     const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
                     page.drawImage(qrCode, { x: signatureX, y: signatureY - 4, width: signatureWidth, height: signatureWidth });
-                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Tanda tangan digital ${assigner_name} Ketua ${LSP_name} untuk dokumen dengan No: ${number} Tanggal: ${now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear()}`, signatureX + 70, signatureY + 54, fontBold, FONTS.xSmall, "justify", undefined, 110);
+                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Tanda tangan digital ${assigner_name} Ketua ${LSP_name} untuk dokumen dengan No: ${number} Tanggal: ${(0, date_helper_1.formatDate)(now, true)}`, signatureX + 70, signatureY + 54, fontBold, FONTS.xSmall, "justify", undefined, 110);
                     signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `${assigner_name}`, signatureX + 36, signatureY - 18, fontBold, FONTS.xSmall, "left", undefined, 200);
                     return signatureY;
                 });
@@ -457,7 +438,7 @@ class ScheduleService {
                 return __awaiter(this, void 0, void 0, function* () {
                     (0, pdfDraw_helper_1.drawParagraph)(page, "Lampiran Surat Tugas", page.getWidth() / 2 + 60, yStart, font, FONTS.small, "left", undefined, 260);
                     (0, pdfDraw_helper_1.drawParagraph)(page, `Nomor      : ${number}`, page.getWidth() / 2 + 60, yStart - GAPS.m, font, FONTS.small, "left", undefined, 260);
-                    (0, pdfDraw_helper_1.drawParagraph)(page, `Tanggal    : ${now.getDate() + " " + months[now.getMonth()] + " " + now.getFullYear()}`, page.getWidth() / 2 + 60, yStart - GAPS.m * 2, font, FONTS.small, "left", undefined, 260);
+                    (0, pdfDraw_helper_1.drawParagraph)(page, `Tanggal    : ${(0, date_helper_1.formatDate)(now, true)}`, page.getWidth() / 2 + 60, yStart - GAPS.m * 2, font, FONTS.small, "left", undefined, 260);
                 });
             }
             function drawSchemeTableHeader(page, y, data, fontBold, fontSize, color) {

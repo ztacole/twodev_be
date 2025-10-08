@@ -87,6 +87,7 @@ router.get('/apl-01/results/:assessmentId', apl_01_controller_1.APL1Controller.g
 ;
 router.get('/apl-01/result/:resultId', apl_01_controller_1.APL1Controller.getResultDetails);
 router.get('/apl-01/result/docs/:resultId', apl_01_controller_1.APL1Controller.getResultDocsByResultId);
+router.get('/apl-01/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateAPL01);
 router.get('/apl-02/units/:resultId', apl_02_controller_1.APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/:resultId/elements/:unitId', apl_02_controller_1.APL02Controller.getElementsByUnitId);
 router.post('/apl-02/result/send', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, apl_02_controller_1.APL02Controller.sendResult);
@@ -96,6 +97,7 @@ router.get('/apl-02/result/units/:resultId/elements/:unitId', apl_02_controller_
 router.put('/apl-02/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, apl_02_controller_1.APL02Controller.approvedByAssessor);
 router.put('/apl-02/result/assessee/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, apl_02_controller_1.APL02Controller.approvedByAssessee);
 router.get('/apl-02/result/:resultId', apl_02_controller_1.APL02Controller.getResultDetails);
+// router.get('/apl-02/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateIA01);
 router.get('/ia-01/units/:resultId', ia_01_controller_1.IA01Controller.getIA01Groups);
 router.get('/ia-01/units/:resultId/elements/:unitId', ia_01_controller_1.IA01Controller.getElementsByUnitId);
 router.post('/ia-01/result/send', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_01_controller_1.IA01Controller.sendResult);

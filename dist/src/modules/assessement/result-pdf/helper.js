@@ -9,13 +9,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.drawFeedbackIA01 = drawFeedbackIA01;
 exports.createNewPage = createNewPage;
 exports.drawTable = drawTable;
 exports.drawCertificateLayout = drawCertificateLayout;
 exports.drawUnitGroupLayout = drawUnitGroupLayout;
 exports.drawUnitLayout = drawUnitLayout;
 exports.drawElementLayout = drawElementLayout;
+exports.drawFeedbackIA01 = drawFeedbackIA01;
+exports.drawChecklistTable = drawChecklistTable;
 const pdf_lib_1 = require("pdf-lib");
 const pdfAssets_helper_1 = require("../../../helper/pdfAssets.helper");
 const qrCode_helper_1 = require("../../../helper/qrCode.helper");
@@ -277,7 +278,7 @@ function drawUnitGroupLayout(page, index, group, startX, startY, rowHeight, font
             borderWidth: 1,
         });
         const align = "center";
-        const titleY = headerY - rowHeight * (group.units.length + 1) / 2 + rowHeight * (group.units.length + 1) / (group.units.length % 2 === 0 ? 6 : 4);
+        const titleY = y - (y - headerY) / 2 + rowHeight * (group.units.length + 1) / (group.units.length % 2 === 0 ? 6 : 4);
         drawCellText(page, group.name, startX, titleY, headerWidth, y - headerY, fontBold, 9, align);
         return y;
     });
@@ -354,7 +355,7 @@ function drawUnitLayout(page, unitNumber, unitCode, unitTitle, startX, startY, r
 function drawElementLayout(page, elements, startX, startY, font, fontBold) {
     return __awaiter(this, void 0, void 0, function* () {
         const colWidths = [20, 110, 170, 90, 65, 65]; // Lebar kolom sesuai gambar
-        const rowHeight = 25;
+        const rowHeight = 20;
         let y = startY;
         // === DRAW HEADER ===
         const mainHeader = ["No", "Elemen", "Kriteria Unjuk Kerja", "Standar Industri atau Tempat Kerja", "Pencapaian", "Penilaian Lanjut"];
@@ -429,24 +430,28 @@ function drawElementLayout(page, elements, startX, startY, font, fontBold) {
             element.details.map((detail) => detail.description),
             element.details[0].benchmark,
             element.details.map((detail) => { var _a; return ((_a = detail.result) === null || _a === void 0 ? void 0 : _a.is_competent) ? "Ya" : "Tidak"; }),
-            element.details.map((detail) => { var _a; return (_a = detail.result) === null || _a === void 0 ? void 0 : _a.evaluation; }),
+            element.details.map((detail) => { var _a, _b; return (_b = (_a = detail.result) === null || _a === void 0 ? void 0 : _a.evaluation) !== null && _b !== void 0 ? _b : "-"; }),
         ]);
         for (let i = 0; i < data.length; i++) {
             const row = data[i];
             let x = startX;
             let maxRowHeight = rowHeight;
-            // ukur tinggi maksimum row (karena ada teks wrap)
+            const detailsHeights = [];
+            // Hitung tinggi per cell
             const cellHeights = row.map((cell, idx) => {
                 if (Array.isArray(cell)) {
-                    const detailsHeights = cell.map((detail) => {
-                        const safeCellArr = detail !== null && detail !== void 0 ? detail : ""; // fallback
-                        const words = safeCellArr.split(" ");
+                    const heights = cell.map((detail) => {
+                        const safeText = detail !== null && detail !== void 0 ? detail : "";
+                        const words = safeText.split(" ");
                         let line = "";
                         let lines = [];
                         for (const word of words) {
                             const testLine = line ? line + " " + word : word;
+                            const maxWidth = (idx === 4)
+                                ? colWidths[idx] / 2 - 8
+                                : colWidths[idx] - 8;
                             const testWidth = font.widthOfTextAtSize(testLine, 9);
-                            if (testWidth > ((idx === 4) ? colWidths[idx] / 2 - 8 : colWidths[idx] - 8)) {
+                            if (testWidth > maxWidth) {
                                 lines.push(line);
                                 line = word;
                             }
@@ -456,12 +461,14 @@ function drawElementLayout(page, elements, startX, startY, font, fontBold) {
                         }
                         if (line)
                             lines.push(line);
-                        return Math.max(lines.length * (9 + 4) + 6, rowHeight) + 10;
+                        return Math.max(lines.length * (9 + 4) + 6, rowHeight);
                     });
-                    return detailsHeights.reduce((a, b) => a + b, 0);
+                    detailsHeights.push(heights);
+                    const totalHeight = heights.reduce((a, b) => a + b, 0);
+                    return totalHeight;
                 }
                 else {
-                    const safeCell = cell !== null && cell !== void 0 ? cell : ""; // fallback
+                    const safeCell = cell !== null && cell !== void 0 ? cell : "";
                     const words = safeCell.split(" ");
                     let line = "";
                     let lines = [];
@@ -481,10 +488,17 @@ function drawElementLayout(page, elements, startX, startY, font, fontBold) {
                     return lines.length * (9 + 4) + 6;
                 }
             });
-            maxRowHeight = Math.max(rowHeight, ...cellHeights) + 10;
-            // draw cell
+            // Hitung tinggi sejajar untuk setiap baris detail
+            const detailCount = Math.max(...detailsHeights.map(h => h.length));
+            const detailRowHeights = [];
+            for (let d = 0; d < detailCount; d++) {
+                const maxHeight = Math.max(rowHeight, ...detailsHeights.map(h => { var _a; return (_a = h[d]) !== null && _a !== void 0 ? _a : rowHeight; }));
+                detailRowHeights.push(maxHeight);
+            }
+            maxRowHeight = Math.max(rowHeight, detailRowHeights.reduce((a, b) => a + b, 0));
             row.forEach((cell, idx) => {
                 const w = colWidths[idx];
+                const align = idx === 3 || idx === 4 ? "center" : "left";
                 page.drawRectangle({
                     x,
                     y: y - maxRowHeight,
@@ -493,42 +507,30 @@ function drawElementLayout(page, elements, startX, startY, font, fontBold) {
                     borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
                     borderWidth: 1,
                 });
-                const align = idx === 3 || idx === 4 ? "center" : "left";
                 if (Array.isArray(cell)) {
-                    let persistanceY = y;
-                    cell.forEach((detail) => {
+                    let currentY = y;
+                    cell.forEach((detail, detIdx) => {
+                        const detailHeight = detailRowHeights[detIdx];
                         if (idx === 4) {
-                            let persistanceX = x;
-                            let detailPersistanceY = persistanceY;
-                            const persistanceW = w / 2;
-                            page.drawRectangle({
-                                x: persistanceX,
-                                y: detailPersistanceY - maxRowHeight / cell.length,
-                                width: persistanceW,
-                                height: maxRowHeight / cell.length,
-                                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
-                                borderWidth: 1,
-                            });
-                            drawCellText(page, detail === "Ya" ? "V" : "", persistanceX, detailPersistanceY, persistanceW, maxRowHeight / cell.length, font, 9, align);
-                            persistanceX += persistanceW;
-                            drawCellText(page, detail === "Tidak" ? "V" : "", persistanceX, detailPersistanceY, persistanceW, maxRowHeight / cell.length, font, 9, align);
-                            detailPersistanceY -= maxRowHeight / cell.length;
+                            // Kolom hasil (Ya/Tidak) dibagi dua
+                            let colX = x;
+                            const halfW = w / 2;
+                            page.drawRectangle({ x: colX, y: currentY - detailHeight, width: halfW, height: detailHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                            drawCellText(page, detail === "Ya" ? "V" : "", colX, currentY, halfW, detailHeight, font, 9, align);
+                            colX += halfW;
+                            page.drawRectangle({ x: colX, y: currentY - detailHeight, width: halfW, height: detailHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                            drawCellText(page, detail === "Tidak" ? "V" : "", colX, currentY, halfW, detailHeight, font, 9, align);
                         }
-                        page.drawRectangle({
-                            x,
-                            y: y - maxRowHeight / cell.length,
-                            width: w,
-                            height: maxRowHeight / cell.length,
-                            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
-                            borderWidth: 1,
-                        });
-                        if (idx !== 4)
-                            drawCellText(page, detail, x, persistanceY, w, maxRowHeight / cell.length, font, 9, align);
-                        persistanceY -= maxRowHeight / cell.length;
+                        else {
+                            page.drawRectangle({ x, y: currentY - detailHeight, width: w, height: detailHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                            drawCellText(page, detail, x, currentY, w, detailHeight, font, 9, align);
+                        }
+                        currentY -= detailHeight;
                     });
                 }
-                else
+                else {
                     drawCellText(page, cell, x, y, w, maxRowHeight, font, 9, align);
+                }
                 x += w;
             });
             y -= maxRowHeight;
@@ -677,7 +679,7 @@ function drawFeedbackIA01(pdfDoc, page, data, startX, startY, rowHeight, font, f
             borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
             borderWidth: 1,
         });
-        if (!data.ia01_header.approved_assessee) {
+        if (data.ia01_header.approved_assessee) {
             const asesiQrImage = yield pdfDoc.embedPng(yield (0, qrCode_helper_1.generateQrDataURL)((0, hashids_1.getAssesseeUrl)(data.assessee.id)));
             page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
         }
@@ -755,7 +757,7 @@ function drawFeedbackIA01(pdfDoc, page, data, startX, startY, rowHeight, font, f
             borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
             borderWidth: 1,
         });
-        if (!data.ia01_header.approved_assessee) {
+        if (data.ia01_header.approved_assessee) {
             const asesiQrImage = yield pdfDoc.embedPng(yield (0, qrCode_helper_1.generateQrDataURL)((0, hashids_1.getAssesseeUrl)(data.assessee.id)));
             page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
         }
@@ -764,4 +766,106 @@ function drawFeedbackIA01(pdfDoc, page, data, startX, startY, rowHeight, font, f
         y -= rowHeight * 4;
         return y - 130;
     });
+}
+function drawChecklistTable(page, items, startX, startY, rowHeight, font, fontIcon) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let y = startY;
+        const colWidths = [30, 200, 180, 80];
+        const totalWidth = colWidths.reduce((a, b) => a + b, 0);
+        const headerHeight = rowHeight * 2;
+        page.drawRectangle({
+            x: startX,
+            y: y - headerHeight,
+            width: totalWidth,
+            height: headerHeight,
+            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+            borderWidth: 1,
+        });
+        let tempX = startX;
+        for (let i = 0; i < colWidths.length; i++) {
+            tempX += colWidths[i];
+            page.drawLine({
+                start: { x: tempX, y },
+                end: { x: tempX, y: y - headerHeight },
+                color: (0, pdf_lib_1.rgb)(0, 0, 0),
+                thickness: 1,
+            });
+        }
+        page.drawLine({
+            start: { x: startX + colWidths[0] + colWidths[1], y: y - rowHeight },
+            end: { x: startX + colWidths[0] + colWidths[1] + colWidths[2], y: y - rowHeight },
+            color: (0, pdf_lib_1.rgb)(0, 0, 0),
+            thickness: 1,
+        });
+        const adaX = startX + colWidths[0] + colWidths[1];
+        const adaWidth = colWidths[2];
+        const subAdaWidth = adaWidth / 2;
+        page.drawLine({
+            start: { x: adaX + subAdaWidth, y: y - rowHeight },
+            end: { x: adaX + subAdaWidth, y: y - headerHeight },
+            color: (0, pdf_lib_1.rgb)(0, 0, 0),
+            thickness: 1,
+        });
+        drawCellText(page, "No", startX, y - rowHeight / 2, colWidths[0], headerHeight, font, 8, "center");
+        drawCellText(page, "Bukti Persyaratan Dasar", startX + colWidths[0], y - rowHeight / 2, colWidths[1], headerHeight, font, 8, "center");
+        drawCellText(page, "Ada", adaX, y, adaWidth, rowHeight, font, 8, "center");
+        drawCellText(page, "Memenuhi Syarat", adaX, y - rowHeight, subAdaWidth, rowHeight, font, 7, "center");
+        drawCellText(page, "Tidak Memenuhi Syarat", adaX + subAdaWidth, y - rowHeight, subAdaWidth, rowHeight, font, 7, "center");
+        drawCellText(page, "Tidak Ada", adaX + adaWidth, y - rowHeight / 2, colWidths[3], headerHeight, font, 8, "center");
+        y -= headerHeight;
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            page.drawRectangle({
+                x: startX,
+                y: y - rowHeight,
+                width: totalWidth,
+                height: rowHeight,
+                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                borderWidth: 1,
+            });
+            let tempX2 = startX;
+            for (let j = 0; j < colWidths.length; j++) {
+                tempX2 += colWidths[j];
+                page.drawLine({
+                    start: { x: tempX2, y },
+                    end: { x: tempX2, y: y - rowHeight },
+                    color: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    thickness: 1,
+                });
+            }
+            page.drawLine({
+                start: { x: adaX + subAdaWidth, y },
+                end: { x: adaX + subAdaWidth, y: y - rowHeight },
+                color: (0, pdf_lib_1.rgb)(0, 0, 0),
+                thickness: 1,
+            });
+            drawCellText(page, String(i + 1), startX, y, colWidths[0], rowHeight, font, 8, "center");
+            drawCellText(page, item.label, startX + colWidths[0], y, colWidths[1], rowHeight, font, 8, "left");
+            const boxSize = 10;
+            const boxY = y - (rowHeight + boxSize) / 2;
+            const boxPositions = [
+                { x: adaX + (subAdaWidth - boxSize) / 2, key: "memenuhi" },
+                { x: adaX + subAdaWidth + (subAdaWidth - boxSize) / 2, key: "tidakMemenuhi" },
+                { x: adaX + adaWidth + (colWidths[3] - boxSize) / 2, key: "tidakAda" },
+            ];
+            for (const pos of boxPositions) {
+                page.drawRectangle({
+                    x: pos.x,
+                    y: boxY,
+                    width: boxSize,
+                    height: boxSize,
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                if (item[pos.key]) {
+                    drawCellText(page, "✓", pos.x, y + rowHeight - boxSize + 4, boxSize, rowHeight, fontIcon, 10, "center");
+                }
+            }
+            y -= rowHeight;
+        }
+        return y - 15;
+    });
+}
+function drawSignatureSectionLayout(page, items, startX, startY, rowHeight, font, fontIcon) {
+    return __awaiter(this, void 0, void 0, function* () { });
 }

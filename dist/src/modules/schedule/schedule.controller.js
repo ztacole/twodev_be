@@ -19,6 +19,7 @@ const exceljs_1 = __importDefault(require("exceljs"));
 const async_handler_1 = require("../../common/async.handler");
 const assessment_service_1 = require("../assessement/assessment.service");
 const apl_02_service_1 = require("../assessement/apl-02/apl-02.service");
+const assessor_service_1 = require("../assessor/assessor.service");
 class ScheduleController {
 }
 exports.ScheduleController = ScheduleController;
@@ -40,8 +41,7 @@ ScheduleController.getSchedules = (0, async_handler_1.asyncHandler)((req, res) =
     });
 }));
 ScheduleController.getScheduleById = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = req.user;
-    const schedule = yield schedule_service_1.ScheduleService.getScheduleById(Number(req.params.id), user);
+    const schedule = yield schedule_service_1.ScheduleService.getScheduleById(Number(req.params.id));
     res.status(200).json({
         success: true,
         message: 'Jadwal berhasil diambil',
@@ -168,6 +168,29 @@ ScheduleController.exportScheduleToExcel = (0, async_handler_1.asyncHandler)((re
     yield workbook.xlsx.write(res);
     res.end();
 }));
+ScheduleController.getScheduleDetailById = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = Number(req.params.id);
+    if (!id) {
+        return res.status(400).json({
+            success: false,
+            message: 'ID jadwal harus diisi',
+        });
+    }
+    const schedule = yield schedule_service_1.ScheduleService.getScheduleDetailById(id);
+    if (schedule) {
+        res.status(200).json({
+            success: true,
+            message: 'Detail jadwal berhasil diambil',
+            data: schedule
+        });
+    }
+    else {
+        res.status(404).json({
+            success: false,
+            message: 'Detail jadwal tidak ditemukan',
+        });
+    }
+}));
 ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { type } = req.query;
@@ -175,17 +198,46 @@ ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)(
         let letter;
         let filename = '';
         if (type !== 'assessor') {
-            letter = yield schedule_service_1.ScheduleService.generateLetterAssignment(Object.assign(Object.assign({}, body), { type: type }));
-            if (type === 'verifications') {
-                filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
-            }
-            else if (type === 'assignments') {
-                filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
-            }
-            filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
+            // letter = await ScheduleService.generateLetterAssignment({
+            //     ...body,
+            //     type: type as 'assignments' | 'verifications'
+            // });
+            // if(type === 'verifications') {
+            //     filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
+            // } else if(type === 'assignments') {
+            //     filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
+            // }
+            // filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
+            res.status(400).json({
+                success: false,
+                message: "Tipe surat tugas sedang dalam pengembangan. Gunakan 'assessor' untuk tipe surat tugas asesor.",
+            });
         }
         else if (type === 'assessor') {
-            const assessment_id = Number(req.body.assessment_id);
+            const schedule_detail_id = Number(body.schedule_detail_id);
+            const data_schedule_detail = yield schedule_service_1.ScheduleService.getScheduleDetailById(schedule_detail_id);
+            if (!data_schedule_detail) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Jadwal assessment tidak ditemukan"
+                });
+            }
+            const data_schedule = yield schedule_service_1.ScheduleService.getScheduleById(data_schedule_detail.schedule_id);
+            if (!data_schedule) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Jadwal assessment tidak ditemukan"
+                });
+            }
+            const assessor_id = Number(data_schedule_detail.assessor_id);
+            const data_assessor = yield assessor_service_1.AssessorService.getAssessorById(assessor_id);
+            if (!data_assessor) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Asesor tidak ditemukan"
+                });
+            }
+            const assessment_id = Number(data_schedule.assessment.id);
             const data_assessment = yield assessment_service_1.AssessmentService.getAssessmentById(assessment_id);
             if (!data_assessment) {
                 return res.status(404).json({
@@ -200,8 +252,8 @@ ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)(
                     message: "Hasil assessment tidak ditemukan"
                 });
             }
-            letter = yield schedule_service_1.ScheduleService.generateLetterAssignmentAssessor(data_assessment, data_result, body);
-            filename = `Surat Tugas Asesor_${body.location || 'Jakarta'}`;
+            letter = yield schedule_service_1.ScheduleService.generateLetterAssignmentAssessor(data_assessment, data_schedule, data_schedule_detail, data_assessor, data_result, body);
+            filename = `Surat Tugas Asesor_${data_assessor.name}`;
         }
         else {
             res.status(400).json({

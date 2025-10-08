@@ -1,129 +1,139 @@
 "use strict";
+// ============================================================================
+// 📅 Date & Time Helpers (Indonesian Locale)
+// ============================================================================
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.months = exports.days = void 0;
 exports.formatDate = formatDate;
 exports.formatDay = formatDay;
 exports.formatDateRange = formatDateRange;
 exports.formatDateRangeSD = formatDateRangeSD;
-exports.formatTime = formatTime;
 exports.formatTimeRange = formatTimeRange;
-// helpers/date-time.ts
-exports.days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+/** Nama hari dalam bahasa Indonesia */
+exports.days = [
+    "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu",
+];
+/** Nama bulan dalam bahasa Indonesia */
 exports.months = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
+// ============================================================================
+// 🔹 Utility Functions
+// ============================================================================
 /**
- * Format a date into a string in the format "dd MMMM yyyy".
- * @param {Date} d - The date to format.
- * @returns {string} The formatted date string.
+ * Ekstraksi bagian tanggal (hari, bulan, tahun) dari objek Date.
+ * Bisa memilih mode UTC (true) atau lokal (false).
  */
-function formatDate(d) {
-    return `${d.getDate()} ${exports.months[d.getMonth()]} ${d.getFullYear()}`;
+function extractDateParts(date, useUTC) {
+    return {
+        day: useUTC ? date.getUTCDate() : date.getDate(),
+        month: useUTC ? date.getUTCMonth() : date.getMonth(),
+        year: useUTC ? date.getUTCFullYear() : date.getFullYear(),
+    };
+}
+// ============================================================================
+// 📆 Date Formatting
+// ============================================================================
+/**
+ * Format tanggal tunggal menjadi string seperti "30 April 2025".
+ * Bisa memilih mode UTC (true) atau lokal (false).
+ */
+function formatDate(d, useUTC = false) {
+    const day = useUTC ? d.getUTCDate() : d.getDate();
+    const month = useUTC ? d.getUTCMonth() : d.getMonth();
+    const year = useUTC ? d.getUTCFullYear() : d.getFullYear();
+    return `${day} ${exports.months[month]} ${year}`;
 }
 /**
- * Returns the day of the week as a string (e.g. "Minggu", "Selasa", etc.)
- * @param {Date} d - The date to get the day of the week from.
- * @returns {string} The day of the week as a string.
+ * Mengembalikan nama hari dari tanggal, misal "Senin", "Rabu", dll.
+ * Bisa memilih mode UTC (true) atau lokal (false).
  */
-function formatDay(d) {
-    return exports.days[d.getDay()];
+function formatDay(d, useUTC = false) {
+    const dayIndex = useUTC ? d.getUTCDay() : d.getDay();
+    return exports.days[dayIndex];
 }
 /**
- * Format a range of dates into a string in the format "dd MMMM yyyy"
- * Example: "28, 29, 30 April dan 2 Mei 2025"
- * @param {Date[]} dates - The range of dates to format.
- * @returns {string} The formatted date range string.
+ * Format kumpulan tanggal menjadi rentang seperti:
+ * "28, 29, 30 April dan 2 Mei 2025"
  */
 function formatDateRange(dates) {
+    var _a;
     if (!dates || dates.length === 0)
         return "-";
-    dates.sort((a, b) => a.getTime() - b.getTime());
+    const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
     const grouped = {};
-    const year = dates[0].getFullYear();
-    for (const d of dates) {
+    const year = sorted[0].getFullYear();
+    for (const d of sorted) {
         const monthName = exports.months[d.getMonth()];
-        if (!grouped[monthName])
-            grouped[monthName] = [];
+        (_a = grouped[monthName]) !== null && _a !== void 0 ? _a : (grouped[monthName] = []);
         grouped[monthName].push(d.getDate());
     }
-    const parts = Object.entries(grouped).map(([month, days]) => {
-        return `${days.join(", ")} ${month}`;
-    });
-    return parts.join(", ").replace(/, ([^,]*)$/, " dan $1") + ` ${year}`;
+    const parts = Object.entries(grouped).map(([month, days]) => `${days.join(", ")} ${month}`);
+    return `${parts.join(", ").replace(/, ([^,]*)$/, " dan $1")} ${year}`;
 }
 /**
- * Format a date range into a string using "s.d." notation.
- * Example output: "30 April 2025 s.d. 02 Mei 2025"
- * - If there is only 1 date: "30 April 2025"
- * - If the month changes: "30 April 2025 s.d. 02 May 2025"
- * - If the year changes: "30 December 2025 s.d. 02 January 2026"
- *
- * @param {Date[]} dates - Array of dates to format (will be sorted automatically).
- * @returns {string} The formatted date range string.
+ * Format rentang tanggal menggunakan format "s.d.".
+ * Contoh:
+ *  - "30 April 2025 s.d. 02 Mei 2025"
+ *  - "30 April 2025" (jika hanya satu tanggal)
+ * Mendukung mode UTC atau lokal (default: lokal).
  */
-function formatDateRangeSD(dates) {
+function formatDateRangeSD(dates, useUTC = false) {
     if (!dates || dates.length === 0)
         return "-";
     const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
     const start = sorted[0];
     const end = sorted[sorted.length - 1];
+    const s = extractDateParts(start, useUTC);
+    const e = extractDateParts(end, useUTC);
     const sameDay = start.getTime() === end.getTime();
-    const sameMonth = start.getMonth() === end.getMonth();
-    const sameYear = start.getFullYear() === end.getFullYear();
-    const startDay = String(start.getDate()).padStart(2, "0");
-    const endDay = String(end.getDate()).padStart(2, "0");
-    const startMonth = exports.months[start.getMonth()];
-    const endMonth = exports.months[end.getMonth()];
-    if (sameDay) {
-        return `${startDay} ${startMonth} ${start.getFullYear()}`;
-    }
-    if (sameMonth && sameYear) {
-        return `${startDay} s.d. ${endDay} ${startMonth} ${start.getFullYear()}`;
-    }
-    if (sameYear) {
-        return `${startDay} ${startMonth} s.d. ${endDay} ${endMonth} ${start.getFullYear()}`;
-    }
-    return `${startDay} ${startMonth} ${start.getFullYear()} s.d. ${endDay} ${endMonth} ${end.getFullYear()}`;
+    const sameMonth = s.month === e.month;
+    const sameYear = s.year === e.year;
+    const startDay = String(s.day).padStart(2, "0");
+    const endDay = String(e.day).padStart(2, "0");
+    const startMonth = exports.months[s.month];
+    const endMonth = exports.months[e.month];
+    if (sameDay)
+        return `${startDay} ${startMonth} ${s.year}`;
+    if (sameMonth && sameYear)
+        return `${startDay} s.d. ${endDay} ${startMonth} ${s.year}`;
+    if (sameYear)
+        return `${startDay} ${startMonth} s.d. ${endDay} ${endMonth} ${s.year}`;
+    return `${startDay} ${startMonth} ${s.year} s.d. ${endDay} ${endMonth} ${e.year}`;
 }
+// ============================================================================
+// 🕓 Time Formatting
+// ============================================================================
 /**
- * Format a single time string ("07:00") into Indonesian-style format ("07.00 WIB")
- * @param {string} time - The time string in HH:mm format.
- * @returns {string} The formatted time string.
+ * Format rentang waktu dalam gaya Indonesia:
+ * - "07.00 WIB"
+ * - "07.00 - 17.00 WIB"
+ * Bisa menerima string ("07:00") atau objek Date.
+ * Mendukung mode UTC (true) atau lokal (false).
  */
-function formatTime(time) {
-    if (!time)
+function formatTimeRange(start, end, useUTC = false) {
+    if (!start && !end)
         return "-";
-    // Replace ":" with ".", ensure leading zero
-    const formatted = time.replace(":", ".");
-    return `${formatted} WIB`;
-}
-/**
- * Format a time range object into a string in the format "HH.mm - HH.mm WIB".
- * Example: { start: "07:00", end: "17:00" } → "07.00 - 17.00 WIB"
- *
- * @param {{ start?: string, end?: string }} [timeRange] - The time range object.
- * @returns {string} The formatted time range string.
- */
-function formatTimeRange(timeRange) {
-    if (!timeRange || (!timeRange.start && !timeRange.end))
-        return "-";
-    const formatTime = (time) => {
-        if (!time)
+    const parseTime = (t) => {
+        if (!t)
             return undefined;
-        // Ambil hanya jam dan menit
-        const [h, m = "00"] = time.replace(".", ":").split(":");
-        const hour = h.padStart(2, "0");
-        const minute = m.padStart(2, "0");
-        return `${hour}.${minute}`;
+        if (t instanceof Date) {
+            const hours = useUTC ? t.getUTCHours() : t.getHours();
+            const minutes = useUTC ? t.getUTCMinutes() : t.getMinutes();
+            return `${String(hours).padStart(2, "0")}.${String(minutes).padStart(2, "0")}`;
+        }
+        // Untuk input string "07:00" atau "07.00"
+        const [h, m = "00"] = t.replace(".", ":").split(":");
+        return `${h.padStart(2, "0")}.${m.padStart(2, "0")}`;
     };
-    const startStr = formatTime(timeRange.start);
-    const endStr = formatTime(timeRange.end);
+    const startStr = parseTime(start);
+    const endStr = parseTime(end);
     if (startStr && endStr)
         return `${startStr} - ${endStr} WIB`;
-    if (startStr && !endStr)
+    if (startStr)
         return `${startStr} WIB`;
-    if (!startStr && endStr)
+    if (endStr)
         return `${endStr} WIB`;
     return "-";
 }
