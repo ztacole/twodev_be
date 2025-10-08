@@ -991,7 +991,8 @@ export class AssessmentService {
         tabs.push(
             { name: 'AK-02', status: "Belum Tuntas" },
             { name: 'AK-03', status: "Menunggu Asesi" },
-            { name: 'AK-05', status: "Belum Tuntas" }
+            { name: 'AK-05', status: "Belum Tuntas" },
+            { name: 'Penilaian', status: "Belum Tuntas" }
         );
 
         const results = await db.select().from(resultTable)
@@ -1124,6 +1125,13 @@ export class AssessmentService {
                             } else if (ia05Result && header.approved_assessor && header.approved_assessee) {
                                 status = "Tuntas";
                             }
+                        }
+                        break;
+                    case 'Penilaian':
+                        if (result.score !== -1) {
+                            status = "Tuntas";
+                        } else {
+                            status = "Belum Tuntas";
                         }
                         break;
                     // case 'IA-07':
