@@ -1797,14 +1797,10 @@ class AssessmentService {
                 const data = (_b = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].assessees.map((assessee, idx) => {
                     return [`${idx + 1}.`, assessee.assessee_name, assessee.score < 85 && assessee.score >= 0 ? assessee.score.toString() : assessee.score < 0 ? "" : "", assessee.score >= 85 && assessee.score <= 90 ? assessee.score.toString() : "", assessee.score > 90 ? assessee.score.toString() : ""];
                 })) !== null && _b !== void 0 ? _b : [];
-                for (let i = 0; i < (data.length < 12 ? data.length : data.length); i++) {
-                    let row = [`${i + 1}.`, 'N/A', 'N/A', 'N/A', 'N/A'];
-                    try {
-                        row = data[i];
-                    }
-                    catch (_e) {
+                for (let i = 0; i < (data.length < 12 ? 12 : data.length); i++) {
+                    let row = data[i];
+                    if (!row)
                         row = [`${i + 1}.`, 'N/A', 'N/A', 'N/A', 'N/A'];
-                    }
                     let x = startX;
                     let maxRowHeight = rowHeight;
                     // ukur tinggi maksimum row (karena ada teks wrap)

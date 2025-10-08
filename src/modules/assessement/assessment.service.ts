@@ -1961,13 +1961,10 @@ export class AssessmentService {
             const data: string[][] = results?.assessors[assessorIdx].assessees.map((assessee: any, idx: number) => {
                 return [`${idx + 1}.`, assessee.assessee_name, assessee.score < 85 && assessee.score >= 0 ? assessee.score.toString() : assessee.score < 0 ? "" : "", assessee.score >= 85 && assessee.score <= 90 ? assessee.score.toString() : "", assessee.score > 90 ? assessee.score.toString() : ""];
             }) ?? [];
-            for (let i = 0; i < (data.length < 12 ? data.length : data.length); i++) {
-                let row = [`${i + 1}.`, 'N/A', 'N/A', 'N/A', 'N/A'];
-                try {
-                    row = data[i];
-                } catch {
-                    row = [`${i + 1}.`, 'N/A', 'N/A', 'N/A', 'N/A'];
-                }
+            for (let i = 0; i < (data.length < 12 ? 12 : data.length); i++) {
+                let row = data[i];
+                if (!row) row = [`${i + 1}.`, 'N/A', 'N/A', 'N/A', 'N/A'];
+                
                 let x = startX;
                 let maxRowHeight = rowHeight;
 
