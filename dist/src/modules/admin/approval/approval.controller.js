@@ -50,7 +50,7 @@ exports.ApprovalController = {
     },
     createApprovalRequest(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d;
+            var _a, _b, _c, _d, _e, _f, _g;
             try {
                 const user = req.user;
                 if (!req.body) {
@@ -64,16 +64,29 @@ exports.ApprovalController = {
                 const targetId = (_b = body === null || body === void 0 ? void 0 : body.targetId) !== null && _b !== void 0 ? _b : body === null || body === void 0 ? void 0 : body.target_id;
                 const action = body === null || body === void 0 ? void 0 : body.action;
                 const approverAdminRaw = (_c = body === null || body === void 0 ? void 0 : body.approverAdminId) !== null && _c !== void 0 ? _c : body === null || body === void 0 ? void 0 : body.approver_admin_id;
-                const comment = (_d = body === null || body === void 0 ? void 0 : body.comment) !== null && _d !== void 0 ? _d : null;
+                const backupAdminRaw = (_f = (_e = (_d = body === null || body === void 0 ? void 0 : body.backupApproverId) !== null && _d !== void 0 ? _d : body === null || body === void 0 ? void 0 : body.backup_approver_id) !== null && _e !== void 0 ? _e : body === null || body === void 0 ? void 0 : body.backupAdminId) !== null && _f !== void 0 ? _f : body === null || body === void 0 ? void 0 : body.backup_admin_id;
+                const comment = (_g = body === null || body === void 0 ? void 0 : body.comment) !== null && _g !== void 0 ? _g : null;
                 if (!targetTable || !targetId || !action || !approverAdminRaw) {
                     return res.status(400).json({
                         success: false,
                         message: 'targetTable/target_table, targetId/target_id, action, dan approverAdminId/approver_admin_id wajib diisi'
                     });
                 }
-                const data = yield approval_services_1.ApprovalService.createApprovalRequest({
+                if (backupAdminRaw) {
+                    const data = yield approval_services_1.ApprovalService.createApprovalRequestWithBackup({
+                        user,
+                        primaryApproverId: Number(approverAdminRaw),
+                        backupApproverId: Number(backupAdminRaw),
+                        targetTable,
+                        targetId: Number(targetId),
+                        action,
+                        comment,
+                    });
+                    return res.json({ success: true, message: 'Approval request created with manual backup', data });
+                }
+                const data = yield approval_services_1.ApprovalService.createApprovalRequestWithAutoBackup({
                     user,
-                    approverAdminId: Number(approverAdminRaw),
+                    primaryApproverId: Number(approverAdminRaw),
                     targetTable,
                     targetId: Number(targetId),
                     action,
@@ -125,6 +138,23 @@ exports.ApprovalController = {
             }
             catch (error) {
                 res.status(400).json({ success: false, message: error.message || 'Gagal mengambil daftar approval requests' });
+            }
+        });
+    },
+    getAvailableApprovers(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield approval_services_1.ApprovalService.getAvailableApprovers();
+                res.json({
+                    success: true,
+                    data
+                });
+            }
+            catch (error) {
+                res.status(400).json({
+                    success: false,
+                    message: error.message || 'Gagal mengambil available approvers'
+                });
             }
         });
     }

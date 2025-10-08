@@ -299,6 +299,7 @@ class APL1Service {
             const rows = yield drizzle_1.db
                 .select({
                 id: schema_1.resultDoc.id,
+                admin_id: schema_1.resultDoc.admin_id,
                 result_id: schema_1.resultDoc.result_id,
                 approved: schema_1.resultDoc.approved,
                 purpose: schema_1.resultDoc.purpose,
@@ -333,6 +334,7 @@ class APL1Service {
         return __awaiter(this, void 0, void 0, function* () {
             const results = yield drizzle_1.db.select({
                 id: schema_1.resultDoc.id,
+                admin_id: schema_1.resultDoc.admin_id,
                 result_id: schema_1.resultDoc.result_id,
                 approved: schema_1.resultDoc.approved,
                 purpose: schema_1.resultDoc.purpose,
@@ -358,9 +360,12 @@ class APL1Service {
             return results;
         });
     }
-    static approveResultDoc(result_id) {
+    static approveResultDoc(result_id, user_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield drizzle_1.db.update(schema_1.resultDoc).set({ approved: true }).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.id, result_id));
+            const admin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, user_id) });
+            if (!admin)
+                throw new error_1.NotFoundError('Admin');
+            yield drizzle_1.db.update(schema_1.resultDoc).set({ admin_id: admin.id, approved: true }).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.id, result_id));
             const updated = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.id, result_id) });
             return updated;
         });

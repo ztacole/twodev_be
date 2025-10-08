@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createNewPage = createNewPage;
+exports.drawCellText = drawCellText;
 exports.drawTable = drawTable;
 exports.drawCertificateLayout = drawCertificateLayout;
 exports.drawUnitGroupLayout = drawUnitGroupLayout;
@@ -17,6 +18,8 @@ exports.drawUnitLayout = drawUnitLayout;
 exports.drawElementLayout = drawElementLayout;
 exports.drawFeedbackIA01 = drawFeedbackIA01;
 exports.drawChecklistTable = drawChecklistTable;
+exports.drawCertificateLayoutAK02 = drawCertificateLayoutAK02;
+exports.drawFeedbackAK02 = drawFeedbackAK02;
 const pdf_lib_1 = require("pdf-lib");
 const pdfAssets_helper_1 = require("../../../helper/pdfAssets.helper");
 const qrCode_helper_1 = require("../../../helper/qrCode.helper");
@@ -95,8 +98,8 @@ function drawCellText(page, text, x, y, width, height, font, size = 9, align = "
     }
     return lines.length * (size + 2);
 }
-function drawTable(page, data, colWidths, startX, startY, rowHeight, font, fontBold) {
-    return __awaiter(this, void 0, void 0, function* () {
+function drawTable(page_1, data_1, colWidths_1, startX_1, startY_1, rowHeight_1, font_1, fontBold_1) {
+    return __awaiter(this, arguments, void 0, function* (page, data, colWidths, startX, startY, rowHeight, font, fontBold, fontSize = 9) {
         let y = startY;
         for (let i = 0; i < data.length; i++) {
             const row = data[i];
@@ -110,7 +113,7 @@ function drawTable(page, data, colWidths, startX, startY, rowHeight, font, fontB
                 let lines = [];
                 for (const word of words) {
                     const testLine = line ? line + " " + word : word;
-                    const testWidth = font.widthOfTextAtSize(testLine, 9);
+                    const testWidth = font.widthOfTextAtSize(testLine, fontSize);
                     if (testWidth > colWidths[idx] - 8) {
                         lines.push(line);
                         line = word;
@@ -136,7 +139,7 @@ function drawTable(page, data, colWidths, startX, startY, rowHeight, font, fontB
                     borderWidth: 1,
                 });
                 const align = i === 0 ? "center" : "left"; // header rata tengah
-                drawCellText(page, cell, x, y, w, maxRowHeight, i === 0 ? fontBold : font, 9, align);
+                drawCellText(page, cell, x, y, w, maxRowHeight, i === 0 ? fontBold : font, fontSize, align);
                 x += w;
             });
             y -= maxRowHeight;
@@ -868,4 +871,211 @@ function drawChecklistTable(page, items, startX, startY, rowHeight, font, fontIc
 }
 function drawSignatureSectionLayout(page, items, startX, startY, rowHeight, font, fontIcon) {
     return __awaiter(this, void 0, void 0, function* () { });
+}
+function drawCertificateLayoutAK02(page, data, colWidths, startX, startY, rowHeight, font, fontBold) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let y = startY;
+        let footerX = startX;
+        const footerText = "Tanggal Asesmen";
+        const w = 90;
+        const footerData = data.splice(-2);
+        y = yield drawCertificateLayout(page, data, colWidths, startX, startY, rowHeight, font, fontBold);
+        page.drawRectangle({
+            x: footerX,
+            y: y - rowHeight * 2,
+            width: w,
+            height: rowHeight * 2,
+            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+            borderWidth: 1,
+        });
+        const align = "center";
+        drawCellText(page, footerText, footerX, y - rowHeight / 2 + rowHeight / 4, w, rowHeight * 2, fontBold, 9, align);
+        footerX += w;
+        for (let i = 0; i < footerData.length; i++) {
+            const row = footerData[i];
+            let x = footerX;
+            let maxRowHeight = rowHeight;
+            // ukur tinggi maksimum row (karena ada teks wrap)
+            const cellHeights = row.map((cell, idx) => {
+                const safeCell = cell !== null && cell !== void 0 ? cell : ""; // fallback
+                const words = safeCell.split(" ");
+                let line = "";
+                let lines = [];
+                for (const word of words) {
+                    const testLine = line ? line + " " + word : word;
+                    const testWidth = font.widthOfTextAtSize(testLine, 9);
+                    if (testWidth > colWidths[idx] - 8) {
+                        lines.push(line);
+                        line = word;
+                    }
+                    else {
+                        line = testLine;
+                    }
+                }
+                if (line)
+                    lines.push(line);
+                return lines.length * (9 + 4) + 6;
+            });
+            maxRowHeight = Math.max(rowHeight, ...cellHeights);
+            // draw cell
+            row.forEach((cell, idx) => {
+                const w = idx === 0 ? 42 : colWidths[idx];
+                page.drawRectangle({
+                    x,
+                    y: y - maxRowHeight,
+                    width: w,
+                    height: maxRowHeight,
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                const align = "left";
+                drawCellText(page, cell, x, y, w, maxRowHeight, i === 0 ? fontBold : font, 9, align);
+                x += w;
+            });
+            y -= maxRowHeight;
+        }
+        return y;
+    });
+}
+function drawFeedbackAK02(pdfDoc, page, data, startX, startY, font, fontBold) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const tableWidth = 520;
+        const lineHeight = 18;
+        const qrSize = 70;
+        const leftColWidth = 200;
+        const rightColWidth = tableWidth - leftColWidth;
+        let y = startY;
+        // === Header rows ===
+        const rows = [
+            ["Rekomendasi Hasil Asesmen", "Kompeten"],
+            [
+                "Tindak lanjut yang dibutuhkan (Masukkan pekerjaan tambahan dan asesmen yang diperlukan untuk mencapai kompetensi)",
+                "-",
+            ],
+            [
+                "Komentar/ Observasi oleh asesor",
+                "Asesi sudah menunjukkan kinerja yang memuaskan",
+            ],
+        ];
+        for (const [label, value] of rows) {
+            const height = lineHeight * (label.length > 50 ? 2 : 1);
+            page.drawRectangle({
+                x: startX,
+                y: y - height,
+                width: tableWidth,
+                height,
+                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                borderWidth: 1,
+            });
+            page.drawText(label, {
+                x: startX + 5,
+                y: y - 12,
+                size: 9,
+                font: fontBold,
+            });
+            page.drawText(":", {
+                x: startX + 165,
+                y: y - 12,
+                size: 9,
+                font,
+            });
+            page.drawText(value, {
+                x: startX + 175,
+                y: y - 12,
+                size: 9,
+                font,
+            });
+            y -= height;
+        }
+        // === tanda tangan Asesi ===
+        const sectionHeight = qrSize + 20;
+        // Kotak besar Asesi
+        page.drawRectangle({
+            x: startX,
+            y: y - sectionHeight,
+            width: tableWidth,
+            height: sectionHeight,
+            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+            borderWidth: 1,
+        });
+        // Kolom kiri (label tanda tangan)
+        page.drawRectangle({
+            x: startX,
+            y: y - sectionHeight,
+            width: leftColWidth,
+            height: sectionHeight,
+            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+            borderWidth: 1,
+        });
+        page.drawText("Tanda Tangan Asesi", {
+            x: startX + 40,
+            y: y - sectionHeight / 2,
+            size: 9,
+            font,
+        });
+        // Kolom kanan
+        const qrX = startX + leftColWidth + 15;
+        const qrY = y - qrSize - 5;
+        if (data.ak02_headers.approved_assessee) {
+            const qrData = yield (0, qrCode_helper_1.generateQrDataURL)((0, hashids_1.getAssesseeUrl)(data.assessee.id));
+            const qrImage = yield pdfDoc.embedPng(qrData);
+            page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+        }
+        page.drawText("Tanggal", {
+            x: startX + tableWidth - 100,
+            y: y - 15,
+            size: 9,
+            font: fontBold,
+        });
+        page.drawText((0, date_helper_1.formatDate)(data.ak02_headers.updated_at || new Date()), {
+            x: startX + tableWidth - 60,
+            y: y - 15,
+            size: 9,
+            font,
+        });
+        y -= sectionHeight;
+        // === tanda tangan Asesor ===
+        page.drawRectangle({
+            x: startX,
+            y: y - sectionHeight,
+            width: tableWidth,
+            height: sectionHeight,
+            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+            borderWidth: 1,
+        });
+        page.drawRectangle({
+            x: startX,
+            y: y - sectionHeight,
+            width: leftColWidth,
+            height: sectionHeight,
+            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+            borderWidth: 1,
+        });
+        page.drawText("Tanda Tangan Asesor", {
+            x: startX + 35,
+            y: y - sectionHeight / 2,
+            size: 9,
+            font,
+        });
+        const qrY2 = y - qrSize - 5;
+        if (data.ak02_headers.approved_assessor) {
+            const qrData = yield (0, qrCode_helper_1.generateQrDataURL)((0, hashids_1.getAssessorUrl)(data.assessor.id));
+            const qrImage = yield pdfDoc.embedPng(qrData);
+            page.drawImage(qrImage, { x: qrX, y: qrY2, width: qrSize, height: qrSize });
+        }
+        page.drawText("Tanggal", {
+            x: startX + tableWidth - 100,
+            y: y - 15,
+            size: 9,
+            font: fontBold,
+        });
+        page.drawText((0, date_helper_1.formatDate)(data.ak02_headers.updated_at || new Date()), {
+            x: startX + tableWidth - 60,
+            y: y - 15,
+            size: 9,
+            font,
+        });
+        y -= sectionHeight;
+        return y - 10;
+    });
 }

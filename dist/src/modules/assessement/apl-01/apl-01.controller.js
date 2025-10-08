@@ -121,8 +121,9 @@ APL1Controller.getUnapprovedResult = (0, async_handler_1.asyncHandler)((req, res
     });
 }));
 APL1Controller.approveResult = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.user;
     const resultId = parseInt(req.params.resultId);
-    const result = yield apl_01_service_1.APL1Service.approveResultDoc(resultId);
+    const result = yield apl_01_service_1.APL1Service.approveResultDoc(resultId, user.id);
     res.status(200).json({
         success: true,
         message: 'Hasil berhasil disetujui',

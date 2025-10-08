@@ -76,6 +76,8 @@ class DashboardAssessorService {
                         //     return false;
                         case "ak-05":
                             return (ak05 === null || ak05 === void 0 ? void 0 : ak05.approved_assessor) ? 'Tuntas' : 'Belum Tuntas';
+                        case "penilaian":
+                            return (result.score !== -1) ? 'Tuntas' : 'Belum Tuntas';
                         default:
                             throw new error_1.ValidationError('Result Type tidak valid');
                     }

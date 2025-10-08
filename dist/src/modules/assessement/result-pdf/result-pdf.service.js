@@ -17,6 +17,7 @@ const date_helper_1 = require("../../../helper/date.helper");
 const pdfDraw_helper_1 = require("../../../helper/pdfDraw.helper");
 const apl_01_service_1 = require("../apl-01/apl-01.service");
 const asseessee_service_1 = require("../../assessee/asseessee.service");
+const ak_02_service_1 = require("../ak-02/ak-02.service");
 const headerImage = "../../public/images/kop-surat-lsp-smkn24j.png";
 class ResultPdfService {
     static generateIA01(resultId) {
@@ -206,6 +207,72 @@ class ResultPdfService {
                     (0, pdfDraw_helper_1.drawParagraph)(page, `${(result === null || result === void 0 ? void 0 : result.title) || "-"}`, x + col.no + col.code + 10, rowY + 5, font, fontSize);
                 });
             }
+        });
+    }
+    static generateAK02(resultId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+            const pdfDoc = yield pdf_lib_1.PDFDocument.create();
+            const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
+            const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
+            let { page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold);
+            const resultDetails = yield ak_02_service_1.AK02Service.getResultDetails(resultId);
+            // === TITLE ===
+            page.drawText("FR.AK.02 - REKAMAN ASESMEN KOMPETENSI", {
+                x: 40, y, size: 12, font: fontBold
+            });
+            y -= 30;
+            // === SKEMA / INFO ===
+            const info = [
+                ["Judul", ":", (_c = (_b = (_a = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessment) === null || _a === void 0 ? void 0 : _a.occupation) === null || _b === void 0 ? void 0 : _b.name) !== null && _c !== void 0 ? _c : "-"],
+                ["Nomor", ":", (_e = (_d = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessment) === null || _d === void 0 ? void 0 : _d.code) !== null && _e !== void 0 ? _e : "-"],
+                ["TUK", ":", (_f = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.tuk) !== null && _f !== void 0 ? _f : "-"],
+                ["Nama Asesor", ":", (_h = (_g = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessor) === null || _g === void 0 ? void 0 : _g.name) !== null && _h !== void 0 ? _h : "-"],
+                ["Nama Asesi", ":", (_k = (_j = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessee) === null || _j === void 0 ? void 0 : _j.name) !== null && _k !== void 0 ? _k : "-"],
+                ["Mulai", ":", new Date(resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.created_at)
+                        .toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        timeZone: "UTC"
+                    })
+                ],
+                ["Selesai", ":", new Date(resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.updated_at)
+                        .toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        timeZone: "UTC"
+                    })],
+            ];
+            y = yield (0, helper_1.drawCertificateLayoutAK02)(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+            y -= 20;
+            const evidenceTypes = [
+                "Observasi Demonstrasi",
+                "Portofolio",
+                "Pernyataan Pihak Ketiga",
+                "Pernyataan Wawancara",
+                "Pertanyaan Lisan",
+                "Pertanyaan Tertulis",
+                "Proyek Kerja",
+                "Lainnya",
+            ];
+            const selectedEvidences = resultDetails.ak02_headers.rows.map((row) => evidenceTypes.map((evidenceType) => row.evidences.some((evidence) => evidence.evidence === evidenceType)));
+            // === TABEL UNIT KOMPETENSI & BUKTI ===
+            const tableHeader = [
+                ["Unit Kompetensi", ...evidenceTypes],
+            ];
+            const tableRows = resultDetails.ak02_headers.rows.map((row, i) => [
+                `${row.unit_code} - ${row.unit_title}`,
+                ...selectedEvidences[i].map((selected) => selected ? "V" : ""),
+            ]);
+            const tableData = [...tableHeader, ...tableRows];
+            y = yield (0, helper_1.drawTable)(page, tableData, [100, ...Array(8).fill(420 / 8)], 40, y, 25, font, fontBold);
+            y -= 30;
+            y = yield (0, helper_1.drawFeedbackAK02)(pdfDoc, page, resultDetails, 40, y, font, fontBold);
+            return yield pdfDoc.save();
         });
     }
 }

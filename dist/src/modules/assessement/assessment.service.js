@@ -18,6 +18,8 @@ const pdf_lib_1 = require("pdf-lib");
 const pdfAssets_helper_1 = require("../../helper/pdfAssets.helper");
 const pdfDraw_helper_1 = require("../../helper/pdfDraw.helper");
 const hashids_1 = require("../../helper/hashids");
+const helper_1 = require("./result-pdf/helper");
+const date_helper_1 = require("../../helper/date.helper");
 class AssessmentService {
     static createAssessment(data) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -715,6 +717,7 @@ class AssessmentService {
                 assessee: schema_1.assessee,
                 assessor: schema_1.assessor,
                 tuk: schema_1.result.tuk,
+                score: schema_1.result.score,
                 is_competent: schema_1.result.is_competent,
                 created_at: schema_1.result.created_at,
             })
@@ -747,6 +750,7 @@ class AssessmentService {
                     assessee: result.assessee,
                     assessor: result.assessor,
                     tuk: result.tuk,
+                    score: result.score,
                     is_competent: result.is_competent,
                     created_at: result.created_at,
                     doc: doc,
@@ -870,6 +874,7 @@ class AssessmentService {
                 assessor_id: result[0].assessor_id,
                 assessee_id: result[0].assessee_id,
                 tuk: result[0].tuk,
+                score: result[0].score,
                 is_competent: result[0].is_competent,
                 created_at: result[0].created_at,
                 tabs: tabs,
@@ -897,7 +902,7 @@ class AssessmentService {
                 tabs.push({ name: 'IA-05', status: "Menunggu Asesi" });
             if (isAnyIa07)
                 tabs.push({ name: 'IA-07', status: "Belum Tuntas" });
-            tabs.push({ name: 'AK-02', status: "Belum Tuntas" }, { name: 'AK-03', status: "Menunggu Asesi" }, { name: 'AK-05', status: "Belum Tuntas" });
+            tabs.push({ name: 'AK-02', status: "Belum Tuntas" }, { name: 'AK-03', status: "Menunggu Asesi" }, { name: 'AK-05', status: "Belum Tuntas" }, { name: 'Penilaian', status: "Belum Tuntas" });
             const results = yield drizzle_1.db.select().from(schema_1.result)
                 .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id)));
             if (results.length === 0) {
@@ -1043,6 +1048,14 @@ class AssessmentService {
                                 }
                             }
                             break;
+                        case 'Penilaian':
+                            if (result.score !== -1) {
+                                status = "Tuntas";
+                            }
+                            else {
+                                status = "Belum Tuntas";
+                            }
+                            break;
                         // case 'IA-07':
                         //     header = await db.query.resultIa07Header.findFirst({ where: eq(resultIa07HeaderTable.result_id, result.id) });
                         //     if (header) {
@@ -1140,6 +1153,7 @@ class AssessmentService {
     }
     static getAssessmentRecapt(schedule_detail_id, assessor) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const scheduleDetail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.id, schedule_detail_id), (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.assessor_id, assessor.id)) });
             if (!scheduleDetail)
                 throw new error_1.NotFoundError('Schedule Detail');
@@ -1161,6 +1175,7 @@ class AssessmentService {
                 assessor_id: schema_1.result.assessor_id,
                 assessee_id: schema_1.result.assessee_id,
                 tuk: schema_1.result.tuk,
+                score: schema_1.result.score,
                 is_competent: schema_1.result.is_competent,
             }).from(schema_1.result).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, schedule.assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor.id)));
             let assessees = [];
@@ -1218,7 +1233,7 @@ class AssessmentService {
                     (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
                     res.is_competent)
                     status = "Competent";
-                assessees.push({ id: assessee.id, name: user === null || user === void 0 ? void 0 : user.full_name, status });
+                assessees.push({ id: assessee.id, name: user === null || user === void 0 ? void 0 : user.full_name, status, score: (_a = res.score) !== null && _a !== void 0 ? _a : null });
                 summary.total_assessees++;
                 if (status === 'Competent')
                     summary.total_competent++;
@@ -1553,214 +1568,454 @@ class AssessmentService {
             return pdfBytes;
         });
     }
-    static generateUkkEvaluationPdf(assessment) {
+    static getResultsByAssessmentGroupedByAssessor(assessmentId) {
         return __awaiter(this, void 0, void 0, function* () {
-            // === Create a new PDF document ===
+            // Query untuk mendapatkan semua data yang dibutuhkan
+            const results = yield drizzle_1.db
+                .select({
+                // Assessment fields
+                assessment_id: schema_1.assessment.id,
+                assessment_code: schema_1.assessment.code,
+                assessment_created_at: schema_1.assessment.created_at,
+                assessment_updated_at: schema_1.assessment.updated_at,
+                // Occupation fields
+                occupation_id: schema_1.occupation.id,
+                occupation_name: schema_1.occupation.name,
+                occupation_scheme_id: schema_1.occupation.scheme_id,
+                // Scheme fields
+                scheme_id: schema_1.scheme.id,
+                scheme_code: schema_1.scheme.code,
+                scheme_name: schema_1.scheme.name,
+                // Assessor fields
+                assessor_id: schema_1.assessor.id,
+                assessor_no_reg_met: schema_1.assessor.no_reg_met,
+                // Assessor user fields
+                assessor_user_full_name: schema_1.user.full_name,
+                // Result fields
+                result_id: schema_1.result.id,
+                result_score: schema_1.result.score,
+                result_is_competent: schema_1.result.is_competent,
+                result_tuk: schema_1.result.tuk,
+                result_created_at: schema_1.result.created_at,
+                result_updated_at: schema_1.result.updated_at,
+                // Assessee fields
+                assessee_id: schema_1.assessee.id,
+                // Assessee user fields (untuk nama assessee)
+                assessee_user_id: schema_1.assessee.user_id,
+            })
+                .from(schema_1.result)
+                .innerJoin(schema_1.assessment, (0, drizzle_orm_1.eq)(schema_1.result.assessment_id, schema_1.assessment.id))
+                .innerJoin(schema_1.occupation, (0, drizzle_orm_1.eq)(schema_1.assessment.occupation_id, schema_1.occupation.id))
+                .innerJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, schema_1.scheme.id))
+                .innerJoin(schema_1.assessor, (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, schema_1.assessor.id))
+                .innerJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, schema_1.user.id))
+                .innerJoin(schema_1.assessee, (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, schema_1.assessee.id))
+                .where((0, drizzle_orm_1.eq)(schema_1.assessment.id, assessmentId));
+            if (results.length === 0) {
+                return null;
+            }
+            const assesseeUserIds = [...new Set(results.map(r => r.assessee_user_id))];
+            const assesseeUsers = yield drizzle_1.db
+                .select({
+                id: schema_1.user.id,
+                full_name: schema_1.user.full_name,
+            })
+                .from(schema_1.user)
+                .where((0, drizzle_orm_1.eq)(schema_1.user.id, assesseeUserIds[0]) // akan di-map manual di bawah
+            );
+            const assesseeUserMap = new Map();
+            for (const userId of assesseeUserIds) {
+                const user = yield drizzle_1.db
+                    .select({ full_name: schema_1.user.full_name })
+                    .from(schema_1.user)
+                    .where((0, drizzle_orm_1.eq)(schema_1.user.id, userId))
+                    .limit(1);
+                if (user[0]) {
+                    assesseeUserMap.set(userId, user[0].full_name);
+                }
+            }
+            const assessorMap = new Map();
+            results.forEach(row => {
+                if (!assessorMap.has(row.assessor_id)) {
+                    assessorMap.set(row.assessor_id, {
+                        id: row.assessor_id,
+                        full_name: row.assessor_user_full_name,
+                        no_reg_met: row.assessor_no_reg_met,
+                        assessees: [],
+                    });
+                }
+                assessorMap.get(row.assessor_id).assessees.push({
+                    result_id: row.result_id,
+                    score: row.result_score,
+                    is_competent: row.result_is_competent,
+                    tuk: row.result_tuk,
+                    created_at: row.result_created_at,
+                    updated_at: row.result_updated_at,
+                    assessee_id: row.assessee_id,
+                    assessee_name: assesseeUserMap.get(row.assessee_user_id) || '',
+                });
+            });
+            const firstRow = results[0];
+            const finalResult = {
+                id: firstRow.assessment_id,
+                code: firstRow.assessment_code,
+                occupation_id: firstRow.occupation_id,
+                created_at: firstRow.assessment_created_at,
+                updated_at: firstRow.assessment_updated_at,
+                occupation: {
+                    id: firstRow.occupation_id,
+                    name: firstRow.occupation_name,
+                    scheme_id: firstRow.occupation_scheme_id,
+                    scheme: {
+                        id: firstRow.scheme_id,
+                        code: firstRow.scheme_code,
+                        name: firstRow.scheme_name,
+                    },
+                },
+                assessors: Array.from(assessorMap.values()),
+            };
+            return finalResult;
+        });
+    }
+    static generateUkkEvaluationPdf(assessment_id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c, _d;
+            const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
+            if (!existingAssessment) {
+                throw new error_1.NotFoundError('Assessment not found');
+            }
+            const results = yield this.getResultsByAssessmentGroupedByAssessor(assessment_id);
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
-            const page = pdfDoc.addPage([612, 936]);
-            //  === Dates ===
-            const now = new Date();
-            const months = [
-                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-            ];
-            const day = now.getDate();
-            const month = months[now.getMonth()];
-            const year = now.getFullYear();
-            // === Fonts ===
             const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
             const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
-            const iconFont = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.ZapfDingbats);
-            const fontSizeSmall = 11;
-            let y = page.getHeight() - 50;
-            const l2LineGap = 8;
-            const lLineGap = 12;
-            const xlLineGap = 20;
-            // === Header ===
             const image = "../../public/images/kop-surat-lsp-smkn24j.png";
-            y = yield (0, pdfAssets_helper_1.kopSurat)(pdfDoc, page, image);
-            // === TITLE ===
-            const headerText = [
-                "FORM PENILAIAN",
-                "UJI KOMPETENSI KEAHLIAN",
-            ];
-            headerText.forEach(text => {
-                y = (0, pdfDraw_helper_1.drawParagraph)(page, text, 40, y, fontBold, fontSizeSmall, "center");
-            });
-            y -= xlLineGap;
-            // === TABLE CONTENT ===
-            const tableData = assessment.assessees.map((assessee, index) => ({
-                no: index + 1,
-                name: assessee.name,
-            }));
-            const tableTop = y + 7;
-            const rowHeight = 25;
-            const colWidths = [30, 260, 75, 75, 75];
-            const headerColor = (0, pdf_lib_1.rgb)(1, 0.95, 0.7);
-            let x = 50;
-            // === Column No ===
-            page.drawRectangle({
-                x, y: tableTop - rowHeight * 3 + 12,
-                width: colWidths[0], height: rowHeight * 4 - 23,
-                color: headerColor, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1
-            });
-            page.drawText("No", {
-                x: x + colWidths[0] / 2 - 8,
-                y: tableTop - rowHeight - 3,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            x += colWidths[0];
-            // === Column Nama Peserta ===
-            page.drawRectangle({
-                x, y: tableTop - rowHeight * 3 + 12,
-                width: colWidths[1], height: rowHeight * 4 - 23,
-                color: headerColor, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1
-            });
-            page.drawText("Nama Peserta", {
-                x: x + colWidths[1] / 2 - 40,
-                y: tableTop - rowHeight - 3,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            x += colWidths[1];
-            // === Kolom Gabungan Rekomendasi (K, BK, SK) ===
-            page.drawRectangle({
-                x, y: tableTop - rowHeight * 2 + 11,
-                width: colWidths[2] + colWidths[3] + colWidths[4],
-                height: rowHeight * 3 - 22,
-                color: headerColor, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1
-            });
-            page.drawText("SKOR PENILAIAN", { x: x + (colWidths[2] + colWidths[3] + colWidths[4]) / 2 - 45, y: tableTop - 3, size: fontSizeSmall, font: fontBold });
-            page.drawText("BUTCHER COMMIS", { x: x + (colWidths[2] + colWidths[3] + colWidths[4]) / 2 - 50, y: tableTop - rowHeight + 9, size: fontSizeSmall, font: fontBold });
+            for (let assessorIdx = 0; assessorIdx < (!results ? 0 : results === null || results === void 0 ? void 0 : results.assessors.length); assessorIdx++) {
+                let { page, y } = yield (0, helper_1.createNewPage)(pdfDoc, image, fontBold);
+                // === Fonts === 
+                const iconFont = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.ZapfDingbats);
+                const fontSizeSmall = 11;
+                const fontSizeLarge = 14;
+                const rowHeight = 24;
+                // === TITLE ===
+                const headerText = [
+                    "FORM PENILAIAN",
+                    "UJI KOMPETENSI KEAHLIAN",
+                ];
+                headerText.forEach(text => {
+                    y = (0, pdfDraw_helper_1.drawParagraph)(page, text, 40, y, fontBold, fontSizeLarge, "center");
+                });
+                y += 8;
+                const colWidths = [30, 265, 75, 75, 75];
+                const headerColor = (0, pdf_lib_1.rgb)(1, 0.95, 0.7);
+                let startX = 40;
+                const scoreHeaderTexts = [`SKOR PENILAIAN`, (_a = results === null || results === void 0 ? void 0 : results.occupation.name.toUpperCase()) !== null && _a !== void 0 ? _a : "OKUPASI"];
+                const scoreHeaderHeights = scoreHeaderTexts.map((cell) => {
+                    const words = cell.split(" ");
+                    let line = "";
+                    let lines = [];
+                    for (const word of words) {
+                        const testLine = line ? line + " " + word : word;
+                        const testWidth = font.widthOfTextAtSize(testLine, fontSizeSmall);
+                        if (testWidth > colWidths[2] + colWidths[3] + colWidths[4] - 8) {
+                            lines.push(line);
+                            line = word;
+                        }
+                        else {
+                            line = testLine;
+                        }
+                    }
+                    if (line)
+                        lines.push(line);
+                    return Math.max(rowHeight, lines.length * (9 + 4) + 6);
+                });
+                const scoreHeaderWidth = colWidths[2] + colWidths[3] + colWidths[4];
+                let scoreHeaderX = startX + colWidths[0] + colWidths[1];
+                let scoreHeaderY = y;
+                // === Kolom Gabungan Rekomendasi (K, BK, SK) ===
+                let scoreTextY = scoreHeaderY;
+                page.drawRectangle({
+                    x: scoreHeaderX, y: scoreHeaderY - scoreHeaderHeights.reduce((a, b) => a + b, 0),
+                    width: scoreHeaderWidth,
+                    height: scoreHeaderHeights.reduce((a, b) => a + b, 0) + fontSizeSmall / 2 - 16,
+                    color: headerColor, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1
+                });
+                (0, helper_1.drawCellText)(page, scoreHeaderTexts[0], scoreHeaderX, scoreTextY - scoreHeaderHeights.reduce((a, b) => a + b, 0) / 2 + fontSizeSmall / 2 + 10, scoreHeaderWidth, scoreHeaderHeights[0], fontBold, fontSizeSmall, "center");
+                scoreTextY -= scoreHeaderHeights[0] - fontSizeSmall / 2 - 4;
+                (0, helper_1.drawCellText)(page, scoreHeaderTexts[1], scoreHeaderX, scoreTextY - scoreHeaderHeights.reduce((a, b) => a + b, 0) / 2 + fontSizeSmall / 2 + 10, scoreHeaderWidth, scoreHeaderHeights[1], fontBold, fontSizeSmall, "center");
+                scoreHeaderY -= scoreHeaderHeights.reduce((a, b) => a + b, 0) + fontSizeSmall / 2 - 8;
+                const subColumnScoreTexts = ['< 85   BELUM KOMPETEN', '85 - 90 KOMPETEN', '91 - 100 SANGAT KOMPETEN'];
+                const subColumnScoreHeights = subColumnScoreTexts.map((cell, idx) => {
+                    const words = cell.split(" ");
+                    let line = "";
+                    let lines = [];
+                    for (const word of words) {
+                        const testLine = line ? line + " " + word : word;
+                        const testWidth = font.widthOfTextAtSize(testLine, fontSizeSmall);
+                        if (testWidth > colWidths[idx] - 8) {
+                            lines.push(line);
+                            line = word;
+                        }
+                        else {
+                            line = testLine;
+                        }
+                    }
+                    if (line)
+                        lines.push(line);
+                    return lines.length * (9 + 4) + 6;
+                });
+                const maxSubColumnScoreHeight = Math.max(rowHeight, ...subColumnScoreHeights);
+                subColumnScoreTexts.forEach((cell, idx) => {
+                    const w = colWidths[idx + 2];
+                    page.drawRectangle({
+                        x: scoreHeaderX,
+                        y: scoreHeaderY - maxSubColumnScoreHeight + fontSizeSmall / 2,
+                        width: w,
+                        height: maxSubColumnScoreHeight - fontSizeSmall / 2,
+                        color: headerColor,
+                        borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    (0, helper_1.drawCellText)(page, cell, scoreHeaderX, scoreHeaderY - 2, w, maxSubColumnScoreHeight - fontSizeSmall / 2 - 16, fontBold, fontSizeSmall, "center");
+                    scoreHeaderX += w;
+                });
+                scoreHeaderY -= maxSubColumnScoreHeight - fontSizeSmall / 2;
+                const headerTexts = ['NO', 'NAMA PESERTA'];
+                headerTexts.forEach((cell, idx) => {
+                    const w = colWidths[idx];
+                    page.drawRectangle({
+                        x: startX,
+                        y: scoreHeaderY,
+                        width: w,
+                        height: y - scoreHeaderY + fontSizeSmall / 2 - 16,
+                        color: headerColor, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1
+                    });
+                    (0, helper_1.drawCellText)(page, cell, startX, scoreHeaderY + (y - scoreHeaderY + fontSizeSmall / 2) / 2 + 4, w, rowHeight - fontSizeSmall / 2 - 16, fontBold, fontSizeSmall, "center");
+                    startX += w;
+                });
+                y = scoreHeaderY;
+                startX = 40;
+                const data = (_b = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].assessees.map((assessee, idx) => {
+                    return [`${idx + 1}.`, assessee.assessee_name, assessee.score < 85 ? assessee.score.toString() : assessee.score < 0 ? "" : "", assessee.score >= 85 && assessee.score <= 90 ? assessee.score.toString() : "", assessee.score > 90 ? assessee.score.toString() : ""];
+                })) !== null && _b !== void 0 ? _b : [];
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i];
+                    let x = startX;
+                    let maxRowHeight = rowHeight;
+                    // ukur tinggi maksimum row (karena ada teks wrap)
+                    const cellHeights = row.map((cell, idx) => {
+                        const safeCell = cell !== null && cell !== void 0 ? cell : ""; // fallback
+                        const words = safeCell.split(" ");
+                        let line = "";
+                        let lines = [];
+                        for (const word of words) {
+                            const testLine = line ? line + " " + word : word;
+                            const testWidth = font.widthOfTextAtSize(testLine, fontSizeSmall);
+                            if (testWidth > colWidths[idx] - 8) {
+                                lines.push(line);
+                                line = word;
+                            }
+                            else {
+                                line = testLine;
+                            }
+                        }
+                        if (line)
+                            lines.push(line);
+                        return lines.length * (9 + 4) + 6;
+                    });
+                    maxRowHeight = Math.max(rowHeight, ...cellHeights);
+                    // draw cell
+                    row.forEach((cell, idx) => {
+                        const w = colWidths[idx];
+                        page.drawRectangle({
+                            x,
+                            y: y - maxRowHeight,
+                            width: w,
+                            height: maxRowHeight,
+                            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                            borderWidth: 1,
+                        });
+                        const align = idx === 0 || idx === 1 ? "left" : "center";
+                        (0, helper_1.drawCellText)(page, cell, x, y, w, maxRowHeight, font, fontSizeSmall, align);
+                        x += w;
+                    });
+                    y -= maxRowHeight;
+                }
+                y -= 24;
+                const l2LineGap = 8;
+                const lLineGap = 12;
+                // === NOTE ===
+                y = (0, pdfDraw_helper_1.drawParagraph)(page, "Selama pelaksanaan uji kompetensi keahlian telah terjadi hal penting sebagai berikut :", 50, y, font, fontSizeSmall) + lLineGap;
+                const boxSize = 12;
+                const boxX = 50;
+                let boxY = y - boxSize * 2 + 10 - 6;
+                page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
+                (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar", boxX + boxSize + 5, boxY, font, fontSizeSmall);
+                boxY -= l2LineGap;
+                page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
+                (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);
+                boxY -= l2LineGap;
+                y = (0, pdfDraw_helper_1.drawParagraph)(page, "catatan : ....................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
+                boxY -= l2LineGap;
+                y = (0, pdfDraw_helper_1.drawParagraph)(page, "............................................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 3, font, fontSizeSmall);
+                (0, pdfDraw_helper_1.drawParagraph)(page, "Demikian, form penilaian ini dibuat sesuai dengan kejadian yang sebenarnya, untuk digunakan sebagaimana mestinya.", 50, y, font, fontSizeSmall);
+                // === SIGNATURE ===
+                const signatureX = 50;
+                let signatureY = y - 50;
+                const signatureWidth = 60;
+                const date = `${(0, date_helper_1.formatDay)(new Date())} ${(0, date_helper_1.formatDate)(new Date())}`;
+                const signatureDate = `Jakarta, ${date}`;
+                const assessor_name = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].full_name;
+                const signatureNameLength = font.widthOfTextAtSize((_c = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].full_name) !== null && _c !== void 0 ? _c : "", fontSizeSmall);
+                (0, pdfDraw_helper_1.drawParagraph)(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
+                y = (0, pdfDraw_helper_1.drawParagraph)(page, `Assessor`, signatureX + (signatureNameLength / 2) - (signatureWidth / 2), signatureY - 15, font, fontSizeSmall, "right");
+                signatureY -= 20;
+                const qrData = (0, hashids_1.getAssessorUrl)((_d = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].id) !== null && _d !== void 0 ? _d : 0);
+                const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
+                page.drawImage(qrCode, { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth });
+                (0, pdfDraw_helper_1.drawParagraph)(page, `${assessor_name}`, signatureX, signatureY - signatureWidth - 12, font, fontSizeSmall, "right");
+            }
             // === Subkolom BK ===
-            page.drawRectangle({
-                x, y: tableTop - rowHeight * 3 + 12,
-                width: colWidths[2],
-                height: rowHeight * 2 - 9,
-                color: headerColor,
-                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
-                borderWidth: 1
-            });
-            page.drawText("< 85", {
-                x: x + colWidths[2] / 2 - 10,
-                y: tableTop - rowHeight * 2 + 16,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            page.drawText("Belum", {
-                x: x + colWidths[2] / 2 - 14,
-                y: tableTop - rowHeight * 2 + 4,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            page.drawText("Kompeten", {
-                x: x + colWidths[2] / 2 - 24,
-                y: tableTop - rowHeight * 2 - 8,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            // === Subkolom K ===
-            page.drawRectangle({
-                x: x + colWidths[2],
-                y: tableTop - rowHeight * 3 + 12,
-                width: colWidths[3],
-                height: rowHeight * 2 - 9,
-                color: headerColor,
-                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
-                borderWidth: 1
-            });
-            page.drawText("86-90", {
-                x: x + colWidths[2] + colWidths[3] / 2 - 10,
-                y: tableTop - rowHeight * 2 + 16,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            page.drawText("Kompeten", {
-                x: x + colWidths[2] + colWidths[3] / 2 - 24,
-                y: tableTop - rowHeight * 2 - 8,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            // === Subkolom SK ===
-            page.drawRectangle({
-                x: x + colWidths[2] + colWidths[3],
-                y: tableTop - rowHeight * 3 + 12,
-                width: colWidths[4],
-                height: rowHeight * 2 - 9,
-                color: headerColor,
-                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
-                borderWidth: 1
-            });
-            page.drawText("91-100 ", {
-                x: x + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 15,
-                y: tableTop - rowHeight * 2 + 16,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            page.drawText("Sangat", {
-                x: x + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 14,
-                y: tableTop - rowHeight * 2 + 4,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            page.drawText("Kompeten", {
-                x: x + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 24,
-                y: tableTop - rowHeight * 2 - 8,
-                size: fontSizeSmall,
-                font: fontBold
-            });
-            let currentY = tableTop - rowHeight * 4 + 12;
-            // === TABLE CONTENT ===
-            tableData.forEach(row => {
-                let x = 50;
-                page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
-                page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
-                x += colWidths[0];
-                page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
-                page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
-                x += colWidths[1];
-                page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
-                page.drawText('', { x: x + colWidths[2] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-                x += colWidths[2];
-                page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
-                page.drawText('', { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-                x += colWidths[3];
-                page.drawRectangle({ x, y: currentY, width: colWidths[4], height: rowHeight, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
-                page.drawText('', { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-                currentY -= rowHeight;
-            });
-            y = currentY;
-            // === NOTE ===
-            y = (0, pdfDraw_helper_1.drawParagraph)(page, "Selama pelaksanaan uji kompetensi keahlian telah terjadi hal penting sebagai berikut :", 50, y, font, fontSizeSmall) + lLineGap;
-            const boxSize = 12;
-            const boxX = 50;
-            let boxY = y - boxSize * 2 + 10 - 6;
-            page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
-            (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar", boxX + boxSize + 5, boxY, font, fontSizeSmall);
-            boxY -= l2LineGap;
-            page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
-            (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);
-            boxY -= l2LineGap;
-            y = (0, pdfDraw_helper_1.drawParagraph)(page, "catatan : .......................................................................................................................................................", boxX, boxY - boxSize * 2, font, fontSizeSmall);
-            boxY -= l2LineGap;
-            y = (0, pdfDraw_helper_1.drawParagraph)(page, "......................................................................................................................................................................", boxX, boxY - boxSize * 3, font, fontSizeSmall);
-            (0, pdfDraw_helper_1.drawParagraph)(page, "Demikian, form penilaian ini dibuat sesuai dengan kejadian yang sebenarnya, untuk digunakan sebagaimana mestinya.", 50, y, font, fontSizeSmall);
-            // === SIGNATURE ===
-            const signatureX = 50;
-            let signatureY = y - 50;
-            const signatureWidth = 60;
-            const signatureDate = `Jakarta, ${day + " " + month + " " + year}`;
-            const assessor_name = assessment.schedule.assessor.full_name;
-            const signatureNameLength = font.widthOfTextAtSize(assessor_name, fontSizeSmall);
-            (0, pdfDraw_helper_1.drawParagraph)(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
-            y = (0, pdfDraw_helper_1.drawParagraph)(page, `Assessor`, signatureX + (signatureNameLength / 2) - (signatureWidth / 2), signatureY - 15, font, fontSizeSmall, "right");
-            signatureY -= 20;
-            const qrData = (0, hashids_1.getAssessorUrl)(assessment.schedule.assessor.id);
-            const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
-            page.drawImage(qrCode, { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth });
-            (0, pdfDraw_helper_1.drawParagraph)(page, `${assessor_name}`, signatureX, signatureY - signatureWidth - 12, font, fontSizeSmall, "right");
+            // page.drawRectangle({
+            //     x: startX, y: tableTop - rowHeight * 3 + 12,
+            //     width: colWidths[2],
+            //     height: rowHeight * 2 - 9,
+            //     color: headerColor,
+            //     borderColor: rgb(0, 0, 0),
+            //     borderWidth: 1
+            // });
+            // page.drawText("< 85", {
+            //     x: startX + colWidths[2] / 2 - 10,
+            //     y: tableTop - rowHeight * 2 + 16,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // page.drawText("Belum", {
+            //     x: startX + colWidths[2] / 2 - 14,
+            //     y: tableTop - rowHeight * 2 + 4,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // page.drawText("Kompeten", {
+            //     x: startX + colWidths[2] / 2 - 24,
+            //     y: tableTop - rowHeight * 2 - 8,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // // === Subkolom K ===
+            // page.drawRectangle({
+            //     x: startX + colWidths[2],
+            //     y: tableTop - rowHeight * 3 + 12,
+            //     width: colWidths[3],
+            //     height: rowHeight * 2 - 9,
+            //     color: headerColor,
+            //     borderColor: rgb(0, 0, 0),
+            //     borderWidth: 1
+            // });
+            // page.drawText("86-90", {
+            //     x: startX + colWidths[2] + colWidths[3] / 2 - 10,
+            //     y: tableTop - rowHeight * 2 + 16,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // page.drawText("Kompeten", {
+            //     x: startX + colWidths[2] + colWidths[3] / 2 - 24,
+            //     y: tableTop - rowHeight * 2 - 8,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // // === Subkolom SK ===
+            // page.drawRectangle({
+            //     x: startX + colWidths[2] + colWidths[3],
+            //     y: tableTop - rowHeight * 3 + 12,
+            //     width: colWidths[4],
+            //     height: rowHeight * 2 - 9,
+            //     color: headerColor,
+            //     borderColor: rgb(0, 0, 0),
+            //     borderWidth: 1
+            // });
+            // page.drawText("91-100 ", {
+            //     x: startX + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 15,
+            //     y: tableTop - rowHeight * 2 + 16,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // page.drawText("Sangat", {
+            //     x: startX + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 14,
+            //     y: tableTop - rowHeight * 2 + 4,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // page.drawText("Kompeten", {
+            //     x: startX + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 24,
+            //     y: tableTop - rowHeight * 2 - 8,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // // === Column No ===
+            // page.drawRectangle({
+            //     x: startX, y: tableTop - rowHeight * 3 + 12,
+            //     width: colWidths[0], height: rowHeight * 4 - 23,
+            //     color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
+            // });
+            // page.drawText("No", {
+            //     x: startX + colWidths[0] / 2 - 8,
+            //     y: tableTop - rowHeight - 3,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // startX += colWidths[0];
+            // // === Column Nama Peserta ===
+            // page.drawRectangle({
+            //     x: startX, y: tableTop - rowHeight * 3 + 12,
+            //     width: colWidths[1], height: rowHeight * 4 - 23,
+            //     color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
+            // });
+            // page.drawText("Nama Peserta", {
+            //     x: startX + colWidths[1] / 2 - 40,
+            //     y: tableTop - rowHeight - 3,
+            //     size: fontSizeSmall,
+            //     font: fontBold
+            // });
+            // startX += colWidths[1];
+            // let currentY = tableTop - rowHeight * 4 + 12;
+            // // === TABLE CONTENT ===
+            // tableData.forEach(row => {
+            //     let x = 50;
+            //     page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            //     page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
+            //     x += colWidths[0];
+            //     page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            //     page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
+            //     x += colWidths[1];
+            //     page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            //     page.drawText('', { x: x + colWidths[2] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+            //     x += colWidths[2];
+            //     page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            //     page.drawText('', { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+            //     x += colWidths[3];
+            //     page.drawRectangle({ x, y: currentY, width: colWidths[4], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            //     page.drawText('', { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
+            //     currentY -= rowHeight;
+            // });
+            // y = currentY;
             return yield pdfDoc.save();
+        });
+    }
+    static inputScore(result_id, score) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existingResults = yield drizzle_1.db.query.result.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id),
+            });
+            if (!existingResults)
+                throw new error_1.NotFoundError('Result');
+            yield drizzle_1.db
+                .update(schema_1.result)
+                .set({ score })
+                .where((0, drizzle_orm_1.eq)(schema_1.result.id, result_id));
+            const resultUpdated = yield drizzle_1.db.query.result.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id),
+            });
+            return resultUpdated;
         });
     }
 }

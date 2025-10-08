@@ -55,7 +55,7 @@ exports.ApprovalService = {
             if (!admin) {
                 throw new Error("Hanya admin yang dapat melakukan approval dokumen APL-01");
             }
-            yield drizzle_1.db.update(schema_1.resultDoc).set({ approved: true }).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.id, docId));
+            yield drizzle_1.db.update(schema_1.resultDoc).set({ admin_id: admin.id, approved: true }).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.id, docId));
             const resultDoc = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.id, docId) });
             return resultDoc;
         });
@@ -162,12 +162,12 @@ exports.ApprovalService = {
             }
             if (scope === 'to-approve') {
                 return yield drizzle_1.db.query.approvalRequest.findMany({
-                    where: (tbl, { and, eq: _eq }) => and(_eq(tbl.approver_admin_id, admin.id), _eq(tbl.status, 'pending')),
+                    where: (tbl, { and, eq: _eq, or }) => and(or(_eq(tbl.approver_admin_id, admin.id), _eq(tbl.backup_admin_id, admin.id)), _eq(tbl.status, 'pending')),
                     orderBy: (tbl, { desc }) => desc(tbl.created_at),
                 });
             }
             return yield drizzle_1.db.query.approvalRequest.findMany({
-                where: (tbl, { or, eq: _eq }) => or(_eq(tbl.requester_admin_id, admin.id), _eq(tbl.approver_admin_id, admin.id)),
+                where: (tbl, { or, eq: _eq }) => or(_eq(tbl.requester_admin_id, admin.id), _eq(tbl.approver_admin_id, admin.id), _eq(tbl.backup_admin_id, admin.id)),
                 orderBy: (tbl, { desc }) => desc(tbl.created_at),
             });
         });
@@ -183,13 +183,16 @@ exports.ApprovalService = {
                 throw new Error("Approval request tidak ditemukan");
             if (request.status === 'rejected' || request.status === 'approved')
                 throw new Error("Approval request sudah diproses");
-            const isFirstApprover = request.approver_admin_id === admin.id;
-            if (!isFirstApprover)
+            const isPrimaryApprover = request.approver_admin_id === admin.id;
+            const isBackupApprover = request.backup_admin_id === admin.id;
+            if (!isPrimaryApprover && !isBackupApprover) {
                 throw new Error("Anda bukan approver untuk request ini");
+            }
             if (input.decision === 'approved') {
                 yield drizzle_1.db.update(schema_1.approvalRequest).set({
                     status: 'approved',
                     approved_at: new Date(),
+                    approved_by: admin.id,
                     comment: (_a = input.comment) !== null && _a !== void 0 ? _a : request.comment,
                 }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
                 const refreshed = yield drizzle_1.db.query.approvalRequest.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id) });
@@ -336,11 +339,146 @@ exports.ApprovalService = {
                         status: 'approved',
                         comment: (_c = input.comment) !== null && _c !== void 0 ? _c : request.comment,
                         approved_at: new Date(),
+                        approved_by: admin.id,
                     }).where((0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id)).execute();
                 }
             }
             const updated = yield drizzle_1.db.query.approvalRequest.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, input.id) });
             return updated;
+        });
+    },
+    createApprovalRequestWithBackup(input) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const requester = yield drizzle_1.db.query.admin.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, input.user.id)
+            });
+            if (!requester)
+                throw new Error("Hanya admin yang dapat membuat approval request");
+            const primaryApprover = yield drizzle_1.db.query.admin.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.admin.id, input.primaryApproverId)
+            });
+            if (!primaryApprover || !primaryApprover.can_approve) {
+                throw new Error("Primary approver tidak memiliki izin approve");
+            }
+            if (input.backupApproverId) {
+                const backupApprover = yield drizzle_1.db.query.admin.findFirst({
+                    where: (0, drizzle_orm_1.eq)(schema_1.admin.id, input.backupApproverId)
+                });
+                if (!backupApprover || !backupApprover.can_approve) {
+                    throw new Error("Backup approver tidak memiliki izin approve");
+                }
+            }
+            const insertResult = yield drizzle_1.db.insert(schema_1.approvalRequest).values({
+                requester_admin_id: requester.id,
+                approver_admin_id: input.primaryApproverId,
+                backup_admin_id: input.backupApproverId || null,
+                target_table: input.targetTable,
+                target_id: input.targetId,
+                target_name: yield this.getTargetName(input.targetTable, input.targetId),
+                action: input.action,
+                status: 'pending',
+                comment: (_a = input.comment) !== null && _a !== void 0 ? _a : null,
+                approved_at: null,
+            });
+            // Ambil data yang baru dibuat
+            const approvalRequest = yield drizzle_1.db.query.approvalRequest.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, insertResult[0].insertId)
+            });
+            return approvalRequest;
+        });
+    },
+    getTargetName(targetTable, targetId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c, _d;
+            const targetTableLower = targetTable.toLowerCase();
+            try {
+                switch (targetTableLower) {
+                    case 'user': {
+                        const u = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, targetId) });
+                        return (_a = u === null || u === void 0 ? void 0 : u.full_name) !== null && _a !== void 0 ? _a : null;
+                    }
+                    case 'occupation': {
+                        const o = yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, targetId) });
+                        return (_b = o === null || o === void 0 ? void 0 : o.name) !== null && _b !== void 0 ? _b : null;
+                    }
+                    case 'scheme': {
+                        const s = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, targetId) });
+                        return s ? (s.code || s.name) : null;
+                    }
+                    case 'assessment': {
+                        const a = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, targetId) });
+                        return (_c = a === null || a === void 0 ? void 0 : a.code) !== null && _c !== void 0 ? _c : null;
+                    }
+                    case 'schedule': {
+                        const sch = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, targetId) });
+                        if (sch) {
+                            const asmt = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, sch.assessment_id) });
+                            const occ = asmt ? yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, asmt.occupation_id) }) : null;
+                            const fmt = (d) => d instanceof Date ? d.toISOString().slice(0, 10) : new Date(d).toISOString().slice(0, 10);
+                            const start = sch.start_date ? fmt(sch.start_date) : '';
+                            const end = sch.end_date ? fmt(sch.end_date) : '';
+                            return `${(_d = occ === null || occ === void 0 ? void 0 : occ.name) !== null && _d !== void 0 ? _d : 'Schedule'} — ${start} s/d ${end}`;
+                        }
+                        return null;
+                    }
+                    default:
+                        return null;
+                }
+            }
+            catch (_e) {
+                return null;
+            }
+        });
+    },
+    getAvailableApprovers() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield drizzle_1.db.query.admin.findMany({
+                where: (0, drizzle_orm_1.eq)(schema_1.admin.can_approve, true),
+                columns: {
+                    id: true,
+                    user_id: true,
+                    can_approve: true
+                }
+            });
+        });
+    },
+    createApprovalRequestWithAutoBackup(input) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const requester = yield drizzle_1.db.query.admin.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, input.user.id)
+            });
+            if (!requester)
+                throw new Error("Hanya admin yang dapat membuat approval request");
+            // Validasi primary approver
+            const primaryApprover = yield drizzle_1.db.query.admin.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.admin.id, input.primaryApproverId)
+            });
+            if (!primaryApprover || !primaryApprover.can_approve) {
+                throw new Error("Primary approver tidak memiliki izin approve");
+            }
+            // Cari admin lain yang bisa approve sebagai backup
+            const availableApprovers = yield this.getAvailableApprovers();
+            const backupApprover = availableApprovers.find(admin => admin.id !== input.primaryApproverId);
+            // Buat approval request dengan auto backup
+            const insertResult = yield drizzle_1.db.insert(schema_1.approvalRequest).values({
+                requester_admin_id: requester.id,
+                approver_admin_id: input.primaryApproverId,
+                backup_admin_id: (backupApprover === null || backupApprover === void 0 ? void 0 : backupApprover.id) || null,
+                target_table: input.targetTable,
+                target_id: input.targetId,
+                target_name: yield this.getTargetName(input.targetTable, input.targetId),
+                action: input.action,
+                status: 'pending',
+                comment: (_a = input.comment) !== null && _a !== void 0 ? _a : null,
+                approved_at: null,
+            });
+            // Ambil data yang baru dibuat
+            const approvalRequest = yield drizzle_1.db.query.approvalRequest.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, insertResult[0].insertId)
+            });
+            return approvalRequest;
         });
     },
 };

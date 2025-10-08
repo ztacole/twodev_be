@@ -11,4 +11,6 @@ router.post("/:id/approve", auth_middleware_1.authenticateToken, auth_middleware
 router.post("/:id/reject", auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, approval_controller_1.ApprovalController.rejectRequest);
 router.get("/requests/scope/:scope", auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, approval_controller_1.ApprovalController.listApprovalRequests);
 router.get("/requests", auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, approval_controller_1.ApprovalController.listApprovalRequests);
+// Routes for backup admin functionality
+router.get("/available-approvers", auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, approval_controller_1.ApprovalController.getAvailableApprovers);
 exports.default = router;

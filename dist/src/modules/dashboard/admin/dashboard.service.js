@@ -58,6 +58,7 @@ class DashboardService {
             const docs = yield drizzle_1.db.select().from(schema_1.resultDoc).orderBy((0, drizzle_orm_1.asc)(schema_1.resultDoc.created_at)).limit(5);
             return docs.map((d) => ({
                 id: d.id,
+                admin_id: d.admin_id,
                 result_id: d.result_id,
                 purpose: d.purpose,
                 school_report_card: d.school_report_card,

@@ -315,35 +315,14 @@ AssessmentController.generateRecaptPdfForAdmin = (0, async_handler_1.asyncHandle
 }));
 AssessmentController.generateUkkEvaluationPdf = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const scheduleDetailId = Number(req.params.scheduleDetailId);
-        if (!scheduleDetailId) {
+        const assessmentId = Number(req.params.assessmentId);
+        if (!assessmentId) {
             return res.status(400).json({
                 success: false,
-                message: "Schedule ID dan Assessor ID harus diisi",
+                message: "Assessment ID harus diisi",
             });
         }
-        const schedule = yield schedule_service_1.ScheduleService.getScheduleDetailById(scheduleDetailId);
-        if (!schedule) {
-            return res.status(404).json({
-                success: false,
-                message: "Jadwal tidak ditemukan",
-            });
-        }
-        const assessor = yield assessor_service_1.AssessorService.getAssessorById(schedule.assessor_id);
-        if (!assessor) {
-            return res.status(404).json({
-                success: false,
-                message: "Assessor tidak ditemukan",
-            });
-        }
-        const data = yield assessment_service_1.AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
-        if (data.assessment.assessees.length > 15) {
-            return res.status(400).json({
-                success: false,
-                message: "Jumlah assessee melebihi batas maksimal untuk di-generate PDF (15 orang)",
-            });
-        }
-        const pdfBytes = yield assessment_service_1.AssessmentService.generateUkkEvaluationPdf(data.assessment);
+        const pdfBytes = yield assessment_service_1.AssessmentService.generateUkkEvaluationPdf(assessmentId);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "attachment; filename=\"FORM PENILAIAN UKK.pdf\"");
         res.send(Buffer.from(pdfBytes));
@@ -355,4 +334,32 @@ AssessmentController.generateUkkEvaluationPdf = (0, async_handler_1.asyncHandler
             error: error.message
         });
     }
+}));
+AssessmentController.inputScore = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const resultId = Number(req.params.resultId);
+    const { score } = req.body;
+    if (!resultId) {
+        return res.status(400).json({
+            success: false,
+            message: "Result ID harus diisi",
+        });
+    }
+    if (score === undefined || score === null || Number.isNaN(Number(score))) {
+        return res.status(400).json({
+            success: false,
+            message: "Score harus diisi dan berupa angka",
+        });
+    }
+    if (score < 0 || score > 100) {
+        return res.status(400).json({
+            success: false,
+            message: "Score harus berada di antara 0 dan 100",
+        });
+    }
+    const updated = yield assessment_service_1.AssessmentService.inputScore(resultId, Number(score));
+    res.status(200).json({
+        success: true,
+        message: "Score berhasil diperbarui",
+        data: updated,
+    });
 }));

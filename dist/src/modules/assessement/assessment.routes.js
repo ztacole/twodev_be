@@ -57,6 +57,7 @@ router.get('/', assessment_controller_1.AssessmentController.getAssessments);
 router.put('/:id', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.updateAssessment);
 router.get('/:id', assessment_controller_1.AssessmentController.getAssessmentById);
 router.delete('/:id', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, (0, approval_middleware_1.requireApproval)('assessment'), assessment_controller_1.AssessmentController.deleteAssessment);
+router.get('/result/evaluation/:assessmentId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.generateUkkEvaluationPdf);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', assessment_controller_1.AssessmentController.getAssessmentResultDetails);
 // RESULT PDF
 //-- Route Example: /ia-01/result/:resultId/export --//
@@ -69,7 +70,7 @@ router.get('/navigation/admin/:resultId', auth_middleware_2.authenticateToken, a
 router.get('/assessment-recapt/:scheduleDetailId', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, assessment_controller_1.AssessmentController.getAssessmentRecapt);
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssessmentRecaptForAdmin);
 router.get('/recap/:scheduleDetailId/pdf', auth_middleware_2.authenticateToken, auth_middleware_1.adminOrAssessorMiddleware, assessment_controller_1.AssessmentController.generateRecaptPdf);
-router.get('/ukk-evaluation/:scheduleDetailId/pdf', auth_middleware_2.authenticateToken, auth_middleware_1.adminOrAssessorMiddleware, assessment_controller_1.AssessmentController.generateUkkEvaluationPdf);
+router.put('/result/input-score/:resultId', auth_middleware_2.authenticateToken, auth_middleware_1.adminOrAssessorMiddleware, assessment_controller_1.AssessmentController.inputScore);
 router.post('/apl-01/create-self-data', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, apl_01_controller_1.APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, uploadAPL01.any(), apl_01_controller_1.APL1Controller.createOrUploadCertificateDocs);
 router.get('/uploads/apl-01/:folder/:filename', auth_middleware_1.authUpload, (req, res) => {
@@ -82,7 +83,7 @@ router.get('/uploads/apl-01/:folder/:filename', auth_middleware_1.authUpload, (r
 router.get('/apl-01/results', apl_01_controller_1.APL1Controller.getAllResult);
 router.get('/apl-01/results/assessor/:assessorId', apl_01_controller_1.APL1Controller.getResultDocsByAssessorId);
 router.get('/apl-01/results/unapproved', apl_01_controller_1.APL1Controller.getUnapprovedResult);
-router.put('/apl-01/results/:resultId/approve', apl_01_controller_1.APL1Controller.approveResult);
+router.put('/apl-01/results/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, apl_01_controller_1.APL1Controller.approveResult);
 router.get('/apl-01/results/:assessmentId', apl_01_controller_1.APL1Controller.getResultDocsByAssessmentId);
 ;
 router.get('/apl-01/result/:resultId', apl_01_controller_1.APL1Controller.getResultDetails);
@@ -139,6 +140,7 @@ router.get('/ak-02/units/:assessmentId', ak_02_controller_1.AK02Controller.getUn
 router.get('/ak-02/result/:resultId', ak_02_controller_1.AK02Controller.getAK02ByResultId);
 router.put('/ak-02/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ak_02_controller_1.AK02Controller.approvedByAssessor);
 router.put('/ak-02/result/assessee/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ak_02_controller_1.AK02Controller.approvedByAssessee);
+router.get('/ak-02/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateAK02);
 router.post('/ak-03', ak_03_controller_1.AK03Controller.createAK03);
 router.post('/ak-03/answer', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ak_03_controller_1.AK03Controller.createAnswerAK03);
 router.get('/ak-03/:result_id', ak_03_controller_1.AK03Controller.getAK03ByResultId);
