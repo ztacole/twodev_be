@@ -76,6 +76,8 @@ router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', authenticat
 router.get('/recap/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMiddleware, AssessmentController.generateRecaptPdf);
 router.get('/ukk-evaluation/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMiddleware, AssessmentController.generateUkkEvaluationPdf);
 
+router.put('/result/input-score/:resultId', authenticateToken, adminOrAssessorMiddleware, AssessmentController.inputScore);
+
 router.post('/apl-01/create-self-data', authenticateToken, assesseeMiddleware, APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', authenticateToken, assesseeMiddleware, 
     uploadAPL01.any(), 

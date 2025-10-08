@@ -784,6 +784,7 @@ export class AssessmentService {
                 assessee: assesseeTable,
                 assessor: assessor,
                 tuk: resultTable.tuk,
+                score: resultTable.score,
                 is_competent: resultTable.is_competent,
                 created_at: resultTable.created_at,
             })
@@ -823,6 +824,7 @@ export class AssessmentService {
                 assessee: result.assessee,
                 assessor: result.assessor,
                 tuk: result.tuk,
+                score: result.score,
                 is_competent: result.is_competent,
                 created_at: result.created_at,
                 doc: doc,
@@ -959,6 +961,7 @@ export class AssessmentService {
             assessor_id: result[0].assessor_id,
             assessee_id: result[0].assessee_id,
             tuk: result[0].tuk,
+            score: result[0].score,
             is_competent: result[0].is_competent,
             created_at: result[0].created_at,
             tabs: tabs,
@@ -1920,5 +1923,24 @@ export class AssessmentService {
         drawParagraph(page, `${assessor_name}`, signatureX, signatureY - signatureWidth - 12, font, fontSizeSmall, "right");
 
         return await pdfDoc.save();
+    }
+
+    static async inputScore(result_id: number, score: number) {
+        const existingResults = await db.query.result.findFirst({
+            where: eq(resultTable.id, result_id),
+        });
+
+        if (!existingResults) throw new NotFoundError('Result');
+
+        await db
+            .update(resultTable)
+            .set({ score })
+            .where(eq(resultTable.id, result_id));
+
+        const resultUpdated = await db.query.result.findFirst({
+            where: eq(resultTable.id, result_id),
+        });
+
+        return resultUpdated;
     }
 }

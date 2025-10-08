@@ -391,4 +391,31 @@ export class AssessmentController {
             });
         }
     });
+
+    static inputScore = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+        const { score } = req.body;
+
+        if (!resultId) {
+            return res.status(400).json({
+                success: false,
+                message: "Result ID harus diisi",
+            });
+        }
+
+        if (score === undefined || score === null || Number.isNaN(Number(score))) {
+            return res.status(400).json({
+                success: false,
+                message: "Score harus diisi dan berupa angka",
+            });
+        }
+
+        const updated = await AssessmentService.inputScore(resultId, Number(score));
+        res.status(200).json({
+            success: true,
+            message: "Score berhasil diperbarui",
+            data: updated,
+        });
+    });
+    
 }
