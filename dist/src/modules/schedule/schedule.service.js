@@ -339,9 +339,9 @@ class ScheduleService {
     //     const pdfBytes = await pdfDoc.save();
     //     return pdfBytes;
     // }
-    static generateLetterAssignmentAssessor(data_assessment, data_schedule, data_schedule_details, data_assessor, data_result, params) {
+    static generateLetterAssignmentAssessor(data_assessment, data_schedule, data_schedule_details, data_leader, data_assessor, data_result, params) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { number, LSP_name = 'LSP SMKN 24 Jakarta', assigner_name, work_unit = 'SMK Negeri 24', activity_name, location = `SMK Negeri 24 Jakarta`, address = `Jl. Bambu Hitam No.3, RT.3/RW.1, Bambu Apus, Cipayung, Jakarta Timur`, issued_in = `Jakarta`, } = params;
+            const { number, LSP_name = 'LSP SMKN 24 Jakarta', work_unit = 'SMK Negeri 24', activity_name, location = `SMK Negeri 24 Jakarta`, address = `Jl. Bambu Hitam No.3, RT.3/RW.1, Bambu Apus, Cipayung, Jakarta Timur`, issued_in = `Jakarta`, } = params;
             // === Date & Time Formatting ===
             const now = new Date();
             const start = new Date(data_schedule.start_date);
@@ -425,11 +425,11 @@ class ScheduleService {
                     signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Pada tanggal   : ${(0, date_helper_1.formatDate)(now)}`, signatureX, signatureY, fontBold, FONTS.small, "left", undefined, 240);
                     signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Ketua`, signatureX + 65, signatureY - 4, fontBold, FONTS.small, "left", undefined, 240);
                     signatureY -= 50;
-                    const qrData = (0, hashids_1.getAssessorUrl)(data_schedule_details.assessor_id);
+                    const qrData = (0, hashids_1.getAssessorUrl)(data_leader.id);
                     const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
                     page.drawImage(qrCode, { x: signatureX, y: signatureY - 4, width: signatureWidth, height: signatureWidth });
-                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Tanda tangan digital ${assigner_name} Ketua ${LSP_name} untuk dokumen dengan No: ${number} Tanggal: ${(0, date_helper_1.formatDate)(now, true)}`, signatureX + 70, signatureY + 54, fontBold, FONTS.xSmall, "justify", undefined, 110);
-                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `${assigner_name}`, signatureX + 36, signatureY - 18, fontBold, FONTS.xSmall, "left", undefined, 200);
+                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `Tanda tangan digital ${data_leader.full_name} Ketua ${LSP_name} untuk dokumen dengan No: ${number} Tanggal: ${(0, date_helper_1.formatDate)(now, true)}`, signatureX + 70, signatureY + 54, fontBold, FONTS.xSmall, "justify", undefined, 110);
+                    signatureY = (0, pdfDraw_helper_1.drawParagraph)(page, `${data_leader.full_name}`, signatureX + 36, signatureY - 18, fontBold, FONTS.small, "left", undefined, 200);
                     return signatureY;
                 });
             }

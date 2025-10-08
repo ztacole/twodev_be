@@ -20,6 +20,7 @@ const async_handler_1 = require("../../common/async.handler");
 const assessment_service_1 = require("../assessement/assessment.service");
 const apl_02_service_1 = require("../assessement/apl-02/apl-02.service");
 const assessor_service_1 = require("../assessor/assessor.service");
+const admin_service_1 = require("../admin/admin.service");
 class ScheduleController {
 }
 exports.ScheduleController = ScheduleController;
@@ -210,7 +211,7 @@ ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)(
             // filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
             res.status(400).json({
                 success: false,
-                message: "Tipe surat tugas sedang dalam pengembangan. Gunakan 'assessor' untuk tipe surat tugas asesor.",
+                message: "Tipe surat tugas sedang dinonaktifkan. Gunakan 'assessor' untuk tipe surat tugas asesor.",
             });
         }
         else if (type === 'assessor') {
@@ -227,6 +228,14 @@ ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)(
                 return res.status(404).json({
                     success: false,
                     message: "Jadwal assessment tidak ditemukan"
+                });
+            }
+            const leader_id = Number(body.leader_id);
+            const data_leader = yield admin_service_1.AdminService.getAdminById(leader_id);
+            if (!data_leader) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Ketua tidak ditemukan"
                 });
             }
             const assessor_id = Number(data_schedule_detail.assessor_id);
@@ -252,7 +261,8 @@ ScheduleController.generateLetterAssignment = (0, async_handler_1.asyncHandler)(
                     message: "Hasil assessment tidak ditemukan"
                 });
             }
-            letter = yield schedule_service_1.ScheduleService.generateLetterAssignmentAssessor(data_assessment, data_schedule, data_schedule_detail, data_assessor, data_result, body);
+            console.log(data_assessment, data_schedule, data_schedule_detail, data_leader, data_assessor, data_result);
+            letter = yield schedule_service_1.ScheduleService.generateLetterAssignmentAssessor(data_assessment, data_schedule, data_schedule_detail, data_leader, data_assessor, data_result, body);
             filename = `Surat Tugas Asesor_${data_assessor.name}`;
         }
         else {
