@@ -1963,8 +1963,8 @@ export class AssessmentService {
             }) ?? [];
             for (let i = 0; i < (data.length < 12 ? 12 : data.length); i++) {
                 let row = data[i];
-                if (!row) row = [`${i + 1}.`, 'N/A', 'N/A', 'N/A', 'N/A'];
-                
+                if (!row) row = [`${i + 1}.`, '', '', '', ''];
+
                 let x = startX;
                 let maxRowHeight = rowHeight;
 
