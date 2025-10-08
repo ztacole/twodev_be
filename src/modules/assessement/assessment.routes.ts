@@ -94,7 +94,7 @@ router.get('/uploads/apl-01/:folder/:filename', authUpload, (req, res) => {
 router.get('/apl-01/results', APL1Controller.getAllResult);
 router.get('/apl-01/results/assessor/:assessorId', APL1Controller.getResultDocsByAssessorId);
 router.get('/apl-01/results/unapproved', APL1Controller.getUnapprovedResult);
-router.put('/apl-01/results/:resultId/approve', APL1Controller.approveResult)
+router.put('/apl-01/results/:resultId/approve', authenticateToken, adminMiddleware, APL1Controller.approveResult);
 router.get('/apl-01/results/:assessmentId', APL1Controller.getResultDocsByAssessmentId);;
 router.get('/apl-01/result/:resultId', APL1Controller.getResultDetails);
 router.get('/apl-01/result/docs/:resultId', APL1Controller.getResultDocsByResultId);

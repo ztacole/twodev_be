@@ -49,6 +49,7 @@ export class DashboardService {
 
     return docs.map((d) => ({
       id: d.id,
+      admin_id: d.admin_id,
       result_id: d.result_id,
       purpose: d.purpose,
       school_report_card: d.school_report_card,

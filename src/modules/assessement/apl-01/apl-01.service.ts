@@ -2,6 +2,7 @@ import { DuplicateEntryError, NotFoundError, ValidationError } from '../../../co
 import { db } from '../../../config/drizzle';
 import {
     user as userTable,
+    admin as adminTable,
     assessee as assesseeTable,
     assesseeJob as assesseeJobTable,
     result as resultTable,
@@ -339,6 +340,7 @@ export class APL1Service {
         const rows = await db
             .select({
                 id: resultDocTable.id,
+                admin_id: resultDocTable.admin_id,
                 result_id: resultDocTable.result_id,
                 approved: resultDocTable.approved,
                 purpose: resultDocTable.purpose,
@@ -372,6 +374,7 @@ export class APL1Service {
     static async getUnapprovedResultDoc(): Promise<any[]> {
         const results = await db.select({
             id: resultDocTable.id,
+            admin_id: resultDocTable.admin_id,
             result_id: resultDocTable.result_id,
             approved: resultDocTable.approved,
             purpose: resultDocTable.purpose,
@@ -397,8 +400,10 @@ export class APL1Service {
         return results as any;
     }
 
-    static async approveResultDoc(result_id: number): Promise<any> {
-        await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.id, result_id));
+    static async approveResultDoc(result_id: number, user_id: number): Promise<any> {
+        const admin = await db.query.admin.findFirst({ where: eq(adminTable.user_id, user_id) });
+        if (!admin) throw new NotFoundError('Admin');
+        await db.update(resultDocTable).set({ admin_id: admin.id, approved: true }).where(eq(resultDocTable.id, result_id));
         const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, result_id) });
         return updated as any;
     }

@@ -13,7 +13,7 @@ export const ApprovalService = {
       throw new Error("Hanya admin yang dapat melakukan approval dokumen APL-01");
     }
 
-    await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.id, docId));
+    await db.update(resultDocTable).set({ admin_id: admin.id, approved: true }).where(eq(resultDocTable.id, docId));
     const resultDoc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, docId) });
 
     return resultDoc;
@@ -78,7 +78,7 @@ export const ApprovalService = {
           if (sch) {
             const asmt = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, sch.assessment_id) });
             const occ = asmt ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, asmt.occupation_id) }) : null;
-            const fmt = (d: any) => d instanceof Date ? d.toISOString().slice(0,10) : new Date(d as any).toISOString().slice(0,10);
+            const fmt = (d: any) => d instanceof Date ? d.toISOString().slice(0, 10) : new Date(d as any).toISOString().slice(0, 10);
             const start = sch.start_date ? fmt(sch.start_date as any) : '';
             const end = sch.end_date ? fmt(sch.end_date as any) : '';
             targetName = `${occ?.name ?? 'Schedule'} — ${start} s/d ${end}`;
@@ -166,7 +166,7 @@ export const ApprovalService = {
 
     const isPrimaryApprover = request.approver_admin_id === admin.id;
     const isBackupApprover = request.backup_admin_id === admin.id;
-    
+
     if (!isPrimaryApprover && !isBackupApprover) {
       throw new Error("Anda bukan approver untuk request ini");
     }
@@ -330,21 +330,21 @@ export const ApprovalService = {
     action: string;
     comment: string | null;
   }) {
-    const requester = await db.query.admin.findFirst({ 
-      where: eq(adminTable.user_id, input.user.id) 
+    const requester = await db.query.admin.findFirst({
+      where: eq(adminTable.user_id, input.user.id)
     });
     if (!requester) throw new Error("Hanya admin yang dapat membuat approval request");
 
-    const primaryApprover = await db.query.admin.findFirst({ 
-      where: eq(adminTable.id, input.primaryApproverId) 
+    const primaryApprover = await db.query.admin.findFirst({
+      where: eq(adminTable.id, input.primaryApproverId)
     });
     if (!primaryApprover || !primaryApprover.can_approve) {
       throw new Error("Primary approver tidak memiliki izin approve");
     }
 
     if (input.backupApproverId) {
-      const backupApprover = await db.query.admin.findFirst({ 
-        where: eq(adminTable.id, input.backupApproverId) 
+      const backupApprover = await db.query.admin.findFirst({
+        where: eq(adminTable.id, input.backupApproverId)
       });
       if (!backupApprover || !backupApprover.can_approve) {
         throw new Error("Backup approver tidak memiliki izin approve");
@@ -398,7 +398,7 @@ export const ApprovalService = {
           if (sch) {
             const asmt = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, sch.assessment_id) });
             const occ = asmt ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, asmt.occupation_id) }) : null;
-            const fmt = (d: any) => d instanceof Date ? d.toISOString().slice(0,10) : new Date(d as any).toISOString().slice(0,10);
+            const fmt = (d: any) => d instanceof Date ? d.toISOString().slice(0, 10) : new Date(d as any).toISOString().slice(0, 10);
             const start = sch.start_date ? fmt(sch.start_date as any) : '';
             const end = sch.end_date ? fmt(sch.end_date as any) : '';
             return `${occ?.name ?? 'Schedule'} — ${start} s/d ${end}`;
@@ -408,12 +408,12 @@ export const ApprovalService = {
         default:
           return null;
       }
-    } catch { 
-      return null; 
+    } catch {
+      return null;
     }
   },
 
-  async getAvailableApprovers(): Promise<Array<{id: number, user_id: number, can_approve: boolean}>> {
+  async getAvailableApprovers(): Promise<Array<{ id: number, user_id: number, can_approve: boolean }>> {
     return await db.query.admin.findMany({
       where: eq(adminTable.can_approve, true),
       columns: {
@@ -432,14 +432,14 @@ export const ApprovalService = {
     action: string;
     comment: string | null;
   }) {
-    const requester = await db.query.admin.findFirst({ 
-      where: eq(adminTable.user_id, input.user.id) 
+    const requester = await db.query.admin.findFirst({
+      where: eq(adminTable.user_id, input.user.id)
     });
     if (!requester) throw new Error("Hanya admin yang dapat membuat approval request");
 
     // Validasi primary approver
-    const primaryApprover = await db.query.admin.findFirst({ 
-      where: eq(adminTable.id, input.primaryApproverId) 
+    const primaryApprover = await db.query.admin.findFirst({
+      where: eq(adminTable.id, input.primaryApproverId)
     });
     if (!primaryApprover || !primaryApprover.can_approve) {
       throw new Error("Primary approver tidak memiliki izin approve");

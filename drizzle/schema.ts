@@ -140,6 +140,7 @@ export const result = mysqlTable('result', {
 
 export const resultDoc = mysqlTable('result_doc', {
     id: int('id').primaryKey().autoincrement(),
+    admin_id: int('admin_id').references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     result_id: int('result_id').notNull().references(() => result.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     purpose: varchar('purpose', { length: 255 }).notNull(),
     school_report_card: varchar('school_report_card', { length: 255 }).notNull(),
