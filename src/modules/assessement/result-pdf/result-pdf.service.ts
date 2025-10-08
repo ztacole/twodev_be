@@ -4,11 +4,12 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCertificateLayout, drawChecklistTable, drawElementLayout, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout } from "./helper";
+import { createNewPage, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementLayout, drawFeedbackAK02, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout } from "./helper";
 import { formatDate, formatDay } from "../../../helper/date.helper";
 import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
 import { APL1Service } from "../apl-01/apl-01.service";
 import { AssesseeService } from "../../assessee/asseessee.service";
+import { AK02Service } from "../ak-02/ak-02.service";
 
 interface ChecklistData {
     schemaTitle: string;
@@ -298,4 +299,88 @@ export class ResultPdfService {
             });
         }
     }
+
+    static async generateAK02(resultId: number) {
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
+
+        const resultDetails = await AK02Service.getResultDetails(resultId);
+
+        console.log(resultDetails);
+
+        // === TITLE ===
+        page.drawText("FR.AK.02 - REKAMAN ASESMEN KOMPETENSI", {
+            x: 40, y, size: 12, font: fontBold
+        });
+        y -= 30;
+
+        // console.log(resultDetails);
+
+        // === SKEMA / INFO ===
+        const info = [
+            ["Judul", ":", resultDetails?.assessment?.occupation?.name ?? "-"],
+            ["Nomor", ":", resultDetails?.assessment?.code ?? "-"],
+            ["TUK", ":", resultDetails?.tuk ?? "-"],
+            ["Nama Asesor", ":", resultDetails?.assessor?.name ?? "-"],
+            ["Nama Asesi", ":", resultDetails?.assessee?.name ?? "-"],
+            ["Mulai", ":", new Date(resultDetails?.created_at)
+                .toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+  	                timeZone: "UTC"
+                })
+            ],
+            ["Selesai", ":", new Date(resultDetails?.updated_at)
+                .toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+  	                timeZone: "UTC"
+                })],
+        ];
+        y = await drawCertificateLayoutAK02(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+        y -= 20;
+
+        const evidenceTypes = [
+            "Observasi Demonstrasi",
+            "Portofolio",
+            "Pernyataan Pihak Ketiga",
+            "Pernyataan Wawancara",
+            "Pertanyaan Lisan",
+            "Pertanyaan Tertulis",
+            "Proyek Kerja",
+            "Lainnya",
+        ];
+
+        const selectedEvidences = resultDetails.ak02_headers.rows.map((row) => 
+            evidenceTypes.map((evidenceType) => row.evidences.some((evidence) => evidence.evidence === evidenceType))
+        );
+
+        // console.log(selectedEvidences);
+
+        // === TABEL UNIT KOMPETENSI & BUKTI ===
+        const tableHeader = [
+            ["Unit Kompetensi", ...evidenceTypes],
+        ];
+        const tableRows = resultDetails.ak02_headers.rows.map((row, i) => [
+            `${row.unit_code} - ${row.unit_title}`,
+            ...selectedEvidences[i].map((selected) => selected ? "V" : ""),
+        ]);
+
+        const tableData = [...tableHeader, ...tableRows];
+        y = await drawTable(page, tableData, [100, ...Array(8).fill(420/8)], 40, y, 25, font, fontBold);
+        y -= 30;
+
+        y = await drawFeedbackAK02(pdfDoc, page, resultDetails, 40, y, font, fontBold);
+
+        return await pdfDoc.save();
+    }
+
+
 }

@@ -161,6 +161,7 @@ router.get('/ak-02/units/:assessmentId', AK02Controller.getUnits);
 router.get('/ak-02/result/:resultId', AK02Controller.getAK02ByResultId);
 router.put('/ak-02/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, AK02Controller.approvedByAssessor);
 router.put('/ak-02/result/assessee/:resultId/approve', authenticateToken, assesseeMiddleware, AK02Controller.approvedByAssessee);
+router.get('/ak-02/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateAK02);
 
 router.post('/ak-03', AK03Controller.createAK03);
 router.post('/ak-03/answer', authenticateToken, assesseeMiddleware, AK03Controller.createAnswerAK03);
