@@ -309,15 +309,11 @@ export class ResultPdfService {
 
         const resultDetails = await AK02Service.getResultDetails(resultId);
 
-        console.log(resultDetails);
-
         // === TITLE ===
         page.drawText("FR.AK.02 - REKAMAN ASESMEN KOMPETENSI", {
             x: 40, y, size: 12, font: fontBold
         });
         y -= 30;
-
-        // console.log(resultDetails);
 
         // === SKEMA / INFO ===
         const info = [
@@ -361,8 +357,6 @@ export class ResultPdfService {
         const selectedEvidences = resultDetails.ak02_headers.rows.map((row) => 
             evidenceTypes.map((evidenceType) => row.evidences.some((evidence) => evidence.evidence === evidenceType))
         );
-
-        // console.log(selectedEvidences);
 
         // === TABEL UNIT KOMPETENSI & BUKTI ===
         const tableHeader = [
