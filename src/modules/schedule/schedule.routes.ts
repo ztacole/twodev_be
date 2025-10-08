@@ -12,6 +12,7 @@ router.get('/active', authenticateToken, adminOrAssesseeMiddleware, ScheduleCont
 router.get('/active-assessor', authenticateToken, assessorMiddleware, ScheduleController.getActiveSchedulesAssessor);
 router.get('/completed', authenticateToken, assesseeMiddleware, ScheduleController.getCompletedSchedules);
 router.get('/:id', ScheduleController.getScheduleById);
+router.get('/detail/:id', ScheduleController.getScheduleDetailById);
 router.post('/', authenticateToken, adminMiddleware, ScheduleController.createSchedule);
 router.put('/:id', authenticateToken, adminMiddleware, ScheduleController.updateSchedule);
 router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('schedule'), ScheduleController.deleteSchedule);

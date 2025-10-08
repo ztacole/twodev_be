@@ -1,11 +1,14 @@
-import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFFont, PDFPage, RGB, StandardFonts, rgb } from "pdf-lib";
 import fs from "fs";
 import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCertificateLayout, drawElementLayout, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout } from "./helper";
+import { createNewPage, drawCertificateLayout, drawChecklistTable, drawElementLayout, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout } from "./helper";
 import { formatDate, formatDay } from "../../../helper/date.helper";
+import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
+import { APL1Service } from "../apl-01/apl-01.service";
+import { AssesseeService } from "../../assessee/asseessee.service";
 
 interface ChecklistData {
     schemaTitle: string;
@@ -94,5 +97,205 @@ export class ResultPdfService {
         y = await drawFeedbackIA01(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
         return await pdfDoc.save();
+    }
+
+    static async generateAPL01(resultId: number) {
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const fontIcon = await pdfDoc.embedFont(StandardFonts.ZapfDingbats);
+
+        const FONTS = { s: 9, m: 10, l: 12 };
+        const GAPS = { s: 5, m: 10, l: 15 };
+
+        let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
+
+        // Fetch data
+        const resultDetails = await APL1Service.getResultDetails(resultId);
+        const assessee = await AssesseeService.getAssesseeById(resultDetails?.id || 0);
+
+        let gender = resultDetails?.gender.toLowerCase();
+        if (gender === "female") {
+            gender = 'Perempuan';
+        } else if (gender === "male") {
+            gender = 'Laki-laki';
+        } else {
+            throw new Error(`Gender ${gender} tidak diketahui`);
+        }
+
+        // ==== TITLE ====
+        page.drawText(
+            "FR.APL.01. PERMOHONAN SERTIFIKASI KOMPETENSI",
+            { x: 40, y, size: FONTS.l, font: fontBold, maxWidth: 520, lineHeight: 16 }
+        );
+        y -= 30;
+
+        // ==== SECTION 1 ====
+        page.drawText(
+            "Bagian 1 : Rincian Data Pemohon Sertifikasi",
+            { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
+        );
+        y -= 20;
+
+        page.drawText(
+            "a. Data Pribadi",
+            { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
+        );
+        y -= 15;
+
+        y = drawField(page, "Nama Lengkap", `${resultDetails?.full_name}`, 40, y, font, FONTS.s);
+        y = drawField(page, "NIK", `${resultDetails?.identity_number}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Tempat / Tanggal Lahir ", `${resultDetails?.birth_location} / ${resultDetails?.birth_date}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Jenis Kelamin", `${gender}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Kewarganegaraan", `${resultDetails?.nationality}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Alamat Rumah", `${resultDetails?.address}`, 40, y, font, FONTS.s);
+        y = drawField(page, "No Hp", `${resultDetails?.phone_no}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Email", `${assessee?.email.toLowerCase()}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Kualifikasi Pendidikan ", `${resultDetails?.educational_qualifications}`, 40, y, font, FONTS.s);
+
+        y -= 20;
+        page.drawText(
+            "b. Data Sekolah",
+            { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
+        );
+        y -= 15;
+        y = drawField(page, "Nama Sekolah", `${resultDetails?.job.institution_name}`, 40, y, font, FONTS.s);
+        // y = drawField(page, "Konsentrasi Keahlian", `${resultDetails?.job.work_unit}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Alamat Sekolah", `${resultDetails?.job.address}`, 40, y, font, FONTS.s);
+        y = drawField(page, "No Telpon Sekolah", `${resultDetails?.job.phone_no}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Email Sekolah", `${resultDetails?.job.job_email}`, 40, y, font, FONTS.s);
+
+        // === PAGE BREAK ===
+        ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+
+        // ==== SECTION 2 ====
+        page.drawText(
+            "Bagian 2 : Data Sertifikasi",
+            { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
+        );
+        y -= 20;
+
+        // ==== INFO SKEMA ====
+        const info = [
+            ["Judul", ":", resultDetails?.assessment?.occupation?.name ?? "-"],
+            ["Nomor", ":", resultDetails?.assessment?.code ?? "-"],
+            ["Tujuan Asesmen", ":", `Sertifikasi`],
+            ["Tujuan Asesmen", ":", `Pengakuan Kompetensi Terkini (PKT)`],
+            ["Tujuan Asesmen", ":", `Rekognisi Pembelajaran Lampau (RPL)`],
+            ["Tujuan Asesmen", ":", `Lainnya`],
+        ];
+        y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, font);
+        y -= 30;
+
+        page.drawText(
+            "Daftar Unit Kompetensi sesuai kemasan:",
+            { x: 40, y, size: FONTS.s, font: font, maxWidth: 520, lineHeight: 14 }
+        );
+        y -= 20;
+
+        drawSchemeTableHeader(page, y, resultDetails?.assessment, fontBold, FONTS.s, rgb(0, 0, 0));
+        y -= 80;
+
+        drawUnitTable(page, y, resultDetails?.assessment?.uc_apl02s || [], font, fontBold, FONTS.s, rgb(0, 0, 0));
+
+        // === PAGE BREAK ===
+        ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+
+        // ==== SECTION 3 ====
+        
+        page.drawText(
+            "Bagian 2 : Data Sertifikasi",
+            { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
+        );
+        y -= 20;
+
+        page.drawText("3.1. Bukti Persyaratan Dasar Pemohon", { x: 40, y, size: FONTS.s, font: fontBold });
+        y -= 10;
+        y = await drawChecklistTable(
+            page,
+            [
+                { label: "Rapor Semester 1 s.d. 5", memenuhi: true },
+                { label: "Sertifikat Praktek Kerja Lapangan (PKL)", memenuhi: true },
+            ],
+            40, y, 20, font, fontIcon
+        );
+
+        y -= 25;
+
+        page.drawText("3.2. Bukti Administratif", { x: 40, y, size: FONTS.s, font: fontBold });
+        y -= 10;
+        y = await drawChecklistTable(
+            page,
+            [
+                { label: "Kartu Keluarga", memenuhi: true },
+                { label: "Foto", memenuhi: true },
+            ],
+            40, y, 20, font, fontIcon
+        );
+
+        y -= 20;
+
+        
+
+        return await pdfDoc.save();
+
+        function drawSchemeTableHeader(page: PDFPage, y: number, data: any, fontBold: PDFFont, fontSize: number, color: RGB) {
+            const w = page.getWidth() - 80;
+            const x = 40;
+
+            page.drawRectangle({ x, y: y - 60, width: 90, height: 60, borderColor: color, borderWidth: 1 });
+            let yText = y - 15;
+            yText = drawParagraph(page, "SKEMA", 50, yText - 4, fontBold, fontSize, "left", undefined, 80);
+            yText = drawParagraph(page, "SERTIFIKASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+            yText = drawParagraph(page, "OKUPASI", 50, yText, fontBold, fontSize, "left", undefined, 80);
+
+            ["JUDUL", "NOMOR"].forEach((text, i) => {
+                const yOffset = y - 30 * (i + 1);
+                page.drawRectangle({ x: 130, y: yOffset, width: 80, height: 30, borderColor: color, borderWidth: 1 });
+                drawParagraph(page, text, 142, yOffset + 10, fontBold, fontSize);
+                drawParagraph(page, ":", 198, yOffset + 10, fontBold, fontSize);
+            });
+
+            ["name", "code"].forEach((field, i) => {
+                page.drawRectangle({
+                    x: 190,
+                    y: y - 30 * (i + 1),
+                    width: w - 150,
+                    height: 30,
+                    borderColor: color,
+                    borderWidth: 1,
+                });
+                const value = field === "name" ? data?.occupation?.name?.toUpperCase() : data?.code || "-";
+                drawParagraph(page, value, 215, y - 20 - 30 * i, fontBold, fontSize);
+            });
+        }
+
+        function drawUnitTable(page: PDFPage, y: number, data: any[], font: PDFFont, fontBold: PDFFont, fontSize: number, color: RGB) {
+            const x = 40;
+            const width = page.getWidth() - 80;
+            const rowHeight = 20;
+            const col = { no: 30, code: 120, title: width - 150 };
+
+            // Header
+            page.drawRectangle({ x, y: y - rowHeight, width, height: rowHeight, borderColor: color, borderWidth: 1 });
+            page.drawRectangle({ x: x + col.no, y: y - rowHeight, width: col.code, height: rowHeight, borderColor: color, borderWidth: 1 });
+            page.drawRectangle({ x: x + col.no + col.code, y: y - rowHeight, width: col.title, height: rowHeight, borderColor: color, borderWidth: 1 });
+
+            drawParagraph(page, "NO", x + 10, y - 15, fontBold, fontSize);
+            drawParagraph(page, "KODE UNIT", x + col.no + 10, y - 15, fontBold, fontSize);
+            drawParagraph(page, "JUDUL UNIT", x + col.no + col.code + 10, y - 15, fontBold, fontSize);
+
+            // Rows
+            data.forEach((result, i) => {
+                const rowY = y - rowHeight - (i + 1) * rowHeight;
+                page.drawRectangle({ x, y: rowY, width, height: rowHeight, borderColor: color, borderWidth: 1 });
+                page.drawLine({ start: { x: x + col.no, y: rowY }, end: { x: x + col.no, y: rowY + rowHeight }, thickness: 1, color });
+                page.drawLine({ start: { x: x + col.no + col.code, y: rowY }, end: { x: x + col.no + col.code, y: rowY + rowHeight }, thickness: 1, color });
+
+                drawParagraph(page, `${i + 1}`, x + 10, rowY + 5, font, fontSize);
+                drawParagraph(page, `${result?.unit_code || "-"}`, x + col.no + 10, rowY + 5, font, fontSize);
+                drawParagraph(page, `${result?.title || "-"}`, x + col.no + col.code + 10, rowY + 5, font, fontSize);
+            });
+        }
     }
 }

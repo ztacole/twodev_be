@@ -301,15 +301,15 @@ async function drawUnitGroupLayout(
     const headerY = y;
     const headerWidth = 160;
     const headerX = startX + headerWidth;
-    
+
     // Tabel unit
     const unitHeader = [["No", "Kode Unit", "Judul Unit"]];
     const unitRows = group.units.map((u, idx) => [String(idx + 1), u.unit_code, u.title]);
     const mergedData = [...unitHeader, ...unitRows];
     const colWidths = [20, 110, 230];
-    
+
     y = await drawTable(page, mergedData, colWidths, headerX, y, rowHeight, font, fontBold);
-    
+
     page.drawRectangle({
         x: startX,
         y: y - (y - headerY),
@@ -319,7 +319,7 @@ async function drawUnitGroupLayout(
         borderWidth: 1,
     });
     const align = "center"
-    const titleY = headerY - rowHeight * (group.units.length + 1) / 2 + rowHeight * (group.units.length + 1) / (group.units.length % 2 === 0 ? 6 : 4)
+    const titleY = y - (y - headerY) / 2 + rowHeight * (group.units.length + 1) / (group.units.length % 2 === 0 ? 6 : 4)
     drawCellText(page, group.name, startX, titleY, headerWidth, y - headerY, fontBold, 9, align);
 
     return y;
@@ -508,11 +508,12 @@ async function drawElementLayout(
         const row = data[i];
         let x = startX;
         let maxRowHeight = rowHeight;
+        let detailsHeights: number[] = [];
 
         // ukur tinggi maksimum row (karena ada teks wrap)
         const cellHeights = row.map((cell: any, idx: number) => {
             if (Array.isArray(cell)) {
-                const detailsHeights = cell.map((detail: any) => {
+                detailsHeights = cell.map((detail: any) => {
                     const safeCellArr = detail ?? ""; // fallback
                     const words = safeCellArr.split(" ");
                     let line = "";
@@ -528,7 +529,7 @@ async function drawElementLayout(
                         }
                     }
                     if (line) lines.push(line);
-                    return Math.max(lines.length * (9 + 4) + 6, rowHeight) + 10;
+                    return lines.length * (9 + 4) + 6, rowHeight + 10;
                 })
 
                 return detailsHeights.reduce((a: number, b: number) => a + b, 0);
@@ -552,7 +553,7 @@ async function drawElementLayout(
             }
         });
 
-        maxRowHeight = Math.max(rowHeight, ...cellHeights) + 10;
+        maxRowHeight = Math.max(rowHeight, ...cellHeights);
 
         // draw cell
         row.forEach((cell: any, idx: number) => {
@@ -568,35 +569,42 @@ async function drawElementLayout(
             const align = idx === 3 || idx === 4 ? "center" : "left";
             if (Array.isArray(cell)) {
                 let persistanceY = y;
-                cell.forEach((detail: any) => {
+                cell.forEach((detail: any, detIdx: number) => {
                     if (idx === 4) {
                         let persistanceX = x;
                         let detailPersistanceY = persistanceY;
                         const persistanceW = w / 2;
                         page.drawRectangle({
                             x: persistanceX,
-                            y: detailPersistanceY - maxRowHeight / cell.length,
+                            y: detailPersistanceY - detailsHeights[detIdx],
                             width: persistanceW,
-                            height: maxRowHeight / cell.length,
+                            height: detailsHeights[detIdx],
                             borderColor: rgb(0, 0, 0),
                             borderWidth: 1,
                         });
-                        drawCellText(page, detail === "Ya" ? "V" : "", persistanceX, detailPersistanceY, persistanceW, maxRowHeight / cell.length, font, 9, align);
+                        drawCellText(page, detail === "Ya" ? "V" : "", persistanceX, detailPersistanceY, persistanceW, detailsHeights[detIdx], font, 9, align);
                         persistanceX += persistanceW;
-                        drawCellText(page, detail === "Tidak" ? "V" : "", persistanceX, detailPersistanceY, persistanceW, maxRowHeight / cell.length, font, 9, align);
-                        detailPersistanceY -= maxRowHeight / cell.length;
-
+                        page.drawRectangle({
+                            x: persistanceX,
+                            y: detailPersistanceY - detailsHeights[detIdx],
+                            width: persistanceW,
+                            height: detailsHeights[detIdx],
+                            borderColor: rgb(0, 0, 0),
+                            borderWidth: 1,
+                        });
+                        drawCellText(page, detail === "Tidak" ? "V" : "", persistanceX, detailPersistanceY, persistanceW, detailsHeights[detIdx], font, 9, align);
+                        detailPersistanceY -= detailsHeights[detIdx];
                     }
                     page.drawRectangle({
                         x,
-                        y: y - maxRowHeight / cell.length,
+                        y: y - detailsHeights[detIdx],
                         width: w,
-                        height: maxRowHeight / cell.length,
+                        height: detailsHeights[detIdx],
                         borderColor: rgb(0, 0, 0),
                         borderWidth: 1,
                     });
-                    if (idx !== 4) drawCellText(page, detail, x, persistanceY, w, maxRowHeight / cell.length, font, 9, align);
-                    persistanceY -= maxRowHeight / cell.length;
+                    if (idx !== 4) drawCellText(page, detail, x, persistanceY, w, detailsHeights[detIdx], font, 9, align);
+                    persistanceY -= detailsHeights[detIdx];
                 });
             } else drawCellText(page, cell, x, y, w, maxRowHeight, font, 9, align);
             x += w;
@@ -608,7 +616,7 @@ async function drawElementLayout(
     return y;
 }
 
-export async function drawFeedbackIA01(
+async function drawFeedbackIA01(
     pdfDoc: PDFDocument,
     page: PDFPage,
     data: any,
@@ -886,4 +894,141 @@ export async function drawFeedbackIA01(
     return y - 130;
 }
 
-export { createNewPage, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementLayout };
+async function drawChecklistTable(
+    page: PDFPage,
+    items: { label: string; memenuhi?: boolean, tidakMemenuhi?: boolean, tidakAda?: boolean }[],
+    startX: number,
+    startY: number,
+    rowHeight: number,
+    font: PDFFont,
+    fontIcon: PDFFont
+): Promise<number> {
+    let y = startY;
+    const colWidths = [30, 200, 180, 80];
+    const totalWidth = colWidths.reduce((a, b) => a + b, 0);
+    const headerHeight = rowHeight * 2;
+
+    page.drawRectangle({
+        x: startX,
+        y: y - headerHeight,
+        width: totalWidth,
+        height: headerHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    let tempX = startX;
+    for (let i = 0; i < colWidths.length; i++) {
+        tempX += colWidths[i];
+        page.drawLine({
+            start: { x: tempX, y },
+            end: { x: tempX, y: y - headerHeight },
+            color: rgb(0, 0, 0),
+            thickness: 1,
+        });
+    }
+
+    page.drawLine({
+        start: { x: startX + colWidths[0] + colWidths[1], y: y - rowHeight },
+        end: { x: startX + colWidths[0] + colWidths[1] + colWidths[2], y: y - rowHeight },
+        color: rgb(0, 0, 0),
+        thickness: 1,
+    });
+
+    const adaX = startX + colWidths[0] + colWidths[1];
+    const adaWidth = colWidths[2];
+    const subAdaWidth = adaWidth / 2;
+
+    page.drawLine({
+        start: { x: adaX + subAdaWidth, y: y - rowHeight },
+        end: { x: adaX + subAdaWidth, y: y - headerHeight },
+        color: rgb(0, 0, 0),
+        thickness: 1,
+    });
+
+    drawCellText(page, "No", startX, y - rowHeight / 2, colWidths[0], headerHeight, font, 8, "center");
+    drawCellText(page, "Bukti Persyaratan Dasar", startX + colWidths[0], y - rowHeight / 2, colWidths[1], headerHeight, font, 8, "center");
+    drawCellText(page, "Ada", adaX, y, adaWidth, rowHeight, font, 8, "center");
+    drawCellText(page, "Memenuhi Syarat", adaX, y - rowHeight, subAdaWidth, rowHeight, font, 7, "center");
+    drawCellText(page, "Tidak Memenuhi Syarat", adaX + subAdaWidth, y - rowHeight, subAdaWidth, rowHeight, font, 7, "center");
+    drawCellText(page, "Tidak Ada", adaX + adaWidth, y - rowHeight / 2, colWidths[3], headerHeight, font, 8, "center");
+
+    y -= headerHeight;
+
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        page.drawRectangle({
+            x: startX,
+            y: y - rowHeight,
+            width: totalWidth,
+            height: rowHeight,
+            borderColor: rgb(0, 0, 0),
+            borderWidth: 1,
+        });
+
+        let tempX2 = startX;
+        for (let j = 0; j < colWidths.length; j++) {
+            tempX2 += colWidths[j];
+            page.drawLine({
+                start: { x: tempX2, y },
+                end: { x: tempX2, y: y - rowHeight },
+                color: rgb(0, 0, 0),
+                thickness: 1,
+            });
+        }
+
+        page.drawLine({
+            start: { x: adaX + subAdaWidth, y },
+            end: { x: adaX + subAdaWidth, y: y - rowHeight },
+            color: rgb(0, 0, 0),
+            thickness: 1,
+        });
+
+        drawCellText(page, String(i + 1), startX, y, colWidths[0], rowHeight, font, 8, "center");
+        drawCellText(page, item.label, startX + colWidths[0], y, colWidths[1], rowHeight, font, 8, "left");
+
+        const boxSize = 10;
+        const boxY = y - (rowHeight + boxSize) / 2;
+        const boxPositions = [
+            { x: adaX + (subAdaWidth - boxSize) / 2, key: "memenuhi" },
+            { x: adaX + subAdaWidth + (subAdaWidth - boxSize) / 2, key: "tidakMemenuhi" },
+            { x: adaX + adaWidth + (colWidths[3] - boxSize) / 2, key: "tidakAda" },
+        ];
+
+        for (const pos of boxPositions) {
+            page.drawRectangle({
+                x: pos.x,
+                y: boxY,
+                width: boxSize,
+                height: boxSize,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+
+            if ((item as any)[pos.key]) {
+                drawCellText(page, "✓", pos.x, y + rowHeight - boxSize + 4, boxSize, rowHeight, fontIcon, 10, "center");
+            }
+        }
+
+        y -= rowHeight;
+    }
+
+    return y - 15;
+}
+
+async function drawSignatureSectionLayout(
+    page: PDFPage,
+    items: {
+        label: string,
+        memenuhi?: boolean,
+        tidakMemenuhi?: boolean,
+        tidakAda?: boolean
+    },
+    startX: number,
+    startY: number,
+    rowHeight: number,
+    font: PDFFont,
+    fontIcon: PDFFont
+) { }
+
+export { createNewPage, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementLayout, drawFeedbackIA01, drawChecklistTable };

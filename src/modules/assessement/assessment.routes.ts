@@ -96,6 +96,7 @@ router.put('/apl-01/results/:resultId/approve', APL1Controller.approveResult)
 router.get('/apl-01/results/:assessmentId', APL1Controller.getResultDocsByAssessmentId);;
 router.get('/apl-01/result/:resultId', APL1Controller.getResultDetails);
 router.get('/apl-01/result/docs/:resultId', APL1Controller.getResultDocsByResultId);
+router.get('/apl-01/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateAPL01);
 
 router.get('/apl-02/units/:resultId', APL02Controller.getUnitsAPL02);
 router.get('/apl-02/units/:resultId/elements/:unitId', APL02Controller.getElementsByUnitId);
@@ -106,6 +107,7 @@ router.get('/apl-02/result/units/:resultId/elements/:unitId', APL02Controller.ge
 router.put('/apl-02/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, APL02Controller.approvedByAssessor);
 router.put('/apl-02/result/assessee/:resultId/approve', authenticateToken, assesseeMiddleware, APL02Controller.approvedByAssessee);
 router.get('/apl-02/result/:resultId', APL02Controller.getResultDetails);
+// router.get('/apl-02/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateIA01);
 
 router.get('/ia-01/units/:resultId', IA01Controller.getIA01Groups);
 router.get('/ia-01/units/:resultId/elements/:unitId', IA01Controller.getElementsByUnitId);
