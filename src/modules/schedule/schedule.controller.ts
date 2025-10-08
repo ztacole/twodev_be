@@ -7,6 +7,7 @@ import { LetterAssignmentRequest, updateScheduleRequest } from "./schedule.type"
 import { AssessmentService } from "../assessement/assessment.service";
 import { APL02Service } from "../assessement/apl-02/apl-02.service";
 import { AssessorService } from "../assessor/assessor.service";
+import { AdminService } from "../admin/admin.service";
 export class ScheduleController {
     static createSchedule = asyncHandler(async (req: Request, res: Response) => {
         const schedule = await ScheduleService.createSchedule(req.body);
@@ -223,7 +224,7 @@ export class ScheduleController {
                 // filename = `Surat Tugas Verifikasi TUK dan PraUK_${body.location || 'Jakarta'}`;
                 res.status(400).json({
                     success: false,
-                    message: "Tipe surat tugas sedang dalam pengembangan. Gunakan 'assessor' untuk tipe surat tugas asesor.",
+                    message: "Tipe surat tugas sedang dinonaktifkan. Gunakan 'assessor' untuk tipe surat tugas asesor.",
                 })
             } else if(type === 'assessor') {
                 const schedule_detail_id = Number(body.schedule_detail_id);
@@ -239,6 +240,15 @@ export class ScheduleController {
                     return res.status(404).json({
                         success: false,
                         message: "Jadwal assessment tidak ditemukan"
+                    });
+                }
+
+                const leader_id = Number(body.leader_id);
+                const data_leader = await AdminService.getAdminById(leader_id);
+                if (!data_leader) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Ketua tidak ditemukan"
                     });
                 }
 
@@ -267,10 +277,12 @@ export class ScheduleController {
                     });
                 }
                 
+                console.log(data_assessment, data_schedule, data_schedule_detail, data_leader, data_assessor, data_result);
                 letter = await ScheduleService.generateLetterAssignmentAssessor(
                     data_assessment, 
                     data_schedule, 
                     data_schedule_detail, 
+                    data_leader,
                     data_assessor, 
                     data_result, 
                     body

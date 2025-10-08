@@ -385,6 +385,7 @@ export class ScheduleService {
         data_assessment: any,
         data_schedule: any,
         data_schedule_details: any,
+        data_leader: any,
         data_assessor: any,
         data_result: any,
         params: LetterAssignmentRequest
@@ -392,7 +393,6 @@ export class ScheduleService {
         const {
             number,
             LSP_name = 'LSP SMKN 24 Jakarta',
-            assigner_name,
             work_unit = 'SMK Negeri 24',
             activity_name,
             location = `SMK Negeri 24 Jakarta`,
@@ -506,13 +506,13 @@ export class ScheduleService {
             signatureY = drawParagraph(page, `Ketua`, signatureX + 65, signatureY - 4, fontBold, FONTS.small, "left", undefined, 240);
 
             signatureY -= 50;
-            const qrData = getAssessorUrl(data_schedule_details.assessor_id);
+            const qrData = getAssessorUrl(data_leader.id);
             const qrCode = await embedQrCode(pdfDoc, qrData);
             page.drawImage(qrCode, { x: signatureX, y: signatureY - 4, width: signatureWidth, height: signatureWidth });
 
             signatureY = drawParagraph(
                 page,
-                `Tanda tangan digital ${assigner_name} Ketua ${LSP_name} untuk dokumen dengan No: ${number} Tanggal: ${formatDate(now, true)}`,
+                `Tanda tangan digital ${data_leader.full_name} Ketua ${LSP_name} untuk dokumen dengan No: ${number} Tanggal: ${formatDate(now, true)}`,
                 signatureX + 70,
                 signatureY + 54,
                 fontBold,
@@ -521,7 +521,7 @@ export class ScheduleService {
                 undefined,
                 110
             );
-            signatureY = drawParagraph(page, `${assigner_name}`, signatureX + 36, signatureY - 18, fontBold, FONTS.xSmall, "left", undefined, 200);
+            signatureY = drawParagraph(page, `${data_leader.full_name}`, signatureX + 36, signatureY - 18, fontBold, FONTS.small, "left", undefined, 200);
 
             return signatureY;
         };

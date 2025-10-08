@@ -76,7 +76,7 @@ export interface LetterAssignmentRequest {
     type: "assignments" | "verifications" | "assessor";
     number: string;
     LSP_name?: string; // default
-    assigner_name?: string;
+    leader_id?: number;
     schedule_detail_id: number;
     work_unit?: string; // default
     activity_name?: string;
