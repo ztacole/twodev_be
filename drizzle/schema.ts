@@ -132,6 +132,7 @@ export const result = mysqlTable('result', {
     assessment_id: int('assessment_id').notNull().references(() => assessment.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     assessor_id: int('assessor_id').notNull().references(() => assessor.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     assessee_id: int('assessee_id').notNull().references(() => assessee.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    score: int('score').default(0),
     is_competent: boolean('is_competent').notNull(),
     tuk: tukEnum.notNull(),
     ...timestamps

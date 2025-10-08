@@ -1238,6 +1238,7 @@ export class AssessmentService {
             assessor_id: resultTable.assessor_id,
             assessee_id: resultTable.assessee_id,
             tuk: resultTable.tuk,
+            score: resultTable.score,
             is_competent: resultTable.is_competent,
         }).from(resultTable).where(
             and(
@@ -1305,7 +1306,7 @@ export class AssessmentService {
                 res.is_competent
             ) status = "Competent";
 
-            assessees.push({ id: assessee.id, name: user?.full_name, status });
+            assessees.push({ id: assessee.id, name: user?.full_name, status, score: res.score ?? null });
 
             summary.total_assessees++;
             if (status === 'Competent') summary.total_competent++;
