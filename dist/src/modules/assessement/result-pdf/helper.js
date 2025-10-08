@@ -124,7 +124,7 @@ function drawTable(page_1, data_1, colWidths_1, startX_1, startY_1, rowHeight_1,
                 }
                 if (line)
                     lines.push(line);
-                return lines.length * (9 + 4) + 6;
+                return lines.length * (fontSize + 4) + 6;
             });
             maxRowHeight = Math.max(rowHeight, ...cellHeights);
             // draw cell

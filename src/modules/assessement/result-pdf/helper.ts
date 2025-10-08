@@ -131,7 +131,7 @@ async function drawTable(
                 }
             }
             if (line) lines.push(line);
-            return lines.length * (9 + 4) + 6;
+            return lines.length * (fontSize + 4) + 6;
         });
 
         maxRowHeight = Math.max(rowHeight, ...cellHeights);
