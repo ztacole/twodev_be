@@ -19,6 +19,7 @@ const pdfAssets_helper_1 = require("../../helper/pdfAssets.helper");
 const pdfDraw_helper_1 = require("../../helper/pdfDraw.helper");
 const hashids_1 = require("../../helper/hashids");
 const date_helper_1 = require("../../helper/date.helper");
+const helper_1 = require("../assessement/result-pdf/helper");
 class ScheduleService {
     static createSchedule(data) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -470,26 +471,18 @@ class ScheduleService {
                 });
             }
             function drawUnitTable(page, y, data, font, fontBold, fontSize, color) {
-                const x = 40;
-                const width = page.getWidth() - 80;
-                const rowHeight = 20;
-                const col = { no: 30, code: 120, title: width - 150 };
-                // Header
-                page.drawRectangle({ x, y: y - rowHeight, width, height: rowHeight, borderColor: color, borderWidth: 1 });
-                page.drawRectangle({ x: x + col.no, y: y - rowHeight, width: col.code, height: rowHeight, borderColor: color, borderWidth: 1 });
-                page.drawRectangle({ x: x + col.no + col.code, y: y - rowHeight, width: col.title, height: rowHeight, borderColor: color, borderWidth: 1 });
-                (0, pdfDraw_helper_1.drawParagraph)(page, "NO", x + 10, y - 15, fontBold, fontSize);
-                (0, pdfDraw_helper_1.drawParagraph)(page, "KODE UNIT", x + col.no + 10, y - 15, fontBold, fontSize);
-                (0, pdfDraw_helper_1.drawParagraph)(page, "JUDUL UNIT", x + col.no + col.code + 10, y - 15, fontBold, fontSize);
-                // Rows
-                data.forEach((result, i) => {
-                    const rowY = y - rowHeight - (i + 1) * rowHeight;
-                    page.drawRectangle({ x, y: rowY, width, height: rowHeight, borderColor: color, borderWidth: 1 });
-                    page.drawLine({ start: { x: x + col.no, y: rowY }, end: { x: x + col.no, y: rowY + rowHeight }, thickness: 1, color });
-                    page.drawLine({ start: { x: x + col.no + col.code, y: rowY }, end: { x: x + col.no + col.code, y: rowY + rowHeight }, thickness: 1, color });
-                    (0, pdfDraw_helper_1.drawParagraph)(page, `${i + 1}`, x + 10, rowY + 5, font, fontSize);
-                    (0, pdfDraw_helper_1.drawParagraph)(page, `${(result === null || result === void 0 ? void 0 : result.unit_code) || "-"}`, x + col.no + 10, rowY + 5, font, fontSize);
-                    (0, pdfDraw_helper_1.drawParagraph)(page, `${(result === null || result === void 0 ? void 0 : result.title) || "-"}`, x + col.no + col.code + 10, rowY + 5, font, fontSize);
+                return __awaiter(this, void 0, void 0, function* () {
+                    const x = 40;
+                    const width = page.getWidth() - 80;
+                    const rowHeight = 20;
+                    const colWidths = [30, 120, width - 150];
+                    const colData = [["NO", "KODE UNIT", "JUDUL UNIT"]];
+                    data.map((data, idx) => {
+                        var _a, _b;
+                        const newData = [`${idx + 1}.`, (_a = data.unit_code) !== null && _a !== void 0 ? _a : "-", (_b = data.title) !== null && _b !== void 0 ? _b : "-"];
+                        colData.push(newData);
+                    });
+                    yield (0, helper_1.drawTable)(page, colData, colWidths, x, y, rowHeight, font, fontBold, fontSize);
                 });
             }
         });
