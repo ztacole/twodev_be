@@ -51,7 +51,7 @@ export class AssesseeService {
             job: assesseeJob
         }).from(assesseeTable)
             .leftJoin(userTable, eq(assesseeTable.user_id, userTable.id))
-            .innerJoin(assesseeJob, eq(assesseeJob.assessee_id, assesseeTable.id))
+            .leftJoin(assesseeJob, eq(assesseeJob.assessee_id, assesseeTable.id))
             .where(
                 or(
                     keyword ? like(userTable.full_name, `%${keyword}%`) : undefined,

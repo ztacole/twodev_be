@@ -33,6 +33,7 @@ interface AssesseeResponse {
 
 interface CertificateDocsResponse {
     id: number;
+    admin_id: number;
     result_id: number;
     purpose: string;
     school_report_card?: string;
@@ -44,6 +45,7 @@ interface CertificateDocsResponse {
 
 interface ResultDocResponse {
     id: number;
+    admin_id: number;
     result_id: number;
     purpose: string;
     school_report_card?: string;

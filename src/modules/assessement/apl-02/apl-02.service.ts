@@ -341,6 +341,7 @@ export class APL02Service {
       is_competent: result.is_competent,
       created_at: result.created_at,
       apl02_header: header,
+      approved_by: docs[docs.length - 1].admin_id,
       approved_admin: docs[docs.length - 1].approved
     };
   }

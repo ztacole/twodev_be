@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { APL1Service } from './apl-01.service';
 import { asyncHandler } from '../../../common/async.handler';
+import { JwtPayload } from 'jsonwebtoken';
 
 export class APL1Controller {
     static createAssesseeAPL1 = asyncHandler(async (req: Request, res: Response) => {
@@ -119,8 +120,9 @@ export class APL1Controller {
     });
 
     static approveResult = asyncHandler(async (req: Request, res: Response) => {
+        const user = req.user as JwtPayload;
         const resultId = parseInt(req.params.resultId);
-        const result = await APL1Service.approveResultDoc(resultId);
+        const result = await APL1Service.approveResultDoc(resultId, user.id);
         res.status(200).json({
             success: true,
             message: 'Hasil berhasil disetujui',
