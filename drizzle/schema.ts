@@ -475,6 +475,8 @@ export const approvalRequest = mysqlTable('approval_request', {
     id: int('id').primaryKey().autoincrement(),
     requester_admin_id: int('requester_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     approver_admin_id: int('approver_admin_id').notNull().references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    backup_admin_id: int('backup_admin_id').references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    approved_by: int('approved_by').references(() => admin.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     target_table: varchar('target_table', { length: 255 }).notNull(),
     target_id: int('target_id').notNull(),
     target_name: varchar('target_name', { length: 255 }),
@@ -953,6 +955,14 @@ export const approvalRequestRelations = relations(approvalRequest, ({ one }) => 
     approver: one(admin, {
         fields: [approvalRequest.approver_admin_id],
         references: [admin.id]
+    }),
+    backupApprover: one(admin, {
+        fields: [approvalRequest.backup_admin_id],
+        references: [admin.id]
+    }),
+    approvedBy: one(admin, {
+        fields: [approvalRequest.approved_by],
+        references: [admin.id]
     })
 }));
 
@@ -962,5 +972,7 @@ export const adminRelations = relations(admin, ({ one, many }) => ({
         references: [user.id]
     }),
     requestedApprovalRequests: many(approvalRequest, { relationName: 'requester' }),
-    receivedApprovalRequests: many(approvalRequest, { relationName: 'approver' })
+    receivedApprovalRequests: many(approvalRequest, { relationName: 'approver' }),
+    backupApprovalRequests: many(approvalRequest, { relationName: 'backupApprover' }),
+    approvedRequests: many(approvalRequest, { relationName: 'approvedBy' })
 }));

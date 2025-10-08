@@ -34,4 +34,7 @@ router.get(
   ApprovalController.listApprovalRequests
 );
 
+// Routes for backup admin functionality
+router.get("/available-approvers", authenticateToken, adminMiddleware, ApprovalController.getAvailableApprovers);
+
 export default router;

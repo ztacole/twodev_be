@@ -62,6 +62,7 @@ export const ApprovalController = {
       const targetId = body?.targetId ?? body?.target_id;
       const action = body?.action;
       const approverAdminRaw = body?.approverAdminId ?? body?.approver_admin_id;
+      const backupAdminRaw = body?.backupApproverId ?? body?.backup_approver_id ?? body?.backupAdminId ?? body?.backup_admin_id;
       const comment = body?.comment ?? null;
 
       if (!targetTable || !targetId || !action || !approverAdminRaw) {
@@ -71,9 +72,22 @@ export const ApprovalController = {
         });
       }
 
-      const data = await ApprovalService.createApprovalRequest({
+      if (backupAdminRaw) {
+        const data = await ApprovalService.createApprovalRequestWithBackup({
+          user,
+          primaryApproverId: Number(approverAdminRaw),
+          backupApproverId: Number(backupAdminRaw),
+          targetTable,
+          targetId: Number(targetId),
+          action,
+          comment,
+        });
+        return res.json({ success: true, message: 'Approval request created with manual backup', data });
+      }
+
+      const data = await ApprovalService.createApprovalRequestWithAutoBackup({
         user,
-        approverAdminId: Number(approverAdminRaw),
+        primaryApproverId: Number(approverAdminRaw),
         targetTable,
         targetId: Number(targetId),
         action,
@@ -118,6 +132,23 @@ export const ApprovalController = {
       res.json({ success: true, data });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message || 'Gagal mengambil daftar approval requests' });
+    }
+  },
+
+
+  async getAvailableApprovers(req: Request, res: Response) {
+    try {
+      const data = await ApprovalService.getAvailableApprovers();
+      
+      res.json({ 
+        success: true, 
+        data 
+      });
+    } catch (error: any) {
+      res.status(400).json({ 
+        success: false, 
+        message: error.message || 'Gagal mengambil available approvers' 
+      });
     }
   }
 };
