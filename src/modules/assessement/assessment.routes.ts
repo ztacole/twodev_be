@@ -58,6 +58,7 @@ router.get('/', AssessmentController.getAssessments);
 router.put('/:id', authenticateToken, adminMiddleware, AssessmentController.updateAssessment);
 router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('assessment'), AssessmentController.deleteAssessment);
+router.get('/result/evaluation/:assessmentId/export', authenticateToken, adminMiddleware, AssessmentController.generateUkkEvaluationPdf);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
 
 // RESULT PDF
@@ -74,7 +75,6 @@ router.get('/navigation/admin/:resultId', authenticateToken, adminMiddleware, As
 router.get('/assessment-recapt/:scheduleDetailId', authenticateToken, assessorMiddleware, AssessmentController.getAssessmentRecapt);
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssessmentRecaptForAdmin);
 router.get('/recap/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMiddleware, AssessmentController.generateRecaptPdf);
-router.get('/ukk-evaluation/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMiddleware, AssessmentController.generateUkkEvaluationPdf);
 
 router.put('/result/input-score/:resultId', authenticateToken, adminOrAssessorMiddleware, AssessmentController.inputScore);
 

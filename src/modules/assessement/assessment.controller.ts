@@ -344,39 +344,15 @@ export class AssessmentController {
 
     static generateUkkEvaluationPdf = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const scheduleDetailId = Number(req.params.scheduleDetailId);
-            if (!scheduleDetailId) {
+            const assessmentId = Number(req.params.assessmentId);
+            if (!assessmentId) {
                 return res.status(400).json({
                     success: false,
-                    message: "Schedule ID dan Assessor ID harus diisi",
+                    message: "Assessment ID harus diisi",
                 });
             }
 
-            const schedule = await ScheduleService.getScheduleDetailById(scheduleDetailId);
-            if (!schedule) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Jadwal tidak ditemukan",
-                });
-            }
-
-            const assessor = await AssessorService.getAssessorById(schedule.assessor_id);
-            if (!assessor) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Assessor tidak ditemukan",
-                });
-            }
-
-            const data = await AssessmentService.getAssessmentRecapt(scheduleDetailId, assessor);
-            if (data.assessment.assessees.length > 15) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Jumlah assessee melebihi batas maksimal untuk di-generate PDF (15 orang)",
-                });
-            }
-
-            const pdfBytes = await AssessmentService.generateUkkEvaluationPdf(data.assessment);
+            const pdfBytes = await AssessmentService.generateUkkEvaluationPdf(assessmentId);
             res.setHeader("Content-Type", "application/pdf");
             res.setHeader(
                 "Content-Disposition",

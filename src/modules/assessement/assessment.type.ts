@@ -332,3 +332,36 @@ export interface AdminTab {
     name: string;
     status: "Belum Tuntas" | "Tuntas";
 }
+
+export interface AssessmentResultGrouped {
+  id: number;
+  code: string;
+  occupation_id: number;
+  created_at: Date;
+  updated_at: Date;
+  occupation: {
+    id: number;
+    name: string;
+    scheme_id: number;
+    scheme: {
+      id: number;
+      code: string;
+      name: string;
+    };
+  };
+  assessors: {
+    id: number;
+    full_name: string;
+    no_reg_met: string;
+    assessees: {
+      result_id: number;
+      score: number | null;
+      is_competent: boolean;
+      tuk: 'sewaktu' | 'tempat_kerja' | 'mandiri';
+      created_at: Date;
+      updated_at: Date;
+      assessee_id: number;
+      assessee_name: string;
+    }[];
+  }[];
+}

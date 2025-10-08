@@ -97,14 +97,15 @@ function drawCellText(
 }
 
 async function drawTable(
-    page: any,
+    page: PDFPage,
     data: string[][],
     colWidths: number[],
     startX: number,
     startY: number,
     rowHeight: number,
-    font: any,
-    fontBold: any
+    font: PDFFont,
+    fontBold: PDFFont,
+    fontSize: number = 9
 ) {
     let y = startY;
 
@@ -121,7 +122,7 @@ async function drawTable(
             let lines: string[] = [];
             for (const word of words) {
                 const testLine = line ? line + " " + word : word;
-                const testWidth = font.widthOfTextAtSize(testLine, 9);
+                const testWidth = font.widthOfTextAtSize(testLine, fontSize);
                 if (testWidth > colWidths[idx] - 8) {
                     lines.push(line);
                     line = word;
@@ -147,7 +148,7 @@ async function drawTable(
                 borderWidth: 1,
             });
             const align = i === 0 ? "center" : "left"; // header rata tengah
-            drawCellText(page, cell, x, y, w, maxRowHeight, i === 0 ? fontBold : font, 9, align);
+            drawCellText(page, cell, x, y, w, maxRowHeight, i === 0 ? fontBold : font, fontSize, align);
             x += w;
         });
 
@@ -1290,4 +1291,4 @@ async function drawFeedbackAK02(
   return y - 10;
 }
 
-export { createNewPage, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementLayout, drawFeedbackIA01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02 };
+export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementLayout, drawFeedbackIA01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02 };
