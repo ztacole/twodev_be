@@ -32,6 +32,7 @@ import path from 'path';
 import { AssessorService } from '../assessor/assessor.service';
 import { sign } from 'crypto';
 import { start } from 'repl';
+import { drawTable } from '../assessement/result-pdf/helper';
 
 export class ScheduleService {
     static async createSchedule(data: ScheduleRequest): Promise<ScheduleResponse> {
@@ -563,32 +564,19 @@ export class ScheduleService {
             });
         }
 
-        function drawUnitTable(page: PDFPage, y: number, data: any[], font: PDFFont, fontBold: PDFFont, fontSize: number, color: RGB) {
+        async function drawUnitTable(page: PDFPage, y: number, data: any[], font: PDFFont, fontBold: PDFFont, fontSize: number, color: RGB) {
             const x = 40;
             const width = page.getWidth() - 80;
             const rowHeight = 20;
-            const col = { no: 30, code: 120, title: width - 150 };
+            const colWidths = [30, 120, width - 150 ];
+            const colData = [["NO", "KODE UNIT", "JUDUL UNIT"]];
 
-            // Header
-            page.drawRectangle({ x, y: y - rowHeight, width, height: rowHeight, borderColor: color, borderWidth: 1 });
-            page.drawRectangle({ x: x + col.no, y: y - rowHeight, width: col.code, height: rowHeight, borderColor: color, borderWidth: 1 });
-            page.drawRectangle({ x: x + col.no + col.code, y: y - rowHeight, width: col.title, height: rowHeight, borderColor: color, borderWidth: 1 });
+            data.map((data: any, idx: number) => {
+                const newData = [`${idx + 1}.`, data.unit_code ?? "-", data.title ?? "-"];
+                colData.push(newData);
+            })
 
-            drawParagraph(page, "NO", x + 10, y - 15, fontBold, fontSize);
-            drawParagraph(page, "KODE UNIT", x + col.no + 10, y - 15, fontBold, fontSize);
-            drawParagraph(page, "JUDUL UNIT", x + col.no + col.code + 10, y - 15, fontBold, fontSize);
-
-            // Rows
-            data.forEach((result, i) => {
-                const rowY = y - rowHeight - (i + 1) * rowHeight;
-                page.drawRectangle({ x, y: rowY, width, height: rowHeight, borderColor: color, borderWidth: 1 });
-                page.drawLine({ start: { x: x + col.no, y: rowY }, end: { x: x + col.no, y: rowY + rowHeight }, thickness: 1, color });
-                page.drawLine({ start: { x: x + col.no + col.code, y: rowY }, end: { x: x + col.no + col.code, y: rowY + rowHeight }, thickness: 1, color });
-
-                drawParagraph(page, `${i + 1}`, x + 10, rowY + 5, font, fontSize);
-                drawParagraph(page, `${result?.unit_code || "-"}`, x + col.no + 10, rowY + 5, font, fontSize);
-                drawParagraph(page, `${result?.title || "-"}`, x + col.no + col.code + 10, rowY + 5, font, fontSize);
-            });
+            await drawTable(page, colData, colWidths, x, y, rowHeight, font, fontBold, fontSize);
         }
     }
 }

@@ -1959,10 +1959,13 @@ export class AssessmentService {
             startX = 40
 
             const data: string[][] = results?.assessors[assessorIdx].assessees.map((assessee: any, idx: number) => {
-                return [`${idx + 1}.`, assessee.assessee_name, assessee.score < 85 ? assessee.score.toString() : assessee.score < 0 ? "" : "", assessee.score >= 85 && assessee.score <= 90 ? assessee.score.toString() : "", assessee.score > 90 ? assessee.score.toString() : ""];
+                return [`${idx + 1}.`, assessee.assessee_name, assessee.score < 85 && assessee.score >= 0 ? assessee.score.toString() : assessee.score < 0 ? "" : "", assessee.score >= 85 && assessee.score <= 90 ? assessee.score.toString() : "", assessee.score > 90 ? assessee.score.toString() : ""];
             }) ?? [];
-            for (let i = 0; i < data.length; i++) {
-                const row = data[i];
+            for (let i = 0; i < (data.length <= 12 ? 12 : data.length); i++) {
+                let row = [`${i + 1}.`, '', '', '', ''];
+                try {
+                    row = data[i];
+                } catch {}
                 let x = startX;
                 let maxRowHeight = rowHeight;
 
@@ -2053,143 +2056,6 @@ export class AssessmentService {
             );
             drawParagraph(page, `${assessor_name}`, signatureX, signatureY - signatureWidth - 12, font, fontSizeSmall, "right");
         }
-
-        // === Subkolom BK ===
-        // page.drawRectangle({
-        //     x: startX, y: tableTop - rowHeight * 3 + 12,
-        //     width: colWidths[2],
-        //     height: rowHeight * 2 - 9,
-        //     color: headerColor,
-        //     borderColor: rgb(0, 0, 0),
-        //     borderWidth: 1
-        // });
-        // page.drawText("< 85", {
-        //     x: startX + colWidths[2] / 2 - 10,
-        //     y: tableTop - rowHeight * 2 + 16,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-        // page.drawText("Belum", {
-        //     x: startX + colWidths[2] / 2 - 14,
-        //     y: tableTop - rowHeight * 2 + 4,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-        // page.drawText("Kompeten", {
-        //     x: startX + colWidths[2] / 2 - 24,
-        //     y: tableTop - rowHeight * 2 - 8,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-
-        // // === Subkolom K ===
-        // page.drawRectangle({
-        //     x: startX + colWidths[2],
-        //     y: tableTop - rowHeight * 3 + 12,
-        //     width: colWidths[3],
-        //     height: rowHeight * 2 - 9,
-        //     color: headerColor,
-        //     borderColor: rgb(0, 0, 0),
-        //     borderWidth: 1
-        // });
-        // page.drawText("86-90", {
-        //     x: startX + colWidths[2] + colWidths[3] / 2 - 10,
-        //     y: tableTop - rowHeight * 2 + 16,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-        // page.drawText("Kompeten", {
-        //     x: startX + colWidths[2] + colWidths[3] / 2 - 24,
-        //     y: tableTop - rowHeight * 2 - 8,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-
-        // // === Subkolom SK ===
-        // page.drawRectangle({
-        //     x: startX + colWidths[2] + colWidths[3],
-        //     y: tableTop - rowHeight * 3 + 12,
-        //     width: colWidths[4],
-        //     height: rowHeight * 2 - 9,
-        //     color: headerColor,
-        //     borderColor: rgb(0, 0, 0),
-        //     borderWidth: 1
-        // });
-        // page.drawText("91-100 ", {
-        //     x: startX + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 15,
-        //     y: tableTop - rowHeight * 2 + 16,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-        // page.drawText("Sangat", {
-        //     x: startX + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 14,
-        //     y: tableTop - rowHeight * 2 + 4,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-        // page.drawText("Kompeten", {
-        //     x: startX + colWidths[2] + colWidths[3] + colWidths[4] / 2 - 24,
-        //     y: tableTop - rowHeight * 2 - 8,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-
-        // // === Column No ===
-        // page.drawRectangle({
-        //     x: startX, y: tableTop - rowHeight * 3 + 12,
-        //     width: colWidths[0], height: rowHeight * 4 - 23,
-        //     color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
-        // });
-        // page.drawText("No", {
-        //     x: startX + colWidths[0] / 2 - 8,
-        //     y: tableTop - rowHeight - 3,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-        // startX += colWidths[0];
-
-        // // === Column Nama Peserta ===
-        // page.drawRectangle({
-        //     x: startX, y: tableTop - rowHeight * 3 + 12,
-        //     width: colWidths[1], height: rowHeight * 4 - 23,
-        //     color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
-        // });
-        // page.drawText("Nama Peserta", {
-        //     x: startX + colWidths[1] / 2 - 40,
-        //     y: tableTop - rowHeight - 3,
-        //     size: fontSizeSmall,
-        //     font: fontBold
-        // });
-        // startX += colWidths[1];
-
-        // let currentY = tableTop - rowHeight * 4 + 12;
-        // // === TABLE CONTENT ===
-        // tableData.forEach(row => {
-        //     let x = 50;
-        //     page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-        //     page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
-        //     x += colWidths[0];
-
-        //     page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-        //     page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
-        //     x += colWidths[1];
-
-        //     page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-        //     page.drawText('', { x: x + colWidths[2] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-        //     x += colWidths[2];
-
-        //     page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-        //     page.drawText('', { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-        //     x += colWidths[3];
-
-        //     page.drawRectangle({ x, y: currentY, width: colWidths[4], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
-        //     page.drawText('', { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-
-        //     currentY -= rowHeight;
-        // });
-
-        // y = currentY;
-
 
         return await pdfDoc.save();
     }
