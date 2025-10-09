@@ -59,6 +59,7 @@ router.put('/:id', authenticateToken, adminMiddleware, AssessmentController.upda
 router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('assessment'), AssessmentController.deleteAssessment);
 router.get('/result/evaluation/:assessmentId/export', authenticateToken, adminMiddleware, AssessmentController.generateUkkEvaluationPdf);
+router.put('/result/input-score/:resultId', authenticateToken, assessorMiddleware, AssessmentController.inputScore);
 router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
 
 // RESULT PDF
@@ -76,7 +77,6 @@ router.get('/assessment-recapt/:scheduleDetailId', authenticateToken, assessorMi
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssessmentRecaptForAdmin);
 router.get('/recap/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMiddleware, AssessmentController.generateRecaptPdf);
 
-router.put('/result/input-score/:resultId', authenticateToken, assessorMiddleware, AssessmentController.inputScore);
 
 router.post('/apl-01/create-self-data', authenticateToken, assesseeMiddleware, APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', authenticateToken, assesseeMiddleware, 
