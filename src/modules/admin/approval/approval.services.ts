@@ -92,9 +92,14 @@ export const ApprovalService = {
       }
     } catch { }
 
+    const availableApproversForBase = await this.getAvailableApprovers();
+    const autoBackupForBase = availableApproversForBase.find(a => a.id !== input.approverAdminId && a.id !== requester.id);
+    const backupIdForBase = autoBackupForBase?.id ?? (requester.can_approve ? requester.id : null);
+
     await db.insert(approvalRequestTable).values({
       requester_admin_id: requester.id,
       approver_admin_id: input.approverAdminId,
+      backup_admin_id: backupIdForBase,
       target_table: input.targetTable,
       target_id: input.targetId,
       target_name: targetName,
@@ -447,13 +452,14 @@ export const ApprovalService = {
 
     // Cari admin lain yang bisa approve sebagai backup
     const availableApprovers = await this.getAvailableApprovers();
-    const backupApprover = availableApprovers.find(admin => admin.id !== input.primaryApproverId);
+    const backupApprover = availableApprovers.find(admin => admin.id !== input.primaryApproverId && admin.id !== requester.id);
+    const backupIdAuto = backupApprover?.id ?? (requester.can_approve && requester.id !== input.primaryApproverId ? requester.id : null);
 
     // Buat approval request dengan auto backup
     const insertResult = await db.insert(approvalRequestTable).values({
       requester_admin_id: requester.id,
       approver_admin_id: input.primaryApproverId,
-      backup_admin_id: backupApprover?.id || null,
+      backup_admin_id: backupIdAuto,
       target_table: input.targetTable,
       target_id: input.targetId,
       target_name: await this.getTargetName(input.targetTable, input.targetId),

@@ -189,12 +189,6 @@ class APL1Service {
                     fileData[mapped] = `${BASE_URL}/uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
                 }
             }
-            for (const key of Object.keys(bodyData || {})) {
-                const mapped = fieldMapping[key];
-                if (mapped && bodyData[key]) {
-                    fileData[mapped] = bodyData[key];
-                }
-            }
             const docsData = Object.assign({ purpose: (bodyData === null || bodyData === void 0 ? void 0 : bodyData.purpose) || 'APL1 Certificate Documents' }, fileData);
             // find latest result
             let [result] = yield drizzle_1.db.select().from(schema_1.result)
@@ -230,7 +224,6 @@ class APL1Service {
                 yield drizzle_1.db.insert(schema_1.resultAk04).values({ result_id: result.id, approved_assessee: false, q1_yes: false, q2_yes: false, q3_yes: false, reason: "" });
                 yield drizzle_1.db.insert(schema_1.resultAk05).values({ result_id: result.id, approved_assessor: false, is_competent: false });
             }
-            // existing docs?
             const existingDocs = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, result.id) });
             if (existingDocs) {
                 yield drizzle_1.db.update(schema_1.resultDoc).set({
@@ -241,14 +234,11 @@ class APL1Service {
                     family_card: docsData.family_card,
                     id_card: docsData.id_card
                 }).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.id, existingDocs.id));
-                // fetch updated doc
                 const updated = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.id, existingDocs.id) });
-                // build full result nested
                 const fullresult = yield APL1Service._buildFullresult(result.id);
                 return Object.assign(Object.assign({}, updated), { result: fullresult });
             }
             else {
-                // create new doc
                 const [ins] = yield drizzle_1.db.insert(schema_1.resultDoc).values({
                     result_id: result.id,
                     approved: false,
@@ -259,14 +249,12 @@ class APL1Service {
                     family_card: docsData.family_card,
                     id_card: docsData.id_card
                 }).$returningId();
-                // fetch created doc (by result_id)
-                const created = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, ins.id) });
+                const created = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.id, ins.id) });
                 const fullresult = yield APL1Service._buildFullresult(result.id);
                 return Object.assign(Object.assign({}, created), { result: fullresult });
             }
         });
     }
-    // helper untuk membangun nested result object mirip Prisma include
     static _buildFullresult(result_id) {
         return __awaiter(this, void 0, void 0, function* () {
             const resultRow = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
@@ -275,8 +263,6 @@ class APL1Service {
             const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, resultRow.assessment_id) });
             const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, resultRow.assessee_id) });
             const assessor = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, resultRow.assessor_id) });
-            // if assessor stored in separate table, adapt accordingly
-            // headers
             const apl02_headers = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, result_id) });
             const ia01_headers = yield drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, result_id) });
             const ia02_headers = yield drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, result_id) });

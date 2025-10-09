@@ -15,7 +15,7 @@ const schema_1 = require("../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 function requireApproval(targetTable) {
     return (req, res, next) => __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1;
         try {
             const user = req.user;
             const admin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, user.id) });
@@ -52,7 +52,7 @@ function requireApproval(targetTable) {
                     const merged = Object.assign(Object.assign({}, existing), { tempFilePath: req.file.path, tempDestination: req.file.destination, tempFileName: req.file.filename, name: (_u = body.name) !== null && _u !== void 0 ? _u : existing.name, scheme_id: body.scheme_id ? Number(body.scheme_id) : existing.scheme_id });
                     comment = JSON.stringify(merged);
                 }
-                catch (_z) {
+                catch (_2) {
                     comment = JSON.stringify({ tempFilePath: req.file.path, tempDestination: req.file.destination, tempFileName: req.file.filename, name: body.name, scheme_id: body.scheme_id ? Number(body.scheme_id) : undefined });
                 }
             }
@@ -98,10 +98,17 @@ function requireApproval(targetTable) {
                         targetName = null;
                 }
             }
-            catch (_0) { }
+            catch (_3) { }
+            const approvers = yield drizzle_1.db.query.admin.findMany({
+                where: (0, drizzle_orm_1.eq)(schema_1.admin.can_approve, true),
+                columns: { id: true, can_approve: true }
+            });
+            const autoBackup = approvers.find(a => a.id !== approverAdminId && a.id !== admin.id);
+            const backupAdminId = (_z = autoBackup === null || autoBackup === void 0 ? void 0 : autoBackup.id) !== null && _z !== void 0 ? _z : (admin.can_approve && admin.id !== approverAdminId ? admin.id : null);
             const insertResult = yield drizzle_1.db.insert(schema_1.approvalRequest).values({
                 requester_admin_id: admin.id,
                 approver_admin_id: approverAdminId,
+                backup_admin_id: backupAdminId,
                 target_table: targetTable,
                 target_id: targetId,
                 target_name: targetName !== null && targetName !== void 0 ? targetName : null,
@@ -109,14 +116,15 @@ function requireApproval(targetTable) {
                 status: 'pending',
                 comment: comment !== null && comment !== void 0 ? comment : null,
             }).execute();
-            const createdId = Number(insertResult === null || insertResult === void 0 ? void 0 : insertResult.insertId);
+            const createdId = Number((_1 = (_0 = insertResult === null || insertResult === void 0 ? void 0 : insertResult[0]) === null || _0 === void 0 ? void 0 : _0.insertId) !== null && _1 !== void 0 ? _1 : insertResult === null || insertResult === void 0 ? void 0 : insertResult.insertId);
             let created = null;
             if (Number.isFinite(createdId) && createdId > 0) {
                 created = yield drizzle_1.db.query.approvalRequest.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.approvalRequest.id, createdId) });
             }
             else {
                 created = yield drizzle_1.db.query.approvalRequest.findFirst({
-                    where: (t, { and, eq: _eq }) => and(_eq(t.requester_admin_id, admin.id), _eq(t.approver_admin_id, approverAdminId), _eq(t.target_table, targetTable), _eq(t.target_id, targetId), _eq(t.status, 'pending')),
+                    where: (t, { and, eq: _eq }) => and(_eq(t.requester_admin_id, admin.id), _eq(t.approver_admin_id, approverAdminId), _eq(t.target_table, targetTable), _eq(t.target_id, targetId), _eq(t.action, method === 'DELETE' ? 'delete' : 'update'), _eq(t.status, 'pending')),
+                    orderBy: (t, { desc }) => desc(t.created_at),
                 });
             }
             return res.status(202).json({ success: true, message: 'Menunggu persetujuan admin lain', data: created });

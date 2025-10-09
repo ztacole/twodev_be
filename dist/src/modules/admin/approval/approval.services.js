@@ -70,7 +70,7 @@ exports.ApprovalService = {
     },
     createApprovalRequest(input) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e;
+            var _a, _b, _c, _d, _e, _f;
             const requester = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, input.user.id) });
             if (!requester)
                 throw new Error("Hanya admin yang dapat membuat approval request");
@@ -127,16 +127,20 @@ exports.ApprovalService = {
                         targetName = null;
                 }
             }
-            catch (_f) { }
+            catch (_g) { }
+            const availableApproversForBase = yield this.getAvailableApprovers();
+            const autoBackupForBase = availableApproversForBase.find(a => a.id !== input.approverAdminId && a.id !== requester.id);
+            const backupIdForBase = (_e = autoBackupForBase === null || autoBackupForBase === void 0 ? void 0 : autoBackupForBase.id) !== null && _e !== void 0 ? _e : (requester.can_approve ? requester.id : null);
             yield drizzle_1.db.insert(schema_1.approvalRequest).values({
                 requester_admin_id: requester.id,
                 approver_admin_id: input.approverAdminId,
+                backup_admin_id: backupIdForBase,
                 target_table: input.targetTable,
                 target_id: input.targetId,
                 target_name: targetName,
                 action: input.action,
                 status: 'pending',
-                comment: (_e = input.comment) !== null && _e !== void 0 ? _e : null,
+                comment: (_f = input.comment) !== null && _f !== void 0 ? _f : null,
                 approved_at: null,
             }).execute();
             const created = yield drizzle_1.db.query.approvalRequest.findFirst({
@@ -445,7 +449,7 @@ exports.ApprovalService = {
     },
     createApprovalRequestWithAutoBackup(input) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
+            var _a, _b;
             const requester = yield drizzle_1.db.query.admin.findFirst({
                 where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, input.user.id)
             });
@@ -460,18 +464,19 @@ exports.ApprovalService = {
             }
             // Cari admin lain yang bisa approve sebagai backup
             const availableApprovers = yield this.getAvailableApprovers();
-            const backupApprover = availableApprovers.find(admin => admin.id !== input.primaryApproverId);
+            const backupApprover = availableApprovers.find(admin => admin.id !== input.primaryApproverId && admin.id !== requester.id);
+            const backupIdAuto = (_a = backupApprover === null || backupApprover === void 0 ? void 0 : backupApprover.id) !== null && _a !== void 0 ? _a : (requester.can_approve && requester.id !== input.primaryApproverId ? requester.id : null);
             // Buat approval request dengan auto backup
             const insertResult = yield drizzle_1.db.insert(schema_1.approvalRequest).values({
                 requester_admin_id: requester.id,
                 approver_admin_id: input.primaryApproverId,
-                backup_admin_id: (backupApprover === null || backupApprover === void 0 ? void 0 : backupApprover.id) || null,
+                backup_admin_id: backupIdAuto,
                 target_table: input.targetTable,
                 target_id: input.targetId,
                 target_name: yield this.getTargetName(input.targetTable, input.targetId),
                 action: input.action,
                 status: 'pending',
-                comment: (_a = input.comment) !== null && _a !== void 0 ? _a : null,
+                comment: (_b = input.comment) !== null && _b !== void 0 ? _b : null,
                 approved_at: null,
             });
             // Ambil data yang baru dibuat

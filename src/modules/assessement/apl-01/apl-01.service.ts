@@ -208,12 +208,6 @@ export class APL1Service {
             }
         }
 
-        for (const key of Object.keys(bodyData || {})) {
-            const mapped = fieldMapping[key];
-            if (mapped && bodyData[key]) {
-                fileData[mapped] = bodyData[key];
-            }
-        }
 
         const docsData: any = {
             purpose: bodyData?.purpose || 'APL1 Certificate Documents',
@@ -257,7 +251,6 @@ export class APL1Service {
             await db.insert(resultAk05).values({ result_id: result.id, approved_assessor: false, is_competent: false });
         }
 
-        // existing docs?
         const existingDocs = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result.id) });
 
         if (existingDocs) {
@@ -270,13 +263,10 @@ export class APL1Service {
                 id_card: docsData.id_card
             }).where(eq(resultDocTable.id, existingDocs.id));
 
-            // fetch updated doc
             const updated = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, existingDocs.id) });
-            // build full result nested
             const fullresult = await APL1Service._buildFullresult(result.id);
             return { ...(updated as any), result: fullresult } as CertificateDocsResponse;
         } else {
-            // create new doc
             const [ins] = await db.insert(resultDocTable).values({
                 result_id: result.id,
                 approved: false,
@@ -288,14 +278,12 @@ export class APL1Service {
                 id_card: docsData.id_card
             }).$returningId();
 
-            // fetch created doc (by result_id)
-            const created = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, ins.id) });
+            const created = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, ins.id) });
             const fullresult = await APL1Service._buildFullresult(result.id);
             return { ...(created as any), result: fullresult } as CertificateDocsResponse;
         }
     }
 
-    // helper untuk membangun nested result object mirip Prisma include
     private static async _buildFullresult(result_id: number) {
         const resultRow = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
         if (!resultRow) return null;
@@ -303,9 +291,7 @@ export class APL1Service {
         const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, resultRow.assessment_id) });
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, resultRow.assessee_id) });
         const assessor = await db.query.user.findFirst({ where: eq(userTable.id, resultRow.assessor_id) })
-        // if assessor stored in separate table, adapt accordingly
 
-        // headers
         const apl02_headers = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
         const ia01_headers = await db.query.resultIa01Header.findFirst({ where: eq(ia01HeaderTable.result_id, result_id) });
         const ia02_headers = await db.query.resultIa02Header.findFirst({ where: eq(ia02HeaderTable.result_id, result_id) });

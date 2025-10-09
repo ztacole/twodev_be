@@ -101,9 +101,17 @@ export function requireApproval(targetTable: string) {
         }
       } catch { }
 
+      const approvers = await db.query.admin.findMany({
+        where: eq(adminTable.can_approve, true),
+        columns: { id: true, can_approve: true as any }
+      });
+      const autoBackup = approvers.find(a => a.id !== approverAdminId && a.id !== admin.id);
+      const backupAdminId = autoBackup?.id ?? (admin.can_approve && admin.id !== approverAdminId ? admin.id : null);
+
       const insertResult = await db.insert(approvalRequestTable).values({
         requester_admin_id: admin.id,
         approver_admin_id: approverAdminId,
+        backup_admin_id: backupAdminId,
         target_table: targetTable,
         target_id: targetId,
         target_name: targetName ?? null,
@@ -112,7 +120,7 @@ export function requireApproval(targetTable: string) {
         comment: comment ?? null,
       }).execute();
 
-      const createdId = Number((insertResult as any)?.insertId);
+      const createdId = Number((insertResult as any)?.[0]?.insertId ?? (insertResult as any)?.insertId);
       let created = null as any;
       if (Number.isFinite(createdId) && createdId > 0) {
         created = await db.query.approvalRequest.findFirst({ where: eq(approvalRequestTable.id, createdId) });
@@ -123,8 +131,10 @@ export function requireApproval(targetTable: string) {
             _eq(t.approver_admin_id, approverAdminId),
             _eq(t.target_table, targetTable),
             _eq(t.target_id, targetId),
+            _eq(t.action, method === 'DELETE' ? 'delete' : 'update'),
             _eq(t.status, 'pending')
           ),
+          orderBy: (t, { desc }) => desc(t.created_at),
         });
       }
 
