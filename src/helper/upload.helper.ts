@@ -61,8 +61,6 @@ export function createUploader(options: UploadOptions) {
             try { fs.unlinkSync(path.join(uploadPath, fileName)); } catch {}
           }
           reqAny[cleanKey] = true;
-          setTimeout(() => cb(null, uploadPath), 50);
-          return;
         }
       } catch {}
 

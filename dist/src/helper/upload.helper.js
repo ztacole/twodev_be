@@ -47,8 +47,6 @@ function createUploader(options) {
                         catch (_a) { }
                     }
                     reqAny[cleanKey] = true;
-                    setTimeout(() => cb(null, uploadPath), 50);
-                    return;
                 }
             }
             catch (_b) { }

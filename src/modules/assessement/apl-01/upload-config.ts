@@ -21,8 +21,6 @@ const storage = multer.diskStorage({
           try { fs.unlinkSync(filePath); } catch {}
         }
         reqAny.__apl01UploadCleaned = true;
-        setTimeout(() => cb(null, uploadPath), 50);
-        return;
       }
     } catch {}
 

@@ -29,8 +29,6 @@ const storage = multer_1.default.diskStorage({
                     catch (_g) { }
                 }
                 reqAny.__apl01UploadCleaned = true;
-                setTimeout(() => cb(null, uploadPath), 50);
-                return;
             }
         }
         catch (_h) { }
