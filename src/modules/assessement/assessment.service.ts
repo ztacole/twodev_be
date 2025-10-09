@@ -1128,10 +1128,14 @@ export class AssessmentService {
                         }
                         break;
                     case 'Penilaian':
-                        if (result.score !== -1) {
-                            status = "Tuntas";
-                        } else {
+                        header = await db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, result.id) });
+                        if (header && !header.approved_assessor) {
+                            status = "Butuh Persetujuan";
+                        }
+                        else if (header && header.approved_assessor && result.score === -1) {
                             status = "Belum Tuntas";
+                        } else {
+                            status = "Tuntas";
                         }
                         break;
                     // case 'IA-07':

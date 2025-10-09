@@ -1049,11 +1049,15 @@ class AssessmentService {
                             }
                             break;
                         case 'Penilaian':
-                            if (result.score !== -1) {
-                                status = "Tuntas";
+                            header = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result.id) });
+                            if (header && !header.approved_assessor) {
+                                status = "Butuh Persetujuan";
+                            }
+                            else if (header && header.approved_assessor && result.score === -1) {
+                                status = "Belum Tuntas";
                             }
                             else {
-                                status = "Belum Tuntas";
+                                status = "Tuntas";
                             }
                             break;
                         // case 'IA-07':
