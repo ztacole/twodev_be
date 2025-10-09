@@ -35,21 +35,34 @@ function createUploader(options) {
             const uploadPath = path_1.default.join(__dirname, options.basePath, folderName);
             const reqAny = req;
             const cleanKey = `__uploadCleaned_${options.basePath}`;
+            const cleanPromiseKey = `__uploadCleanPromise_${options.basePath}`;
             try {
                 if (!fs_1.default.existsSync(uploadPath)) {
                     fs_1.default.mkdirSync(uploadPath, { recursive: true });
                 }
-                else if (options.cleanBeforeUpload && !reqAny[cleanKey]) {
-                    for (const fileName of fs_1.default.readdirSync(uploadPath)) {
-                        try {
-                            fs_1.default.unlinkSync(path_1.default.join(uploadPath, fileName));
-                        }
-                        catch (_a) { }
-                    }
-                    reqAny[cleanKey] = true;
-                }
             }
-            catch (_b) { }
+            catch (_a) { }
+            if (options.cleanBeforeUpload) {
+                if (!reqAny[cleanPromiseKey]) {
+                    reqAny[cleanPromiseKey] = new Promise((resolve) => {
+                        try {
+                            if (!reqAny[cleanKey] && fs_1.default.existsSync(uploadPath)) {
+                                for (const fileName of fs_1.default.readdirSync(uploadPath)) {
+                                    try {
+                                        fs_1.default.unlinkSync(path_1.default.join(uploadPath, fileName));
+                                    }
+                                    catch (_a) { }
+                                }
+                                reqAny[cleanKey] = true;
+                            }
+                        }
+                        catch (_b) { }
+                        setTimeout(() => resolve(), 150);
+                    });
+                }
+                reqAny[cleanPromiseKey].then(() => cb(null, uploadPath));
+                return;
+            }
             cb(null, uploadPath);
         },
         filename: (req, file, cb) => {

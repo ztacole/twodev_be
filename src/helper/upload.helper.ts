@@ -52,17 +52,31 @@ export function createUploader(options: UploadOptions) {
 
       const reqAny: any = req as any;
       const cleanKey = `__uploadCleaned_${options.basePath}`;
+      const cleanPromiseKey = `__uploadCleanPromise_${options.basePath}`;
 
       try {
         if (!fs.existsSync(uploadPath)) {
           fs.mkdirSync(uploadPath, { recursive: true });          
-        } else if (options.cleanBeforeUpload && !reqAny[cleanKey]) {
-          for (const fileName of fs.readdirSync(uploadPath)) {
-            try { fs.unlinkSync(path.join(uploadPath, fileName)); } catch {}
-          }
-          reqAny[cleanKey] = true;
         }
       } catch {}
+      
+      if (options.cleanBeforeUpload) {
+        if (!reqAny[cleanPromiseKey]) {
+          reqAny[cleanPromiseKey] = new Promise<void>((resolve) => {
+            try {
+              if (!reqAny[cleanKey] && fs.existsSync(uploadPath)) {
+                for (const fileName of fs.readdirSync(uploadPath)) {
+                  try { fs.unlinkSync(path.join(uploadPath, fileName)); } catch {}
+                }
+                reqAny[cleanKey] = true;
+              }
+            } catch {}
+            setTimeout(() => resolve(), 150);
+          });
+        }
+        (reqAny[cleanPromiseKey] as Promise<void>).then(() => cb(null, uploadPath));
+        return;
+      }
 
       cb(null, uploadPath);
     },
