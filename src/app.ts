@@ -32,9 +32,12 @@ import roleRoutes from './modules/role/role.routes';
 import publicRoutes from './modules/public/public.routes';
 
 app.use((req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
   next();
 });
 
@@ -46,7 +49,20 @@ app.use('/twodev/api/schedules', scheduleRoutes);
 // Uploads (generic) API
 app.use('/twodev/api/uploads', uploadsRoutes);
 // Serve uploaded files (secured by auth for now)
-app.use('/twodev/uploads', express.static(path.join(__dirname, '../public/uploads')));
+app.use('/twodev/uploads', express.static(path.join(__dirname, '../public/uploads'), {
+    etag: false,
+    lastModified: false,
+    cacheControl: false,
+    setHeaders: (res) => {
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+    },
+  })
+);
 
 // Modules
 app.use('/twodev/api/roles', roleRoutes);
