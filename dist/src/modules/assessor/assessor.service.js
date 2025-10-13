@@ -273,7 +273,7 @@ class AssessorService {
     static createOrUpdateAssessorDetail(params) {
         return __awaiter(this, void 0, void 0, function* () {
             const { assessorId, bodyData, files } = params;
-            const BASE_URL = "https://asessment24.site";
+            const BASE_URL = "https://lspsmkn24jakarta.com";
             const UPLOAD_DIR = path_1.default.join(__dirname, `../../../../public/uploads/assessor/assessor-${assessorId}`);
             const requiredFields = ['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'];
             const fileData = {};

@@ -149,7 +149,7 @@ class APL1Service {
             const existingAssessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, assessor_id) });
             if (!existingAssessor)
                 throw new error_1.NotFoundError('Assessor');
-            const BASE_URL = "https://asessment24.site/twodev";
+            const BASE_URL = "https://lspsmkn24jakarta.com/twodev";
             const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${assessment_id}`);
             const canonicalFields = [
                 'school_report_card',
