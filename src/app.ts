@@ -31,15 +31,15 @@ import publicRoutes from './modules/public/public.routes';
 
 // Public routes
 app.use('/twodev/api/public', publicRoutes);
+app.use('/twodev/api/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Modules
 app.use('/twodev/api/assessments', assessmentRoutes);
 app.use('/twodev/api/assessments', verificationRoutes);
 app.use('/twodev/api/schedules', scheduleRoutes);
-app.use('/twodev/api/uploads', uploadsRoutes);
+// app.use('/twodev/api/uploads', uploadsRoutes);
 
 // 📁 Serve uploads (tanpa cache)
-app.use('/twodev/api/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 app.use('/twodev/api/roles', roleRoutes);
 app.use('/twodev/api/users', userRoutes);
