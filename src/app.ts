@@ -30,6 +30,14 @@ import roleRoutes from './modules/role/role.routes';
 
 // Public
 import publicRoutes from './modules/public/public.routes';
+
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 app.use('/twodev/api/public', publicRoutes);
 
 app.use('/twodev/api/assessments', assessmentRoutes);

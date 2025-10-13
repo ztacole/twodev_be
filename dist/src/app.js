@@ -29,6 +29,12 @@ const asseesee_routes_1 = __importDefault(require("./modules/assessee/asseesee.r
 const role_routes_1 = __importDefault(require("./modules/role/role.routes"));
 // Public
 const public_routes_1 = __importDefault(require("./modules/public/public.routes"));
+app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+});
 app.use('/twodev/api/public', public_routes_1.default);
 app.use('/twodev/api/assessments', assessment_routes_1.default);
 app.use('/twodev/api/assessments', verification_routes_1.default);
