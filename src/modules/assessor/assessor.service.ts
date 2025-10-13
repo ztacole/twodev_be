@@ -299,7 +299,7 @@ export class AssessorService {
             // Build fileData from uploaded files (moved to final dir) and/or bodyData overrides
             for (const file of fileArray) {
                 if (requiredFields.includes(file.fieldname)) {
-                    fileData[file.fieldname] = `${BASE_URL}/twodev/uploads/assessor/assessor-${assessorId}/${file.filename}`;
+                    fileData[file.fieldname] = `${BASE_URL}/twodev/api/uploads/assessor/assessor-${assessorId}/${file.filename}`;
                 }
             }
 

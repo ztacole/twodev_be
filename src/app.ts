@@ -56,7 +56,7 @@ app.use('/twodev/api/uploads', uploadsRoutes);
 
 // 📁 Serve uploads (tanpa cache)
 app.use(
-  '/twodev/uploads',
+  '/twodev/api/uploads',
   express.static(path.join(__dirname, '../public/uploads'), {
     etag: false,
     lastModified: false,

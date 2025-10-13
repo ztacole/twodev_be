@@ -50,7 +50,7 @@ app.use('/twodev/api/assessments', verification_routes_1.default);
 app.use('/twodev/api/schedules', schedule_routes_1.default);
 app.use('/twodev/api/uploads', uploads_routes_1.default);
 // 📁 Serve uploads (tanpa cache)
-app.use('/twodev/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads'), {
+app.use('/twodev/api/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads'), {
     etag: false,
     lastModified: false,
     cacheControl: false,
