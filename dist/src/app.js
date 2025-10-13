@@ -12,19 +12,6 @@ dotenv.config();
 const app = (0, express_1.default)();
 app.use(cors());
 app.use(express_1.default.json());
-// 🚫 Middleware global anti-cache (sebelum semua route)
-app.use((req, res, next) => {
-    res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store',
-    });
-    // Hindari ETag dan Last-Modified dari middleware lain
-    res.removeHeader('ETag');
-    res.removeHeader('Last-Modified');
-    next();
-});
 // ROUTES
 const user_routes_1 = __importDefault(require("./modules/user/user.routes"));
 const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
@@ -50,19 +37,7 @@ app.use('/twodev/api/assessments', verification_routes_1.default);
 app.use('/twodev/api/schedules', schedule_routes_1.default);
 app.use('/twodev/api/uploads', uploads_routes_1.default);
 // 📁 Serve uploads (tanpa cache)
-app.use('/twodev/api/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads'), {
-    etag: false,
-    lastModified: false,
-    cacheControl: false,
-    setHeaders: (res) => {
-        res.set({
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'Surrogate-Control': 'no-store',
-        });
-    },
-}));
+app.use('/twodev/api/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads')));
 app.use('/twodev/api/roles', role_routes_1.default);
 app.use('/twodev/api/users', user_routes_1.default);
 app.use('/twodev/api/auth', auth_routes_1.default);
