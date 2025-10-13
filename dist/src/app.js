@@ -12,6 +12,20 @@ dotenv.config();
 const app = (0, express_1.default)();
 app.use(cors());
 app.use(express_1.default.json());
+// 🚫 Middleware global anti-cache (sebelum semua route)
+app.use((req, res, next) => {
+    res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store',
+    });
+    // Hindari ETag dan Last-Modified dari middleware lain
+    res.removeHeader('ETag');
+    res.removeHeader('Last-Modified');
+    next();
+});
+// ROUTES
 const user_routes_1 = __importDefault(require("./modules/user/user.routes"));
 const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
 const approval_routes_1 = __importDefault(require("./modules/admin/approval/approval.routes"));
@@ -27,24 +41,15 @@ const assessor_routes_1 = __importDefault(require("./modules/assessor/assessor.r
 const assessor_detail_routes_1 = __importDefault(require("./modules/assessor-detail/assessor-detail.routes"));
 const asseesee_routes_1 = __importDefault(require("./modules/assessee/asseesee.routes"));
 const role_routes_1 = __importDefault(require("./modules/role/role.routes"));
-// Public
 const public_routes_1 = __importDefault(require("./modules/public/public.routes"));
-app.use((req, res, next) => {
-    res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store'
-    });
-    next();
-});
+// Public routes
 app.use('/twodev/api/public', public_routes_1.default);
+// Modules
 app.use('/twodev/api/assessments', assessment_routes_1.default);
 app.use('/twodev/api/assessments', verification_routes_1.default);
 app.use('/twodev/api/schedules', schedule_routes_1.default);
-// Uploads (generic) API
 app.use('/twodev/api/uploads', uploads_routes_1.default);
-// Serve uploaded files (secured by auth for now)
+// 📁 Serve uploads (tanpa cache)
 app.use('/twodev/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads'), {
     etag: false,
     lastModified: false,
@@ -54,11 +59,10 @@ app.use('/twodev/uploads', express_1.default.static(path_1.default.join(__dirnam
             'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
             'Pragma': 'no-cache',
             'Expires': '0',
-            'Surrogate-Control': 'no-store'
+            'Surrogate-Control': 'no-store',
         });
     },
 }));
-// Modules
 app.use('/twodev/api/roles', role_routes_1.default);
 app.use('/twodev/api/users', user_routes_1.default);
 app.use('/twodev/api/auth', auth_routes_1.default);
@@ -71,6 +75,6 @@ app.use('/twodev/api/assessor', assessor_routes_1.default);
 app.use('/twodev/api/assessor-detail', assessor_detail_routes_1.default);
 app.use('/twodev/api/assessee', asseesee_routes_1.default);
 app.use('/twodev/api/user', user_routes_1.default);
-// error handler middleware (DON'T MOVE IT)
+// Error handler
 app.use(error_middleware_1.errorHandler);
 exports.default = app;
