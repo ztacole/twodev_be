@@ -86,6 +86,7 @@ class DashboardAssessorService {
                     result_id: result.id,
                     assessment_id: result.assessment_id,
                     assessee_id: result.assessee_id,
+                    score: result.score,
                     assessee_name: user === null || user === void 0 ? void 0 : user.full_name,
                     status: yield getHeaderStatus(type),
                 };

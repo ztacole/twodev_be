@@ -74,6 +74,7 @@ export class DashboardAssessorService {
                 result_id: result.id,
                 assessment_id: result.assessment_id,
                 assessee_id: result.assessee_id,
+                score: result.score,
                 assessee_name: user?.full_name,
                 status: await getHeaderStatus(type),
             };
