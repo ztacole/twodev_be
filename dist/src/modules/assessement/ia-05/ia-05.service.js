@@ -15,12 +15,15 @@ const drizzle_1 = require("../../../config/drizzle");
 const schema_1 = require("../../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 class IA05Service {
-    static getQuestions(assessment_id) {
+    static getQuestions(schedule_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
+            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, schedule_id) });
+            if (!schedule)
+                throw new error_1.NotFoundError('Schedule');
+            const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id) });
             if (!existingAssessment)
                 throw new error_1.NotFoundError('Assessment');
-            const questions = yield drizzle_1.db.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, assessment_id)).orderBy(schema_1.ia05Question.order);
+            const questions = yield drizzle_1.db.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, schedule.assessment_id)).orderBy(schema_1.ia05Question.order);
             return Promise.all(questions.map((q) => __awaiter(this, void 0, void 0, function* () {
                 const options = yield drizzle_1.db.select().from(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, q.id));
                 return {
@@ -32,12 +35,15 @@ class IA05Service {
             })));
         });
     }
-    static getAnswerKeys(assessment_id) {
+    static getAnswerKeys(schedule_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
+            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, schedule_id) });
+            if (!schedule)
+                throw new error_1.NotFoundError('Schedule');
+            const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id) });
             if (!existingAssessment)
                 throw new error_1.NotFoundError('Assessment');
-            const questions = yield drizzle_1.db.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, assessment_id)).orderBy(schema_1.ia05Question.order);
+            const questions = yield drizzle_1.db.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, schedule.assessment_id)).orderBy(schema_1.ia05Question.order);
             return Promise.all(questions.map((q) => __awaiter(this, void 0, void 0, function* () {
                 const answer = yield drizzle_1.db.query.questionOption.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, q.id), (0, drizzle_orm_1.eq)(schema_1.questionOption.is_answer, true)) });
                 return {

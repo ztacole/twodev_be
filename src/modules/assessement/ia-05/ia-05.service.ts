@@ -18,11 +18,14 @@ import {
 import { and, eq, inArray } from "drizzle-orm";
 
 export class IA05Service {
-  static async getQuestions(assessment_id: number): Promise<IA05QuestionResponse[]> {
-    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+  static async getQuestions(schedule_id: number): Promise<IA05QuestionResponse[]> {
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, schedule_id) });
+    if (!schedule) throw new NotFoundError('Schedule');
+
+    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
     if (!existingAssessment) throw new NotFoundError('Assessment');
 
-    const questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, assessment_id)).orderBy(ia05QuestionTable.order);
+    const questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, schedule.assessment_id)).orderBy(ia05QuestionTable.order);
     return Promise.all(questions.map(async (q) => {
       const options = await db.select().from(questionOptionTable).where(eq(questionOptionTable.question_id, q.id));
       return {
@@ -34,11 +37,14 @@ export class IA05Service {
     }));
   }
 
-  static async getAnswerKeys(assessment_id: number): Promise<IA05QuestionsAnswerResponse[]> {
-    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+  static async getAnswerKeys(schedule_id: number): Promise<IA05QuestionsAnswerResponse[]> {
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, schedule_id) });
+    if (!schedule) throw new NotFoundError('Schedule');
+
+    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
     if (!existingAssessment) throw new NotFoundError('Assessment');
 
-    const questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, assessment_id)).orderBy(ia05QuestionTable.order);
+    const questions = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, schedule.assessment_id)).orderBy(ia05QuestionTable.order);
     return Promise.all(questions.map(async (q) => {
       const answer = await db.query.questionOption.findFirst({ where: and(eq(questionOptionTable.question_id, q.id), eq(questionOptionTable.is_answer, true)) });
       return {

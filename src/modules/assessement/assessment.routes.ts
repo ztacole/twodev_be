@@ -58,10 +58,8 @@ router.get('/', AssessmentController.getAssessments);
 router.put('/:id', authenticateToken, adminMiddleware, AssessmentController.updateAssessment);
 router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('assessment'), AssessmentController.deleteAssessment);
-//
 router.get('/result/evaluation/:scheduleId/export', authenticateToken, adminMiddleware, AssessmentController.generateUkkEvaluationPdf);
 router.put('/result/input-score/:resultId', authenticateToken, assessorMiddleware, AssessmentController.inputScore);
-//
 router.get('/result/:scheduleId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
 
 // RESULT PDF
@@ -69,12 +67,10 @@ router.get('/result/:scheduleId/:assessorId/:assesseeId', AssessmentController.g
 //-- Put it at the bottom of the routes --//
 
 router.get('/results/status/admin', authenticateToken, adminMiddleware, AssessmentController.getAssessmentResultsForAdmin);
-//
 router.get('/results/status/admin/assessees/:scheduleId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssesseesByScheduleAndAssessor);
 
-//
-router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', authenticateToken, assesseeMiddleware, AssessmentController.getNavigationAssessee);
-router.get('/navigation/assessor/:assessmentId', authenticateToken, assessorMiddleware, AssessmentController.getNavigationAssessor);
+router.get('/navigation/assessee/:scheduleId/:assessorId/:assesseeId', authenticateToken, assesseeMiddleware, AssessmentController.getNavigationAssessee);
+router.get('/navigation/assessor/:scheduleId', authenticateToken, assessorMiddleware, AssessmentController.getNavigationAssessor);
 router.get('/navigation/admin/:resultId', authenticateToken, adminMiddleware, AssessmentController.getNavigationAdmin);
 
 router.get('/assessment-recapt/:scheduleDetailId', authenticateToken, assessorMiddleware, AssessmentController.getAssessmentRecapt);
@@ -144,8 +140,8 @@ router.put('/ia-03/result/assessor/:resultId/approve', authenticateToken, assess
 router.put('/ia-03/result/assessee/:resultId/approve', authenticateToken, assesseeMiddleware, IA03Controller.approvedByAssessee);
 router.get('/ia-03/result/:resultId', IA03Controller.getResultDetails);
 
-router.get('/ia-05/questions/:assessmentId', IA05Controller.getQuestions);
-router.get('/ia-05/result/answers/keys/:assessmentId', IA05Controller.getAnswerKeys);
+router.get('/ia-05/questions/:scheduleId', IA05Controller.getQuestions);
+router.get('/ia-05/result/answers/keys/:scheduleId', IA05Controller.getAnswerKeys);
 router.get('/ia-05/result/answers/:resultId', IA05Controller.getAssesseeAnswers);
 router.post('/ia-05/result/assessee/send', authenticateToken, assesseeMiddleware, IA05Controller.sendAssesseeResult);
 router.post('/ia-05/result/assessor/send', authenticateToken, assessorMiddleware, IA05Controller.sendAssessorResult);
@@ -163,7 +159,7 @@ router.put('/ak-01/result/assessee/:resultId/approve', authenticateToken, assess
 router.get('/ak-01/result/:resultId', AK01Controller.getAK01ByResultId);
 
 router.post('/ak-02/result/send', authenticateToken, assessorMiddleware, AK02Controller.sendResult);
-router.get('/ak-02/units/:assessmentId', AK02Controller.getUnits);
+router.get('/ak-02/units/:resultId', AK02Controller.getUnits);
 router.get('/ak-02/result/:resultId', AK02Controller.getAK02ByResultId);
 router.put('/ak-02/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, AK02Controller.approvedByAssessor);
 router.put('/ak-02/result/assessee/:resultId/approve', authenticateToken, assesseeMiddleware, AK02Controller.approvedByAssessee);

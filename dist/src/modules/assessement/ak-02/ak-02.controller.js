@@ -42,15 +42,15 @@ AK02Controller.sendResult = (0, async_handler_1.asyncHandler)((req, res) => __aw
     }
 }));
 AK02Controller.getUnits = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const assessmentId = parseInt(req.params.assessmentId);
-    if (!assessmentId) {
+    const resultId = parseInt(req.params.resultId);
+    if (!resultId) {
         return res.status(400).json({
             success: false,
-            message: 'Assessment ID diperlukan'
+            message: 'Result ID diperlukan'
         });
     }
     try {
-        const result = yield ak_02_service_1.AK02Service.getUnits(assessmentId);
+        const result = yield ak_02_service_1.AK02Service.getUnits(resultId);
         res.status(200).json({
             success: true,
             message: 'Unit berhasil diambil',

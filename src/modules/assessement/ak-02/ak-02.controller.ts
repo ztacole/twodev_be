@@ -34,17 +34,17 @@ export class AK02Controller {
   });
 
   static getUnits = asyncHandler(async (req: Request, res: Response) => {
-    const assessmentId = parseInt(req.params.assessmentId);
+    const resultId = parseInt(req.params.resultId);
 
-    if(!assessmentId) {
+    if(!resultId) {
       return res.status(400).json({
         success: false,
-        message: 'Assessment ID diperlukan'
+        message: 'Result ID diperlukan'
       });
     }
 
     try {
-      const result = await AK02Service.getUnits(assessmentId);
+      const result = await AK02Service.getUnits(resultId);
       res.status(200).json({
         success: true,
         message: 'Unit berhasil diambil',

@@ -18,11 +18,11 @@ class IA05Controller {
 exports.IA05Controller = IA05Controller;
 _a = IA05Controller;
 IA05Controller.getQuestions = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const assessmentId = Number(req.params.assessmentId);
-    if (!assessmentId) {
-        return res.status(400).json({ success: false, message: 'Assessment ID is required' });
+    const scheduleId = Number(req.params.scheduleId);
+    if (!scheduleId) {
+        return res.status(400).json({ success: false, message: 'Schedule ID is required' });
     }
-    const questions = yield ia_05_service_1.IA05Service.getQuestions(assessmentId);
+    const questions = yield ia_05_service_1.IA05Service.getQuestions(scheduleId);
     res.status(200).json({
         success: true,
         message: 'Pertanyaan berhasil diambil',
@@ -30,11 +30,11 @@ IA05Controller.getQuestions = (0, async_handler_1.asyncHandler)((req, res) => __
     });
 }));
 IA05Controller.getAnswerKeys = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const assessmentId = Number(req.params.assessmentId);
-    if (!assessmentId) {
-        return res.status(400).json({ success: false, message: 'Assessment ID is required' });
+    const scheduleId = Number(req.params.scheduleId);
+    if (!scheduleId) {
+        return res.status(400).json({ success: false, message: 'Schedule ID is required' });
     }
-    const answers = yield ia_05_service_1.IA05Service.getAnswerKeys(assessmentId);
+    const answers = yield ia_05_service_1.IA05Service.getAnswerKeys(scheduleId);
     res.status(200).json({
         success: true,
         message: 'Kunci Jawaban berhasil diambil',

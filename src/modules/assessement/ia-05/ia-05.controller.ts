@@ -5,11 +5,11 @@ import { SendAssesseeResultRequest, SendAssessorResultRequest } from "./ia-05.ty
 
 export class IA05Controller {
     static getQuestions = asyncHandler(async (req: Request, res: Response) => {
-        const assessmentId = Number(req.params.assessmentId);
-        if (!assessmentId) {
-            return res.status(400).json({ success: false, message: 'Assessment ID is required' });
+        const scheduleId = Number(req.params.scheduleId);
+        if (!scheduleId) {
+            return res.status(400).json({ success: false, message: 'Schedule ID is required' });
         }
-        const questions = await IA05Service.getQuestions(assessmentId);
+        const questions = await IA05Service.getQuestions(scheduleId);
         
         res.status(200).json({
             success: true,
@@ -19,11 +19,11 @@ export class IA05Controller {
     });
 
     static getAnswerKeys = asyncHandler(async (req: Request, res: Response) => {
-        const assessmentId = Number(req.params.assessmentId);
-        if (!assessmentId) {
-            return res.status(400).json({ success: false, message: 'Assessment ID is required' });
+        const scheduleId = Number(req.params.scheduleId);
+        if (!scheduleId) {
+            return res.status(400).json({ success: false, message: 'Schedule ID is required' });
         }
-        const answers = await IA05Service.getAnswerKeys(assessmentId);
+        const answers = await IA05Service.getAnswerKeys(scheduleId);
         
         res.status(200).json({
             success: true,
