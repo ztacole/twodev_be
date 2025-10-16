@@ -23,10 +23,7 @@ const getPendingVerifications = (schedule_detail_id) => __awaiter(void 0, void 0
             const detail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.id, filterId) });
             if (!detail)
                 return null;
-            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, detail.schedule_id) });
-            if (!schedule)
-                return null;
-            if (!result || result.assessment_id !== schedule.assessment_id || result.assessor_id !== detail.assessor_id)
+            if (!result || result.schedule_id !== detail.schedule_id || result.assessor_id !== detail.assessor_id)
                 return null;
         }
         const assessee = result ? yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, result.assessee_id) }) : null;
@@ -46,10 +43,7 @@ const getApprovedVerifications = (schedule_detail_id) => __awaiter(void 0, void 
             const detail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.id, filterId) });
             if (!detail)
                 return null;
-            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, detail.schedule_id) });
-            if (!schedule)
-                return null;
-            if (!result || result.assessment_id !== schedule.assessment_id || result.assessor_id !== detail.assessor_id)
+            if (!result || result.schedule_id !== detail.schedule_id || result.assessor_id !== detail.assessor_id)
                 return null;
         }
         const assessee = result ? yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, result.assessee_id) }) : null;
@@ -74,28 +68,34 @@ const getVerificationDetail = (result_id) => __awaiter(void 0, void 0, void 0, f
     return Object.assign(Object.assign({}, result), { assessee: assessee && assesseeUser ? Object.assign(Object.assign({}, assessee), { user: assesseeUser, jobs: [] }) : null, assessor: assessor && assessorUser ? Object.assign(Object.assign({}, assessor), { user: assessorUser }) : null, docs });
 });
 exports.getVerificationDetail = getVerificationDetail;
-const approveVerification = (result_id) => __awaiter(void 0, void 0, void 0, function* () {
+const approveVerification = (result_id, user_id) => __awaiter(void 0, void 0, void 0, function* () {
     const existing = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
     if (!existing)
         throw new error_1.NotFoundError('Result');
+    const admin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, user_id) });
+    if (!admin)
+        throw new error_1.NotFoundError('Admin');
     yield drizzle_1.db.update(schema_1.result).set({ is_competent: true }).where((0, drizzle_orm_1.eq)(schema_1.result.id, result_id));
-    yield drizzle_1.db.update(schema_1.resultDoc).set({ approved: true }).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, result_id));
+    yield drizzle_1.db.update(schema_1.resultDoc).set({ approved: true, admin_id: admin.id }).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, result_id));
     return { success: true };
 });
 exports.approveVerification = approveVerification;
-const approveVerificationByScheduleDetail = (schedule_detail_id) => __awaiter(void 0, void 0, void 0, function* () {
+const approveVerificationByScheduleDetail = (schedule_detail_id, user_id) => __awaiter(void 0, void 0, void 0, function* () {
     const detail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.id, schedule_detail_id) });
     if (!detail)
         throw new error_1.NotFoundError('Schedule Detail');
     const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, detail.schedule_id) });
     if (!schedule)
         throw new error_1.NotFoundError('Assessment Schedule');
+    const admin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, user_id) });
+    if (!admin)
+        throw new error_1.NotFoundError('Admin');
     const results = yield drizzle_1.db.select().from(schema_1.result)
-        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, schedule.assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, detail.assessor_id)));
+        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.schedule_id, schedule.id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, detail.assessor_id)));
     const updated = [];
     for (const r of results) {
         yield drizzle_1.db.update(schema_1.result).set({ is_competent: true }).where((0, drizzle_orm_1.eq)(schema_1.result.id, r.id));
-        yield drizzle_1.db.update(schema_1.resultDoc).set({ approved: true }).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, r.id));
+        yield drizzle_1.db.update(schema_1.resultDoc).set({ approved: true, admin_id: admin.id }).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, r.id));
         updated.push(r.id);
     }
     return { success: true, updated_result_ids: updated };
@@ -109,7 +109,7 @@ const getVerificationsByScheduleDetail = (schedule_detail_id) => __awaiter(void 
     if (!schedule)
         throw new error_1.NotFoundError('Assessment Schedule');
     const results = yield drizzle_1.db.select().from(schema_1.result)
-        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, schedule.assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, detail.assessor_id)));
+        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.schedule_id, schedule.id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, detail.assessor_id)));
     return Promise.all(results.map((r) => __awaiter(void 0, void 0, void 0, function* () {
         const docs = yield drizzle_1.db.select().from(schema_1.resultDoc).where((0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, r.id));
         const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, r.assessee_id) });

@@ -1,14 +1,16 @@
 import { db } from '../../../config/drizzle';
 import { DashboardAssessorResponse } from './assessor.type';
 import { NotFoundError, ValidationError } from '../../../common/error';
-import { result as resultTable, user as userTable, assessee as assesseeTable, resultApl02Header as apl02HeaderTable, resultIa02Header as ia02HeaderTable, resultIa05Header as ia05HeaderTable, resultAk01Header as ak01HeaderTable, resultDoc as resultDocTable, resultIa03Header as resultIa03HeaderTable, resultIa01Header as resultIa01HeaderTable, resultIa07Header as resultIa07HeaderTable, resultAk02Header as resultAk02HeaderTable, resultAk03Header, resultAk04, resultAk05, ucApl02, elementApl02, resultApl02, resultIa05 } from '../../../../drizzle/schema';
+import { result as resultTable, user as userTable, assessee as assesseeTable, resultApl02Header as apl02HeaderTable, resultIa02Header as ia02HeaderTable, resultIa05Header as ia05HeaderTable, resultAk01Header as ak01HeaderTable, resultDoc as resultDocTable, resultIa03Header as resultIa03HeaderTable, resultIa01Header as resultIa01HeaderTable, resultIa07Header as resultIa07HeaderTable, resultAk02Header as resultAk02HeaderTable, resultAk03Header, resultAk04, resultAk05, ucApl02, elementApl02, resultApl02, resultIa05, assessmentSchedule } from '../../../../drizzle/schema';
 import { and, eq } from 'drizzle-orm';
 
 export class DashboardAssessorService {
-    static async getAssesseeData(assessor_id: number, assessment_id: number, type: string): Promise<any[]> {
-        const results = await db.select().from(resultTable).where(and(eq(resultTable.assessor_id, assessor_id), eq(resultTable.assessment_id, assessment_id)));
+    static async getAssesseeData(assessor_id: number, schedule_id: number, type: string): Promise<any[]> {
+        const results = await db.select().from(resultTable).where(and(eq(resultTable.assessor_id, assessor_id), eq(resultTable.schedule_id, schedule_id)));
 
         return Promise.all(results.map(async (result) => {
+            const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, result.schedule_id) });
+            if (!schedule) throw new NotFoundError('Assessment Schedule');
             const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
             const user = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
             const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, result.id) });
@@ -28,7 +30,7 @@ export class DashboardAssessorService {
                 switch (type) {
                     case "apl-02":
                         if (!apl02) throw new NotFoundError('Result APL02 Header');
-                        const unitCompetencies = await db.select().from(ucApl02).where(eq(ucApl02.assessment_id, result.assessment_id));
+                        const unitCompetencies = await db.select().from(ucApl02).where(eq(ucApl02.assessment_id, schedule.assessment_id));
                         let finishedUcApl02Count = 0;
                         for (const uc of unitCompetencies) {
                             const elements = await db.select().from(elementApl02).where(eq(elementApl02.uc_id, uc.id));
@@ -72,8 +74,8 @@ export class DashboardAssessorService {
             };
             return {
                 result_id: result.id,
-                assessment_id: result.assessment_id,
                 assessee_id: result.assessee_id,
+                schedule_id: result.schedule_id,
                 score: result.score,
                 assessee_name: user?.full_name,
                 status: await getHeaderStatus(type),

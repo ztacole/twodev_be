@@ -76,10 +76,10 @@ export class AssessmentController {
     });
 
     static getAssessmentResultDetails = asyncHandler(async (req: Request, res: Response) => {
-        const assessmentId = Number(req.params.assessmentId);
+        const scheduleId = Number(req.params.scheduleId);
         const assessorId = Number(req.params.assessorId);
         let assesseeId = Number(req.params.assesseeId);
-        if (!assessmentId || !assessorId) {
+        if (!scheduleId || !assessorId) {
             return res.status(400).json({
                 success: false,
                 message: "Assessment ID, Assessor ID, dan Assessee ID harus diisi",
@@ -87,7 +87,7 @@ export class AssessmentController {
         }
         if (!assesseeId) {
             const user = req.user as JwtPayload;
-            assesseeId = await AssessmentService.findAssesseeByUserId(assessmentId, assessorId, user.id);
+            assesseeId = await AssessmentService.findAssesseeByUserId(scheduleId, assessorId, user.id);
 
             if (assesseeId === 0) {
                 return res.status(400).json({
@@ -97,7 +97,7 @@ export class AssessmentController {
             }
         }
 
-        const result = await AssessmentService.getAssessmentResultDetails(assessmentId, assessorId, assesseeId);
+        const result = await AssessmentService.getAssessmentResultDetails(scheduleId, assessorId, assesseeId);
         res.status(200).json({
             success: true,
             message: "Detail hasil assessment berhasil diambil",
@@ -106,17 +106,17 @@ export class AssessmentController {
     });
 
     static getNavigationAssessee = asyncHandler(async (req: Request, res: Response) => {
-        const assessmentId = Number(req.params.assessmentId);
+        const scheduleId = Number(req.params.scheduleId);
         const assessorId = Number(req.params.assessorId);
         const assesseeId = Number(req.params.assesseeId);
-        if (!assessmentId || !assessorId || !assesseeId) {
+        if (!scheduleId || !assessorId || !assesseeId) {
             return res.status(400).json({
                 success: false,
-                message: "Assessment ID, Assessor ID, dan Assessee ID harus diisi",
+                message: "Schedule ID, Assessor ID, dan Assessee ID harus diisi",
             });
         }
 
-        const result = await AssessmentService.assesseeNavigation(assessmentId, assessorId, assesseeId);
+        const result = await AssessmentService.assesseeNavigation(scheduleId, assessorId, assesseeId);
         res.status(200).json({
             success: true,
             message: "Navigasi berhasil diambil",
@@ -128,15 +128,15 @@ export class AssessmentController {
         const user = req.user as JwtPayload;
         const assessor = await AssessorService.getAssessorByUserId(user.id);
 
-        const assessmentId = Number(req.params.assessmentId);
-        if (!assessmentId) {
+        const scheduleId = Number(req.params.scheduleId);
+        if (!scheduleId) {
             return res.status(400).json({
                 success: false,
                 message: "Assessment ID harus diisi",
             });
         }
 
-        const result = await AssessmentService.assessorNavigation(assessmentId, assessor.id);
+        const result = await AssessmentService.assessorNavigation(scheduleId, assessor.id);
         res.status(200).json({
             success: true,
             message: "Navigasi berhasil diambil",
@@ -221,16 +221,16 @@ export class AssessmentController {
         });
     });
 
-    static getAssesseesByAssessmentAndAssessor = asyncHandler(async (req: Request, res: Response) => {
-        const assessmentId = Number(req.params.assessmentId);
+    static getAssesseesByScheduleAndAssessor = asyncHandler(async (req: Request, res: Response) => {
+        const scheduleId = Number(req.params.scheduleId);
         const assessorId = Number(req.params.assessorId);
-        if (!assessmentId || !assessorId) {
+        if (!scheduleId || !assessorId) {
             return res.status(400).json({
                 success: false,
-                message: "Assessment ID dan Assessor ID harus diisi",
+                message: "Schedule ID dan Assessor ID harus diisi",
             });
         }
-        const result = await AssessmentService.getAssesseesByAssessmentAndAssessor(assessmentId, assessorId);
+        const result = await AssessmentService.getAssesseesByScheduleAndAssessor(scheduleId, assessorId);
         res.status(200).json({
             success: true,
             message: "Navigasi berhasil diambil",
@@ -344,15 +344,15 @@ export class AssessmentController {
 
     static generateUkkEvaluationPdf = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const assessmentId = Number(req.params.assessmentId);
-            if (!assessmentId) {
+            const scheduleId = Number(req.params.scheduleId);
+            if (!scheduleId) {
                 return res.status(400).json({
                     success: false,
-                    message: "Assessment ID harus diisi",
+                    message: "Schedule ID harus diisi",
                 });
             }
 
-            const pdfBytes = await AssessmentService.generateUkkEvaluationPdf(assessmentId);
+            const pdfBytes = await AssessmentService.generateUkkEvaluationPdf(scheduleId);
             res.setHeader("Content-Type", "application/pdf");
             res.setHeader(
                 "Content-Disposition",

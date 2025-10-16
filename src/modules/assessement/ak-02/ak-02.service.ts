@@ -12,6 +12,7 @@ import {
   assessee as assesseeTable,
   assessor as assessorTable,
   user as userTable,
+  assessmentSchedule,
 } from '../../../../drizzle/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 import {
@@ -65,8 +66,12 @@ export class AK02Service {
     if (!header) {
       throw new NotFoundError('Result header');
     }
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, result.schedule_id) });
+    if (!schedule) {
+      throw new NotFoundError('Schedule');
+    }
 
-    const units = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, result.assessment_id));
+    const units = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, schedule.assessment_id));
     const rows = await db.query.resultAk02.findMany({ where: eq(ak02RowTable.header_id, header.id) });
     return {
       id: result.id,
@@ -93,7 +98,12 @@ export class AK02Service {
       throw new NotFoundError('Result header');
     }
 
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, result.schedule_id) });
+    if (!schedule) {
+      throw new NotFoundError('Schedule');
+    }
+
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
     const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
     const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
     const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
@@ -105,6 +115,7 @@ export class AK02Service {
 
     return {
       id: result.id,
+      schedule: schedule,
       assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
       assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
       assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,

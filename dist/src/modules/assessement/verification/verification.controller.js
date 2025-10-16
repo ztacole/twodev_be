@@ -93,10 +93,11 @@ const getDetail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.getDetail = getDetail;
 const approve = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        const user = req.user;
         const id = Number(req.params.resultId);
         if (!Number.isFinite(id))
             return res.status(400).json({ success: false, message: 'resultId tidak valid' });
-        const data = yield verificationService.approveVerification(id);
+        const data = yield verificationService.approveVerification(id, user.id);
         res.status(200).json({ success: true, data });
     }
     catch (error) {
@@ -107,12 +108,13 @@ exports.approve = approve;
 const approveByScheduleDetail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     try {
+        const user = req.user;
         const raw = (_a = req.params.scheduleDetailId) !== null && _a !== void 0 ? _a : (_b = req.body) === null || _b === void 0 ? void 0 : _b.schedule_detail_id;
         const parsed = raw !== undefined && raw !== null && raw !== '' ? Number(raw) : NaN;
         if (!Number.isFinite(parsed))
             return res.status(400).json({ success: false, message: 'scheduleDetailId tidak valid' });
         const scheduleDetailId = parsed;
-        const data = yield verificationService.approveVerificationByScheduleDetail(scheduleDetailId);
+        const data = yield verificationService.approveVerificationByScheduleDetail(scheduleDetailId, user.id);
         res.status(200).json({ success: true, data });
     }
     catch (error) {

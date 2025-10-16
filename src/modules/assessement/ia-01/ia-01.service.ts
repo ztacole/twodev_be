@@ -15,6 +15,7 @@ import {
   user as userTable,
   occupation as occupationTable,
   scheme as schemeTable,
+  assessmentSchedule,
 } from "../../../../drizzle/schema";
 import { and, eq, inArray } from "drizzle-orm";
 
@@ -23,7 +24,10 @@ export class IA01Service {
     const existingResult = await db.query.result.findFirst({ where: eq(resultTable.id, result_id), });
     if (!existingResult) throw new NotFoundError('Result');
 
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, existingResult.assessment_id) });
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, existingResult.schedule_id) });
+    if (!schedule) throw new NotFoundError('Schedule');
+
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
     if (!assessment) throw new NotFoundError('Assessment');
 
     const groups = await db.select().from(groupIa01Table).where(eq(groupIa01Table.assessment_id, assessment.id));
@@ -57,6 +61,7 @@ export class IA01Service {
       return {
         id: group.id,
         assessment_id: group.assessment_id,
+        schedule_id: schedule.id,
         name: group.name,
         units: decorated,
       } as GroupIA01Response;
@@ -189,7 +194,10 @@ export class IA01Service {
     const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
     if (!result) throw new NotFoundError('Result');
 
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, result.schedule_id) });
+    if (!schedule) throw new NotFoundError('Schedule');
+
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
     const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
     const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
 
@@ -204,6 +212,7 @@ export class IA01Service {
 
     return {
       id: result.id,
+      schedule: schedule,
       assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
       assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
       assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,

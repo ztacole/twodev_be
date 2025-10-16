@@ -58,17 +58,21 @@ router.get('/', AssessmentController.getAssessments);
 router.put('/:id', authenticateToken, adminMiddleware, AssessmentController.updateAssessment);
 router.get('/:id', AssessmentController.getAssessmentById);
 router.delete('/:id', authenticateToken, adminMiddleware, requireApproval('assessment'), AssessmentController.deleteAssessment);
-router.get('/result/evaluation/:assessmentId/export', authenticateToken, adminMiddleware, AssessmentController.generateUkkEvaluationPdf);
+//
+router.get('/result/evaluation/:scheduleId/export', authenticateToken, adminMiddleware, AssessmentController.generateUkkEvaluationPdf);
 router.put('/result/input-score/:resultId', authenticateToken, assessorMiddleware, AssessmentController.inputScore);
-router.get('/result/:assessmentId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
+//
+router.get('/result/:scheduleId/:assessorId/:assesseeId', AssessmentController.getAssessmentResultDetails);
 
 // RESULT PDF
 //-- Route Example: /ia-01/result/:resultId/export --//
 //-- Put it at the bottom of the routes --//
 
 router.get('/results/status/admin', authenticateToken, adminMiddleware, AssessmentController.getAssessmentResultsForAdmin);
-router.get('/results/status/admin/assessees/:assessmentId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssesseesByAssessmentAndAssessor);
+//
+router.get('/results/status/admin/assessees/:scheduleId/:assessorId', authenticateToken, adminMiddleware, AssessmentController.getAssesseesByScheduleAndAssessor);
 
+//
 router.get('/navigation/assessee/:assessmentId/:assessorId/:assesseeId', authenticateToken, assesseeMiddleware, AssessmentController.getNavigationAssessee);
 router.get('/navigation/assessor/:assessmentId', authenticateToken, assessorMiddleware, AssessmentController.getNavigationAssessor);
 router.get('/navigation/admin/:resultId', authenticateToken, adminMiddleware, AssessmentController.getNavigationAdmin);

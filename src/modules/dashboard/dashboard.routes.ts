@@ -14,6 +14,6 @@ router.get('/admin/schedules', authenticateToken, adminMiddleware, DashboardCont
 router.get('/admin/verifications', authenticateToken, adminMiddleware, DashboardController.getVerificationDocs);
 
 // assessor
-router.get('/assessor/:assessorId/:assessmentId/:type', authenticateToken, assessorMiddleware, DashboardAssessorController.getAPL02Assessee);
+router.get('/assessor/:assessorId/:scheduleId/:type', authenticateToken, assessorMiddleware, DashboardAssessorController.getAPL02Assessee);
 
 export default router;

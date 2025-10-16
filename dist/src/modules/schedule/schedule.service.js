@@ -498,7 +498,7 @@ function buildScheduleResponse(schedule_1) {
         const detailed = yield Promise.all(details.map((detail) => __awaiter(this, void 0, void 0, function* () {
             const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, detail.assessor_id) });
             const assessorUser = assessor ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) }) : null;
-            const results = yield drizzle_1.db.select().from(schema_1.result).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, schedule.assessment_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, detail.assessor_id)));
+            const results = yield drizzle_1.db.select().from(schema_1.result).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.schedule_id, schedule.id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, detail.assessor_id)));
             const onGoing = user ? results.find(r => user.find(a => a.id === r.assessee_id)) : null;
             return {
                 id: detail.id,

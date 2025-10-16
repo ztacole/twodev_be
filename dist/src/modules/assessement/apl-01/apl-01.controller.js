@@ -50,11 +50,11 @@ APL1Controller.createAssesseeAPL1 = (0, async_handler_1.asyncHandler)((req, res)
 APL1Controller.createOrUploadCertificateDocs = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const assesseeId = parseInt(req.body.assessee_id);
     const assessorId = parseInt(req.body.assessor_id);
-    const assessmentId = parseInt(req.body.assessment_id);
-    if (isNaN(assesseeId) || isNaN(assessorId) || isNaN(assessmentId)) {
+    const scheduleId = parseInt(req.body.schedule_id);
+    if (isNaN(assesseeId) || isNaN(assessorId) || isNaN(scheduleId)) {
         return res.status(400).json({
             success: false,
-            message: 'assessee_id, assessor_id, assessment_id harus valid'
+            message: 'assessee_id, assessor_id, schedule_id harus valid'
         });
     }
     const files = Array.isArray(req.files) ? req.files : [];
@@ -68,7 +68,7 @@ APL1Controller.createOrUploadCertificateDocs = (0, async_handler_1.asyncHandler)
         const result = yield apl_01_service_1.APL1Service.createOrUploadCertificate({
             assessee_id: assesseeId,
             assessor_id: assessorId,
-            assessment_id: assessmentId,
+            schedule_id: scheduleId,
             bodyData: req.body,
             files
         });

@@ -778,10 +778,11 @@ export class AssessmentService {
         return { message: 'Assessment deleted successfully' };
     }
 
-    static async getAssessmentResultDetails(assessment_id: number, assessor_id: number, assessee_id: number) {
-        const results = await db
+    static async getAssessmentResultDetails(schedule_id: number, assessor_id: number, assessee_id: number) {
+        const [result] = await db
             .select({
                 id: resultTable.id,
+                schedule: assessmentScheduleTable,
                 assessment: assessmentTable,
                 assessee: assesseeTable,
                 assessor: assessor,
@@ -791,22 +792,20 @@ export class AssessmentService {
                 created_at: resultTable.created_at,
             })
             .from(resultTable)
-            .innerJoin(assessmentTable, eq(resultTable.assessment_id, assessmentTable.id))
+            .innerJoin(assessmentScheduleTable, eq(resultTable.schedule_id, assessmentScheduleTable.id))
+            .innerJoin(assessmentTable, eq(assessmentScheduleTable.assessment_id, assessmentTable.id))
             .innerJoin(assesseeTable, eq(resultTable.assessee_id, assesseeTable.id))
             .innerJoin(assessor, eq(resultTable.assessor_id, assessor.id))
             .where(and(
-                eq(assessmentTable.id, assessment_id),
+                eq(assessmentScheduleTable.id, schedule_id),
                 eq(assessor.id, assessor_id),
                 eq(assesseeTable.id, assessee_id)
             ))
-            .orderBy(desc(resultTable.created_at))
-            .limit(1);
 
-        if (results.length === 0) {
+        if (!result) {
             throw new NotFoundError('Result');
         }
 
-        const result = results[0];
         const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result.id) });
         const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result.id) });
         const ia01Header = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01Header.result_id, result.id) });
@@ -822,6 +821,7 @@ export class AssessmentService {
         return [
             {
                 id: result.id,
+                schedule: result.schedule,
                 assessment: result.assessment,
                 assessee: result.assessee,
                 assessor: result.assessor,
@@ -844,14 +844,14 @@ export class AssessmentService {
         ];
     }
 
-    static async findAssesseeByUserId(assessment_id: number, assessor_id: number, user_id: number): Promise<number> {
+    static async findAssesseeByUserId(schedule_id: number, assessor_id: number, user_id: number): Promise<number> {
         const assessees = await db.query.assessee.findMany({ where: eq(assesseeTable.user_id, user_id), orderBy: desc(assesseeTable.created_at) });
 
         let result: any;
         for (const assesseeItem of assessees) {
             const results = await db.query.result.findMany({
                 where: and(
-                    eq(resultTable.assessment_id, assessment_id),
+                    eq(resultTable.schedule_id, schedule_id),
                     eq(resultTable.assessor_id, assessor_id),
                     eq(resultTable.assessee_id, assesseeItem.id)
                 ),
@@ -869,25 +869,28 @@ export class AssessmentService {
         return result.assessee_id;
     }
 
-    static async assesseeNavigation(assessment_id: number, assessor_id: number, assessee_id: number) {
-        const result = await db.select().from(resultTable)
+    static async assesseeNavigation(schedule_id: number, assessor_id: number, assessee_id: number) {
+        const [result] = await db.select().from(resultTable)
             .where(and(
-                eq(resultTable.assessment_id, assessment_id),
+                eq(resultTable.schedule_id, schedule_id),
                 eq(resultTable.assessor_id, assessor_id),
                 eq(resultTable.assessee_id, assessee_id)
             ))
             .orderBy(desc(resultTable.created_at))
             .limit(1);
-        if (result.length === 0 || !result[0]) throw new NotFoundError('Result');
+        if (!result) throw new NotFoundError('Result');
+
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, result.schedule_id) });
+        if (!schedule) throw new NotFoundError('Schedule');
 
         // Document
-        const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result[0].id) });
+        const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result.id) });
         if (!doc) throw new NotFoundError('Result Document');
 
         // APL02
-        const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result[0].id) });
+        const apl02Header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result.id) });
         if (!apl02Header) throw new NotFoundError('Result APL02 Header');
-        const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, result[0].assessment_id));
+        const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, schedule.assessment_id));
         let finishedUcApl02Count = 0;
         for (const uc of unitCompetencies) {
             const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
@@ -901,15 +904,15 @@ export class AssessmentService {
         const finishedApl02 = finishedUcApl02Count === unitCompetencies.length;
 
         // AK01
-        const ak01Header = await db.query.resultAk01Header.findFirst({ where: eq(resultAk01HeaderTable.result_id, result[0].id) });
+        const ak01Header = await db.query.resultAk01Header.findFirst({ where: eq(resultAk01HeaderTable.result_id, result.id) });
         if (!ak01Header) throw new NotFoundError('Result AK01 Header');
 
         // IA02
-        const ia02Header = await db.query.resultIa02Header.findFirst({ where: eq(resultIa02HeaderTable.result_id, result[0].id) });
+        const ia02Header = await db.query.resultIa02Header.findFirst({ where: eq(resultIa02HeaderTable.result_id, result.id) });
         if (!ia02Header) throw new NotFoundError('Result IA02 Header');
 
         // IA01
-        const ia01Header = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, result[0].id) });
+        const ia01Header = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, result.id) });
         if (!ia01Header) throw new NotFoundError('Result IA01 Header');
 
         const tabs: AssesseeTab[] = [
@@ -921,18 +924,18 @@ export class AssessmentService {
             { name: 'IA-01', status: (ia01Header.approved_assessor && ia01Header.approved_assessee) ? "Tuntas" : (ia01Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" }
         ];
 
-        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
-        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
+        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, schedule_id) });
+        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, schedule_id) });
         // const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
 
         if (isAnyIa03) {
-            const ia03Header = await db.query.resultIa03Header.findFirst({ where: eq(resultIa03HeaderTable.result_id, result[0].id) });
+            const ia03Header = await db.query.resultIa03Header.findFirst({ where: eq(resultIa03HeaderTable.result_id, result.id) });
             if (!ia03Header) throw new NotFoundError('Result IA03 Header');
             const status = (ia03Header.approved_assessor && ia03Header.approved_assessee) ? "Tuntas" : (ia03Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu";
             tabs.push({ name: 'IA-03', status: status });
         }
         if (isAnyIa05) {
-            const ia05Header = await db.query.resultIa05Header.findFirst({ where: eq(resultIa05HeaderTable.result_id, result[0].id) });
+            const ia05Header = await db.query.resultIa05Header.findFirst({ where: eq(resultIa05HeaderTable.result_id, result.id) });
             if (!ia05Header) throw new NotFoundError('Result IA05 Header');
             const ia05Result = await db.query.resultIa05.findFirst({ where: eq(resultIa05.header_id, ia05Header.id) });
             const status = (ia05Header.approved_assessor && ia05Header.approved_assessee) ? "Tuntas" : (ia05Header.approved_assessor) ? "Butuh Persetujuan" : (ia05Result) ? "Menunggu" : "Belum Tuntas";
@@ -940,13 +943,13 @@ export class AssessmentService {
         }
         // if (isAnyIa07) tabs.push({ name: 'IA-07', status: 'Belum Selesai' });
 
-        const ak02Header = await db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, result[0].id) });
+        const ak02Header = await db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, result.id) });
         if (!ak02Header) throw new NotFoundError('Result AK02 Header');
 
-        const ak03Header = await db.query.resultAk03Header.findFirst({ where: eq(resultAk03HeaderTable.result_id, result[0].id) });
+        const ak03Header = await db.query.resultAk03Header.findFirst({ where: eq(resultAk03HeaderTable.result_id, result.id) });
         if (!ak03Header) throw new NotFoundError('Result AK03 Header');
 
-        const ak05Header = await db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, result[0].id) });
+        const ak05Header = await db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, result.id) });
         if (!ak05Header) throw new NotFoundError('Result AK05');
 
         tabs.push(
@@ -958,21 +961,25 @@ export class AssessmentService {
         const enableOtherRoute = (doc.approved && (apl02Header.approved_assessor && apl02Header.is_continue))
 
         return {
-            result_id: result[0].id,
-            assessment_id: result[0].assessment_id,
-            assessor_id: result[0].assessor_id,
-            assessee_id: result[0].assessee_id,
-            tuk: result[0].tuk,
-            score: result[0].score,
-            is_competent: result[0].is_competent,
-            created_at: result[0].created_at,
+            result_id: result.id,
+            assessment_id: schedule.assessment_id,
+            schedule_id: result.schedule_id,
+            assessor_id: result.assessor_id,
+            assessee_id: result.assessee_id,
+            tuk: result.tuk,
+            score: result.score,
+            is_competent: result.is_competent,
+            created_at: result.created_at,
             tabs: tabs,
             enable_other_route: true,
         }
     }
 
-    static async assessorNavigation(assessment_id: number, assessor_id: number) {
-        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+    static async assessorNavigation(schedule_id: number, assessor_id: number) {
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, schedule_id) });
+        if (!schedule) throw new NotFoundError('Schedule');
+
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
         if (!assessment) throw new NotFoundError('Assessment');
 
         const tabs: AssessorTab[] = [
@@ -982,9 +989,9 @@ export class AssessmentService {
             { name: 'IA-01', status: "Belum Tuntas" }
         ];
 
-        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, assessment_id) });
-        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, assessment_id) });
-        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
+        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, schedule.assessment_id) });
+        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, schedule.assessment_id) });
+        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, schedule.assessment_id) });
         if (isAnyIa03) tabs.push({ name: 'IA-03', status: "Belum Tuntas" });
         if (isAnyIa05) tabs.push({ name: 'IA-05', status: "Menunggu Asesi" });
         if (isAnyIa07) tabs.push({ name: 'IA-07', status: "Belum Tuntas" });
@@ -997,11 +1004,12 @@ export class AssessmentService {
 
         const results = await db.select().from(resultTable)
             .where(and(
-                eq(resultTable.assessment_id, assessment_id),
+                eq(resultTable.schedule_id, schedule_id),
                 eq(resultTable.assessor_id, assessor_id)
             ));
         if (results.length === 0) {
             return {
+                schedule_id: schedule_id,
                 assessment_id: assessment.id,
                 assessment_code: assessment.code,
                 tabs: tabs,
@@ -1016,7 +1024,7 @@ export class AssessmentService {
                     case 'APL-02':
                         header = await db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, result.id) });
                         if (header) {
-                            const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, result.assessment_id));
+                            const unitCompetencies = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, schedule.assessment_id));
                             let finishedUcApl02Count = 0;
                             for (const uc of unitCompetencies) {
                                 const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, uc.id));
@@ -1156,6 +1164,7 @@ export class AssessmentService {
         }
 
         return {
+            schedule_id: schedule.id,
             assessment_id: assessment.id,
             assessment_code: assessment.code,
             tabs: tabs,
@@ -1166,7 +1175,10 @@ export class AssessmentService {
         const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
         if (!result) throw new NotFoundError('Result');
 
-        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, result.schedule_id) });
+        if (!schedule) throw new NotFoundError('Schedule');
+
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
         if (!assessment) throw new NotFoundError('Assessment');
 
         const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result.id) });
@@ -1180,9 +1192,9 @@ export class AssessmentService {
             { name: 'IA-02', status: 'Belum Tuntas' },
             { name: 'IA-01', status: 'Belum Tuntas' }
         ];
-        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, result.assessment_id) });
-        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, result.assessment_id) });
-        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, result.assessment_id) });
+        const isAnyIa03 = await db.query.groupIa03.findFirst({ where: eq(groupIa03Table.assessment_id, schedule.assessment_id) });
+        const isAnyIa05 = await db.query.ia05Question.findFirst({ where: eq(ia05QuestionTable.assessment_id, schedule.assessment_id) });
+        const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, schedule.assessment_id) });
         if (isAnyIa03) tabs.push({ name: 'IA-03', status: 'Belum Tuntas' });
         if (isAnyIa05) tabs.push({ name: 'IA-05', status: 'Belum Tuntas' });
         if (isAnyIa07) tabs.push({ name: 'IA-07', status: 'Belum Tuntas' });
@@ -1227,6 +1239,7 @@ export class AssessmentService {
         }
 
         return {
+            schedule_id: schedule.id,
             assessment_id: assessment.id,
             assessment_code: assessment.code,
             tabs: tabs,
@@ -1251,15 +1264,18 @@ export class AssessmentService {
 
         const results = await db.select({
             id: resultTable.id,
-            assessment_id: resultTable.assessment_id,
+            schedule_id: assessmentScheduleTable.id,
+            assessment_id: assessmentScheduleTable.assessment_id,
             assessor_id: resultTable.assessor_id,
             assessee_id: resultTable.assessee_id,
             tuk: resultTable.tuk,
             score: resultTable.score,
             is_competent: resultTable.is_competent,
-        }).from(resultTable).where(
+        }).from(resultTable)
+            .innerJoin(assessmentScheduleTable, eq(resultTable.schedule_id, assessmentScheduleTable.id))
+            .where(
             and(
-                eq(resultTable.assessment_id, schedule.assessment_id),
+                eq(resultTable.schedule_id, schedule.id),
                 eq(resultTable.assessor_id, assessor.id)
             )
         );
@@ -1330,6 +1346,8 @@ export class AssessmentService {
             if (status === 'Not Competent') summary.total_incompetent++;
             if (status === 'On Going') summary.total_ongoing++;
         }
+
+        assessees.sort((a, b) => a.name.localeCompare(b.name));
 
         return {
             assessment: {
@@ -1413,7 +1431,7 @@ export class AssessmentService {
         return result;
     }
 
-    static async getAssesseesByAssessmentAndAssessor(assessment_id: number, assessor_id: number) {
+    static async getAssesseesByScheduleAndAssessor(schedule_id: number, assessor_id: number) {
         const results = await db.select({
             id: resultTable.id,
             assessee_id: assesseeTable.id,
@@ -1424,7 +1442,7 @@ export class AssessmentService {
             .innerJoin(assesseeTable, eq(resultTable.assessee_id, assesseeTable.id))
             .innerJoin(userTable, eq(assesseeTable.user_id, userTable.id))
             .where(and(
-                eq(resultTable.assessment_id, assessment_id),
+                eq(resultTable.schedule_id, schedule_id),
                 eq(resultTable.assessor_id, assessor_id)
             ))
             .orderBy(asc(userTable.full_name), asc(resultTable.created_at));
@@ -1499,10 +1517,10 @@ export class AssessmentService {
             "Juli", "Agustus", "September", "Oktober", "November", "Desember"
         ];
 
-        const startDay = days[start.getDay()];
-        const startDate = start.getDate();
-        const startMonth = months[start.getMonth()];
-        const startYear = start.getFullYear();
+        const startDay = days[end.getDay()];
+        const startDate = end.getDate();
+        const startMonth = months[end.getMonth()];
+        const startYear = end.getFullYear();
 
         const startHour = (`0${start.getHours()}`).slice(-2);
         const startMinute = (`0${start.getMinutes()}`).slice(-2);
@@ -1697,11 +1715,16 @@ export class AssessmentService {
     }
 
     static async getResultsByAssessmentGroupedByAssessor(
-        assessmentId: number
+        scheduleId: number
     ): Promise<AssessmentResultGrouped | null> {
         // Query untuk mendapatkan semua data yang dibutuhkan
         const results = await db
             .select({
+                // Schedule fields
+                schedule_id: assessmentScheduleTable.id,
+                schedule_start_date: assessmentScheduleTable.start_date,
+                schedule_end_date: assessmentScheduleTable.end_date,
+
                 // Assessment fields
                 assessment_id: assessmentTable.id,
                 assessment_code: assessmentTable.code,
@@ -1740,13 +1763,14 @@ export class AssessmentService {
                 assessee_user_id: assessee.user_id,
             })
             .from(resultTable)
-            .innerJoin(assessmentTable, eq(resultTable.assessment_id, assessmentTable.id))
+            .innerJoin(assessmentScheduleTable, eq(resultTable.schedule_id, assessmentScheduleTable.id))
+            .innerJoin(assessmentTable, eq(assessmentScheduleTable.assessment_id, assessmentTable.id))
             .innerJoin(occupationTable, eq(assessmentTable.occupation_id, occupationTable.id))
             .innerJoin(schemeTable, eq(occupationTable.scheme_id, schemeTable.id))
             .innerJoin(assessorTable, eq(resultTable.assessor_id, assessorTable.id))
             .innerJoin(userTable, eq(assessorTable.user_id, userTable.id))
             .innerJoin(assesseeTable, eq(resultTable.assessee_id, assesseeTable.id))
-            .where(eq(assessmentTable.id, assessmentId));
+            .where(eq(assessmentScheduleTable.id, scheduleId));
 
         if (results.length === 0) {
             return null;
@@ -1816,6 +1840,9 @@ export class AssessmentService {
         const firstRow = results[0];
         const finalResult: AssessmentResultGrouped = {
             id: firstRow.assessment_id,
+            schedule_id: firstRow.schedule_id,
+            schedule_start_date: firstRow.schedule_start_date,
+            schedule_end_date: firstRow.schedule_end_date,
             code: firstRow.assessment_code,
             occupation_id: firstRow.occupation_id,
             created_at: firstRow.assessment_created_at,
@@ -1836,13 +1863,18 @@ export class AssessmentService {
         return finalResult;
     }
 
-    static async generateUkkEvaluationPdf(assessment_id: number) {
-        const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+    static async generateUkkEvaluationPdf(schedule_id: number) {
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, schedule_id) });
+        if (!schedule) {
+            throw new NotFoundError('Schedule not found');
+        }
+
+        const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
         if (!existingAssessment) {
             throw new NotFoundError('Assessment not found');
         }
 
-        const results = await this.getResultsByAssessmentGroupedByAssessor(assessment_id);
+        const results = await this.getResultsByAssessmentGroupedByAssessor(schedule_id);
 
         const pdfDoc = await PDFDocument.create();
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -2042,7 +2074,7 @@ export class AssessmentService {
             let signatureY = y - 50;
             const signatureWidth = 60;
 
-            const date = `${formatDay(new Date())} ${formatDate(new Date())}`
+            const date = `${formatDay(results!.schedule_end_date)} ${formatDate(results!.schedule_end_date)}`;
 
             const signatureDate = `Jakarta, ${date}`;
             const assessor_name = results?.assessors[assessorIdx].full_name;

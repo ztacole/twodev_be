@@ -335,6 +335,9 @@ export interface AdminTab {
 
 export interface AssessmentResultGrouped {
   id: number;
+  schedule_id: number;
+  schedule_start_date: Date;
+  schedule_end_date: Date;
   code: string;
   occupation_id: number;
   created_at: Date;

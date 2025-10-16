@@ -44,17 +44,22 @@ class AK01Service {
             if (!header) {
                 throw new error_1.NotFoundError('Header AK01');
             }
+            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, result.schedule_id) });
+            if (!schedule) {
+                throw new error_1.NotFoundError('Schedule');
+            }
             const rows = yield drizzle_1.db.query.resultAk01.findMany({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01.header_id, header.id) });
-            const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.assessment_id) });
+            const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id) });
             const occupation = assessment ? yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id) }) : null;
             const scheme = occupation ? yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id) }) : null;
             const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, result.assessee_id) });
             const assesseeUser = assessee ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.user_id) }) : null;
             const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, result.assessor_id) });
             const assessorUser = assessor ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) }) : null;
-            const schedules = yield drizzle_1.db.select().from(schema_1.assessmentSchedule).where((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, result.assessment_id));
-            const details = yield Promise.all(schedules.map(s => drizzle_1.db.select().from(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, s.id))));
-            const locations = details.flat().filter(d => d.assessor_id === result.assessor_id).map(d => d.location);
+            const detail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, schedule.id), (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.assessor_id, result.assessor_id)) });
+            if (!detail) {
+                throw new error_1.NotFoundError('Schedule detail');
+            }
             return {
                 id: result.id,
                 assessment: assessment ? Object.assign(Object.assign({}, assessment), { occupation: occupation ? Object.assign(Object.assign({}, occupation), { scheme }) : null }) : null,
@@ -63,7 +68,8 @@ class AK01Service {
                 tuk: result.tuk,
                 is_competent: result.is_competent,
                 created_at: result.created_at,
-                locations,
+                schedule: schedule,
+                location: detail.location,
                 ak01_header: Object.assign(Object.assign({}, header), { rows }),
             };
         });

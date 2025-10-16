@@ -129,9 +129,10 @@ export const scheduleDetail = mysqlTable('schedule_detail', {
 
 export const result = mysqlTable('result', {
     id: int('id').primaryKey().autoincrement(),
-    assessment_id: int('assessment_id').notNull().references(() => assessment.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    // assessment_id: int('assessment_id').notNull().references(() => assessment.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     assessor_id: int('assessor_id').notNull().references(() => assessor.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     assessee_id: int('assessee_id').notNull().references(() => assessee.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    schedule_id: int('schedule_id').notNull().references(() => assessmentSchedule.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
     score: int('score').default(-1),
     is_competent: boolean('is_competent').notNull(),
     tuk: tukEnum.notNull(),
@@ -489,492 +490,492 @@ export const approvalRequest = mysqlTable('approval_request', {
     ...timestamps
 });
 
-// ========= Relations =========
-export const roleRelations = relations(role, ({ many }) => ({
-    users: many(user)
-}));
+// // ========= Relations =========
+// export const roleRelations = relations(role, ({ many }) => ({
+//     users: many(user)
+// }));
 
-export const userRelations = relations(user, ({ one, many }) => ({
-    role: one(role, {
-        fields: [user.role_id],
-        references: [role.id]
-    }),
-    assessees: many(assessee),
-    assessor: one(assessor),
-    admin: one(admin)
-}));
+// export const userRelations = relations(user, ({ one, many }) => ({
+//     role: one(role, {
+//         fields: [user.role_id],
+//         references: [role.id]
+//     }),
+//     assessees: many(assessee),
+//     assessor: one(assessor),
+//     admin: one(admin)
+// }));
 
-// adminRelations moved below after approvalRequest table declaration
+// // adminRelations moved below after approvalRequest table declaration
 
-export const schemeRelations = relations(scheme, ({ many }) => ({
-    occupations: many(occupation),
-    assessors: many(assessor)
-}));
+// export const schemeRelations = relations(scheme, ({ many }) => ({
+//     occupations: many(occupation),
+//     assessors: many(assessor)
+// }));
 
-export const occupationRelations = relations(occupation, ({ one, many }) => ({
-    scheme: one(scheme, {
-        fields: [occupation.scheme_id],
-        references: [scheme.id]
-    }),
-    assessments: many(assessment)
-}));
+// export const occupationRelations = relations(occupation, ({ one, many }) => ({
+//     scheme: one(scheme, {
+//         fields: [occupation.scheme_id],
+//         references: [scheme.id]
+//     }),
+//     assessments: many(assessment)
+// }));
 
-export const assessorRelations = relations(assessor, ({ one, many }) => ({
-    user: one(user, {
-        fields: [assessor.user_id],
-        references: [user.id]
-    }),
-    scheme: one(scheme, {
-        fields: [assessor.scheme_id],
-        references: [scheme.id]
-    }),
-    scheduleDetails: many(scheduleDetail),
-    details: one(assessorDetail),
-    results: many(result)
-}));
+// export const assessorRelations = relations(assessor, ({ one, many }) => ({
+//     user: one(user, {
+//         fields: [assessor.user_id],
+//         references: [user.id]
+//     }),
+//     scheme: one(scheme, {
+//         fields: [assessor.scheme_id],
+//         references: [scheme.id]
+//     }),
+//     scheduleDetails: many(scheduleDetail),
+//     details: one(assessorDetail),
+//     results: many(result)
+// }));
 
-export const assessorDetailRelations = relations(assessorDetail, ({ one }) => ({
-    assessor: one(assessor, {
-        fields: [assessorDetail.assessor_id],
-        references: [assessor.id]
-    })
-}));
+// export const assessorDetailRelations = relations(assessorDetail, ({ one }) => ({
+//     assessor: one(assessor, {
+//         fields: [assessorDetail.assessor_id],
+//         references: [assessor.id]
+//     })
+// }));
 
-export const assesseeRelations = relations(assessee, ({ one, many }) => ({
-    user: one(user, {
-        fields: [assessee.user_id],
-        references: [user.id]
-    }),
-    jobs: many(assesseeJob),
-    results: many(result)
-}));
+// export const assesseeRelations = relations(assessee, ({ one, many }) => ({
+//     user: one(user, {
+//         fields: [assessee.user_id],
+//         references: [user.id]
+//     }),
+//     jobs: many(assesseeJob),
+//     results: many(result)
+// }));
 
-export const assesseeJobRelations = relations(assesseeJob, ({ one }) => ({
-    assessee: one(assessee, {
-        fields: [assesseeJob.assessee_id],
-        references: [assessee.id]
-    })
-}));
+// export const assesseeJobRelations = relations(assesseeJob, ({ one }) => ({
+//     assessee: one(assessee, {
+//         fields: [assesseeJob.assessee_id],
+//         references: [assessee.id]
+//     })
+// }));
 
-export const assessmentRelations = relations(assessment, ({ one, many }) => ({
-    occupation: one(occupation, {
-        fields: [assessment.occupation_id],
-        references: [occupation.id]
-    }),
-    assessmentSchedules: many(assessmentSchedule),
-    results: many(result),
-    groupsIa01: many(groupIa01),
-    groupsIa02: many(groupIa02),
-    ia02Pdf: one(ia02Pdf),
-    groupsIa03: many(groupIa03),
-    ucApl02s: many(ucApl02),
-    ia05Questions: many(ia05Question),
-    ia07Questions: many(ia07Question)
-}));
+// export const assessmentRelations = relations(assessment, ({ one, many }) => ({
+//     occupation: one(occupation, {
+//         fields: [assessment.occupation_id],
+//         references: [occupation.id]
+//     }),
+//     assessmentSchedules: many(assessmentSchedule),
+//     results: many(result),
+//     groupsIa01: many(groupIa01),
+//     groupsIa02: many(groupIa02),
+//     ia02Pdf: one(ia02Pdf),
+//     groupsIa03: many(groupIa03),
+//     ucApl02s: many(ucApl02),
+//     ia05Questions: many(ia05Question),
+//     ia07Questions: many(ia07Question)
+// }));
 
-export const assessmentScheduleRelations = relations(assessmentSchedule, ({ one, many }) => ({
-    assessment: one(assessment, {
-        fields: [assessmentSchedule.assessment_id],
-        references: [assessment.id]
-    }),
-    scheduleDetails: many(scheduleDetail)
-}));
+// export const assessmentScheduleRelations = relations(assessmentSchedule, ({ one, many }) => ({
+//     assessment: one(assessment, {
+//         fields: [assessmentSchedule.assessment_id],
+//         references: [assessment.id]
+//     }),
+//     scheduleDetails: many(scheduleDetail)
+// }));
 
-export const scheduleDetailRelations = relations(scheduleDetail, ({ one }) => ({
-    schedule: one(assessmentSchedule, {
-        fields: [scheduleDetail.schedule_id],
-        references: [assessmentSchedule.id]
-    }),
-    assessor: one(assessor, {
-        fields: [scheduleDetail.assessor_id],
-        references: [assessor.id]
-    })
-}));
+// export const scheduleDetailRelations = relations(scheduleDetail, ({ one }) => ({
+//     schedule: one(assessmentSchedule, {
+//         fields: [scheduleDetail.schedule_id],
+//         references: [assessmentSchedule.id]
+//     }),
+//     assessor: one(assessor, {
+//         fields: [scheduleDetail.assessor_id],
+//         references: [assessor.id]
+//     })
+// }));
 
-export const resultRelations = relations(result, ({ one, many }) => ({
-    assessment: one(assessment, {
-        fields: [result.assessment_id],
-        references: [assessment.id]
-    }),
-    assessor: one(assessor, {
-        fields: [result.assessor_id],
-        references: [assessor.id]
-    }),
-    assessee: one(assessee, {
-        fields: [result.assessee_id],
-        references: [assessee.id]
-    }),
-    docs: many(resultDoc),
-    apl02Header: one(resultApl02Header),
-    ak01Header: one(resultAk01Header),
-    ak02Header: one(resultAk02Header),
-    ak03Header: one(resultAk03Header),
-    ak04: one(resultAk04),
-    ak05: one(resultAk05),
-    ia01Header: one(resultIa01Header),
-    ia02Header: one(resultIa02Header),
-    ia03Header: one(resultIa03Header),
-    ia05Header: one(resultIa05Header),
-    ia07Header: one(resultIa07Header)
-}));
+// export const resultRelations = relations(result, ({ one, many }) => ({
+//     assessment: one(assessment, {
+//         fields: [result.assessment_id],
+//         references: [assessment.id]
+//     }),
+//     assessor: one(assessor, {
+//         fields: [result.assessor_id],
+//         references: [assessor.id]
+//     }),
+//     assessee: one(assessee, {
+//         fields: [result.assessee_id],
+//         references: [assessee.id]
+//     }),
+//     docs: many(resultDoc),
+//     apl02Header: one(resultApl02Header),
+//     ak01Header: one(resultAk01Header),
+//     ak02Header: one(resultAk02Header),
+//     ak03Header: one(resultAk03Header),
+//     ak04: one(resultAk04),
+//     ak05: one(resultAk05),
+//     ia01Header: one(resultIa01Header),
+//     ia02Header: one(resultIa02Header),
+//     ia03Header: one(resultIa03Header),
+//     ia05Header: one(resultIa05Header),
+//     ia07Header: one(resultIa07Header)
+// }));
 
-export const resultDocRelations = relations(resultDoc, ({ one }) => ({
-    result: one(result, {
-        fields: [resultDoc.result_id],
-        references: [result.id]
-    })
-}));
+// export const resultDocRelations = relations(resultDoc, ({ one }) => ({
+//     result: one(result, {
+//         fields: [resultDoc.result_id],
+//         references: [result.id]
+//     })
+// }));
 
-// APL02 Relations
-export const ucApl02Relations = relations(ucApl02, ({ one, many }) => ({
-    assessment: one(assessment, {
-        fields: [ucApl02.assessment_id],
-        references: [assessment.id]
-    }),
-    elements: many(elementApl02),
-    ak02Rows: many(resultAk02)
-}));
+// // APL02 Relations
+// export const ucApl02Relations = relations(ucApl02, ({ one, many }) => ({
+//     assessment: one(assessment, {
+//         fields: [ucApl02.assessment_id],
+//         references: [assessment.id]
+//     }),
+//     elements: many(elementApl02),
+//     ak02Rows: many(resultAk02)
+// }));
 
-export const elementApl02Relations = relations(elementApl02, ({ one, many }) => ({
-    uc: one(ucApl02, {
-        fields: [elementApl02.uc_id],
-        references: [ucApl02.id]
-    }),
-    details: many(elementDetailsApl02),
-    results: many(resultApl02)
-}));
+// export const elementApl02Relations = relations(elementApl02, ({ one, many }) => ({
+//     uc: one(ucApl02, {
+//         fields: [elementApl02.uc_id],
+//         references: [ucApl02.id]
+//     }),
+//     details: many(elementDetailsApl02),
+//     results: many(resultApl02)
+// }));
 
-export const elementDetailsApl02Relations = relations(elementDetailsApl02, ({ one }) => ({
-    element: one(elementApl02, {
-        fields: [elementDetailsApl02.element_id],
-        references: [elementApl02.id]
-    })
-}));
+// export const elementDetailsApl02Relations = relations(elementDetailsApl02, ({ one }) => ({
+//     element: one(elementApl02, {
+//         fields: [elementDetailsApl02.element_id],
+//         references: [elementApl02.id]
+//     })
+// }));
 
-export const resultApl02HeaderRelations = relations(resultApl02Header, ({ one, many }) => ({
-    result: one(result, {
-        fields: [resultApl02Header.result_id],
-        references: [result.id]
-    }),
-    rows: many(resultApl02)
-}));
+// export const resultApl02HeaderRelations = relations(resultApl02Header, ({ one, many }) => ({
+//     result: one(result, {
+//         fields: [resultApl02Header.result_id],
+//         references: [result.id]
+//     }),
+//     rows: many(resultApl02)
+// }));
 
-export const resultApl02Relations = relations(resultApl02, ({ one, many }) => ({
-    header: one(resultApl02Header, {
-        fields: [resultApl02.result_apl02_id],
-        references: [resultApl02Header.id]
-    }),
-    element: one(elementApl02, {
-        fields: [resultApl02.element_id],
-        references: [elementApl02.id]
-    }),
-    evidences: many(apl02Evidence)
-}));
+// export const resultApl02Relations = relations(resultApl02, ({ one, many }) => ({
+//     header: one(resultApl02Header, {
+//         fields: [resultApl02.result_apl02_id],
+//         references: [resultApl02Header.id]
+//     }),
+//     element: one(elementApl02, {
+//         fields: [resultApl02.element_id],
+//         references: [elementApl02.id]
+//     }),
+//     evidences: many(apl02Evidence)
+// }));
 
-export const apl02EvidenceRelations = relations(apl02Evidence, ({ one }) => ({
-    row: one(resultApl02, {
-        fields: [apl02Evidence.result_apl02_id],
-        references: [resultApl02.id]
-    })
-}));
+// export const apl02EvidenceRelations = relations(apl02Evidence, ({ one }) => ({
+//     row: one(resultApl02, {
+//         fields: [apl02Evidence.result_apl02_id],
+//         references: [resultApl02.id]
+//     })
+// }));
 
-// AK01-AK05 Relations
-export const resultAk01HeaderRelations = relations(resultAk01Header, ({ one, many }) => ({
-    result: one(result, {
-        fields: [resultAk01Header.result_id],
-        references: [result.id]
-    }),
-    rows: many(resultAk01)
-}));
+// // AK01-AK05 Relations
+// export const resultAk01HeaderRelations = relations(resultAk01Header, ({ one, many }) => ({
+//     result: one(result, {
+//         fields: [resultAk01Header.result_id],
+//         references: [result.id]
+//     }),
+//     rows: many(resultAk01)
+// }));
 
-export const resultAk01Relations = relations(resultAk01, ({ one }) => ({
-    header: one(resultAk01Header, {
-        fields: [resultAk01.header_id],
-        references: [resultAk01Header.id]
-    })
-}));
+// export const resultAk01Relations = relations(resultAk01, ({ one }) => ({
+//     header: one(resultAk01Header, {
+//         fields: [resultAk01.header_id],
+//         references: [resultAk01Header.id]
+//     })
+// }));
 
-export const resultAk02HeaderRelations = relations(resultAk02Header, ({ one, many }) => ({
-    result: one(result, {
-        fields: [resultAk02Header.result_id],
-        references: [result.id]
-    }),
-    rows: many(resultAk02)
-}));
+// export const resultAk02HeaderRelations = relations(resultAk02Header, ({ one, many }) => ({
+//     result: one(result, {
+//         fields: [resultAk02Header.result_id],
+//         references: [result.id]
+//     }),
+//     rows: many(resultAk02)
+// }));
 
-export const resultAk02Relations = relations(resultAk02, ({ one, many }) => ({
-    header: one(resultAk02Header, {
-        fields: [resultAk02.header_id],
-        references: [resultAk02Header.id]
-    }),
-    uc: one(ucApl02, {
-        fields: [resultAk02.uc_id],
-        references: [ucApl02.id]
-    }),
-    evidences: many(ak02Evidence)
-}));
+// export const resultAk02Relations = relations(resultAk02, ({ one, many }) => ({
+//     header: one(resultAk02Header, {
+//         fields: [resultAk02.header_id],
+//         references: [resultAk02Header.id]
+//     }),
+//     uc: one(ucApl02, {
+//         fields: [resultAk02.uc_id],
+//         references: [ucApl02.id]
+//     }),
+//     evidences: many(ak02Evidence)
+// }));
 
-export const ak02EvidenceRelations = relations(ak02Evidence, ({ one }) => ({
-    row: one(resultAk02, {
-        fields: [ak02Evidence.result_ak02_id],
-        references: [resultAk02.id]
-    })
-}));
+// export const ak02EvidenceRelations = relations(ak02Evidence, ({ one }) => ({
+//     row: one(resultAk02, {
+//         fields: [ak02Evidence.result_ak02_id],
+//         references: [resultAk02.id]
+//     })
+// }));
 
-export const resultAk03HeaderRelations = relations(resultAk03Header, ({ one, many }) => ({
-    result: one(result, {
-        fields: [resultAk03Header.result_id],
-        references: [result.id]
-    }),
-    answers: many(resultAk03)
-}));
+// export const resultAk03HeaderRelations = relations(resultAk03Header, ({ one, many }) => ({
+//     result: one(result, {
+//         fields: [resultAk03Header.result_id],
+//         references: [result.id]
+//     }),
+//     answers: many(resultAk03)
+// }));
 
-export const resultAk03Relations = relations(resultAk03, ({ one }) => ({
-    header: one(resultAk03Header, {
-        fields: [resultAk03.header_id],
-        references: [resultAk03Header.id]
-    })
-}));
+// export const resultAk03Relations = relations(resultAk03, ({ one }) => ({
+//     header: one(resultAk03Header, {
+//         fields: [resultAk03.header_id],
+//         references: [resultAk03Header.id]
+//     })
+// }));
 
-export const resultAk04Relations = relations(resultAk04, ({ one }) => ({
-    result: one(result, {
-        fields: [resultAk04.result_id],
-        references: [result.id]
-    })
-}));
+// export const resultAk04Relations = relations(resultAk04, ({ one }) => ({
+//     result: one(result, {
+//         fields: [resultAk04.result_id],
+//         references: [result.id]
+//     })
+// }));
 
-export const resultAk05Relations = relations(resultAk05, ({ one }) => ({
-    result: one(result, {
-        fields: [resultAk05.result_id],
-        references: [result.id]
-    })
-}));
+// export const resultAk05Relations = relations(resultAk05, ({ one }) => ({
+//     result: one(result, {
+//         fields: [resultAk05.result_id],
+//         references: [result.id]
+//     })
+// }));
 
-// IA01-IA03 Structure Relations
-export const groupIa01Relations = relations(groupIa01, ({ one, many }) => ({
-    assessment: one(assessment, {
-        fields: [groupIa01.assessment_id],
-        references: [assessment.id]
-    }),
-    units: many(ucIa01)
-}));
+// // IA01-IA03 Structure Relations
+// export const groupIa01Relations = relations(groupIa01, ({ one, many }) => ({
+//     assessment: one(assessment, {
+//         fields: [groupIa01.assessment_id],
+//         references: [assessment.id]
+//     }),
+//     units: many(ucIa01)
+// }));
 
-export const ucIa01Relations = relations(ucIa01, ({ one, many }) => ({
-    group: one(groupIa01, {
-        fields: [ucIa01.group_id],
-        references: [groupIa01.id]
-    }),
-    elements: many(elementIa)
-}));
+// export const ucIa01Relations = relations(ucIa01, ({ one, many }) => ({
+//     group: one(groupIa01, {
+//         fields: [ucIa01.group_id],
+//         references: [groupIa01.id]
+//     }),
+//     elements: many(elementIa)
+// }));
 
-export const elementIaRelations = relations(elementIa, ({ one, many }) => ({
-    uc: one(ucIa01, {
-        fields: [elementIa.uc_id],
-        references: [ucIa01.id]
-    }),
-    details: many(elementDetailsIa)
-}));
+// export const elementIaRelations = relations(elementIa, ({ one, many }) => ({
+//     uc: one(ucIa01, {
+//         fields: [elementIa.uc_id],
+//         references: [ucIa01.id]
+//     }),
+//     details: many(elementDetailsIa)
+// }));
 
-export const elementDetailsIaRelations = relations(elementDetailsIa, ({ one, many }) => ({
-    element: one(elementIa, {
-        fields: [elementDetailsIa.element_id],
-        references: [elementIa.id]
-    }),
-    results: many(resultIa01)
-}));
+// export const elementDetailsIaRelations = relations(elementDetailsIa, ({ one, many }) => ({
+//     element: one(elementIa, {
+//         fields: [elementDetailsIa.element_id],
+//         references: [elementIa.id]
+//     }),
+//     results: many(resultIa01)
+// }));
 
-export const groupIa02Relations = relations(groupIa02, ({ one, many }) => ({
-    assessment: one(assessment, {
-        fields: [groupIa02.assessment_id],
-        references: [assessment.id]
-    }),
-    tools: many(ia02Tool),
-    units: many(ucIa02)
-}));
+// export const groupIa02Relations = relations(groupIa02, ({ one, many }) => ({
+//     assessment: one(assessment, {
+//         fields: [groupIa02.assessment_id],
+//         references: [assessment.id]
+//     }),
+//     tools: many(ia02Tool),
+//     units: many(ucIa02)
+// }));
 
-export const ucIa02Relations = relations(ucIa02, ({ one }) => ({
-    group: one(groupIa02, {
-        fields: [ucIa02.group_id],
-        references: [groupIa02.id]
-    })
-}));
+// export const ucIa02Relations = relations(ucIa02, ({ one }) => ({
+//     group: one(groupIa02, {
+//         fields: [ucIa02.group_id],
+//         references: [groupIa02.id]
+//     })
+// }));
 
-export const ia02ToolRelations = relations(ia02Tool, ({ one }) => ({
-    group: one(groupIa02, {
-        fields: [ia02Tool.group_id],
-        references: [groupIa02.id]
-    })
-}));
+// export const ia02ToolRelations = relations(ia02Tool, ({ one }) => ({
+//     group: one(groupIa02, {
+//         fields: [ia02Tool.group_id],
+//         references: [groupIa02.id]
+//     })
+// }));
 
-export const ia02PdfRelations = relations(ia02Pdf, ({ one }) => ({
-    assessment: one(assessment, {
-        fields: [ia02Pdf.assessment_id],
-        references: [assessment.id]
-    })
-}));
+// export const ia02PdfRelations = relations(ia02Pdf, ({ one }) => ({
+//     assessment: one(assessment, {
+//         fields: [ia02Pdf.assessment_id],
+//         references: [assessment.id]
+//     })
+// }));
 
-export const groupIa03Relations = relations(groupIa03, ({ one, many }) => ({
-    assessment: one(assessment, {
-        fields: [groupIa03.assessment_id],
-        references: [assessment.id]
-    }),
-    units: many(ucIa03),
-    questions: many(ia03Question)
-}));
+// export const groupIa03Relations = relations(groupIa03, ({ one, many }) => ({
+//     assessment: one(assessment, {
+//         fields: [groupIa03.assessment_id],
+//         references: [assessment.id]
+//     }),
+//     units: many(ucIa03),
+//     questions: many(ia03Question)
+// }));
 
-export const ucIa03Relations = relations(ucIa03, ({ one }) => ({
-    group: one(groupIa03, {
-        fields: [ucIa03.group_id],
-        references: [groupIa03.id]
-    })
-}));
+// export const ucIa03Relations = relations(ucIa03, ({ one }) => ({
+//     group: one(groupIa03, {
+//         fields: [ucIa03.group_id],
+//         references: [groupIa03.id]
+//     })
+// }));
 
-// IA01 Results Relations
-export const resultIa01HeaderRelations = relations(resultIa01Header, ({ one, many }) => ({
-    result: one(result, {
-        fields: [resultIa01Header.result_id],
-        references: [result.id]
-    }),
-    rows: many(resultIa01)
-}));
+// // IA01 Results Relations
+// export const resultIa01HeaderRelations = relations(resultIa01Header, ({ one, many }) => ({
+//     result: one(result, {
+//         fields: [resultIa01Header.result_id],
+//         references: [result.id]
+//     }),
+//     rows: many(resultIa01)
+// }));
 
-export const resultIa01Relations = relations(resultIa01, ({ one }) => ({
-    header: one(resultIa01Header, {
-        fields: [resultIa01.header_id],
-        references: [resultIa01Header.id]
-    }),
-    elementDetail: one(elementDetailsIa, {
-        fields: [resultIa01.element_detail_id],
-        references: [elementDetailsIa.id]
-    })
-}));
+// export const resultIa01Relations = relations(resultIa01, ({ one }) => ({
+//     header: one(resultIa01Header, {
+//         fields: [resultIa01.header_id],
+//         references: [resultIa01Header.id]
+//     }),
+//     elementDetail: one(elementDetailsIa, {
+//         fields: [resultIa01.element_detail_id],
+//         references: [elementDetailsIa.id]
+//     })
+// }));
 
-// IA02 Results Relations
-export const resultIa02HeaderRelations = relations(resultIa02Header, ({ one }) => ({
-    result: one(result, {
-        fields: [resultIa02Header.result_id],
-        references: [result.id]
-    })
-}));
+// // IA02 Results Relations
+// export const resultIa02HeaderRelations = relations(resultIa02Header, ({ one }) => ({
+//     result: one(result, {
+//         fields: [resultIa02Header.result_id],
+//         references: [result.id]
+//     })
+// }));
 
-// IA03 Questions & Results Relations
-export const ia03QuestionRelations = relations(ia03Question, ({ one, many }) => ({
-    group: one(groupIa03, {
-        fields: [ia03Question.group_id],
-        references: [groupIa03.id]
-    }),
-    rows: many(resultIa03)
-}));
+// // IA03 Questions & Results Relations
+// export const ia03QuestionRelations = relations(ia03Question, ({ one, many }) => ({
+//     group: one(groupIa03, {
+//         fields: [ia03Question.group_id],
+//         references: [groupIa03.id]
+//     }),
+//     rows: many(resultIa03)
+// }));
 
-export const resultIa03HeaderRelations = relations(resultIa03Header, ({ one, many }) => ({
-    result: one(result, {
-        fields: [resultIa03Header.result_id],
-        references: [result.id]
-    }),
-    rows: many(resultIa03)
-}));
+// export const resultIa03HeaderRelations = relations(resultIa03Header, ({ one, many }) => ({
+//     result: one(result, {
+//         fields: [resultIa03Header.result_id],
+//         references: [result.id]
+//     }),
+//     rows: many(resultIa03)
+// }));
 
-export const resultIa03Relations = relations(resultIa03, ({ one }) => ({
-    header: one(resultIa03Header, {
-        fields: [resultIa03.header_id],
-        references: [resultIa03Header.id]
-    }),
-    question: one(ia03Question, {
-        fields: [resultIa03.question_id],
-        references: [ia03Question.id]
-    })
-}));
+// export const resultIa03Relations = relations(resultIa03, ({ one }) => ({
+//     header: one(resultIa03Header, {
+//         fields: [resultIa03.header_id],
+//         references: [resultIa03Header.id]
+//     }),
+//     question: one(ia03Question, {
+//         fields: [resultIa03.question_id],
+//         references: [ia03Question.id]
+//     })
+// }));
 
-// IA05 Questions & Results Relations
-export const ia05QuestionRelations = relations(ia05Question, ({ one, many }) => ({
-    assessment: one(assessment, {
-        fields: [ia05Question.assessment_id],
-        references: [assessment.id]
-    }),
-    options: many(questionOption)
-}));
+// // IA05 Questions & Results Relations
+// export const ia05QuestionRelations = relations(ia05Question, ({ one, many }) => ({
+//     assessment: one(assessment, {
+//         fields: [ia05Question.assessment_id],
+//         references: [assessment.id]
+//     }),
+//     options: many(questionOption)
+// }));
 
-export const questionOptionRelations = relations(questionOption, ({ one, many }) => ({
-    question: one(ia05Question, {
-        fields: [questionOption.question_id],
-        references: [ia05Question.id]
-    }),
-    rows: many(resultIa05)
-}));
+// export const questionOptionRelations = relations(questionOption, ({ one, many }) => ({
+//     question: one(ia05Question, {
+//         fields: [questionOption.question_id],
+//         references: [ia05Question.id]
+//     }),
+//     rows: many(resultIa05)
+// }));
 
-export const resultIa05HeaderRelations = relations(resultIa05Header, ({ one, many }) => ({
-    result: one(result, {
-        fields: [resultIa05Header.result_id],
-        references: [result.id]
-    }),
-    rows: many(resultIa05)
-}));
+// export const resultIa05HeaderRelations = relations(resultIa05Header, ({ one, many }) => ({
+//     result: one(result, {
+//         fields: [resultIa05Header.result_id],
+//         references: [result.id]
+//     }),
+//     rows: many(resultIa05)
+// }));
 
-export const resultIa05Relations = relations(resultIa05, ({ one }) => ({
-    header: one(resultIa05Header, {
-        fields: [resultIa05.header_id],
-        references: [resultIa05Header.id]
-    }),
-    option: one(questionOption, {
-        fields: [resultIa05.option_id],
-        references: [questionOption.id]
-    })
-}));
+// export const resultIa05Relations = relations(resultIa05, ({ one }) => ({
+//     header: one(resultIa05Header, {
+//         fields: [resultIa05.header_id],
+//         references: [resultIa05Header.id]
+//     }),
+//     option: one(questionOption, {
+//         fields: [resultIa05.option_id],
+//         references: [questionOption.id]
+//     })
+// }));
 
-// IA07 Questions & Results Relations
-export const ia07QuestionRelations = relations(ia07Question, ({ one, many }) => ({
-    assessment: one(assessment, {
-        fields: [ia07Question.assessment_id],
-        references: [assessment.id]
-    }),
-    rows: many(resultIa07)
-}));
+// // IA07 Questions & Results Relations
+// export const ia07QuestionRelations = relations(ia07Question, ({ one, many }) => ({
+//     assessment: one(assessment, {
+//         fields: [ia07Question.assessment_id],
+//         references: [assessment.id]
+//     }),
+//     rows: many(resultIa07)
+// }));
 
-export const resultIa07HeaderRelations = relations(resultIa07Header, ({ one, many }) => ({
-    result: one(result, {
-        fields: [resultIa07Header.result_id],
-        references: [result.id]
-    }),
-    rows: many(resultIa07)
-}));
+// export const resultIa07HeaderRelations = relations(resultIa07Header, ({ one, many }) => ({
+//     result: one(result, {
+//         fields: [resultIa07Header.result_id],
+//         references: [result.id]
+//     }),
+//     rows: many(resultIa07)
+// }));
 
-export const resultIa07Relations = relations(resultIa07, ({ one }) => ({
-    header: one(resultIa07Header, {
-        fields: [resultIa07.header_id],
-        references: [resultIa07Header.id]
-    }),
-    question: one(ia07Question, {
-        fields: [resultIa07.question_id],
-        references: [ia07Question.id]
-    })
-}));
+// export const resultIa07Relations = relations(resultIa07, ({ one }) => ({
+//     header: one(resultIa07Header, {
+//         fields: [resultIa07.header_id],
+//         references: [resultIa07Header.id]
+//     }),
+//     question: one(ia07Question, {
+//         fields: [resultIa07.question_id],
+//         references: [ia07Question.id]
+//     })
+// }));
 
-export const approvalRequestRelations = relations(approvalRequest, ({ one }) => ({
-    requester: one(admin, {
-        fields: [approvalRequest.requester_admin_id],
-        references: [admin.id]
-    }),
-    approver: one(admin, {
-        fields: [approvalRequest.approver_admin_id],
-        references: [admin.id]
-    }),
-    backupApprover: one(admin, {
-        fields: [approvalRequest.backup_admin_id],
-        references: [admin.id]
-    }),
-    approvedBy: one(admin, {
-        fields: [approvalRequest.approved_by],
-        references: [admin.id]
-    })
-}));
+// export const approvalRequestRelations = relations(approvalRequest, ({ one }) => ({
+//     requester: one(admin, {
+//         fields: [approvalRequest.requester_admin_id],
+//         references: [admin.id]
+//     }),
+//     approver: one(admin, {
+//         fields: [approvalRequest.approver_admin_id],
+//         references: [admin.id]
+//     }),
+//     backupApprover: one(admin, {
+//         fields: [approvalRequest.backup_admin_id],
+//         references: [admin.id]
+//     }),
+//     approvedBy: one(admin, {
+//         fields: [approvalRequest.approved_by],
+//         references: [admin.id]
+//     })
+// }));
 
-export const adminRelations = relations(admin, ({ one, many }) => ({
-    user: one(user, {
-        fields: [admin.user_id],
-        references: [user.id]
-    }),
-    requestedApprovalRequests: many(approvalRequest, { relationName: 'requester' }),
-    receivedApprovalRequests: many(approvalRequest, { relationName: 'approver' }),
-    backupApprovalRequests: many(approvalRequest, { relationName: 'backupApprover' }),
-    approvedRequests: many(approvalRequest, { relationName: 'approvedBy' })
-}));
+// export const adminRelations = relations(admin, ({ one, many }) => ({
+//     user: one(user, {
+//         fields: [admin.user_id],
+//         references: [user.id]
+//     }),
+//     requestedApprovalRequests: many(approvalRequest, { relationName: 'requester' }),
+//     receivedApprovalRequests: many(approvalRequest, { relationName: 'approver' }),
+//     backupApprovalRequests: many(approvalRequest, { relationName: 'backupApprover' }),
+//     approvedRequests: many(approvalRequest, { relationName: 'approvedBy' })
+// }));

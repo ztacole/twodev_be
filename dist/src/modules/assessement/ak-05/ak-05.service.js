@@ -83,7 +83,10 @@ function buildAK05Response(ak05) {
         const result = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, ak05.result_id) });
         if (!result)
             throw new error_1.NotFoundError('Result');
-        const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.assessment_id) });
+        const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, result.schedule_id) });
+        if (!schedule)
+            throw new error_1.NotFoundError('Schedule');
+        const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id) });
         let occupation = null;
         let scheme = null;
         if (assessment) {
@@ -96,18 +99,31 @@ function buildAK05Response(ak05) {
         const assesseeUser = assessee ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.user_id) }) : null;
         const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, result.assessor_id) });
         const assessorUser = assessor ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) }) : null;
+        const ia01Header = yield drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, result.id) });
+        if (!ia01Header)
+            throw new error_1.NotFoundError('Result header');
         return {
             id: ak05.id,
             result: {
                 id: result.id,
+                schedule: schedule,
                 assessment: assessment ? Object.assign(Object.assign({}, assessment), { occupation: occupation ? Object.assign(Object.assign({}, occupation), { scheme }) : null }) : null,
                 assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } : null,
                 assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } : null,
                 tuk: result.tuk,
                 created_at: result.created_at,
-                result_ak05: ak05,
+                result_ak05: {
+                    id: ak05.id,
+                    is_competent: ia01Header.is_competent,
+                    description: ak05.description,
+                    negative_positive_aspects: ak05.negative_positive_aspects,
+                    rejection_notes: ak05.rejection_notes,
+                    improvement_suggestions: ak05.improvement_suggestions,
+                    notes: ak05.notes,
+                    approved_assessor: ak05.approved_assessor,
+                },
             },
-            is_competent: ak05.is_competent,
+            is_competent: ia01Header.is_competent,
         };
     });
 }

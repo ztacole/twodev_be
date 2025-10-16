@@ -23,6 +23,7 @@ import {
     assessment,
     assessee,
     assessor,
+    assessmentSchedule,
 } from '../../../../drizzle/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import {
@@ -148,26 +149,26 @@ export class APL1Service {
     static async createOrUploadCertificate(params: {
         assessee_id: number;
         assessor_id: number;
-        assessment_id: number;
+        schedule_id: number;
         bodyData: any;
         files: any[];
     }): Promise<CertificateDocsResponse> {
-    const { assessee_id, assessor_id, assessment_id, bodyData, files } = params;
+        const { assessee_id, assessor_id, schedule_id, bodyData, files } = params;
 
-    if (!assessee_id) throw new ValidationError('assessee_id');
-    if (!assessor_id) throw new ValidationError('assessor_id');
-    if (!assessment_id) throw new ValidationError('assessment_id');
+        if (!assessee_id) throw new ValidationError('assessee_id');
+        if (!assessor_id) throw new ValidationError('assessor_id');
+        if (!schedule_id) throw new ValidationError('schedule_id');
 
-    const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
-    if (!existingAssessment) throw new NotFoundError('Assessment');
+        const existingSchedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, schedule_id) });
+        if (!existingSchedule) throw new NotFoundError('Assessment');
 
-    const existingAssessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assessee_id) });
-    if (!existingAssessee) throw new NotFoundError('Assessee');
+        const existingAssessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, assessee_id) });
+        if (!existingAssessee) throw new NotFoundError('Assessee');
 
-    const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessor.id, assessor_id) });
-    if (!existingAssessor) throw new NotFoundError('Assessor');
+        const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessor.id, assessor_id) });
+        if (!existingAssessor) throw new NotFoundError('Assessor');
 
-    const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${assessment_id}`);
+        const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${existingSchedule.assessment_id}`);
 
         const canonicalFields = [
             'school_report_card',
@@ -178,7 +179,7 @@ export class APL1Service {
         ];
 
         if (canonicalFields.length !== 5) throw new NotFoundError('files');
-        
+
         const fieldMapping: Record<string, string> = {};
         for (const f of canonicalFields) {
             fieldMapping[f] = f;
@@ -195,7 +196,7 @@ export class APL1Service {
             if (fs.existsSync(uploadPath)) {
                 for (const fileName of fs.readdirSync(uploadPath)) {
                     const filePath = require('path').join(uploadPath, fileName);
-                    try { fs.unlinkSync(filePath); } catch {}
+                    try { fs.unlinkSync(filePath); } catch { }
                 }
             }
             throw new ValidationError('File belum lengkap. Upload gagal, silakan ulangi.');
@@ -203,7 +204,7 @@ export class APL1Service {
         for (const file of fileArray) {
             const mapped = fieldMapping[file.fieldname];
             if (mapped) {
-                fileData[mapped] = `uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
+                fileData[mapped] = `uploads/apl-01/${assessee_id}_${assessor_id}_${existingSchedule.assessment_id}/${file.filename}`;
             }
         }
 
@@ -215,17 +216,17 @@ export class APL1Service {
 
         // find latest result
         let [result] = await db.select().from(resultTable)
-            .where(and(eq(resultTable.assessee_id, assessee_id), eq(resultTable.assessor_id, assessor_id), eq(resultTable.assessment_id, assessment_id)))
+            .where(and(eq(resultTable.assessee_id, assessee_id), eq(resultTable.assessor_id, assessor_id), eq(resultTable.schedule_id, existingSchedule.id)))
             .orderBy(desc(resultTable.id));
 
         if (!result) {
-            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, assessment_id) });
+            const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, existingSchedule.assessment_id) });
             if (!assessment) throw new NotFoundError('Assessment');
 
             const [createdResult] = await db.insert(resultTable).values({
-                assessment_id,
                 assessee_id,
                 assessor_id,
+                schedule_id,
                 tuk: TUK_VALUES.SEWAKTU as any,
                 is_competent: false,
             }).$returningId();
@@ -287,7 +288,10 @@ export class APL1Service {
         const resultRow = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
         if (!resultRow) return null;
 
-        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, resultRow.assessment_id) });
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, resultRow.schedule_id) });
+        if (!schedule) return null;
+
+        const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, resultRow.assessee_id) });
         const assessor = await db.query.user.findFirst({ where: eq(userTable.id, resultRow.assessor_id) })
 
@@ -305,6 +309,7 @@ export class APL1Service {
             assessment: assessment || null,
             assessee: assessee || null,
             assessor: assessor || null,
+            schedule: schedule || null,
             apl02_headers: apl02_headers || null,
             ia01_headers: ia01_headers || null,
             ia02_headers: ia02_headers || null,
@@ -336,15 +341,17 @@ export class APL1Service {
                 id_card: resultDocTable.id_card,
                 created_at: resultDocTable.created_at,
                 updated_at: resultDocTable.updated_at,
+                schedule: assessmentSchedule,
                 result: result,
                 assessment: assessment,
                 assessee: assessee
             })
             .from(resultDocTable)
             .innerJoin(result, eq(resultDocTable.result_id, result.id))
-            .innerJoin(assessment, eq(result.assessment_id, assessment.id))
+            .innerJoin(assessmentSchedule, eq(result.schedule_id, assessmentSchedule.id))
+            .innerJoin(assessment, eq(assessmentSchedule.assessment_id, assessment.id))
             .innerJoin(assessee, eq(result.assessee_id, assessee.id))
-            .where(eq(result.assessment_id, assessmentId));
+            .where(eq(assessmentSchedule.assessment_id, assessmentId));
 
         return rows;
     }
@@ -397,6 +404,9 @@ export class APL1Service {
         const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
         if (!result) throw new NotFoundError('Result');
 
+        const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, result.schedule_id) });
+        if (!schedule) throw new NotFoundError('Schedule');
+
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
         if (!assessee) throw new NotFoundError('Assessee');
         const user = await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) });
@@ -404,13 +414,14 @@ export class APL1Service {
         if (assesseeJobs.length === 0) throw new NotFoundError('Assessee Jobs');
         const assesseeJob = assesseeJobs[0];
 
-        const assessment = await AssessmentService.getAssessmentById(result.assessment_id);
+        const assessment = await AssessmentService.getAssessmentById(schedule.assessment_id);
 
         return {
             ...(assessee as any),
             full_name: user?.full_name,
             job: assesseeJob,
             assessment: assessment,
+            schedule: schedule
         } as AssesseeResponse;
     }
 

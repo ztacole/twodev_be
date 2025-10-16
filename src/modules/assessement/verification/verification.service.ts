@@ -1,6 +1,6 @@
 import { db } from '../../../config/drizzle';
 import { NotFoundError } from '../../../common/error';
-import { resultDoc as resultDocTable, result as resultTable, assessee as assesseeTable, assessor as assessorTable, user as userTable, scheduleDetail as scheduleDetailTable, assessmentSchedule as assessmentScheduleTable } from '../../../../drizzle/schema';
+import { resultDoc as resultDocTable, result as resultTable, assessee as assesseeTable, assessor as assessorTable, user as userTable, scheduleDetail as scheduleDetailTable, assessmentSchedule as assessmentScheduleTable, admin as adminTable } from '../../../../drizzle/schema';
 import { and, desc, eq } from 'drizzle-orm';
 
 export const getPendingVerifications = async (schedule_detail_id?: number) => {
@@ -11,9 +11,7 @@ export const getPendingVerifications = async (schedule_detail_id?: number) => {
 		if (filterId !== undefined) {
 			const detail = await db.query.scheduleDetail.findFirst({ where: eq(scheduleDetailTable.id, filterId) });
 			if (!detail) return null as any;
-			const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, detail.schedule_id) });
-			if (!schedule) return null as any;
-			if (!result || result.assessment_id !== schedule.assessment_id || result.assessor_id !== detail.assessor_id) return null as any;
+			if (!result || result.schedule_id !== detail.schedule_id || result.assessor_id !== detail.assessor_id) return null as any;
 		}
 		const assessee = result ? await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) }) : null;
 		const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
@@ -38,9 +36,7 @@ export const getApprovedVerifications = async (schedule_detail_id?: number) => {
 		if (filterId !== undefined) {
 			const detail = await db.query.scheduleDetail.findFirst({ where: eq(scheduleDetailTable.id, filterId) });
 			if (!detail) return null as any;
-			const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, detail.schedule_id) });
-			if (!schedule) return null as any;
-			if (!result || result.assessment_id !== schedule.assessment_id || result.assessor_id !== detail.assessor_id) return null as any;
+			if (!result || result.schedule_id !== detail.schedule_id || result.assessor_id !== detail.assessor_id) return null as any;
 		}
 		const assessee = result ? await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) }) : null;
 		const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
@@ -78,30 +74,36 @@ export const getVerificationDetail = async (result_id: number) => {
 	};
 };
 
-export const approveVerification = async (result_id: number) => {
+export const approveVerification = async (result_id: number, user_id: number) => {
 	const existing = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
 	if (!existing) throw new NotFoundError('Result');
 
+	const admin = await db.query.admin.findFirst({ where: eq(adminTable.user_id, user_id) });
+	if (!admin) throw new NotFoundError('Admin');
+
 	await db.update(resultTable).set({ is_competent: true }).where(eq(resultTable.id, result_id));
-	await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.result_id, result_id));
+	await db.update(resultDocTable).set({ approved: true, admin_id: admin.id }).where(eq(resultDocTable.result_id, result_id));
 
 	return { success: true };
 };
 
-export const approveVerificationByScheduleDetail = async (schedule_detail_id: number) => {
+export const approveVerificationByScheduleDetail = async (schedule_detail_id: number, user_id: number) => {
 	const detail = await db.query.scheduleDetail.findFirst({ where: eq(scheduleDetailTable.id, schedule_detail_id) });
 	if (!detail) throw new NotFoundError('Schedule Detail');
 
 	const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentScheduleTable.id, detail.schedule_id) });
 	if (!schedule) throw new NotFoundError('Assessment Schedule');
 
+	const admin = await db.query.admin.findFirst({ where: eq(adminTable.user_id, user_id) });
+	if (!admin) throw new NotFoundError('Admin');
+
 	const results = await db.select().from(resultTable)
-		.where(and(eq(resultTable.assessment_id, schedule.assessment_id), eq(resultTable.assessor_id, detail.assessor_id)));
+		.where(and(eq(resultTable.schedule_id, schedule.id), eq(resultTable.assessor_id, detail.assessor_id)));
 
 	const updated: number[] = [];
 	for (const r of results) {
 		await db.update(resultTable).set({ is_competent: true }).where(eq(resultTable.id, r.id));
-		await db.update(resultDocTable).set({ approved: true }).where(eq(resultDocTable.result_id, r.id));
+		await db.update(resultDocTable).set({ approved: true, admin_id: admin.id }).where(eq(resultDocTable.result_id, r.id));
 		updated.push(r.id);
 	}
 
@@ -116,7 +118,7 @@ export const getVerificationsByScheduleDetail = async (schedule_detail_id: numbe
 	if (!schedule) throw new NotFoundError('Assessment Schedule');
 
 	const results = await db.select().from(resultTable)
-		.where(and(eq(resultTable.assessment_id, schedule.assessment_id), eq(resultTable.assessor_id, detail.assessor_id)));
+		.where(and(eq(resultTable.schedule_id, schedule.id), eq(resultTable.assessor_id, detail.assessor_id)));
 
 	return Promise.all(results.map(async (r) => {
 		const docs = await db.select().from(resultDocTable).where(eq(resultDocTable.result_id, r.id));

@@ -55,10 +55,14 @@ export class AK01Service {
     if (!header) {
       throw new NotFoundError('Header AK01');
     }
+    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, result.schedule_id) });
+    if (!schedule) {
+      throw new NotFoundError('Schedule');
+    }
 
     const rows = await db.query.resultAk01.findMany({ where: eq(ak01RowTable.header_id, header.id) });
 
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
     const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
     const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
     const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
@@ -66,9 +70,10 @@ export class AK01Service {
     const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
     const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
 
-    const schedules = await db.select().from(scheduleTable).where(eq(scheduleTable.assessment_id, result.assessment_id));
-    const details = await Promise.all(schedules.map(s => db.select().from(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, s.id))));
-    const locations = details.flat().filter(d => d.assessor_id === result.assessor_id).map(d => d.location);
+    const detail = await db.query.scheduleDetail.findFirst({ where: and(eq(scheduleDetailTable.schedule_id, schedule.id), eq(scheduleDetailTable.assessor_id, result.assessor_id)) });
+    if (!detail) {
+      throw new NotFoundError('Schedule detail');
+    }
   
     return {
       id: result.id,
@@ -78,7 +83,8 @@ export class AK01Service {
       tuk: result.tuk,
       is_competent: result.is_competent,
       created_at: result.created_at,
-      locations,
+      schedule: schedule,
+      location: detail.location,
       ak01_header: { ...header, rows },
     };
   }

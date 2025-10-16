@@ -594,7 +594,7 @@ async function buildScheduleResponse(schedule: any, user: Assessee[] | null = nu
     const detailed = await Promise.all(details.map(async (detail) => {
         const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, detail.assessor_id) });
         const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
-        const results = await db.select().from(resultTable).where(and(eq(resultTable.assessment_id, schedule.assessment_id), eq(resultTable.assessor_id, detail.assessor_id)));
+        const results = await db.select().from(resultTable).where(and(eq(resultTable.schedule_id, schedule.id), eq(resultTable.assessor_id, detail.assessor_id)));
         const onGoing = user ? results.find(r => user.find(a => a.id === r.assessee_id)) : null;
         return {
             id: detail.id,

@@ -1,5 +1,5 @@
 import { db } from '../../../config/drizzle';
-import { result as resultTable, resultAk05 as resultAk05Table, assessment as assessmentTable, occupation as occupationTable, scheme as schemeTable, assessee as assesseeTable, assessor as assessorTable, user as userTable } from '../../../../drizzle/schema';
+import { result as resultTable, resultAk05 as resultAk05Table, assessment as assessmentTable, occupation as occupationTable, scheme as schemeTable, assessee as assesseeTable, assessor as assessorTable, user as userTable, assessmentSchedule, resultIa01Header } from '../../../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { AK05Request, AK05Response } from './ak-05.type';
 import { NotFoundError } from '../../../common/error';
@@ -65,8 +65,10 @@ export class AK05Service {
 async function buildAK05Response(ak05: any): Promise<AK05Response> {
   const result = await db.query.result.findFirst({ where: eq(resultTable.id, ak05.result_id) });
   if (!result) throw new NotFoundError('Result');
+  const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, result.schedule_id) });
+  if (!schedule) throw new NotFoundError('Schedule');
 
-  const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
+  const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
   let occupation: any = null;
   let scheme: any = null;
   if (assessment) {
@@ -81,17 +83,30 @@ async function buildAK05Response(ak05: any): Promise<AK05Response> {
   const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
   const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
 
+  const ia01Header = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01Header.result_id, result.id) });
+  if (!ia01Header) throw new NotFoundError('Result header');
+
   return {
     id: ak05.id,
     result: {
       id: result.id,
+      schedule: schedule,
       assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
       assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } as any : null,
       assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } as any : null,
       tuk: result.tuk,
       created_at: result.created_at,
-      result_ak05: ak05 as any,
+      result_ak05: {
+        id: ak05.id,
+        is_competent: ia01Header.is_competent,
+        description: ak05.description,
+        negative_positive_aspects: ak05.negative_positive_aspects,
+        rejection_notes: ak05.rejection_notes,
+        improvement_suggestions: ak05.improvement_suggestions,
+        notes: ak05.notes,
+        approved_assessor: ak05.approved_assessor,
+      },
     } as any,
-    is_competent: ak05.is_competent,
+    is_competent: ia01Header.is_competent,
   };
 }

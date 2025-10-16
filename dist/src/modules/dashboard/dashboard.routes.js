@@ -12,5 +12,5 @@ router.get('/admin/summary', auth_middleware_1.authenticateToken, auth_middlewar
 router.get('/admin/schedules', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, dashboard_controller_1.DashboardController.getSchedules);
 router.get('/admin/verifications', auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware, dashboard_controller_1.DashboardController.getVerificationDocs);
 // assessor
-router.get('/assessor/:assessorId/:assessmentId/:type', auth_middleware_1.authenticateToken, auth_middleware_1.assessorMiddleware, assessor_controller_1.DashboardAssessorController.getAPL02Assessee);
+router.get('/assessor/:assessorId/:scheduleId/:type', auth_middleware_1.authenticateToken, auth_middleware_1.assessorMiddleware, assessor_controller_1.DashboardAssessorController.getAPL02Assessee);
 exports.default = router;

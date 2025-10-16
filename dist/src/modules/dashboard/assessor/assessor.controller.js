@@ -19,12 +19,12 @@ exports.DashboardAssessorController = DashboardAssessorController;
 _a = DashboardAssessorController;
 DashboardAssessorController.getAPL02Assessee = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const assessorId = Number(req.params.assessorId);
-    const assessmentId = Number(req.params.assessmentId);
+    const scheduleId = Number(req.params.scheduleId);
     const type = req.params.type;
-    if (!assessmentId || !assessorId || !type) {
-        return res.status(400).json({ success: false, message: 'Assessor ID, Assessment ID, dan Type is required' });
+    if (!scheduleId || !assessorId || !type) {
+        return res.status(400).json({ success: false, message: 'Assessor ID, Schedule ID, dan Type is required' });
     }
-    const data = yield assessor_service_1.DashboardAssessorService.getAssesseeData(assessorId, assessmentId, type);
+    const data = yield assessor_service_1.DashboardAssessorService.getAssesseeData(assessorId, scheduleId, type);
     res.json({
         success: true,
         message: 'Data assessment mandiri berhasil diambil',

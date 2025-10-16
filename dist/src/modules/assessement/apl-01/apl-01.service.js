@@ -133,15 +133,15 @@ class APL1Service {
     }
     static createOrUploadCertificate(params) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { assessee_id, assessor_id, assessment_id, bodyData, files } = params;
+            const { assessee_id, assessor_id, schedule_id, bodyData, files } = params;
             if (!assessee_id)
                 throw new error_1.ValidationError('assessee_id');
             if (!assessor_id)
                 throw new error_1.ValidationError('assessor_id');
-            if (!assessment_id)
-                throw new error_1.ValidationError('assessment_id');
-            const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
-            if (!existingAssessment)
+            if (!schedule_id)
+                throw new error_1.ValidationError('schedule_id');
+            const existingSchedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, schedule_id) });
+            if (!existingSchedule)
                 throw new error_1.NotFoundError('Assessment');
             const existingAssessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, assessee_id) });
             if (!existingAssessee)
@@ -149,7 +149,7 @@ class APL1Service {
             const existingAssessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, assessor_id) });
             if (!existingAssessor)
                 throw new error_1.NotFoundError('Assessor');
-            const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${assessment_id}`);
+            const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${existingSchedule.assessment_id}`);
             const canonicalFields = [
                 'school_report_card',
                 'field_work_practice_certificate',
@@ -185,22 +185,22 @@ class APL1Service {
             for (const file of fileArray) {
                 const mapped = fieldMapping[file.fieldname];
                 if (mapped) {
-                    fileData[mapped] = `uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
+                    fileData[mapped] = `uploads/apl-01/${assessee_id}_${assessor_id}_${existingSchedule.assessment_id}/${file.filename}`;
                 }
             }
             const docsData = Object.assign({ purpose: (bodyData === null || bodyData === void 0 ? void 0 : bodyData.purpose) || 'APL1 Certificate Documents' }, fileData);
             // find latest result
             let [result] = yield drizzle_1.db.select().from(schema_1.result)
-                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessee_id, assessee_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id), (0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id)))
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessee_id, assessee_id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id), (0, drizzle_orm_1.eq)(schema_1.result.schedule_id, existingSchedule.id)))
                 .orderBy((0, drizzle_orm_1.desc)(schema_1.result.id));
             if (!result) {
-                const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, assessment_id) });
+                const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, existingSchedule.assessment_id) });
                 if (!assessment)
                     throw new error_1.NotFoundError('Assessment');
                 const [createdResult] = yield drizzle_1.db.insert(schema_1.result).values({
-                    assessment_id,
                     assessee_id,
                     assessor_id,
+                    schedule_id,
                     tuk: TUK_VALUES.SEWAKTU,
                     is_competent: false,
                 }).$returningId();
@@ -259,7 +259,10 @@ class APL1Service {
             const resultRow = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
             if (!resultRow)
                 return null;
-            const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, resultRow.assessment_id) });
+            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, resultRow.schedule_id) });
+            if (!schedule)
+                return null;
+            const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id) });
             const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, resultRow.assessee_id) });
             const assessor = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, resultRow.assessor_id) });
             const apl02_headers = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, result_id) });
@@ -270,7 +273,7 @@ class APL1Service {
             const ia07_headers = yield drizzle_1.db.query.resultIa07Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa07Header.result_id, result_id) });
             const ak01_headers = yield drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, result_id) });
             const ak02_headers = yield drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, result_id) });
-            return Object.assign(Object.assign({}, resultRow), { assessment: assessment || null, assessee: assessee || null, assessor: assessor || null, apl02_headers: apl02_headers || null, ia01_headers: ia01_headers || null, ia02_headers: ia02_headers || null, ia03_headers: ia03_headers || null, ia05_headers: ia05_headers || null, ia07_headers: ia07_headers || null, ak01_headers: ak01_headers || null, ak02_headers: ak02_headers || null });
+            return Object.assign(Object.assign({}, resultRow), { assessment: assessment || null, assessee: assessee || null, assessor: assessor || null, schedule: schedule || null, apl02_headers: apl02_headers || null, ia01_headers: ia01_headers || null, ia02_headers: ia02_headers || null, ia03_headers: ia03_headers || null, ia05_headers: ia05_headers || null, ia07_headers: ia07_headers || null, ak01_headers: ak01_headers || null, ak02_headers: ak02_headers || null });
         });
     }
     static getAllResultDoc() {
@@ -295,15 +298,17 @@ class APL1Service {
                 id_card: schema_1.resultDoc.id_card,
                 created_at: schema_1.resultDoc.created_at,
                 updated_at: schema_1.resultDoc.updated_at,
+                schedule: schema_1.assessmentSchedule,
                 result: schema_1.result,
                 assessment: schema_1.assessment,
                 assessee: schema_1.assessee
             })
                 .from(schema_1.resultDoc)
                 .innerJoin(schema_1.result, (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, schema_1.result.id))
-                .innerJoin(schema_1.assessment, (0, drizzle_orm_1.eq)(schema_1.result.assessment_id, schema_1.assessment.id))
+                .innerJoin(schema_1.assessmentSchedule, (0, drizzle_orm_1.eq)(schema_1.result.schedule_id, schema_1.assessmentSchedule.id))
+                .innerJoin(schema_1.assessment, (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, schema_1.assessment.id))
                 .innerJoin(schema_1.assessee, (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, schema_1.assessee.id))
-                .where((0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessmentId));
+                .where((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, assessmentId));
             return rows;
         });
     }
@@ -360,6 +365,9 @@ class APL1Service {
             const result = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
             if (!result)
                 throw new error_1.NotFoundError('Result');
+            const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, result.schedule_id) });
+            if (!schedule)
+                throw new error_1.NotFoundError('Schedule');
             const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, result.assessee_id) });
             if (!assessee)
                 throw new error_1.NotFoundError('Assessee');
@@ -368,8 +376,8 @@ class APL1Service {
             if (assesseeJobs.length === 0)
                 throw new error_1.NotFoundError('Assessee Jobs');
             const assesseeJob = assesseeJobs[0];
-            const assessment = yield assessment_service_1.AssessmentService.getAssessmentById(result.assessment_id);
-            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob, assessment: assessment });
+            const assessment = yield assessment_service_1.AssessmentService.getAssessmentById(schedule.assessment_id);
+            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob, assessment: assessment, schedule: schedule });
         });
     }
     static getResultDocsByResultId(result_id) {

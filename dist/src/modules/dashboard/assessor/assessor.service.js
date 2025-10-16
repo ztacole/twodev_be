@@ -15,10 +15,13 @@ const error_1 = require("../../../common/error");
 const schema_1 = require("../../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 class DashboardAssessorService {
-    static getAssesseeData(assessor_id, assessment_id, type) {
+    static getAssesseeData(assessor_id, schedule_id, type) {
         return __awaiter(this, void 0, void 0, function* () {
-            const results = yield drizzle_1.db.select().from(schema_1.result).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id), (0, drizzle_orm_1.eq)(schema_1.result.assessment_id, assessment_id)));
+            const results = yield drizzle_1.db.select().from(schema_1.result).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.assessor_id, assessor_id), (0, drizzle_orm_1.eq)(schema_1.result.schedule_id, schedule_id)));
             return Promise.all(results.map((result) => __awaiter(this, void 0, void 0, function* () {
+                const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, result.schedule_id) });
+                if (!schedule)
+                    throw new error_1.NotFoundError('Assessment Schedule');
                 const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, result.assessee_id) });
                 const user = assessee ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessee.user_id) }) : null;
                 const doc = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.id, result.id) });
@@ -38,7 +41,7 @@ class DashboardAssessorService {
                         case "apl-02":
                             if (!apl02)
                                 throw new error_1.NotFoundError('Result APL02 Header');
-                            const unitCompetencies = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, result.assessment_id));
+                            const unitCompetencies = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, schedule.assessment_id));
                             let finishedUcApl02Count = 0;
                             for (const uc of unitCompetencies) {
                                 const elements = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, uc.id));
@@ -84,8 +87,8 @@ class DashboardAssessorService {
                 });
                 return {
                     result_id: result.id,
-                    assessment_id: result.assessment_id,
                     assessee_id: result.assessee_id,
+                    schedule_id: result.schedule_id,
                     score: result.score,
                     assessee_name: user === null || user === void 0 ? void 0 : user.full_name,
                     status: yield getHeaderStatus(type),
