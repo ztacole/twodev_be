@@ -1,4 +1,4 @@
-import { AssessmentDetailsResponse } from "../assessment.type";
+import { AssessmentDetailsResponse, AssessmentResponse } from "../assessment.type";
 
 // Response
 interface AssesseeJobResponse {

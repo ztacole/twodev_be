@@ -24,6 +24,11 @@ import {
     assessee,
     assessor,
     assessmentSchedule,
+    occupation as occupationTable,
+    scheme as schemeTable,
+    ucApl02 as ucApl02Table,
+    elementApl02 as elementApl02Table,
+    elementDetailsApl02 as elementDetailsApl02Table
 } from '../../../../drizzle/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import {
@@ -414,13 +419,49 @@ export class APL1Service {
         if (assesseeJobs.length === 0) throw new NotFoundError('Assessee Jobs');
         const assesseeJob = assesseeJobs[0];
 
-        const assessment = await AssessmentService.getAssessmentById(schedule.assessment_id);
+        const assessment = await db.query.assessment.findFirst({
+            where: eq(assessmentTable.id, schedule.assessment_id)
+        });
+        if (!assessment) throw new NotFoundError('Assessment');
+
+        // Get occupation and scheme
+        const [occupation] = await db
+            .select({
+                id: occupationTable.id,
+                name: occupationTable.name,
+                scheme_id: occupationTable.scheme_id,
+                created_at: occupationTable.created_at,
+                updated_at: occupationTable.updated_at,
+                scheme: schemeTable
+            })
+            .from(occupationTable)
+            .innerJoin(schemeTable, eq(schemeTable.id, occupationTable.scheme_id))
+            .where(eq(occupationTable.id, assessment.occupation_id));
+
+        // === UCAPL02 ===
+        const ucApl02sRaw = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, schedule.assessment_id));
+        const uc_apl02s = await Promise.all(
+            ucApl02sRaw.map(async (uc) => {
+                return {
+                    id: uc.id,
+                    unit_code: uc.unit_code,
+                    title: uc.title
+                };
+            })
+        );
+
+        const resultAssessment = {
+            id: assessment.id,
+            code: assessment.code,
+            occupation: occupation,
+            uc_apl02s,
+        }
 
         return {
             ...(assessee as any),
             full_name: user?.full_name,
             job: assesseeJob,
-            assessment: assessment,
+            assessment: resultAssessment,
             schedule: schedule
         } as AssesseeResponse;
     }

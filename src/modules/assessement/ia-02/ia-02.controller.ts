@@ -96,16 +96,16 @@ export class IA02Controller {
 
     static async getPdf(req: Request, res: Response) {
         try {
-            const assessmentId = Number(req.params.assessmentId);
+            const scheduleId = Number(req.params.scheduleId);
 
-            if (!assessmentId) {
+            if (!scheduleId) {
             return res.status(400).json({
                 success: false,
-                message: "Assessment ID dibutuhkan",
+                message: "Schedule ID dibutuhkan",
             });
             }
 
-            const pdf = await IAO2Service.getPdf(assessmentId);
+            const pdf = await IAO2Service.getPdf(scheduleId);
 
             if (!pdf) {
             return res.status(404).json({
@@ -117,7 +117,7 @@ export class IA02Controller {
             const filePath = path.join(
                 __dirname,
                 "../../../../public/uploads/ia-02",
-                `assessment-${assessmentId}`,
+                `assessment-${scheduleId}`,
                 pdf.file_name
             );
 

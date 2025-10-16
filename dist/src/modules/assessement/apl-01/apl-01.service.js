@@ -25,7 +25,6 @@ const error_1 = require("../../../common/error");
 const drizzle_1 = require("../../../config/drizzle");
 const schema_1 = require("../../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
-const assessment_service_1 = require("../assessment.service");
 const TUK_VALUES = {
     SEWAKTU: 'sewaktu',
     TEMPAT_KERJA: 'tempat_kerja',
@@ -376,8 +375,40 @@ class APL1Service {
             if (assesseeJobs.length === 0)
                 throw new error_1.NotFoundError('Assessee Jobs');
             const assesseeJob = assesseeJobs[0];
-            const assessment = yield assessment_service_1.AssessmentService.getAssessmentById(schedule.assessment_id);
-            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob, assessment: assessment, schedule: schedule });
+            const assessment = yield drizzle_1.db.query.assessment.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id)
+            });
+            if (!assessment)
+                throw new error_1.NotFoundError('Assessment');
+            // Get occupation and scheme
+            const [occupation] = yield drizzle_1.db
+                .select({
+                id: schema_1.occupation.id,
+                name: schema_1.occupation.name,
+                scheme_id: schema_1.occupation.scheme_id,
+                created_at: schema_1.occupation.created_at,
+                updated_at: schema_1.occupation.updated_at,
+                scheme: schema_1.scheme
+            })
+                .from(schema_1.occupation)
+                .innerJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.scheme.id, schema_1.occupation.scheme_id))
+                .where((0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id));
+            // === UCAPL02 ===
+            const ucApl02sRaw = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, schedule.assessment_id));
+            const uc_apl02s = yield Promise.all(ucApl02sRaw.map((uc) => __awaiter(this, void 0, void 0, function* () {
+                return {
+                    id: uc.id,
+                    unit_code: uc.unit_code,
+                    title: uc.title
+                };
+            })));
+            const resultAssessment = {
+                id: assessment.id,
+                code: assessment.code,
+                occupation: occupation,
+                uc_apl02s,
+            };
+            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob, assessment: resultAssessment, schedule: schedule });
         });
     }
     static getResultDocsByResultId(result_id) {

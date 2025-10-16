@@ -149,10 +149,13 @@ class IAO2Service {
             }
         });
     }
-    static getPdf(assessment_id) {
+    static getPdf(scheduleId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const pdf = yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, assessment_id) });
+                const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, scheduleId) });
+                if (!schedule)
+                    throw new error_1.NotFoundError('Schedule');
+                const pdf = yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, schedule.assessment_id) });
                 return pdf;
             }
             catch (error) {

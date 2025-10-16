@@ -56,21 +56,21 @@ class IA02Controller {
     static getPdf(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const assessmentId = Number(req.params.assessmentId);
-                if (!assessmentId) {
+                const scheduleId = Number(req.params.scheduleId);
+                if (!scheduleId) {
                     return res.status(400).json({
                         success: false,
-                        message: "Assessment ID dibutuhkan",
+                        message: "Schedule ID dibutuhkan",
                     });
                 }
-                const pdf = yield ia_02_service_1.IAO2Service.getPdf(assessmentId);
+                const pdf = yield ia_02_service_1.IAO2Service.getPdf(scheduleId);
                 if (!pdf) {
                     return res.status(404).json({
                         success: false,
                         message: "PDF tidak ditemukan",
                     });
                 }
-                const filePath = path_1.default.join(__dirname, "../../../../public/uploads/ia-02", `assessment-${assessmentId}`, pdf.file_name);
+                const filePath = path_1.default.join(__dirname, "../../../../public/uploads/ia-02", `assessment-${scheduleId}`, pdf.file_name);
                 if (!fs_1.default.existsSync(filePath)) {
                     return res.status(404).json({
                         success: false,

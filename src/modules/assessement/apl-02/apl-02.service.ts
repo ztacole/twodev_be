@@ -338,7 +338,7 @@ export class APL02Service {
     const assesseeUser = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
 
     const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, result.assessor_id) });
-    const assessorUser = assessorTable ? await db.query.user.findFirst({ where: eq(userTable.id, assessorTable.user_id) }) : null;
+    const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
 
     const header = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result_id) });
     if (!header) {

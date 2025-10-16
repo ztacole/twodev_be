@@ -142,9 +142,11 @@ export class IAO2Service {
         }
     }
 
-    static async getPdf(assessment_id: number) {
+    static async getPdf(scheduleId: number) {
         try {
-            const pdf = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, assessment_id) });
+            const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, scheduleId) });
+            if (!schedule) throw new NotFoundError('Schedule');
+            const pdf = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, schedule.assessment_id) });
             return pdf;
         } catch (error: any) {
             if (error instanceof AppError) throw error;
