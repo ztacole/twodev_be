@@ -63,14 +63,14 @@ class IA02Controller {
                         message: "Schedule ID dibutuhkan",
                     });
                 }
-                const pdf = yield ia_02_service_1.IAO2Service.getPdf(scheduleId);
+                const { assessment_id, pdf } = yield ia_02_service_1.IAO2Service.getPdf(scheduleId);
                 if (!pdf) {
                     return res.status(404).json({
                         success: false,
                         message: "PDF tidak ditemukan",
                     });
                 }
-                const filePath = path_1.default.join(__dirname, "../../../../public/uploads/ia-02", `assessment-${scheduleId}`, pdf.file_name);
+                const filePath = path_1.default.join(__dirname, "../../../../public/uploads/ia-02", `assessment-${assessment_id}`, pdf.file_name);
                 if (!fs_1.default.existsSync(filePath)) {
                     return res.status(404).json({
                         success: false,

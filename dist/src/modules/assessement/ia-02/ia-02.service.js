@@ -156,7 +156,10 @@ class IAO2Service {
                 if (!schedule)
                     throw new error_1.NotFoundError('Schedule');
                 const pdf = yield drizzle_1.db.query.ia02Pdf.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia02Pdf.assessment_id, schedule.assessment_id) });
-                return pdf;
+                return {
+                    assessment_id: schedule.assessment_id,
+                    pdf
+                };
             }
             catch (error) {
                 if (error instanceof error_1.AppError)

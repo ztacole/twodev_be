@@ -15,6 +15,7 @@ import {
     occupation as occupationTable,
     scheme as schemeTable,
     assessmentSchedule,
+    assessment,
 } from "../../../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import fs from 'fs';
@@ -147,7 +148,10 @@ export class IAO2Service {
             const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, scheduleId) });
             if (!schedule) throw new NotFoundError('Schedule');
             const pdf = await db.query.ia02Pdf.findFirst({ where: eq(ia02PdfTable.assessment_id, schedule.assessment_id) });
-            return pdf;
+            return {
+                assessment_id: schedule.assessment_id,
+                pdf
+            };
         } catch (error: any) {
             if (error instanceof AppError) throw error;
             throw new AppError(`Gagal mendapatkan file PDF: ${error.message}`, 500);

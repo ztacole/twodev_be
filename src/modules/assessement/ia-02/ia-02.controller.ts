@@ -105,7 +105,7 @@ export class IA02Controller {
             });
             }
 
-            const pdf = await IAO2Service.getPdf(scheduleId);
+            const { assessment_id, pdf } = await IAO2Service.getPdf(scheduleId);
 
             if (!pdf) {
             return res.status(404).json({
@@ -117,7 +117,7 @@ export class IA02Controller {
             const filePath = path.join(
                 __dirname,
                 "../../../../public/uploads/ia-02",
-                `assessment-${scheduleId}`,
+                `assessment-${assessment_id}`,
                 pdf.file_name
             );
 
