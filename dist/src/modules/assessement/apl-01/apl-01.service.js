@@ -149,7 +149,6 @@ class APL1Service {
             const existingAssessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, assessor_id) });
             if (!existingAssessor)
                 throw new error_1.NotFoundError('Assessor');
-            const BASE_URL = "https://lspsmkn24jakarta.com/twodev/api";
             const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${assessment_id}`);
             const canonicalFields = [
                 'school_report_card',
@@ -186,7 +185,7 @@ class APL1Service {
             for (const file of fileArray) {
                 const mapped = fieldMapping[file.fieldname];
                 if (mapped) {
-                    fileData[mapped] = `${BASE_URL}/uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
+                    fileData[mapped] = `uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
                 }
             }
             const docsData = Object.assign({ purpose: (bodyData === null || bodyData === void 0 ? void 0 : bodyData.purpose) || 'APL1 Certificate Documents' }, fileData);

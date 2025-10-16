@@ -167,7 +167,6 @@ export class APL1Service {
     const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessor.id, assessor_id) });
     if (!existingAssessor) throw new NotFoundError('Assessor');
 
-    const BASE_URL = "https://lspsmkn24jakarta.com/twodev/api";
     const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${assessment_id}`);
 
         const canonicalFields = [
@@ -204,7 +203,7 @@ export class APL1Service {
         for (const file of fileArray) {
             const mapped = fieldMapping[file.fieldname];
             if (mapped) {
-                fileData[mapped] = `${BASE_URL}/uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
+                fileData[mapped] = `uploads/apl-01/${assessee_id}_${assessor_id}_${assessment_id}/${file.filename}`;
             }
         }
 

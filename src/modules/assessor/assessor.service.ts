@@ -282,7 +282,6 @@ export class AssessorService {
         files: any[];
     }): Promise<any> {
         const { assessorId, bodyData, files } = params;
-        const BASE_URL = "https://lspsmkn24jakarta.com";
         const UPLOAD_DIR = path.join(__dirname, `../../../../public/uploads/assessor/assessor-${assessorId}`);
 
         const requiredFields = ['tax_id_number', 'bank_book_cover', 'certificate', 'id_card', 'national_id'];
@@ -299,7 +298,7 @@ export class AssessorService {
             // Build fileData from uploaded files (moved to final dir) and/or bodyData overrides
             for (const file of fileArray) {
                 if (requiredFields.includes(file.fieldname)) {
-                    fileData[file.fieldname] = `${BASE_URL}/twodev/api/uploads/assessor/assessor-${assessorId}/${file.filename}`;
+                    fileData[file.fieldname] = `uploads/assessor/assessor-${assessorId}/${file.filename}`;
                 }
             }
 
