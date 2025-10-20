@@ -841,8 +841,8 @@ class AssessmentService {
                 { name: 'IA-02', status: (ia02Header.approved_assessor && ia02Header.approved_assessee) ? "Tuntas" : (ia02Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" },
                 { name: 'IA-01', status: (ia01Header.approved_assessor && ia01Header.approved_assessee) ? "Tuntas" : (ia01Header.approved_assessor) ? "Butuh Persetujuan" : "Menunggu" }
             ];
-            const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, schedule_id) });
-            const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, schedule_id) });
+            const isAnyIa03 = yield drizzle_1.db.query.groupIa03.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, schedule.assessment_id) });
+            const isAnyIa05 = yield drizzle_1.db.query.ia05Question.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, schedule.assessment_id) });
             // const isAnyIa07 = await db.query.ia07Question.findFirst({ where: eq(ia07QuestionTable.assessment_id, assessment_id) });
             if (isAnyIa03) {
                 const ia03Header = yield drizzle_1.db.query.resultIa03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa03Header.result_id, result.id) });

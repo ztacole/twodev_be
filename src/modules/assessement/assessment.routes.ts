@@ -23,14 +23,17 @@ import { authenticateToken } from "../../middleware/auth.middleware";
 import { upload } from "./apl-01/upload-config";
 // import { uploadIA02 } from "./ia-02/upload-conifg";
 import { requireApproval } from '../../middleware/approval.middleware';
+import { db } from "../../config/drizzle";
+import { assessmentSchedule } from "../../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 const uploadAPL01 = createUploader({
     basePath: '../../public/uploads/apl-01',
     folderResolver: (req) => {
         const assesseeId = req.params?.assessee_id || req.body?.assessee_id || 'unknown';
         const assessorId = req.params?.assessor_id || req.body?.assessor_id || 'unknown';
-        const assessmentId = req.params?.assessment_id || req.body?.assessment_id || 'unknown';
-        return `${assesseeId}_${assessorId}_${assessmentId}`;
+        const scheduleId = req.params?.schedule_id || req.body?.schedule_id || 'unknown';
+        return `${assesseeId}_${assessorId}_${scheduleId}`;
     },      
     allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
     maxSizeMB: 10,

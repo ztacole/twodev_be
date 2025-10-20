@@ -173,7 +173,7 @@ export class APL1Service {
         const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessor.id, assessor_id) });
         if (!existingAssessor) throw new NotFoundError('Assessor');
 
-        const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${existingSchedule.assessment_id}`);
+        const uploadPath = require('path').join(__dirname, '../../../../public/uploads/apl-01', `${assessee_id}_${assessor_id}_${schedule_id}`);
 
         const canonicalFields = [
             'school_report_card',
@@ -209,7 +209,7 @@ export class APL1Service {
         for (const file of fileArray) {
             const mapped = fieldMapping[file.fieldname];
             if (mapped) {
-                fileData[mapped] = `uploads/apl-01/${assessee_id}_${assessor_id}_${existingSchedule.assessment_id}/${file.filename}`;
+                fileData[mapped] = `uploads/apl-01/${assessee_id}_${assessor_id}_${schedule_id}/${file.filename}`;
             }
         }
 

@@ -32,8 +32,8 @@ const uploadAPL01 = (0, upload_helper_1.createUploader)({
         var _a, _b, _c, _d, _e, _f;
         const assesseeId = ((_a = req.params) === null || _a === void 0 ? void 0 : _a.assessee_id) || ((_b = req.body) === null || _b === void 0 ? void 0 : _b.assessee_id) || 'unknown';
         const assessorId = ((_c = req.params) === null || _c === void 0 ? void 0 : _c.assessor_id) || ((_d = req.body) === null || _d === void 0 ? void 0 : _d.assessor_id) || 'unknown';
-        const assessmentId = ((_e = req.params) === null || _e === void 0 ? void 0 : _e.assessment_id) || ((_f = req.body) === null || _f === void 0 ? void 0 : _f.assessment_id) || 'unknown';
-        return `${assesseeId}_${assessorId}_${assessmentId}`;
+        const scheduleId = ((_e = req.params) === null || _e === void 0 ? void 0 : _e.schedule_id) || ((_f = req.body) === null || _f === void 0 ? void 0 : _f.schedule_id) || 'unknown';
+        return `${assesseeId}_${assessorId}_${scheduleId}`;
     },
     allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'],
     maxSizeMB: 10,
