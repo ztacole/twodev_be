@@ -49,7 +49,7 @@ export class IA01Service {
           if (hasResult) completedElements += 1;
         }
         const totalElements = elements.length;
-        const finished = totalElements > 0 && totalElements === completedElements;
+        const finished = totalElements === completedElements;
         return {
           id: unit.id,
           unit_code: unit.unit_code,
