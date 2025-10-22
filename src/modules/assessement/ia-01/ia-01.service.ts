@@ -55,7 +55,7 @@ export class IA01Service {
           unit_code: unit.unit_code,
           title: unit.title,
           finished,
-          progress: totalElements > 0 ? Math.round((completedElements / totalElements) * 100) : 0,
+          progress: totalElements > 0 ? Math.round((completedElements / totalElements) * 100) : 100,
         };
       }));
       return {
