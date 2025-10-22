@@ -13,9 +13,9 @@ export class DashboardAssessorService {
             if (!schedule) throw new NotFoundError('Assessment Schedule');
             const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, result.assessee_id) });
             const user = assessee ? await db.query.user.findFirst({ where: eq(userTable.id, assessee.user_id) }) : null;
-            const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.id, result.id) });
+            const doc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result.id) });
             const apl02 = await db.query.resultApl02Header.findFirst({ where: eq(apl02HeaderTable.result_id, result.id) });
-            const ia01 = await db.query.resultIa02Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, result.id) });
+            const ia01 = await db.query.resultIa01Header.findFirst({ where: eq(resultIa01HeaderTable.result_id, result.id) });
             const ia02 = await db.query.resultIa02Header.findFirst({ where: eq(ia02HeaderTable.result_id, result.id) });
             const ia03 = await db.query.resultIa03Header.findFirst({ where: eq(resultIa03HeaderTable.result_id, result.id) });
             const ia05 = await db.query.resultIa05Header.findFirst({ where: eq(ia05HeaderTable.result_id, result.id) });
@@ -23,7 +23,7 @@ export class DashboardAssessorService {
             const ak01 = await db.query.resultAk01Header.findFirst({ where: eq(ak01HeaderTable.result_id, result.id) });
             const ak02 = await db.query.resultAk02Header.findFirst({ where: eq(resultAk02HeaderTable.result_id, result.id) });
             const ak03 = await db.query.resultAk03Header.findFirst({ where: eq(resultAk03Header.result_id, result.id) });
-            const ak04 = await db.query.resultAk04.findFirst({ where: eq(resultAk04.id, result.id) });
+            const ak04 = await db.query.resultAk04.findFirst({ where: eq(resultAk04.result_id, result.id) });
             const ak05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05.result_id, result.id) });
 
             const getHeaderStatus = async (type: string): Promise< 'Belum Tuntas' | 'Menunggu Asesi' | 'Butuh Persetujuan' | 'Tuntas' > => {
