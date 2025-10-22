@@ -921,9 +921,28 @@ class AssessmentService {
                 };
             }
             for (const tab of tabs) {
-                let status = tab.status;
+                // priority: lower = less complete. choose lowest priority across all results so a single Tuntas
+                // doesn't hide others that are incomplete.
+                const priorityMap = {
+                    "Belum Tuntas": 1,
+                    "Menunggu Asesi": 2,
+                    "Butuh Persetujuan": 3,
+                    "Tuntas": 4,
+                };
+                const statusFromPriority = (p) => {
+                    if (p <= 1)
+                        return "Belum Tuntas";
+                    if (p === 2)
+                        return "Menunggu Asesi";
+                    if (p === 3)
+                        return "Butuh Persetujuan";
+                    return "Tuntas";
+                };
+                // start with default priority from tab initial status
+                let bestPriority = priorityMap[tab.status];
                 for (const result of results) {
                     let header = null;
+                    let localStatus = null;
                     switch (tab.name) {
                         case 'APL-02':
                             header = yield drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, result.id) });
@@ -942,147 +961,131 @@ class AssessmentService {
                                         finishedUcApl02Count++;
                                 }
                                 const finishedApl02 = finishedUcApl02Count === unitCompetencies.length;
-                                if (!finishedApl02 && !header.approved_assessor && !header.approved_assessee) {
-                                    status = "Menunggu Asesi";
-                                }
-                                else if (finishedApl02 && !header.approved_assessor && !header.approved_assessee) {
-                                    status = "Butuh Persetujuan";
-                                }
-                                else if (header.approved_assessor && !header.approved_assessee) {
-                                    status = "Menunggu Asesi";
-                                }
-                                else if (header.approved_assessor && header.approved_assessee) {
-                                    status = "Tuntas";
-                                }
+                                const a = header.approved_assessor === true;
+                                const b = header.approved_assessee === true;
+                                if (!finishedApl02 && !a && !b)
+                                    localStatus = "Menunggu Asesi";
+                                else if (finishedApl02 && !a && !b)
+                                    localStatus = "Butuh Persetujuan";
+                                else if (a && !b)
+                                    localStatus = "Menunggu Asesi";
+                                else if (a && b)
+                                    localStatus = "Tuntas";
                             }
                             break;
                         case 'AK-01':
                             header = yield drizzle_1.db.query.resultAk01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk01Header.result_id, result.id) });
                             if (header) {
-                                if (!header.approved_assessor && !header.approved_assessee) {
-                                    status = "Belum Tuntas";
-                                }
-                                else if (header.approved_assessor && !header.approved_assessee) {
-                                    status = "Menunggu Asesi";
-                                }
-                                else if (header.approved_assessor && header.approved_assessee) {
-                                    status = "Tuntas";
-                                }
+                                const a = header.approved_assessor === true;
+                                const b = header.approved_assessee === true;
+                                if (!a && !b)
+                                    localStatus = "Belum Tuntas";
+                                else if (a && !b)
+                                    localStatus = "Menunggu Asesi";
+                                else if (a && b)
+                                    localStatus = "Tuntas";
                             }
                             break;
                         case 'AK-02':
                             header = yield drizzle_1.db.query.resultAk02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk02Header.result_id, result.id) });
                             if (header) {
-                                if (!header.approved_assessor && !header.approved_assessee) {
-                                    status = "Belum Tuntas";
-                                }
-                                else if (header.approved_assessor && !header.approved_assessee) {
-                                    status = "Menunggu Asesi";
-                                }
-                                else if (header.approved_assessor && header.approved_assessee) {
-                                    status = "Tuntas";
-                                }
+                                const a = header.approved_assessor === true;
+                                const b = header.approved_assessee === true;
+                                if (!a && !b)
+                                    localStatus = "Belum Tuntas";
+                                else if (a && !b)
+                                    localStatus = "Menunggu Asesi";
+                                else if (a && b)
+                                    localStatus = "Tuntas";
                             }
                             break;
                         case 'AK-03':
                             header = yield drizzle_1.db.query.resultAk03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk03Header.result_id, result.id) });
                             if (header) {
-                                status = header.comment ? "Tuntas" : "Menunggu Asesi";
+                                localStatus = header.comment ? "Tuntas" : "Menunggu Asesi";
                             }
                             break;
                         case 'AK-05':
                             header = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result.id) });
                             if (header) {
-                                status = header.approved_assessor ? "Tuntas" : "Belum Tuntas";
+                                localStatus = header.approved_assessor === true ? "Tuntas" : "Belum Tuntas";
                             }
                             break;
                         case 'IA-01':
                             header = yield drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, result.id) });
                             if (header) {
-                                if (!header.approved_assessor && !header.approved_assessee) {
-                                    status = "Belum Tuntas";
-                                }
-                                else if (header.approved_assessor && !header.approved_assessee) {
-                                    status = "Menunggu Asesi";
-                                }
-                                else if (header.approved_assessor && header.approved_assessee) {
-                                    status = "Tuntas";
-                                }
+                                const a = header.approved_assessor === true;
+                                const b = header.approved_assessee === true;
+                                if (!a && !b)
+                                    localStatus = "Belum Tuntas";
+                                else if (a && !b)
+                                    localStatus = "Menunggu Asesi";
+                                else if (a && b)
+                                    localStatus = "Tuntas";
                             }
                             break;
                         case 'IA-02':
                             header = yield drizzle_1.db.query.resultIa02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa02Header.result_id, result.id) });
                             if (header) {
-                                if (!header.approved_assessor && !header.approved_assessee) {
-                                    status = "Butuh Persetujuan";
-                                }
-                                else if (header.approved_assessor && !header.approved_assessee) {
-                                    status = "Menunggu Asesi";
-                                }
-                                else if (header.approved_assessor && header.approved_assessee) {
-                                    status = "Tuntas";
-                                }
+                                const a = header.approved_assessor === true;
+                                const b = header.approved_assessee === true;
+                                if (!a && !b)
+                                    localStatus = "Butuh Persetujuan";
+                                else if (a && !b)
+                                    localStatus = "Menunggu Asesi";
+                                else if (a && b)
+                                    localStatus = "Tuntas";
                             }
                             break;
                         case 'IA-03':
                             header = yield drizzle_1.db.query.resultIa03Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa03Header.result_id, result.id) });
                             if (header) {
-                                if (!header.approved_assessor && !header.approved_assessee) {
-                                    status = "Belum Tuntas";
-                                }
-                                else if (header.approved_assessor && !header.approved_assessee) {
-                                    status = "Menunggu Asesi";
-                                }
-                                else if (header.approved_assessor && header.approved_assessee) {
-                                    status = "Tuntas";
-                                }
+                                const a = header.approved_assessor === true;
+                                const b = header.approved_assessee === true;
+                                if (!a && !b)
+                                    localStatus = "Belum Tuntas";
+                                else if (a && !b)
+                                    localStatus = "Menunggu Asesi";
+                                else if (a && b)
+                                    localStatus = "Tuntas";
                             }
                             break;
                         case 'IA-05':
                             header = yield drizzle_1.db.query.resultIa05Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05Header.result_id, result.id) });
                             if (header) {
                                 const ia05Result = yield drizzle_1.db.query.resultIa05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa05.header_id, header.id) });
-                                if (!ia05Result) {
-                                    status = "Menunggu Asesi";
-                                }
-                                else if (ia05Result && !header.approved_assessor && !header.approved_assessee) {
-                                    status = "Butuh Persetujuan";
-                                }
-                                else if (ia05Result && header.approved_assessor && !header.approved_assessee) {
-                                    status = "Menunggu Asesi";
-                                }
-                                else if (ia05Result && header.approved_assessor && header.approved_assessee) {
-                                    status = "Tuntas";
+                                if (!ia05Result)
+                                    localStatus = "Menunggu Asesi";
+                                else {
+                                    const a = header.approved_assessor === true;
+                                    const b = header.approved_assessee === true;
+                                    if (!a && !b)
+                                        localStatus = "Butuh Persetujuan";
+                                    else if (a && !b)
+                                        localStatus = "Menunggu Asesi";
+                                    else if (a && b)
+                                        localStatus = "Tuntas";
                                 }
                             }
                             break;
                         case 'Penilaian':
                             header = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, result.id) });
-                            if (header && !header.approved_assessor) {
-                                status = "Butuh Persetujuan";
-                            }
-                            else if (header && header.approved_assessor && result.score === -1) {
-                                status = "Belum Tuntas";
-                            }
-                            else {
-                                status = "Tuntas";
+                            if (header) {
+                                if (header.approved_assessor !== true)
+                                    localStatus = "Butuh Persetujuan";
+                                else if (header.approved_assessor === true && result.score === -1)
+                                    localStatus = "Belum Tuntas";
+                                else
+                                    localStatus = "Tuntas";
                             }
                             break;
-                        // case 'IA-07':
-                        //     header = await db.query.resultIa07Header.findFirst({ where: eq(resultIa07HeaderTable.result_id, result.id) });
-                        //     if (header) {
-                        //         if (!header.approved_assessor && !header.approved_assessee) {
-                        //             status = "Butuh Persetujuan";
-                        //         } else if (header.approved_assessor && !header.approved_assessee) {
-                        //             status = "Menunggu Asesi";
-                        //         } else if (header.approved_assessor && header.approved_assessor) {
-                        //             status = "Tuntas";
-                        //         }
-                        //     }
-                        //     break;
+                    }
+                    if (localStatus) {
+                        const p = priorityMap[localStatus];
+                        bestPriority = Math.min(bestPriority, p);
                     }
                 }
-                tab.status = status;
+                tab.status = statusFromPriority(bestPriority);
             }
             return {
                 schedule_id: schedule.id,
