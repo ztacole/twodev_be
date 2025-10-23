@@ -17,7 +17,7 @@ const error_1 = require("../../../common/error");
 class AK05Service {
     static createAK05(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3;
             const result = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, data.result_id) });
             if (!result)
                 throw new error_1.NotFoundError('Result');
@@ -47,9 +47,6 @@ class AK05Service {
                     notes: (_1 = (_0 = data.items[0]) === null || _0 === void 0 ? void 0 : _0.notes) !== null && _1 !== void 0 ? _1 : null,
                     approved_assessor: (_3 = (_2 = data.items[0]) === null || _2 === void 0 ? void 0 : _2.approved_assessor) !== null && _3 !== void 0 ? _3 : false,
                 });
-            }
-            if ((_4 = data.items[0]) === null || _4 === void 0 ? void 0 : _4.is_competent) {
-                yield drizzle_1.db.update(schema_1.result).set({ is_competent: true }).where((0, drizzle_orm_1.eq)(schema_1.result.id, data.result_id));
             }
             const ak05 = yield drizzle_1.db.query.resultAk05.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultAk05.result_id, data.result_id) });
             if (!ak05)

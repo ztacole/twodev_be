@@ -1467,19 +1467,6 @@ export class AssessmentService {
             ]);
 
             let status: string = "Sedang Berjalan";
-            if (resultAPL02 && !resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) status = "Belum Kompeten";
-            if (resultIA01 && !resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) status = "Belum Kompeten";
-            if (
-                (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
-                (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
-                (resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee) &&
-                (resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee) &&
-                (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee) : true) &&
-                (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
-                (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
-                (resultAK05 && resultAK05.approved_assessor) &&
-                !resultAK05.is_competent && !res.is_competent
-            ) status = "Belum Kompeten";
             if (
                 (resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee) &&
                 (resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee) &&
@@ -1488,9 +1475,11 @@ export class AssessmentService {
                 (resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true) &&
                 (resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee) &&
                 (resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee) &&
-                (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
-                res.is_competent
-            ) status = "Kompeten";
+                (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent)
+            ) {
+                if (res.is_competent && resultAK05.is_competent) status = "Kompeten";
+                else status = "Belum Kompeten";
+            }
 
             finalResults.push({
                 id: res.id,
