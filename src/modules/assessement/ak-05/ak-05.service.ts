@@ -36,6 +36,10 @@ export class AK05Service {
       });
     }
 
+    if (data.items[0]?.is_competent) {
+      await db.update(resultTable).set({ is_competent: true }).where(eq(resultTable.id, data.result_id));
+    }
+
     const ak05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05Table.result_id, data.result_id) });
     if (!ak05) throw new NotFoundError('AK05');
 
