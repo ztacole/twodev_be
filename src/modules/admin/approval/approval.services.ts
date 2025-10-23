@@ -136,9 +136,15 @@ export const ApprovalService = {
         case "assessee": {
           const assessee = await db.query.assessee.findFirst({
             where: eq(assesseeTable.id, input.targetId),
-            with: { user: true },
           });
-          targetName = assessee?.user?.full_name ?? null;
+          if (assessee) {
+            const user = await db.query.user.findFirst({
+              where: eq(userTable.id, assessee.user_id),
+            });
+            targetName = user?.full_name ?? null;
+          } else {
+            targetName = null;
+          }
           break;
         }
         default:
@@ -640,9 +646,14 @@ export const ApprovalService = {
         case "assessee": {
           const assessee = await db.query.assessee.findFirst({
             where: eq(assesseeTable.id, targetId),
-            with: { user: true },
           });
-          return assessee?.user?.full_name ?? null;
+          if (assessee) {
+            const user = await db.query.user.findFirst({
+              where: eq(userTable.id, assessee.user_id),
+            });
+            return user?.full_name ?? null;
+          }
+          return null;
         }
         default:
           return null;
