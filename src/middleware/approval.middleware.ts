@@ -96,6 +96,11 @@ export function requireApproval(targetTable: string) {
             }
             break;
           }
+          case 'assessee': {
+            const asee = await db.query.user.findFirst({ where: eq(userTable.id, targetId) });
+            targetName = asee?.full_name ?? null;
+            break;
+          }
           default:
             targetName = null;
         }

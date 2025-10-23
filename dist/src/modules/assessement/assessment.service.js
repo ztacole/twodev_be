@@ -1367,7 +1367,7 @@ class AssessmentService {
                 const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, res.assessee_id) });
                 if (!assessee)
                     continue;
-                const isPending = yield drizzle_1.db.query.approvalRequest.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.approvalRequest.target_id, assessee.id), (0, drizzle_orm_1.eq)(schema_1.approvalRequest.target_table, 'assessee')) });
+                const isPending = yield drizzle_1.db.query.approvalRequest.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.approvalRequest.target_id, assessee.id), (0, drizzle_orm_1.eq)(schema_1.approvalRequest.target_table, 'assessee'), (0, drizzle_orm_1.eq)(schema_1.approvalRequest.status, 'pending')) });
                 const [resultAPL02, resultIA01, resultIA02, resultIA03, resultIA05, resultIA07, resultAK01, resultAK02, resultAK03, resultAK05] = yield Promise.all([
                     drizzle_1.db.query.resultApl02Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultApl02Header.result_id, res.id) }),
                     drizzle_1.db.query.resultIa01Header.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultIa01Header.result_id, res.id) }),
