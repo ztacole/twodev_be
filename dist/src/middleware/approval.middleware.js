@@ -95,8 +95,9 @@ function requireApproval(targetTable) {
                         break;
                     }
                     case 'assessee': {
-                        const asee = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, targetId) });
-                        targetName = (_z = asee === null || asee === void 0 ? void 0 : asee.full_name) !== null && _z !== void 0 ? _z : null;
+                        const asee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, targetId) });
+                        const user = asee ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, asee.user_id) }) : null;
+                        targetName = (_z = user === null || user === void 0 ? void 0 : user.full_name) !== null && _z !== void 0 ? _z : null;
                         break;
                     }
                     default:

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import type { JwtPayload } from '../modules/auth/auth.type';
 import { db } from '../config/drizzle';
-import { admin as adminTable, approvalRequest as approvalRequestTable, user as userTable, occupation as occupationTable, scheme as schemeTable, assessment as assessmentTable, assessmentSchedule as scheduleTable } from '../../drizzle/schema';
+import { admin as adminTable, approvalRequest as approvalRequestTable, user as userTable, occupation as occupationTable, scheme as schemeTable, assessment as assessmentTable, assessmentSchedule as scheduleTable, assessee } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 export function requireApproval(targetTable: string) {
@@ -97,8 +97,9 @@ export function requireApproval(targetTable: string) {
             break;
           }
           case 'assessee': {
-            const asee = await db.query.user.findFirst({ where: eq(userTable.id, targetId) });
-            targetName = asee?.full_name ?? null;
+            const asee = await db.query.assessee.findFirst({ where: eq(assessee.id, targetId) });
+            const user = asee ? await db.query.user.findFirst({ where: eq(userTable.id, asee.user_id) }) : null;
+            targetName = user?.full_name ?? null;
             break;
           }
           default:

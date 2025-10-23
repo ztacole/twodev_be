@@ -1453,7 +1453,7 @@ export class AssessmentService {
         for (const res of results) {
             const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, res.assessee_id) });
             if (!assessee) continue;
-            const isPending = await db.query.approvalRequest.findFirst({ where: and(eq(approvalRequest.target_id, assessee.id), eq(approvalRequest.target_table, 'assessee'), eq(approvalRequest.status, 'pending')) });
+            const isPending = await db.query.approvalRequest.findFirst({ where: and(eq(approvalRequest.target_id, assessee.id), eq(approvalRequest.target_table, 'assessee'), eq(approvalRequest.status, 'pending')) }) ? true : false;
 
             const [resultAPL02, resultIA01, resultIA02, resultIA03, resultIA05, resultIA07, resultAK01, resultAK02, resultAK03, resultAK05] = await Promise.all([
                 db.query.resultApl02Header.findFirst({ where: eq(resultApl02HeaderTable.result_id, res.id) }),
@@ -1489,7 +1489,7 @@ export class AssessmentService {
                 full_name: res.full_name,
                 status: status,
                 created_at: res.created_at,
-                is_pending: isPending !== null
+                is_pending: isPending
             });
         }
 
