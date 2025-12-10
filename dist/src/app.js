@@ -11,7 +11,8 @@ const dotenv = require('dotenv');
 dotenv.config();
 const app = (0, express_1.default)();
 app.use(cors());
-app.use(express_1.default.json());
+app.use(express_1.default.json({ limit: '100mb' }));
+app.use(express_1.default.urlencoded({ limit: '100mb', extended: true }));
 // ROUTES
 const user_routes_1 = __importDefault(require("./modules/user/user.routes"));
 const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
