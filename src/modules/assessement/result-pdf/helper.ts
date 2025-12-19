@@ -50,7 +50,7 @@ function drawCellText(
     height: number,
     font: PDFFont,
     size = 9,
-    align: "left" | "center" = "left"
+    align: "left" | "center" | "right" = "left"
 ) {
     const safeText = text ?? ""; // fallback
     const words = safeText.split(" ");
@@ -105,7 +105,9 @@ async function drawTable(
     rowHeight: number,
     font: PDFFont,
     fontBold: PDFFont,
-    fontSize: number = 9
+    fontSize: number = 9,
+    firstRowCenterAlign: "left" | "center" | "right" = "center",
+    isFirstRowBold: boolean = true
 ) {
     let y = startY;
 
@@ -147,8 +149,8 @@ async function drawTable(
                 borderColor: rgb(0, 0, 0),
                 borderWidth: 1,
             });
-            const align = i === 0 ? "center" : "left"; // header rata tengah
-            drawCellText(page, cell, x, y, w, maxRowHeight, i === 0 ? fontBold : font, fontSize, align);
+            const align = i === 0 ? firstRowCenterAlign : "left"; // Header alignment
+            drawCellText(page, cell, x, y, w, maxRowHeight, (i === 0 && isFirstRowBold) ? fontBold : font, fontSize, align);
             x += w;
         });
 

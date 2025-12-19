@@ -12,7 +12,7 @@ import { AssesseeService } from "../../assessee/asseessee.service";
 import { AK02Service } from "../ak-02/ak-02.service";
 import { he } from "@faker-js/faker/.";
 
-const BOTTOM_MARGIN = 150;
+const BASE_MARGIN = 150;
 const ELEMENT_ROW_HEIGHT = 20;
 
 interface ChecklistData {
@@ -76,7 +76,7 @@ export class ResultPdfService {
         for (let i = 0; i < groups.length; i++) {
             const group = groups[i];
 
-            if (y < BOTTOM_MARGIN) {
+            if (y < BASE_MARGIN) {
                 ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
             }
 
@@ -88,7 +88,7 @@ export class ResultPdfService {
                 const elements = await IA01Service.getElementsByUnitId(resultId, unit.id);
 
                 // Page break
-                if (y < BOTTOM_MARGIN) {
+                if (y < BASE_MARGIN) {
                     ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
                 }
 
@@ -108,7 +108,7 @@ export class ResultPdfService {
 
                 // Draw elements
                 y -= 20;
-                ({ page, y } = await drawElementLayout(pdfDoc, page, elements, 40, y, font, fontBold, headerImage, BOTTOM_MARGIN));
+                ({ page, y } = await drawElementLayout(pdfDoc, page, elements, 40, y, font, fontBold, headerImage, BASE_MARGIN));
             }
         }
 
@@ -126,7 +126,7 @@ export class ResultPdfService {
         const fontIcon = await pdfDoc.embedFont(StandardFonts.ZapfDingbats);
 
         const FONTS = { s: 9, m: 10, l: 12 };
-        const GAPS = { s: 5, m: 10, l: 15 };
+        // const GAPS = { s: 5, m: 10, l: 15 };
 
         let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
 
@@ -153,37 +153,37 @@ export class ResultPdfService {
         // ==== SECTION 1 ====
         page.drawText(
             "Bagian 1 : Rincian Data Pemohon Sertifikasi",
-            { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
+            { x: 40, y, size: FONTS.m, font: fontBold, maxWidth: 520, lineHeight: 14 }
         );
         y -= 20;
 
         page.drawText(
             "a. Data Pribadi",
-            { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
+            { x: 40, y, size: FONTS.m, font: fontBold, maxWidth: 520, lineHeight: 14 }
         );
         y -= 15;
 
-        y = drawField(page, "Nama Lengkap", `${resultDetails?.full_name}`, 40, y, font, FONTS.s);
-        y = drawField(page, "NIK", `${resultDetails?.identity_number}`, 40, y, font, FONTS.s);
-        y = drawField(page, "Tempat / Tanggal Lahir ", `${resultDetails?.birth_location} / ${resultDetails?.birth_date}`, 40, y, font, FONTS.s);
-        y = drawField(page, "Jenis Kelamin", `${gender}`, 40, y, font, FONTS.s);
-        y = drawField(page, "Kewarganegaraan", `${resultDetails?.nationality}`, 40, y, font, FONTS.s);
-        y = drawField(page, "Alamat Rumah", `${resultDetails?.address}`, 40, y, font, FONTS.s);
-        y = drawField(page, "No Hp", `${resultDetails?.phone_no}`, 40, y, font, FONTS.s);
-        y = drawField(page, "Email", `${assessee?.email.toLowerCase()}`, 40, y, font, FONTS.s);
-        y = drawField(page, "Kualifikasi Pendidikan ", `${resultDetails?.educational_qualifications}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Nama Lengkap", `${resultDetails?.full_name}`, 40, y, font, FONTS.m);
+        y = drawField(page, "NIK", `${resultDetails?.identity_number}`, 40, y, font, FONTS.m);
+        y = drawField(page, "Tempat / Tanggal Lahir ", `${resultDetails?.birth_location} / ${resultDetails?.birth_date}`, 40, y, font, FONTS.m);
+        y = drawField(page, "Jenis Kelamin", `${gender}`, 40, y, font, FONTS.m);
+        y = drawField(page, "Kewarganegaraan", `${resultDetails?.nationality}`, 40, y, font, FONTS.m);
+        y = drawField(page, "Alamat Rumah", `${resultDetails?.address}`, 40, y, font, FONTS.m);
+        y = drawField(page, "No Hp", `${resultDetails?.phone_no}`, 40, y, font, FONTS.m);
+        y = drawField(page, "Email", `${assessee?.email.toLowerCase()}`, 40, y, font, FONTS.m);
+        y = drawField(page, "Kualifikasi Pendidikan ", `${resultDetails?.educational_qualifications}`, 40, y, font, FONTS.m);
 
         y -= 20;
         page.drawText(
             "b. Data Sekolah",
-            { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
+            { x: 40, y, size: FONTS.m, font: fontBold, maxWidth: 520, lineHeight: 14 }
         );
         y -= 15;
-        y = drawField(page, "Nama Sekolah", `${resultDetails?.job.institution_name}`, 40, y, font, FONTS.s);
-        // y = drawField(page, "Konsentrasi Keahlian", `${resultDetails?.job.work_unit}`, 40, y, font, FONTS.s);
-        y = drawField(page, "Alamat Sekolah", `${resultDetails?.job.address}`, 40, y, font, FONTS.s);
-        y = drawField(page, "No Telpon Sekolah", `${resultDetails?.job.phone_no}`, 40, y, font, FONTS.s);
-        y = drawField(page, "Email Sekolah", `${resultDetails?.job.job_email}`, 40, y, font, FONTS.s);
+        y = drawField(page, "Nama Sekolah", `${resultDetails?.job.institution_name}`, 40, y, font, FONTS.m);
+        // y = drawField(page, "Konsentrasi Keahlian", `${resultDetails?.job.work_unit}`, 40, y, font, FONTS.m);
+        y = drawField(page, "Alamat Sekolah", `${resultDetails?.job.address}`, 40, y, font, FONTS.m);
+        y = drawField(page, "No Telpon Sekolah", `${resultDetails?.job.phone_no}`, 40, y, font, FONTS.m);
+        y = drawField(page, "Email Sekolah", `${resultDetails?.job.job_email}`, 40, y, font, FONTS.m);
 
         // === PAGE BREAK ===
         ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
@@ -191,7 +191,7 @@ export class ResultPdfService {
         // ==== SECTION 2 ====
         page.drawText(
             "Bagian 2 : Data Sertifikasi",
-            { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
+            { x: 40, y, size: FONTS.m, font: fontBold, maxWidth: 520, lineHeight: 14 }
         );
         y -= 20;
 
@@ -209,12 +209,12 @@ export class ResultPdfService {
 
         page.drawText(
             "Daftar Unit Kompetensi sesuai kemasan:",
-            { x: 40, y, size: FONTS.s, font: font, maxWidth: 520, lineHeight: 14 }
+            { x: 40, y, size: FONTS.m, font: font, maxWidth: 520, lineHeight: 14 }
         );
-        y -= 20;
+        y -= 10;
 
         drawSchemeTableHeader(page, y, resultDetails?.assessment, fontBold, FONTS.s, rgb(0, 0, 0));
-        y -= 80;
+        y -= 60;
 
         drawUnitTable(page, y, resultDetails?.assessment?.uc_apl02s || [], font, fontBold, FONTS.s, rgb(0, 0, 0));
 
@@ -280,7 +280,7 @@ export class ResultPdfService {
                 page.drawRectangle({
                     x: 190,
                     y: y - 30 * (i + 1),
-                    width: w - BOTTOM_MARGIN,
+                    width: w - BASE_MARGIN,
                     height: 30,
                     borderColor: color,
                     borderWidth: 1,
@@ -294,28 +294,18 @@ export class ResultPdfService {
             const x = 40;
             const width = page.getWidth() - 80;
             const rowHeight = 20;
-            const col = { no: 30, code: 120, title: width - BOTTOM_MARGIN };
+            const col = { no: 30, code: 120, title: width - BASE_MARGIN };
+            const colArray = [col.no, col.code, col.title];
+            const tableData = [
+                ["NO", "KODE UNIT", "JUDUL UNIT"],
+                ...data.map((result: any, i: number) => [
+                    `${i + 1}`,
+                    `${result?.unit_code || "-"}`,
+                    `${result?.title || "-"}`,
+                ])
+            ];
 
-            // Header
-            page.drawRectangle({ x, y: y - rowHeight, width, height: rowHeight, borderColor: color, borderWidth: 1 });
-            page.drawRectangle({ x: x + col.no, y: y - rowHeight, width: col.code, height: rowHeight, borderColor: color, borderWidth: 1 });
-            page.drawRectangle({ x: x + col.no + col.code, y: y - rowHeight, width: col.title, height: rowHeight, borderColor: color, borderWidth: 1 });
-
-            drawParagraph(page, "NO", x + 10, y - 15, fontBold, fontSize);
-            drawParagraph(page, "KODE UNIT", x + col.no + 10, y - 15, fontBold, fontSize);
-            drawParagraph(page, "JUDUL UNIT", x + col.no + col.code + 10, y - 15, fontBold, fontSize);
-
-            // Rows
-            data.forEach((result, i) => {
-                const rowY = y - rowHeight - (i + 1) * rowHeight;
-                page.drawRectangle({ x, y: rowY, width, height: rowHeight, borderColor: color, borderWidth: 1 });
-                page.drawLine({ start: { x: x + col.no, y: rowY }, end: { x: x + col.no, y: rowY + rowHeight }, thickness: 1, color });
-                page.drawLine({ start: { x: x + col.no + col.code, y: rowY }, end: { x: x + col.no + col.code, y: rowY + rowHeight }, thickness: 1, color });
-
-                drawParagraph(page, `${i + 1}`, x + 10, rowY + 5, font, fontSize);
-                drawParagraph(page, `${result?.unit_code || "-"}`, x + col.no + 10, rowY + 5, font, fontSize);
-                drawParagraph(page, `${result?.title || "-"}`, x + col.no + col.code + 10, rowY + 5, font, fontSize);
-            });
+            drawTable(page, tableData, colArray, x, y - rowHeight, rowHeight, font, fontBold, fontSize, "left");
         }
     }
 
