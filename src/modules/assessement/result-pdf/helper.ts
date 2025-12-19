@@ -411,90 +411,81 @@ async function drawUnitLayout(
 }
 
 async function drawElementLayout(
+    pdfDoc: PDFDocument,
     page: PDFPage,
     elements: any[],
     startX: number,
     startY: number,
     font: PDFFont,
-    fontBold: PDFFont
-): Promise<number> {
+    fontBold: PDFFont,
+    headerImage: any,
+    bottomMargin: number
+): Promise<{ page: PDFPage, y: number }> {
     const colWidths = [20, 110, 170, 90, 65, 65]; // Lebar kolom sesuai gambar
     const rowHeight = 20;
     let y = startY;
 
     // === DRAW HEADER ===
-    const mainHeader = ["No", "Elemen", "Kriteria Unjuk Kerja", "Standar Industri atau Tempat Kerja", "Pencapaian", "Penilaian Lanjut"];
+    const drawHeader = () => {
+        const mainHeader = [
+            "No",
+            "Elemen",
+            "Kriteria Unjuk Kerja",
+            "Standar Industri atau Tempat Kerja",
+            "Pencapaian",
+            "Penilaian Lanjut",
+        ];
 
-    const row = mainHeader;
-    let headerX = startX;
-    let maxRowHeight = rowHeight;
+        let headerX = startX;
+        let maxRowHeight = rowHeight;
 
-    // ukur tinggi maksimum row (karena ada teks wrap)
-    const cellHeights = row.map((cell, idx) => {
-        const safeCell = cell ?? ""; // fallback
-        const words = safeCell.split(" ");
-        let line = "";
-        let lines: string[] = [];
-        for (const word of words) {
-            const testLine = line ? line + " " + word : word;
-            const testWidth = font.widthOfTextAtSize(testLine, 9);
-            if (testWidth > colWidths[idx] - 8) {
-                lines.push(line);
-                line = word;
-            } else {
-                line = testLine;
+        const cellHeights = mainHeader.map((cell, idx) => {
+            const words = cell.split(" ");
+            let line = "";
+            let lines: string[] = [];
+
+            for (const word of words) {
+                const test = line ? line + " " + word : word;
+                if (font.widthOfTextAtSize(test, 9) > colWidths[idx] - 8) {
+                    lines.push(line);
+                    line = word;
+                } else {
+                    line = test;
+                }
             }
-        }
-        if (line) lines.push(line);
-        return lines.length * (9 + 4) + 6;
-    });
-
-    maxRowHeight = Math.max(rowHeight, ...cellHeights) + 10;
-
-    // draw cell
-    row.forEach((cell, idx) => {
-        const w = colWidths[idx];
-        page.drawRectangle({
-            x: headerX,
-            y: y - maxRowHeight,
-            width: w,
-            height: maxRowHeight,
-            borderColor: rgb(0, 0, 0),
-            borderWidth: 1,
+            if (line) lines.push(line);
+            return lines.length * (9 + 4) + 6;
         });
-        const align = "center";
-        drawCellText(page, cell, headerX, y, w, maxRowHeight, fontBold, 9, align);
 
-        if (idx === 4) {
-            let persistanceX = headerX;
-            const persistanceW = w / 2;
+        maxRowHeight = Math.max(rowHeight, ...cellHeights) + 10;
+
+        mainHeader.forEach((cell, idx) => {
+            const w = colWidths[idx];
             page.drawRectangle({
-                x: persistanceX,
+                x: headerX,
                 y: y - maxRowHeight,
-                width: persistanceW,
-                height: maxRowHeight / 2,
+                width: w,
+                height: maxRowHeight,
                 borderColor: rgb(0, 0, 0),
                 borderWidth: 1,
             });
-            drawCellText(page, "Ya", persistanceX, y - maxRowHeight / 2, persistanceW, maxRowHeight, fontBold, 9, align);
 
-            persistanceX += persistanceW;
+            drawCellText(page, cell, headerX, y, w, maxRowHeight, fontBold, 9, "center");
 
-            page.drawRectangle({
-                x: persistanceX,
-                y: y - maxRowHeight,
-                width: persistanceW,
-                height: maxRowHeight / 2,
-                borderColor: rgb(0, 0, 0),
-                borderWidth: 1,
-            });
-            drawCellText(page, "Tidak", persistanceX, y - maxRowHeight / 2, persistanceW, maxRowHeight, fontBold, 9, align);
-        }
+            if (idx === 4) {
+                const half = w / 2;
+                page.drawRectangle({ x: headerX, y: y - maxRowHeight, width: half, height: maxRowHeight / 2, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+                page.drawRectangle({ x: headerX + half, y: y - maxRowHeight, width: half, height: maxRowHeight / 2, borderColor: rgb(0, 0, 0), borderWidth: 1 });
 
-        headerX += w;
-    });
+                drawCellText(page, "Ya", headerX, y - maxRowHeight / 2, half, maxRowHeight, fontBold, 9, "center");
+                drawCellText(page, "Tidak", headerX + half, y - maxRowHeight / 2, half, maxRowHeight, fontBold, 9, "center");
+            }
 
-    y -= maxRowHeight;
+            headerX += w;
+        });
+
+        y -= maxRowHeight;
+    };
 
     // === DRAW ELEMENTS ===
     const data = elements.map((element: any, idx: number) => [
@@ -579,6 +570,11 @@ async function drawElementLayout(
             detailRowHeights.reduce((a, b) => a + b, 0)
         );
 
+        if (y - maxRowHeight < bottomMargin) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+            drawHeader();
+        } else if (i === 0) drawHeader();
+
         row.forEach((cell: any, idx: number) => {
             const w = colWidths[idx];
             const align = idx === 3 || idx === 4 ? "center" : "left";
@@ -624,7 +620,55 @@ async function drawElementLayout(
     }
 
 
-    return y;
+    return { page, y };
+}
+
+export function measureUnitLayoutHeight(): number {
+    // estimasi aman drawUnitLayout
+    // 2 baris header + padding
+    return 20 * 4;
+}
+
+export function measureElementLayoutHeight(
+    elements: any[],
+    font: PDFFont
+): number {
+    const colWidths = [20, 110, 170, 90, 65, 65];
+    const rowHeight = 20;
+    let totalHeight = 0;
+
+    // header
+    totalHeight += 40; // header element (estimasi aman)
+
+    // rows
+    for (const element of elements) {
+        const detailCount = element.details.length;
+        let rowTotal = 0;
+
+        for (const detail of element.details) {
+            // estimasi tinggi per detail
+            const text = detail.description ?? "";
+            const words = text.split(" ");
+            let lines = 1;
+
+            let line = "";
+            for (const word of words) {
+                const test = line ? line + " " + word : word;
+                if (font.widthOfTextAtSize(test, 9) > colWidths[2] - 8) {
+                    lines++;
+                    line = word;
+                } else {
+                    line = test;
+                }
+            }
+
+            rowTotal += Math.max(lines * (9 + 4) + 6, rowHeight);
+        }
+
+        totalHeight += Math.max(rowHeight, rowTotal);
+    }
+
+    return totalHeight;
 }
 
 async function drawFeedbackIA01(

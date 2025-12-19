@@ -4,12 +4,16 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementLayout, drawFeedbackAK02, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout } from "./helper";
+import { createNewPage, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementLayout, drawFeedbackAK02, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
 import { formatDate, formatDay } from "../../../helper/date.helper";
 import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
 import { APL1Service } from "../apl-01/apl-01.service";
 import { AssesseeService } from "../../assessee/asseessee.service";
 import { AK02Service } from "../ak-02/ak-02.service";
+import { he } from "@faker-js/faker/.";
+
+const BOTTOM_MARGIN = 150;
+const ELEMENT_ROW_HEIGHT = 20;
 
 interface ChecklistData {
     schemaTitle: string;
@@ -38,6 +42,7 @@ interface ChecklistData {
 const headerImage = "../../public/images/kop-surat-lsp-smkn24j.png";
 
 export class ResultPdfService {
+
     static async generateIA01(resultId: number) {
         const pdfDoc = await PDFDocument.create();
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -71,29 +76,43 @@ export class ResultPdfService {
         for (let i = 0; i < groups.length; i++) {
             const group = groups[i];
 
-            if (y < 150) {
+            if (y < BOTTOM_MARGIN) {
                 ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
             }
 
             y = await drawUnitGroupLayout(page, i, group, 40, y, 20, font, fontBold);
 
-            // Loop unit
             let unitIdx = 0;
-            for (const unit of group.units) {
-                y -= 20;
-                y = await drawUnitLayout(page, ++unitIdx, unit.unit_code, unit.title, 40, y, 20, font, fontBold);
-                y -= 20;
 
+            for (const unit of group.units) {
                 const elements = await IA01Service.getElementsByUnitId(resultId, unit.id);
 
-                if (y < 150) {
+                // Page break
+                if (y < BOTTOM_MARGIN) {
                     ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
                 }
 
-                y = await drawElementLayout(page, elements, 40, y, font, fontBold);
+                // Draw unit
+                y -= 20;
+                y = await drawUnitLayout(
+                    page,
+                    ++unitIdx,
+                    unit.unit_code,
+                    unit.title,
+                    40,
+                    y,
+                    20,
+                    font,
+                    fontBold
+                );
+
+                // Draw elements
+                y -= 20;
+                ({ page, y } = await drawElementLayout(pdfDoc, page, elements, 40, y, font, fontBold, headerImage, BOTTOM_MARGIN));
             }
         }
-        
+
+
         ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
         y = await drawFeedbackIA01(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
@@ -203,7 +222,7 @@ export class ResultPdfService {
         ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
 
         // ==== SECTION 3 ====
-        
+
         page.drawText(
             "Bagian 2 : Data Sertifikasi",
             { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
@@ -236,7 +255,7 @@ export class ResultPdfService {
 
         y -= 20;
 
-        
+
 
         return await pdfDoc.save();
 
@@ -261,7 +280,7 @@ export class ResultPdfService {
                 page.drawRectangle({
                     x: 190,
                     y: y - 30 * (i + 1),
-                    width: w - 150,
+                    width: w - BOTTOM_MARGIN,
                     height: 30,
                     borderColor: color,
                     borderWidth: 1,
@@ -275,7 +294,7 @@ export class ResultPdfService {
             const x = 40;
             const width = page.getWidth() - 80;
             const rowHeight = 20;
-            const col = { no: 30, code: 120, title: width - 150 };
+            const col = { no: 30, code: 120, title: width - BOTTOM_MARGIN };
 
             // Header
             page.drawRectangle({ x, y: y - rowHeight, width, height: rowHeight, borderColor: color, borderWidth: 1 });
@@ -328,7 +347,7 @@ export class ResultPdfService {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
-  	                timeZone: "UTC"
+                    timeZone: "UTC"
                 })
             ],
             ["Selesai", ":", new Date(resultDetails?.updated_at)
@@ -337,7 +356,7 @@ export class ResultPdfService {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
-  	                timeZone: "UTC"
+                    timeZone: "UTC"
                 })],
         ];
         y = await drawCertificateLayoutAK02(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
@@ -354,7 +373,7 @@ export class ResultPdfService {
             "Lainnya",
         ];
 
-        const selectedEvidences = resultDetails.ak02_headers.rows.map((row) => 
+        const selectedEvidences = resultDetails.ak02_headers.rows.map((row) =>
             evidenceTypes.map((evidenceType) => row.evidences.some((evidence) => evidence.evidence === evidenceType))
         );
 
@@ -368,7 +387,7 @@ export class ResultPdfService {
         ]);
 
         const tableData = [...tableHeader, ...tableRows];
-        y = await drawTable(page, tableData, [100, ...Array(8).fill(420/8)], 40, y, 25, font, fontBold);
+        y = await drawTable(page, tableData, [100, ...Array(8).fill(420 / 8)], 40, y, 25, font, fontBold);
         y -= 30;
 
         y = await drawFeedbackAK02(pdfDoc, page, resultDetails, 40, y, font, fontBold);
