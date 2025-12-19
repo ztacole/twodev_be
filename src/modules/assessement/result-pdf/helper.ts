@@ -1,7 +1,6 @@
 import { PDFDocument, PDFFont, PDFPage, rgb } from "pdf-lib";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
-import { skip } from "node:test";
 import { generateQrDataURL } from "../../../helper/qrCode.helper";
 import { drawParagraph } from "../../../helper/pdfDraw.helper";
 import { getAssesseeUrl, getAssessorUrl } from "../../../helper/hashids";
@@ -11,6 +10,7 @@ import { IA01Service } from "../ia-01/ia-01.service";
 // Ukuran F4 = 210mm x 330mm
 const F4_WIDTH = 595.28;  // 210 mm
 const F4_HEIGHT = 935.43; // 330 mm
+const headerImage = "../../public/images/kop-surat-lsp-smkn24j.png";
 
 async function createNewPage(pdfDoc: PDFDocument, headerImage: string, fontBold: any) {
     const page = pdfDoc.addPage([F4_WIDTH, F4_HEIGHT]);
@@ -98,6 +98,7 @@ function drawCellText(
 
 async function drawTable(
     page: PDFPage,
+    pdfDoc: PDFDocument,
     data: string[][],
     colWidths: number[],
     startX: number,
@@ -105,6 +106,7 @@ async function drawTable(
     rowHeight: number,
     font: PDFFont,
     fontBold: PDFFont,
+    bottomMargin: number = 150,
     fontSize: number = 9,
     firstRowCenterAlign: "left" | "center" | "right" = "center",
     isFirstRowBold: boolean = true
@@ -139,8 +141,13 @@ async function drawTable(
         maxRowHeight = Math.max(rowHeight, ...cellHeights);
 
         // draw cell
-        row.forEach((cell, idx) => {
+        row.forEach(async (cell, idx) => {
             const w = colWidths[idx];
+
+            if (y - maxRowHeight < bottomMargin) {
+                ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+            }
+
             page.drawRectangle({
                 x,
                 y: y - maxRowHeight,
@@ -157,7 +164,7 @@ async function drawTable(
         y -= maxRowHeight;
     }
 
-    return y;
+    return { page, y };
 }
 
 async function drawCertificateLayout(
@@ -287,6 +294,7 @@ async function drawCertificateLayout(
 
 async function drawUnitGroupLayout(
     page: PDFPage,
+    pdfDoc: PDFDocument,
     index: number,
     group: GroupIA01Response,
     startX: number,
@@ -311,7 +319,7 @@ async function drawUnitGroupLayout(
     const mergedData = [...unitHeader, ...unitRows];
     const colWidths = [20, 110, 230];
 
-    y = await drawTable(page, mergedData, colWidths, headerX, y, rowHeight, font, fontBold);
+    ({ page, y } = await drawTable(page, pdfDoc, mergedData, colWidths, headerX, y, rowHeight, font, fontBold));
 
     page.drawRectangle({
         x: startX,
@@ -1171,170 +1179,201 @@ async function drawCertificateLayoutAK02(
 }
 
 async function drawFeedbackAK02(
-  pdfDoc: PDFDocument,
-  page: PDFPage,
-  data: any,
-  startX: number,
-  startY: number,
-  font: PDFFont,
-  fontBold: PDFFont
+    pdfDoc: PDFDocument,
+    page: PDFPage,
+    data: any,
+    startX: number,
+    startY: number,
+    font: PDFFont,
+    fontBold: PDFFont
 ) {
-  const tableWidth = 520;
-  const lineHeight = 18;
-  const qrSize = 70;
-  const leftColWidth = 200;
-  const rightColWidth = tableWidth - leftColWidth;
+    const tableWidth = 520;
+    const rowHeight = 20;
+    const qrSize = 60;
 
-  let y = startY;
+    let y = startY;
 
-  // === Header rows ===
-  const rows = [
-    ["Rekomendasi Hasil Asesmen", "Kompeten"],
-    [
-      "Tindak lanjut yang dibutuhkan (Masukkan pekerjaan tambahan dan asesmen yang diperlukan untuk mencapai kompetensi)",
-      "-",
-    ],
-    [
-      "Komentar/ Observasi oleh asesor",
-      "Asesi sudah menunjukkan kinerja yang memuaskan",
-    ],
-  ];
+    // === Header rows ===
+    const rows = [
+        ["Rekomendasi Hasil Asesmen", ":", (data.ak02_headers.is_competent) ? "Kompeten" : "Belum Kompeten"],
+        [
+            "Tindak lanjut yang dibutuhkan (Masukkan pekerjaan tambahan dan asesmen yang diperlukan untuk mencapai kompetensi)",
+            ":",
+            data.ak02_headers.follow_up || "-",
+        ],
+        [
+            "Komentar/ Observasi oleh asesor",
+            ":",
+            data.ak02_headers.comments || "-",
+        ],
+    ];
 
-  for (const [label, value] of rows) {
-    const height = lineHeight * (label.length > 50 ? 2 : 1);
+    ({ page, y } = await drawTable(page, pdfDoc, rows, [200, 11, 309], startX, y, rowHeight, font, fontBold, 150, 9, "left", false));
+
+    let rowX = startX;
+
+    // == Asesi ==
     page.drawRectangle({
-      x: startX,
-      y: y - height,
-      width: tableWidth,
-      height,
-      borderColor: rgb(0, 0, 0),
-      borderWidth: 1,
-    });
-    page.drawText(label, {
-      x: startX + 5,
-      y: y - 12,
-      size: 9,
-      font: fontBold,
-    });
-    page.drawText(":", {
-      x: startX + 165,
-      y: y - 12,
-      size: 9,
-      font,
-    });
-    page.drawText(value, {
-      x: startX + 175,
-      y: y - 12,
-      size: 9,
-      font,
-    });
-    y -= height;
-  }
+        x: rowX,
+        y: y - rowHeight,
+        width: tableWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Asesi:", startX, y, tableWidth, rowHeight, fontBold, 9, "left");
 
-  // === tanda tangan Asesi ===
-  const sectionHeight = qrSize + 20;
+    y -= rowHeight;
 
-  // Kotak besar Asesi
-  page.drawRectangle({
-    x: startX,
-    y: y - sectionHeight,
-    width: tableWidth,
-    height: sectionHeight,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 1,
-  });
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: tableWidth / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Nama", rowX, y, tableWidth / 3, rowHeight, font, 9, "left");
 
-  // Kolom kiri (label tanda tangan)
-  page.drawRectangle({
-    x: startX,
-    y: y - sectionHeight,
-    width: leftColWidth,
-    height: sectionHeight,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 1,
-  });
+    rowX += tableWidth / 3;
 
-  page.drawText("Tanda Tangan Asesi", {
-    x: startX + 40,
-    y: y - sectionHeight / 2,
-    size: 9,
-    font,
-  });
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: tableWidth * 2 / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, data.assessee.name, rowX, y, tableWidth * 2 / 3, rowHeight, fontBold, 9, "left");
 
-  // Kolom kanan
-  const qrX = startX + leftColWidth + 15;
-  const qrY = y - qrSize - 5;
+    rowX = startX;
+    y -= rowHeight;
 
-  if (data.ak02_headers.approved_assessee) {
-    const qrData = await generateQrDataURL(getAssesseeUrl(data.assessee.id));
-    const qrImage = await pdfDoc.embedPng(qrData);
-    page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
-  }
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 4,
+        width: tableWidth / 3,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Tanda Tangan/ Tanggal", rowX, y, tableWidth / 3, rowHeight, font, 9, "left");
 
-  page.drawText("Tanggal", {
-    x: startX + tableWidth - 100,
-    y: y - 15,
-    size: 9,
-    font: fontBold,
-  });
-  page.drawText(formatDate(data.ak02_headers.updated_at || new Date()), {
-    x: startX + tableWidth - 60,
-    y: y - 15,
-    size: 9,
-    font,
-  });
+    rowX += tableWidth / 3;
 
-  y -= sectionHeight;
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 4,
+        width: tableWidth * 2 / 3,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
 
-  // === tanda tangan Asesor ===
-  page.drawRectangle({
-    x: startX,
-    y: y - sectionHeight,
-    width: tableWidth,
-    height: sectionHeight,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 1,
-  });
+    if (data.ak02_headers.approved_assessee) {
+        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
+        const startXQr = rowX + ((startX * 2 / 3) - qrSize) + qrSize * 2 / 3;
+        page.drawImage(asesiQrImage, { x: startXQr, y: y - qrSize - 5, width: qrSize, height: qrSize });
+    }
+    drawCellText(page, formatDate(data.ak02_headers.updated_at), rowX, y - qrSize, tableWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+    rowX = startX;
+    y -= rowHeight * 4;
 
-  page.drawRectangle({
-    x: startX,
-    y: y - sectionHeight,
-    width: leftColWidth,
-    height: sectionHeight,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 1,
-  });
+    // Assessor
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: tableWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Asesor:", startX, y, tableWidth, rowHeight, fontBold, 9, "left");
 
-  page.drawText("Tanda Tangan Asesor", {
-    x: startX + 35,
-    y: y - sectionHeight / 2,
-    size: 9,
-    font,
-  });
+    y -= rowHeight;
 
-  const qrY2 = y - qrSize - 5;
-  if (data.ak02_headers.approved_assessor) {
-    const qrData = await generateQrDataURL(getAssessorUrl(data.assessor.id));
-    const qrImage = await pdfDoc.embedPng(qrData);
-    page.drawImage(qrImage, { x: qrX, y: qrY2, width: qrSize, height: qrSize });
-  }
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: tableWidth / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Nama", rowX, y, tableWidth / 3, rowHeight, font, 9, "left");
 
-  page.drawText("Tanggal", {
-    x: startX + tableWidth - 100,
-    y: y - 15,
-    size: 9,
-    font: fontBold,
-  });
-  page.drawText(formatDate(data.ak02_headers.updated_at || new Date()), {
-    x: startX + tableWidth - 60,
-    y: y - 15,
-    size: 9,
-    font,
-  });
+    rowX += tableWidth / 3;
 
-  y -= sectionHeight;
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: tableWidth * 2 / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, data.assessor.name, rowX, y, tableWidth * 2 / 3, rowHeight, fontBold, 9, "left");
 
-  return y - 10;
+    rowX = startX;
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: tableWidth / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "No Reg.", rowX, y, tableWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += tableWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: tableWidth * 2 / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, data.assessor.no_reg_met, rowX, y, tableWidth * 2 / 3, rowHeight, fontBold, 9, "left");
+
+    rowX = startX;
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 4,
+        width: tableWidth / 3,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Tanda Tangan/ Tanggal", rowX, y, tableWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += tableWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 4,
+        width: tableWidth * 2 / 3,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+
+    if (data.ak02_headers.approved_assessee) {
+        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
+        const startXQr = rowX + ((startX * 2 / 3) - qrSize) + qrSize * 2 / 3;
+        page.drawImage(asesiQrImage, { x: startXQr, y: y - qrSize - 5, width: qrSize, height: qrSize });
+    }
+    drawCellText(page, formatDate(data.ak02_headers.updated_at), rowX, y - qrSize, tableWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+    rowX = startX;
+    y -= rowHeight * 4;
+
+    return y - 130;
 }
 
 export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementLayout, drawFeedbackIA01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02 };

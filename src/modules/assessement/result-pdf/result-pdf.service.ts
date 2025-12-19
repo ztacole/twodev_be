@@ -80,7 +80,7 @@ export class ResultPdfService {
                 ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
             }
 
-            y = await drawUnitGroupLayout(page, i, group, 40, y, 20, font, fontBold);
+            y = await drawUnitGroupLayout(page, pdfDoc, i, group, 40, y, 20, font, fontBold);
 
             let unitIdx = 0;
 
@@ -216,7 +216,7 @@ export class ResultPdfService {
         drawSchemeTableHeader(page, y, resultDetails?.assessment, fontBold, FONTS.s, rgb(0, 0, 0));
         y -= 60;
 
-        drawUnitTable(page, y, resultDetails?.assessment?.uc_apl02s || [], font, fontBold, FONTS.s, rgb(0, 0, 0));
+        ({ page, y } = await drawUnitTable(page, pdfDoc, y, resultDetails?.assessment?.uc_apl02s || [], font, fontBold, FONTS.s, rgb(0, 0, 0)));
 
         // === PAGE BREAK ===
         ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
@@ -290,7 +290,7 @@ export class ResultPdfService {
             });
         }
 
-        function drawUnitTable(page: PDFPage, y: number, data: any[], font: PDFFont, fontBold: PDFFont, fontSize: number, color: RGB) {
+        function drawUnitTable(page: PDFPage, pdfDoc: PDFDocument, y: number, data: any[], font: PDFFont, fontBold: PDFFont, fontSize: number, color: RGB) {
             const x = 40;
             const width = page.getWidth() - 80;
             const rowHeight = 20;
@@ -305,7 +305,7 @@ export class ResultPdfService {
                 ])
             ];
 
-            drawTable(page, tableData, colArray, x, y - rowHeight, rowHeight, font, fontBold, fontSize, "left");
+            return drawTable(page, pdfDoc, tableData, colArray, x, y - rowHeight, rowHeight, font, fontBold, BASE_MARGIN, fontSize, "left");
         }
     }
 
@@ -320,9 +320,9 @@ export class ResultPdfService {
 
         // === TITLE ===
         page.drawText("FR.AK.02 - REKAMAN ASESMEN KOMPETENSI", {
-            x: 40, y, size: 12, font: fontBold
+            x: 40, y, size: 11, font: fontBold
         });
-        y -= 30;
+        y -= 20;
 
         // === SKEMA / INFO ===
         const info = [
@@ -355,8 +355,7 @@ export class ResultPdfService {
         const evidenceTypes = [
             "Observasi Demonstrasi",
             "Portofolio",
-            "Pernyataan Pihak Ketiga",
-            "Pernyataan Wawancara",
+            "Pernyataan Pihak Ketiga / Wawancara",
             "Pertanyaan Lisan",
             "Pertanyaan Tertulis",
             "Proyek Kerja",
@@ -372,13 +371,20 @@ export class ResultPdfService {
             ["Unit Kompetensi", ...evidenceTypes],
         ];
         const tableRows = resultDetails.ak02_headers.rows.map((row, i) => [
-            `${row.unit_code} - ${row.unit_title}`,
+            `${row.unit_title}`,
             ...selectedEvidences[i].map((selected) => selected ? "V" : ""),
         ]);
 
         const tableData = [...tableHeader, ...tableRows];
-        y = await drawTable(page, tableData, [100, ...Array(8).fill(420 / 8)], 40, y, 25, font, fontBold);
+        const colsWidth = [
+            140, 62, 52, 70, 56, 56, 40, 44
+        ];
+        ({ page, y } = await drawTable(page, pdfDoc, tableData, colsWidth, 40, y, 25, font, fontBold));
         y -= 30;
+
+        if (y < BASE_MARGIN * 2) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        }
 
         y = await drawFeedbackAK02(pdfDoc, page, resultDetails, 40, y, font, fontBold);
 

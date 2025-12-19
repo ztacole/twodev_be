@@ -13,6 +13,16 @@ export const months = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
+function validateDate(d: Date): boolean {
+  if (!d) return false;
+
+  const date = d instanceof Date ? d : new Date(d);
+
+  if (isNaN(date.getTime())) return false;
+
+  return true;
+}
+
 // ============================================================================
 // 🔹 Utility Functions
 // ============================================================================
@@ -38,6 +48,8 @@ function extractDateParts(date: Date, useUTC: boolean) {
  * Bisa memilih mode UTC (true) atau lokal (false).
  */
 export function formatDate(d: Date, useUTC = false): string {
+  if (!validateDate(d)) return "-";
+
   const day = useUTC ? d.getUTCDate() : d.getDate();
   const month = useUTC ? d.getUTCMonth() : d.getMonth();
   const year = useUTC ? d.getUTCFullYear() : d.getFullYear();
@@ -49,6 +61,8 @@ export function formatDate(d: Date, useUTC = false): string {
  * Bisa memilih mode UTC (true) atau lokal (false).
  */
 export function formatDay(d: Date, useUTC = false): string {
+  if (!validateDate(d)) return "-";
+
   const dayIndex = useUTC ? d.getUTCDay() : d.getDay();
   return days[dayIndex];
 }

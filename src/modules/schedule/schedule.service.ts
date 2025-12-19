@@ -414,7 +414,7 @@ export class ScheduleService {
 
         // === PDF SETUP ===
         const pdfDoc = await PDFDocument.create();
-        const [page1, page2, page3] = [pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936])];
+        let [page1, page2, page3] = [pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936])];
 
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -491,7 +491,7 @@ export class ScheduleService {
         drawSchemeTableHeader(page2, y, data_assessment, fontBold, FONTS.small, color);
         y -= 85;
 
-        drawUnitTable(page2, y, data_result, font, fontBold, FONTS.small, color);
+        ({ page: page2, y } = await drawUnitTable(page2, pdfDoc, y, data_result, font, fontBold, FONTS.small, color));
 
         return await pdfDoc.save();
 
@@ -564,7 +564,7 @@ export class ScheduleService {
             });
         }
 
-        async function drawUnitTable(page: PDFPage, y: number, data: any[], font: PDFFont, fontBold: PDFFont, fontSize: number, color: RGB) {
+        async function drawUnitTable(page: PDFPage, pdfDoc: PDFDocument, y: number, data: any[], font: PDFFont, fontBold: PDFFont, fontSize: number, color: RGB) {
             const x = 40;
             const width = page.getWidth() - 80;
             const rowHeight = 24;
@@ -576,7 +576,7 @@ export class ScheduleService {
                 colData.push(newData);
             })
 
-            await drawTable(page, colData, colWidths, x, y, rowHeight, font, fontBold, fontSize);
+            return await drawTable(page, pdfDoc, colData, colWidths, x, y, rowHeight, font, fontBold, 150, fontSize);
         }
     }
 }
