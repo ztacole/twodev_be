@@ -4,13 +4,14 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementLayout, drawFeedbackAK02, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
+import { createNewPage, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
 import { formatDate, formatDay } from "../../../helper/date.helper";
 import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
 import { APL1Service } from "../apl-01/apl-01.service";
 import { AssesseeService } from "../../assessee/asseessee.service";
 import { AK02Service } from "../ak-02/ak-02.service";
 import { he } from "@faker-js/faker/.";
+import { APL02Service } from "../apl-02/apl-02.service";
 
 const BASE_MARGIN = 150;
 const ELEMENT_ROW_HEIGHT = 20;
@@ -42,6 +43,70 @@ interface ChecklistData {
 const headerImage = "../../public/images/kop-surat-lsp-smkn24j.png";
 
 export class ResultPdfService {
+    static async generateApl02(resultId: number) {
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
+
+        const resultDetails = await APL02Service.getResultDetails(resultId);
+
+        // ==== TITLE ====
+        page.drawText(
+            "FR.APL.02 - ASESMEN MANDIRI",
+            { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 }
+        );
+        y -= 30;
+
+        // ==== INFO SKEMA ====
+        const info = [
+            ["Judul", ":", resultDetails?.assessment?.occupation?.name ?? "-"],
+            ["Nomor", ":", resultDetails?.assessment?.code ?? "-"],
+            ["TUK", ":", resultDetails?.tuk ?? "-"],
+            ["Nama Assesor", ":", resultDetails?.assessor?.name ?? "-"],
+            ["Nama Asesee", ":", resultDetails?.assessee?.name ?? "-"],
+            ["Tanggal", ":", formatDate(resultDetails?.created_at) ?? "-"],
+        ];
+        y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+        y -= 30;
+
+        // ==== LOOP UNIT KOMPETENSI ====
+        const units = await APL02Service.getUnitsAPL02(resultId);
+        for (let i = 0; i < units.length; i++) {
+            const unit = units[i];
+            const elements = await APL02Service.getElementsByUnitId(resultId, unit.id);
+
+            if (y < BASE_MARGIN) {
+                ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+            }
+
+            y = await drawUnitLayout(
+                page,
+                i + 1,
+                unit.unit_code,
+                unit.title,
+                40,
+                y,
+                20,
+                font,
+                fontBold,
+            );
+
+            ({ page, y } = await drawElementApl02Layout(pdfDoc, page, i + 1, elements, 40, y, font, fontBold, headerImage, BASE_MARGIN));
+
+            y -= 20;
+        }
+
+        y -= 20;
+
+        if (y < BASE_MARGIN + 260) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        }
+        y = await drawFeedbackAPL02(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
+
+        return await pdfDoc.save();
+    }
 
     static async generateIA01(resultId: number) {
         const pdfDoc = await PDFDocument.create();
@@ -108,12 +173,14 @@ export class ResultPdfService {
 
                 // Draw elements
                 y -= 20;
-                ({ page, y } = await drawElementLayout(pdfDoc, page, elements, 40, y, font, fontBold, headerImage, BASE_MARGIN));
+                ({ page, y } = await drawElementIa01Layout(pdfDoc, page, elements, 40, y, font, fontBold, headerImage, BASE_MARGIN));
             }
         }
 
 
-        ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        if (y < BASE_MARGIN + 470) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        }
         y = await drawFeedbackIA01(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
         return await pdfDoc.save();

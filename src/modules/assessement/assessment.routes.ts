@@ -112,7 +112,7 @@ router.get('/apl-02/result/units/:resultId/elements/:unitId', APL02Controller.ge
 router.put('/apl-02/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, APL02Controller.approvedByAssessor);
 router.put('/apl-02/result/assessee/:resultId/approve', authenticateToken, assesseeMiddleware, APL02Controller.approvedByAssessee);
 router.get('/apl-02/result/:resultId', APL02Controller.getResultDetails);
-// router.get('/apl-02/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateIA01);
+router.get('/apl-02/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateApl02);
 
 router.get('/ia-01/units/:resultId', IA01Controller.getIA01Groups);
 router.get('/ia-01/units/:resultId/elements/:unitId', IA01Controller.getElementsByUnitId);

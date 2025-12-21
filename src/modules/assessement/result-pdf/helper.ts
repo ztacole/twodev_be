@@ -6,6 +6,7 @@ import { drawParagraph } from "../../../helper/pdfDraw.helper";
 import { getAssesseeUrl, getAssessorUrl } from "../../../helper/hashids";
 import { formatDate } from "../../../helper/date.helper";
 import { IA01Service } from "../ia-01/ia-01.service";
+import { text } from "stream/consumers";
 
 // Ukuran F4 = 210mm x 330mm
 const F4_WIDTH = 595.28;  // 210 mm
@@ -20,25 +21,53 @@ async function createNewPage(pdfDoc: PDFDocument, headerImage: string, fontBold:
     return { page, y };
 }
 
-function calculateTextHeight(text: string, maxWidth: number, font: PDFFont, fontSize: number): number {
-    const words = text.split(" ");
-    let line = "";
+function calculateTextHeight(
+    text: string,
+    maxWidth: number,
+    font: PDFFont,
+    fontSize: number,
+    paddingY = Math.ceil(fontSize * 0.7),
+    lineGap = Math.ceil(fontSize * 0.3)
+): number {
+    if (!text) return fontSize + lineGap + paddingY;
+
+    const paragraphs = text.split("\n");
     let lines = 0;
 
-    for (const word of words) {
-        const testLine = line ? line + " " + word : word;
-        const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+    for (const paragraph of paragraphs) {
+        const words = paragraph.split(" ");
+        let line = "";
 
-        if (testWidth > maxWidth - 8) {
-            lines++;
-            line = word;
-        } else {
-            line = testLine;
+        for (const word of words) {
+            const testLine = line ? line + " " + word : word;
+            if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth - 8) {
+                lines++;
+                line = word;
+            } else {
+                line = testLine;
+            }
         }
+        if (line) lines++;
     }
-    if (line) lines++;
 
-    return lines * (fontSize + 4) + 10;
+    return lines * (fontSize + lineGap) + paddingY;
+}
+
+function calculateMultilineHeight(
+    texts: string[],
+    width: number,
+    font: PDFFont,
+    fontSize: number,
+    itemGap = 2
+) {
+    let height = 0;
+
+    for (const text of texts) {
+        height += calculateTextHeight(text, width, font, fontSize, 0);
+        height += fontSize * 0.3 - 0.4
+    }
+
+    return height;
 }
 
 function drawCellText(
@@ -79,7 +108,7 @@ function drawCellText(
             size: size,
             font: font,
         });
-        return;
+        return size + 2;
     }
 
     let ty = y - 5 - size;
@@ -120,33 +149,35 @@ async function drawTable(
 
         // ukur tinggi maksimum row (karena ada teks wrap)
         const cellHeights = row.map((cell, idx) => {
-            const safeCell = cell ?? ""; // fallback
-            const words = safeCell.split(" ");
-            let line = "";
-            let lines: string[] = [];
-            for (const word of words) {
-                const testLine = line ? line + " " + word : word;
-                const testWidth = font.widthOfTextAtSize(testLine, fontSize);
-                if (testWidth > colWidths[idx] - 8) {
-                    lines.push(line);
-                    line = word;
-                } else {
-                    line = testLine;
-                }
-            }
-            if (line) lines.push(line);
-            return lines.length * (fontSize + 4) + 6;
+            if (Array.isArray(cell)) return calculateMultilineHeight(cell, colWidths[idx], font, fontSize);
+            else return calculateTextHeight(cell ?? "", colWidths[idx], font, fontSize);
+            // const safeCell = cell ?? ""; // fallback
+            // const words = safeCell.split(" ");
+            // let line = "";
+            // let lines: string[] = [];
+            // for (const word of words) {
+            //     const testLine = line ? line + " " + word : word;
+            //     const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+            //     if (testWidth > colWidths[idx] - 8) {
+            //         lines.push(line);
+            //         line = word;
+            //     } else {
+            //         line = testLine;
+            //     }
+            // }
+            // if (line) lines.push(line);
+            // return lines.length * (fontSize + 4) + 6;
         });
 
         maxRowHeight = Math.max(rowHeight, ...cellHeights);
 
-        // draw cell
-        row.forEach(async (cell, idx) => {
-            const w = colWidths[idx];
+        if (y - maxRowHeight < bottomMargin) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        }
 
-            if (y - maxRowHeight < bottomMargin) {
-                ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
-            }
+        // draw cell
+        row.forEach((cell, idx) => {
+            const w = colWidths[idx];
 
             page.drawRectangle({
                 x,
@@ -157,7 +188,14 @@ async function drawTable(
                 borderWidth: 1,
             });
             const align = i === 0 ? firstRowCenterAlign : "left"; // Header alignment
-            drawCellText(page, cell, x, y, w, maxRowHeight, (i === 0 && isFirstRowBold) ? fontBold : font, fontSize, align);
+
+            if (Array.isArray(cell)) {
+                let textY = y;
+                for (const line of cell) {
+                    textY -= drawCellText(page, line, x, textY, w, maxRowHeight, (i === 0 && isFirstRowBold) ? fontBold : font, fontSize, align);
+                }
+            }
+            else drawCellText(page, cell, x, y, w, maxRowHeight, (i === 0 && isFirstRowBold) ? fontBold : font, fontSize, align);
             x += w;
         });
 
@@ -410,7 +448,7 @@ async function drawUnitLayout(
                 borderWidth: 1,
             });
             const align = "left";
-            drawCellText(page, cell, x, y, w, maxRowHeight, i === 0 ? fontBold : font, 9, align);
+            drawCellText(page, cell, x, y, w, maxRowHeight, font, 9, align);
             x += w;
         });
 
@@ -420,7 +458,281 @@ async function drawUnitLayout(
     return y;
 }
 
-async function drawElementLayout(
+export async function drawElementApl02Layout(
+    pdfDoc: PDFDocument,
+    page: PDFPage,
+    unitNo: number,
+    elements: any[],
+    startX: number,
+    startY: number,
+    font: PDFFont,
+    fontBold: PDFFont,
+    headerImage: any,
+    bottomMargin: number
+): Promise<{ page: PDFPage, y: number }> {
+    const colWidths = [330, 32.5, 32.5, 125];
+    const rowHeight = 20;
+    let y = startY;
+
+    // === DRAW HEADER ===
+    const drawHeader = () => {
+        const mainHeader = ["Dapatkah Saya?", "K", "BK", "Bukti Relevan"];
+
+        let headerX = startX;
+        let maxRowHeight = rowHeight;
+
+        mainHeader.forEach((cell, idx) => {
+            const w = colWidths[idx];
+            page.drawRectangle({
+                x: headerX,
+                y: y - maxRowHeight,
+                width: w,
+                height: maxRowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            const align = idx === 0 ? "left" : "center";
+            drawCellText(page, cell, headerX, y, w, maxRowHeight, fontBold, 9, align);
+            headerX += w;
+        });
+
+        y -= maxRowHeight;
+    };
+
+    function buildElementText(
+        elementNo: number,
+        elementTitle: string,
+        criterias: string[]
+    ): string[] {
+        const sb: string[] = [];
+
+        sb.push(`${elementNo}. Elemen : ${elementTitle}`);
+        sb.push("Kriteria Unjuk Kerja:");
+
+        criterias.forEach((kriteria, idx) => {
+            sb.push(`${unitNo}.${elementNo}.${idx + 1}. ${kriteria}`);
+        });
+
+        return sb;
+    }
+
+    // === DRAW ELEMENTS ===
+    const data = elements.map((element: any, idx: number) => [
+        buildElementText(idx + 1, element.title, element.details.map((detail: any) => detail.description)),
+        element.result?.is_competent ? "V" : "",
+        !element.result?.is_competent ? "V" : "",
+        element.result?.evidences?.map((evidence: any) => evidence.evidence).join(", ") ?? "-",
+    ]);
+    drawHeader();
+    ({ page, y } = await drawTable(page, pdfDoc, data, colWidths, startX, y, rowHeight, font, fontBold, bottomMargin, 9, "left", false));
+    
+
+    return { page, y };
+}
+
+export async function drawFeedbackAPL02(
+    pdfDoc: PDFDocument,
+    page: PDFPage,
+    data: any,
+    startX: number,
+    startY: number,
+    rowHeight: number,
+    font: PDFFont,
+    fontBold: PDFFont
+): Promise<number> {
+    let y = startY;
+    const maxWidth = 520;
+
+    // === Rekomendasi kompeten ===
+    const leftRectY = y - 260;
+
+    page.drawRectangle({
+        x: startX,
+        y: leftRectY,
+        width: maxWidth / 2,
+        height: 260,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+
+    page.drawText("Rekomendasi:", { x: startX + 5, y: y - 12, size: 9, font: fontBold });
+    let leftSectionY = y - 22;
+
+    const recommendationText = data.apl02_header.is_continue ? "Asesmen dapat dilanjutkan" : "Asesmen tidak dapat dilanjutkan";
+    leftSectionY = drawParagraph(page, recommendationText, startX + 5, leftSectionY - 3, font, 8.5, "left", rgb(0, 0, 0), maxWidth / 2 + startX - (startX + 5), 12);
+
+    // == Right Section ==
+    const rightSectionWidth = maxWidth / 2;
+    const rightSectionX = startX + rightSectionWidth;
+    const qrSize = 60;
+    let rowX = rightSectionX;
+
+    // == Asesi ==
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Asesi:", rightSectionX, y, rightSectionWidth, rowHeight, fontBold, 9, "left");
+
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Nama", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, data.assessee.name, rowX, y, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "left");
+
+    rowX = rightSectionX;
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 4,
+        width: rightSectionWidth / 3,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Tanda Tangan/ Tanggal", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 4,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+
+    if (data.apl02_header.approved_assessee) {
+        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
+        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+    }
+    drawCellText(page, formatDate(data.apl02_header.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+
+    rowX = rightSectionX;
+    y -= rowHeight * 4;
+
+    // Assessor
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Asesor:", rightSectionX, y, rightSectionWidth, rowHeight, fontBold, 9, "left");
+
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Nama", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, data.assessor.name, rowX, y, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "left");
+
+    rowX = rightSectionX;
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "No Reg.", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, data.assessor.no_reg_met, rowX, y, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "left");
+
+    rowX = rightSectionX;
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 4,
+        width: rightSectionWidth / 3,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+    drawCellText(page, "Tanda Tangan/ Tanggal", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 4,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    })
+
+    if (data.apl02_header.approved_assessee) {
+        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
+        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+    }
+    drawCellText(page, formatDate(data.apl02_header.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+
+    rowX = rightSectionX;
+    y -= rowHeight * 4;
+
+    return y;
+}
+
+async function drawElementIa01Layout(
     pdfDoc: PDFDocument,
     page: PDFPage,
     elements: any[],
@@ -496,6 +808,9 @@ async function drawElementLayout(
 
         y -= maxRowHeight;
     };
+
+    drawHeader();
+
 
     // === DRAW ELEMENTS ===
     const data = elements.map((element: any, idx: number) => [
@@ -582,8 +897,7 @@ async function drawElementLayout(
 
         if (y - maxRowHeight < bottomMargin) {
             ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
-            drawHeader();
-        } else if (i === 0) drawHeader();
+        }
 
         row.forEach((cell: any, idx: number) => {
             const w = colWidths[idx];
@@ -956,7 +1270,7 @@ async function drawFeedbackIA01(
     rowX = rightSectionX;
     y -= rowHeight * 4;
 
-    return y - 130;
+    return y;
 }
 
 async function drawChecklistTable(
@@ -1080,21 +1394,6 @@ async function drawChecklistTable(
 
     return y - 15;
 }
-
-async function drawSignatureSectionLayout(
-    page: PDFPage,
-    items: {
-        label: string,
-        memenuhi?: boolean,
-        tidakMemenuhi?: boolean,
-        tidakAda?: boolean
-    },
-    startX: number,
-    startY: number,
-    rowHeight: number,
-    font: PDFFont,
-    fontIcon: PDFFont
-) { }
 
 async function drawCertificateLayoutAK02(
     page: any,
@@ -1373,7 +1672,7 @@ async function drawFeedbackAK02(
     rowX = startX;
     y -= rowHeight * 4;
 
-    return y - 130;
+    return y;
 }
 
-export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementLayout, drawFeedbackIA01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02 };
+export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02 };
