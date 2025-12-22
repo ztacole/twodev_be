@@ -29,6 +29,7 @@ interface AssesseeResponse {
     educational_qualifications: string;
     job: AssesseeJobResponse;
     assessment: AssessmentDetailsResponse;
+    resultDoc: ResultDocResponse;
 }
 
 interface CertificateDocsResponse {

@@ -42,6 +42,7 @@ import {
 import { w } from '@faker-js/faker/dist/airline-CLphikKp';
 import fs from 'fs';
 import { AssessmentService } from '../assessment.service';
+import { approve } from '../verification/verification.controller';
 
 const TUK_VALUES = {
     SEWAKTU: 'sewaktu',
@@ -409,6 +410,9 @@ export class APL1Service {
         const result = await db.query.result.findFirst({ where: eq(resultTable.id, result_id) });
         if (!result) throw new NotFoundError('Result');
 
+        const resultDoc = await db.query.resultDoc.findFirst({ where: eq(resultDocTable.result_id, result.id) });
+        if (!resultDoc) throw new NotFoundError('Result Document');
+
         const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(assessmentSchedule.id, result.schedule_id) });
         if (!schedule) throw new NotFoundError('Schedule');
 
@@ -418,6 +422,11 @@ export class APL1Service {
         const assesseeJobs = await db.select().from(assesseeJobTable).where(eq(assesseeJobTable.assessee_id, assessee.id));
         if (assesseeJobs.length === 0) throw new NotFoundError('Assessee Jobs');
         const assesseeJob = assesseeJobs[0];
+        
+        const admin = await db.query.admin.findFirst({ where: eq(adminTable.id, resultDoc.admin_id!) });
+        if (!admin) throw new NotFoundError('Admin');
+        const adminUser = await db.query.user.findFirst({ where: eq(userTable.id, admin.user_id) });
+        if (!adminUser) throw new NotFoundError('Admin User');
 
         const assessment = await db.query.assessment.findFirst({
             where: eq(assessmentTable.id, schedule.assessment_id)
@@ -457,12 +466,36 @@ export class APL1Service {
             uc_apl02s,
         }
 
+        const resulDoc = {
+            id: resultDoc.id,
+            admin_id: resultDoc.admin_id,
+            result_id: resultDoc.result_id,
+            purpose: resultDoc.purpose,
+            school_report_card: resultDoc.school_report_card,
+            field_work_practice_certificate: resultDoc.field_work_practice_certificate,
+            student_card: resultDoc.student_card,
+            family_card: resultDoc.family_card,
+            id_card: resultDoc.id_card,
+            approved: resultDoc.approved,
+            created_at: resultDoc.created_at,
+            updated_at: resultDoc.updated_at,
+        }
+
+        const adminData = {
+            id: admin.id,
+            user_id: admin.user_id,
+            full_name: adminUser.full_name,
+            email: adminUser.email,
+        }
+
         return {
             ...(assessee as any),
             full_name: user?.full_name,
             job: assesseeJob,
             assessment: resultAssessment,
-            schedule: schedule
+            resultDoc: resulDoc,
+            schedule: schedule,
+            admin: adminData
         } as AssesseeResponse;
     }
 
