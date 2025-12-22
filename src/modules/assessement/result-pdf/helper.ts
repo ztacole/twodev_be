@@ -1675,225 +1675,163 @@ async function drawFeedbackAK02(
     return y;
 }
 
-async function drawSignatureAPL01(
+async function drawFeedbackAK01(
     pdfDoc: PDFDocument,
     page: PDFPage,
     data: any,
     startX: number,
     startY: number,
-    rowHeight: number,
     font: PDFFont,
     fontBold: PDFFont
-): Promise<number> {
-    let y = startY;
-    const maxWidth = 520;
-    const leftSectionWidth = maxWidth / 2;
-    const leftSectionX = startX;
-    const initialY = y;
-    
-    const leftSectionHeight = rowHeight * 12;
-
-    page.drawRectangle({
-        x: leftSectionX,
-        y: y - leftSectionHeight,
-        width: leftSectionWidth,
-        height: leftSectionHeight,
-        borderColor: rgb(0, 0, 0),
-        borderWidth: 1,
-    });
-
-    page.drawText("Rekomendasi", {
-        x: leftSectionX + 5,
-        y: y - 12,
-        size: 9,
-        font: fontBold,
-    });      
-    drawMixedParagraph(
-        page,
-        [
-            { text: "Berdasarkan ketentuan persyaratan dasar, maka pemohon: ", font: font },
-            { text: "Diterima", font: fontBold },
-            { text: " sebagai peserta sertifikasi", font: font },
-        ],
-        startX + 5,
-        y - 22 - 3,
-        9,
-        rgb(0, 0, 0),
-        maxWidth / 2 + startX - (startX + 22),
-        12,
-        "left"
-    );
-
-    const catatanY = initialY - rowHeight * 6;
-
-    page.drawLine({
-        start: { x: leftSectionX, y: catatanY },
-        end: { x: leftSectionX + leftSectionWidth, y: catatanY },
-        thickness: 1,
-        color: rgb(0, 0, 0),
-    });
-    page.drawText("Catatan:", {
-        x: leftSectionX + 5,
-        y: catatanY - 12,
-        size: 9,
-        font: fontBold,
-    });
-    drawParagraph(
-        page,
-        data.note ?? "",
-        leftSectionX + 5,
-        catatanY - 24,
-        font, 
-        9,
-        "left",
-        rgb(0, 0, 0),
-        leftSectionWidth - 10,
-        12
-    );
-
-    // == Right Section ==
-    const rightSectionWidth = maxWidth / 2;
-    const rightSectionX = startX + rightSectionWidth;
+) {
+    const tableWidth = 520;
+    const rowHeight = 20;
     const qrSize = 60;
-    let rowX = rightSectionX;
+    const halfWidth = tableWidth / 2;
 
-    // == Asesi ==
+    let y = startY;
+
+    // === HEADER PERNYATAAN ===
     page.drawRectangle({
-        x: rowX,
+        x: startX,
         y: y - rowHeight,
-        width: rightSectionWidth,
+        width: halfWidth,
         height: rowHeight,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
-    })
-    drawCellText(page, "Pemohon/Kandidat", rightSectionX, y, rightSectionWidth, rowHeight, fontBold, 9, "left");
+    });
+    drawCellText(page, "Asesor", startX, y, halfWidth, rowHeight, fontBold, 9, "center");
+
+    page.drawRectangle({
+        x: startX + halfWidth,
+        y: y - rowHeight,
+        width: halfWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Asesi", startX + halfWidth, y, halfWidth, rowHeight, fontBold, 9, "center");
 
     y -= rowHeight;
 
+    // === PERNYATAAN ASESOR & ASESI ===
+    const assessorStatement = "Menyatakan tidak akan membuka hasil pekerjaan yang saya peroleh karena penugasan saya sebagai Asesor dalam pekerjaan Asesmen kepada siapapun atau organisasi apapun selain kepada pihak yang berwenang sehubungan dengan kewajiban saya sebagai Asesor yang ditugaskan oleh LSP.";
+    const assesseeStatement = "Saya setuju mengikuti asesmen dengan pemahaman bahwa informasi yang dikumpulkan hanya digunakan untuk pengembangan profesional dan hanya dapat diakses oleh orang tertentu saja.";
+
+    // Hitung tinggi pernyataan
+    const assessorHeight = calculateTextHeight(assessorStatement, halfWidth, font, 8, 10, 3);
+    const assesseeHeight = calculateTextHeight(assesseeStatement, halfWidth, font, 8, 10, 3);
+    const statementHeight = Math.max(assessorHeight, assesseeHeight, 60);
+
+    // Draw statement boxes
     page.drawRectangle({
-        x: rowX,
+        x: startX,
+        y: y - statementHeight,
+        width: halfWidth,
+        height: statementHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawParagraph(page, assessorStatement, startX + 5, y - 10, font, 8, "left", rgb(0, 0, 0), halfWidth - 10, 10);
+
+    page.drawRectangle({
+        x: startX + halfWidth,
+        y: y - statementHeight,
+        width: halfWidth,
+        height: statementHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawParagraph(page, assesseeStatement, startX + halfWidth + 5, y - 10, font, 8, "left", rgb(0, 0, 0), halfWidth - 10, 10);
+
+    y -= statementHeight;
+
+    // === NAMA ASESOR & ASESI ===
+    page.drawRectangle({
+        x: startX,
         y: y - rowHeight,
-        width: rightSectionWidth / 3,
+        width: halfWidth,
         height: rowHeight,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
-    })
-    drawCellText(page, "Nama", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
-
-    rowX += rightSectionWidth / 3;
+    });
+    drawCellText(page, `Nama: ${data.assessor.name}`, startX, y, halfWidth, rowHeight, font, 9, "left");
 
     page.drawRectangle({
-        x: rowX,
+        x: startX + halfWidth,
         y: y - rowHeight,
-        width: rightSectionWidth * 2 / 3,
+        width: halfWidth,
         height: rowHeight,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
-    })
-    drawCellText(page, data.full_name, rowX, y, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "left");
+    });
+    drawCellText(page, `Nama: ${data.assessee.name}`, startX + halfWidth, y, halfWidth, rowHeight, font, 9, "left");
 
-    rowX = rightSectionX;
     y -= rowHeight;
 
+    // === NO REG ASESOR ===
     page.drawRectangle({
-        x: rowX,
-        y: y - rowHeight * 4,
-        width: rightSectionWidth / 3,
-        height: rowHeight * 4,
+        x: startX,
+        y: y - rowHeight,
+        width: halfWidth,
+        height: rowHeight,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
-    })
-    drawCellText(page, "Tanda Tangan/ Tanggal", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
-
-    rowX += rightSectionWidth / 3;
+    });
+    drawCellText(page, `No. Reg: ${data.assessor.no_reg_met ?? "-"}`, startX, y, halfWidth, rowHeight, font, 9, "left");
 
     page.drawRectangle({
-        x: rowX,
-        y: y - rowHeight * 4,
-        width: rightSectionWidth * 2 / 3,
-        height: rowHeight * 4,
+        x: startX + halfWidth,
+        y: y - rowHeight,
+        width: halfWidth,
+        height: rowHeight,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
-    })
+    });
+    drawCellText(page, "", startX + halfWidth, y, halfWidth, rowHeight, font, 9, "left");
 
-    if (data.resultDoc.approved) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+    y -= rowHeight;
+
+    // === TANDA TANGAN ===
+    const signatureHeight = rowHeight * 4;
+
+    // Asesor signature
+    page.drawRectangle({
+        x: startX,
+        y: y - signatureHeight,
+        width: halfWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    if (data.ak01_header.approved_assessor) {
+        const asesorQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssessorUrl(data.assessor.id)));
+        const qrX = startX + (halfWidth / 2) - (qrSize / 2);
+        page.drawImage(asesorQrImage, { x: qrX, y: y - qrSize - 5, width: qrSize, height: qrSize });
     }
-    drawCellText(page, formatDate(data.resultDoc.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+    drawCellText(page, `Tanda Tangan / ${formatDate(data.ak01_header.updated_at)}`, startX, y - signatureHeight + 5, halfWidth, rowHeight, font, 8, "center");
 
-    rowX = rightSectionX;
-    y -= rowHeight * 4;
-
-    // Assessor
+    // Asesi signature
     page.drawRectangle({
-        x: rowX,
-        y: y - rowHeight,
-        width: rightSectionWidth,
-        height: rowHeight,
+        x: startX + halfWidth,
+        y: y - signatureHeight,
+        width: halfWidth,
+        height: signatureHeight,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
-    })
-    drawCellText(page, "Admin LSP:", rightSectionX, y, rightSectionWidth, rowHeight, fontBold, 9, "left");
+    });
 
-    y -= rowHeight;
-
-    page.drawRectangle({
-        x: rowX,
-        y: y - rowHeight,
-        width: rightSectionWidth / 3,
-        height: rowHeight,
-        borderColor: rgb(0, 0, 0),
-        borderWidth: 1,
-    })
-    drawCellText(page, "Nama", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
-
-    rowX += rightSectionWidth / 3;
-
-    page.drawRectangle({
-        x: rowX,
-        y: y - rowHeight,
-        width: rightSectionWidth * 2 / 3,
-        height: rowHeight,
-        borderColor: rgb(0, 0, 0),
-        borderWidth: 1,
-    })
-    drawCellText(page, data.admin.full_name, rowX, y, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "left");
-
-    rowX = rightSectionX;
-    y -= rowHeight;
-
-    page.drawRectangle({
-        x: rowX,
-        y: y - rowHeight * 4,
-        width: rightSectionWidth / 3,
-        height: rowHeight * 4,
-        borderColor: rgb(0, 0, 0),
-        borderWidth: 1,
-    })
-    drawCellText(page, "Tanda Tangan/ Tanggal", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
-
-    rowX += rightSectionWidth / 3;
-
-    page.drawRectangle({
-        x: rowX,
-        y: y - rowHeight * 4,
-        width: rightSectionWidth * 2 / 3,
-        height: rowHeight * 4,
-        borderColor: rgb(0, 0, 0),
-        borderWidth: 1,
-    })
-
-    if (data.resultDoc.approved) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.admin.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+    if (data.ak01_header.approved_assessee) {
+        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
+        const qrX = startX + halfWidth + (halfWidth / 2) - (qrSize / 2);
+        page.drawImage(asesiQrImage, { x: qrX, y: y - qrSize - 5, width: qrSize, height: qrSize });
     }
-    drawCellText(page, formatDate(data.resultDoc.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+    drawCellText(page, `Tanda Tangan / ${formatDate(data.ak01_header.updated_at)}`, startX + halfWidth, y - signatureHeight + 5, halfWidth, rowHeight, font, 8, "center");
 
-    rowX = rightSectionX;
-    y -= rowHeight * 4;
+    y -= signatureHeight;
 
     return y;
 }
 
-export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02 };
+export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01 };

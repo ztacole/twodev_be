@@ -4,12 +4,13 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawSignatureAPL01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
+import { createNewPage, drawCellText, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawFeedbackAK01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
 import { formatDate, formatDay } from "../../../helper/date.helper";
 import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
 import { APL1Service } from "../apl-01/apl-01.service";
 import { AssesseeService } from "../../assessee/asseessee.service";
 import { AK02Service } from "../ak-02/ak-02.service";
+import { AK01Service } from "../ak-01/ak-01.service";
 import { he } from "@faker-js/faker/.";
 import { APL02Service } from "../apl-02/apl-02.service";
 
@@ -381,6 +382,208 @@ export class ResultPdfService {
             }
             return { memenuhi: false, tidakMemenuhi: false, tidakAda: true };
         }
+    }
+
+    static async generateAK01(resultId: number) {
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
+
+        const resultDetails = await AK01Service.getDataForAK01(resultId);
+
+        // === TITLE ===
+        page.drawText("FR.AK.01 - PERSETUJUAN ASESMEN DAN KERAHASIAAN", {
+            x: 40, y, size: 11, font: fontBold
+        });
+        y -= 20;
+
+        // Pernyataan header
+        const headerStatement = "Persetujuan Asesmen ini untuk menjamin bahwa Asesi telah diberi arahan secara rinci tentang perencanaan dan proses asesmen";
+        y = drawParagraph(page, headerStatement, 40, y, font, 9, "left", rgb(0, 0, 0), 520, 12);
+        y -= 10;
+
+        // === INFO SKEMA (dalam tabel) ===
+        const infoData = [
+            ["Judul", ":", resultDetails?.assessment?.occupation?.name?.toUpperCase() ?? "-"],
+            ["Nomor", ":", resultDetails?.assessment?.code ?? "-"],
+        ];
+
+        // Header Skema Sertifikasi + Info
+        const schemeHeaderWidth = 90;
+        const labelWidth = 42;
+        const colonWidth = 11;
+        const valueWidth = 377;
+        const tableWidth = schemeHeaderWidth + labelWidth + colonWidth + valueWidth;
+
+        // Draw "Skema Sertifikasi Okupasi" header
+        page.drawRectangle({
+            x: 40,
+            y: y - 40,
+            width: schemeHeaderWidth,
+            height: 40,
+            borderColor: rgb(0, 0, 0),
+            borderWidth: 1,
+        });
+        page.drawText("Skema Sertifikasi", { x: 45, y: y - 15, size: 9, font: fontBold });
+        page.drawText("Okupasi", { x: 45, y: y - 27, size: 9, font: fontBold });
+
+        // Draw info rows (Judul, Nomor)
+        let infoY = y;
+        for (let i = 0; i < infoData.length; i++) {
+            const row = infoData[i];
+            let x = 40 + schemeHeaderWidth;
+
+            page.drawRectangle({ x, y: infoY - 20, width: labelWidth, height: 20, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            drawCellText(page, row[0], x, infoY, labelWidth, 20, fontBold, 9, "left");
+            x += labelWidth;
+
+            page.drawRectangle({ x, y: infoY - 20, width: colonWidth, height: 20, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            drawCellText(page, row[1], x, infoY, colonWidth, 20, font, 9, "center");
+            x += colonWidth;
+
+            page.drawRectangle({ x, y: infoY - 20, width: valueWidth, height: 20, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            drawCellText(page, row[2], x, infoY, valueWidth, 20, font, 9, "left");
+
+            infoY -= 20;
+        }
+        y -= 40;
+
+        // === TUK, Nama Asesor, Nama Asesi, Tanggal ===
+        const detailData = [
+            ["TUK", ":", resultDetails?.tuk ?? "-"],
+            ["Nama Asesor", ":", resultDetails?.assessor?.name ?? "-"],
+            ["Nama Asesi", ":", resultDetails?.assessee?.name ?? "-"],
+            ["Tanggal", ":", formatDate(resultDetails?.created_at) ?? "-"],
+        ];
+
+        for (const row of detailData) {
+            let x = 40;
+            page.drawRectangle({ x, y: y - 20, width: schemeHeaderWidth + labelWidth, height: 20, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            drawCellText(page, row[0], x, y, schemeHeaderWidth + labelWidth, 20, font, 9, "left");
+            x += schemeHeaderWidth + labelWidth;
+
+            page.drawRectangle({ x, y: y - 20, width: colonWidth, height: 20, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            drawCellText(page, row[1], x, y, colonWidth, 20, font, 9, "center");
+            x += colonWidth;
+
+            page.drawRectangle({ x, y: y - 20, width: valueWidth, height: 20, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            drawCellText(page, row[2], x, y, valueWidth, 20, font, 9, "left");
+
+            y -= 20;
+        }
+
+        // === BUKTI YANG DIKUMPULKAN (2 kolom checkbox) ===
+        const allEvidenceTypes = [
+            "Hasil Verifikasi Portofolio",
+            "Hasil Observasi Langsung",
+            "Hasil Tanya Jawab",
+            "Hasil Reviu Produk",
+            "Hasil Kegiatan Terstruktur",
+            "Lainnya"
+        ];
+        const selectedEvidences = resultDetails.ak01_header.rows.map((row: any) => row.evidence.toLowerCase());
+
+        const evidenceBoxHeight = 80;
+        
+        // Label "Bukti yang dikumpulkan"
+        page.drawRectangle({ x: 40, y: y - evidenceBoxHeight, width: schemeHeaderWidth + labelWidth, height: evidenceBoxHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+        drawCellText(page, "Bukti yang dikumpulkan", 40, y - evidenceBoxHeight / 2 + 10, schemeHeaderWidth + labelWidth, 20, font, 9, "left");
+
+        // Colon
+        page.drawRectangle({ x: 40 + schemeHeaderWidth + labelWidth, y: y - evidenceBoxHeight, width: colonWidth, height: evidenceBoxHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+        drawCellText(page, ":", 40 + schemeHeaderWidth + labelWidth, y - evidenceBoxHeight / 2 + 10, colonWidth, 20, font, 9, "center");
+
+        // Evidence checkboxes area
+        const evidenceAreaX = 40 + schemeHeaderWidth + labelWidth + colonWidth;
+        page.drawRectangle({ x: evidenceAreaX, y: y - evidenceBoxHeight, width: valueWidth, height: evidenceBoxHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+
+        // Draw checkboxes in 2 columns
+        const checkboxSize = 10;
+        const colWidth = valueWidth / 2;
+        let checkY = y - 15;
+
+        for (let i = 0; i < allEvidenceTypes.length; i++) {
+            const col = i < 3 ? 0 : 1;
+            const row = i < 3 ? i : i - 3;
+            const checkX = evidenceAreaX + 10 + (col * colWidth);
+            const itemY = checkY - (row * 22);
+
+            // Checkbox
+            page.drawRectangle({
+                x: checkX,
+                y: itemY - checkboxSize,
+                width: checkboxSize,
+                height: checkboxSize,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+
+            // Check if selected
+            const isSelected = selectedEvidences.some((sel: string) => 
+                sel.includes(allEvidenceTypes[i].toLowerCase()) || 
+                allEvidenceTypes[i].toLowerCase().includes(sel)
+            );
+            if (isSelected) {
+                page.drawText("V", { x: checkX + 2, y: itemY - checkboxSize + 2, size: 8, font: fontBold });
+            }
+
+            // Label
+            page.drawText(allEvidenceTypes[i], { x: checkX + checkboxSize + 5, y: itemY - checkboxSize + 2, size: 9, font });
+        }
+
+        y -= evidenceBoxHeight;
+
+        // === PELAKSANAAN ASESMEN ===
+        const startDate = resultDetails?.schedule?.start_date 
+            ? `${formatDay(resultDetails.schedule.start_date)}, ${formatDate(resultDetails.schedule.start_date)}`
+            : "-";
+        const endDate = resultDetails?.schedule?.end_date 
+            ? `${formatDay(resultDetails.schedule.end_date)}, ${formatDate(resultDetails.schedule.end_date)}`
+            : "-";
+
+        const scheduleData = [
+            ["Hari / Tanggal", ":", `${startDate} s.d. ${endDate}`],
+            ["Waktu", ":", "Pukul 07.00 s.d. 17.00 WIB"],
+            ["TUK", ":", resultDetails?.tuk ?? "-"],
+        ];
+
+        // Header "Pelaksanaan asesmen disepakati pada"
+        const scheduleHeaderHeight = 60;
+        page.drawRectangle({ x: 40, y: y - scheduleHeaderHeight, width: schemeHeaderWidth + labelWidth, height: scheduleHeaderHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+        page.drawText("Pelaksanaan asesmen", { x: 45, y: y - 20, size: 9, font });
+        page.drawText("disepakati pada", { x: 45, y: y - 32, size: 9, font });
+
+        // Schedule rows
+        let schedY = y;
+        for (let i = 0; i < scheduleData.length; i++) {
+            const row = scheduleData[i];
+            let x = 40 + schemeHeaderWidth + labelWidth;
+
+            page.drawRectangle({ x, y: schedY - 20, width: 70, height: 20, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            drawCellText(page, row[0], x, schedY, 70, 20, font, 9, "left");
+            x += 70;
+
+            page.drawRectangle({ x, y: schedY - 20, width: colonWidth, height: 20, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            drawCellText(page, row[1], x, schedY, colonWidth, 20, font, 9, "center");
+            x += colonWidth;
+
+            page.drawRectangle({ x, y: schedY - 20, width: valueWidth - 70, height: 20, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+            drawCellText(page, row[2], x, schedY, valueWidth - 70, 20, font, 9, "left");
+
+            schedY -= 20;
+        }
+        y -= scheduleHeaderHeight;
+        y -= 10;
+
+        // === SECTION TANDA TANGAN ===
+        if (y < BASE_MARGIN * 2 + 100) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        }
+        y = await drawFeedbackAK01(pdfDoc, page, resultDetails, 40, y, font, fontBold);
+
+        return await pdfDoc.save();
     }
 
     static async generateAK02(resultId: number) {
