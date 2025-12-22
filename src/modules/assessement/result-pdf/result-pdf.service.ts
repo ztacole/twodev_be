@@ -4,7 +4,7 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
+import { createNewPage, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawSignatureAPL01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
 import { formatDate, formatDay } from "../../../helper/date.helper";
 import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
 import { APL1Service } from "../apl-01/apl-01.service";
@@ -199,7 +199,7 @@ export class ResultPdfService {
 
         // Fetch data
         const resultDetails = await APL1Service.getResultDetails(resultId);
-        const assessee = await AssesseeService.getAssesseeById(resultDetails?.id || 0);
+        const assessee = await AssesseeService.getAssesseeById(resultDetails?.id);
 
         let gender = resultDetails?.gender.toLowerCase();
         if (gender === "female") {
@@ -289,7 +289,6 @@ export class ResultPdfService {
         ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
 
         // ==== SECTION 3 ====
-
         page.drawText(
             "Bagian 2 : Data Sertifikasi",
             { x: 40, y, size: FONTS.s, font: fontBold, maxWidth: 520, lineHeight: 14 }
@@ -301,8 +300,8 @@ export class ResultPdfService {
         y = await drawChecklistTable(
             page,
             [
-                { label: "Rapor Semester 1 s.d. 5", memenuhi: true },
-                { label: "Sertifikat Praktek Kerja Lapangan (PKL)", memenuhi: true },
+                { label: "Rapor Semester 1 s.d. 5", ...docStatus(resultDetails.resultDoc?.school_report_card) },
+                { label: "Sertifikat Praktek Kerja Lapangan (PKL)", ...docStatus(resultDetails.resultDoc?.field_work_practice_certificate) },
             ],
             40, y, 20, font, fontIcon
         );
@@ -314,15 +313,16 @@ export class ResultPdfService {
         y = await drawChecklistTable(
             page,
             [
-                { label: "Kartu Keluarga", memenuhi: true },
-                { label: "Foto", memenuhi: true },
+                { label: "Kartu Pelajar", ...docStatus(resultDetails.resultDoc?.student_card) },
+                { label: "Kartu Keluarga", ...docStatus(resultDetails.resultDoc?.family_card) },
+                { label: "Foto", ...docStatus(resultDetails.resultDoc?.id_card) },
             ],
             40, y, 20, font, fontIcon
         );
 
         y -= 20;
 
-
+        await drawSignatureAPL01(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
         return await pdfDoc.save();
 
@@ -373,6 +373,13 @@ export class ResultPdfService {
             ];
 
             return drawTable(page, pdfDoc, tableData, colArray, x, y - rowHeight, rowHeight, font, fontBold, BASE_MARGIN, fontSize, "left");
+        }
+
+        function docStatus(file?: string | null) {
+            if (file) {
+                return { memenuhi: true, tidakMemenuhi: false, tidakAda: false };
+            }
+            return { memenuhi: false, tidakMemenuhi: false, tidakAda: true };
         }
     }
 
