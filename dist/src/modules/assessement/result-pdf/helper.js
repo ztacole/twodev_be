@@ -324,7 +324,6 @@ function drawUnitLayout(page, unitNumber, unitCode, unitTitle, startX, startY, r
         let leftColHeight = 0;
         const leftColWidth = 132;
         let headerX = leftColWidth;
-        headerX += leftColWidth;
         const headerData = [
             ["Kode Unit", ":", unitCode],
             ["Judul Unit", ":", unitTitle],
@@ -357,6 +356,7 @@ function drawUnitLayout(page, unitNumber, unitCode, unitTitle, startX, startY, r
             });
             y -= maxRowHeight;
         }
+        // Left Column
         y = startY;
         headerX = startX;
         page.drawRectangle({

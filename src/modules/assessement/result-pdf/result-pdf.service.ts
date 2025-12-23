@@ -173,6 +173,7 @@ export class ResultPdfService {
                 );
 
                 // Draw elements
+                y -= 20;
                 ({ page, y } = await drawElementIa01Layout(pdfDoc, page, elements, 40, y, font, fontBold, headerImage, BASE_MARGIN));
             }
         }

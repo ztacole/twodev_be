@@ -391,8 +391,6 @@ async function drawUnitLayout(
     const leftColWidth = 132;
     let headerX = leftColWidth;
 
-    headerX += leftColWidth;
-
     const headerData = [
         ["Kode Unit", ":", unitCode],
         ["Judul Unit", ":", unitTitle],
@@ -430,6 +428,8 @@ async function drawUnitLayout(
 
         y -= maxRowHeight;
     }
+
+    // Left Column
     y = startY;
     headerX = startX;
 
