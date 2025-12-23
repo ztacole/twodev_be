@@ -657,10 +657,20 @@ function drawElementIa01Layout(pdfDoc, page, elements, startX, startY, font, fon
             const detailsHeights = [];
             // Hitung tinggi per cell
             const cellHeights = row.map((cell, idx) => {
-                if (Array.isArray(cell))
-                    calculateMultilineHeight(cell, colWidths[idx], font, 9);
-                else
+                if (Array.isArray(cell)) {
+                    const heights = cell.map((detail) => {
+                        const maxWidth = (idx === 4)
+                            ? colWidths[idx] / 2 - 8
+                            : colWidths[idx] - 8;
+                        return calculateTextHeight(detail !== null && detail !== void 0 ? detail : "", maxWidth, font, 9);
+                    });
+                    detailsHeights.push(heights);
+                    const totalHeight = heights.reduce((a, b) => a + b, 0);
+                    return totalHeight;
+                }
+                else {
                     return calculateTextHeight(cell !== null && cell !== void 0 ? cell : "", colWidths[idx], font, 9);
+                }
             });
             // Hitung tinggi sejajar untuk setiap baris detail
             const detailCount = Math.max(...detailsHeights.map(h => h.length));

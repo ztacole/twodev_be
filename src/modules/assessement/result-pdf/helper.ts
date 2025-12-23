@@ -815,8 +815,20 @@ async function drawElementIa01Layout(
 
         // Hitung tinggi per cell
         const cellHeights = row.map((cell: any, idx: number) => {
-            if (Array.isArray(cell)) calculateMultilineHeight(cell, colWidths[idx], font, 9);
-            else return calculateTextHeight(cell ?? "", colWidths[idx], font, 9);
+            if (Array.isArray(cell)) {
+                const heights = cell.map((detail: any) => {
+                    const maxWidth = (idx === 4)
+                        ? colWidths[idx] / 2 - 8
+                        : colWidths[idx] - 8;
+                    return calculateTextHeight(detail ?? "", maxWidth, font, 9);
+                });
+
+                detailsHeights.push(heights);
+                const totalHeight = heights.reduce((a, b) => a + b, 0);
+                return totalHeight;
+            } else {
+                return calculateTextHeight(cell ?? "", colWidths[idx], font, 9);
+            }
         });
 
         // Hitung tinggi sejajar untuk setiap baris detail
