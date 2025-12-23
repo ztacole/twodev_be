@@ -106,7 +106,6 @@ class ResultPdfService {
                     y -= 20;
                     y = yield (0, helper_1.drawUnitLayout)(page, ++unitIdx, unit.unit_code, unit.title, 40, y, 20, font, fontBold);
                     // Draw elements
-                    y -= 20;
                     ({ page, y } = yield (0, helper_1.drawElementIa01Layout)(pdfDoc, page, elements, 40, y, font, fontBold, headerImage, BASE_MARGIN));
                 }
             }

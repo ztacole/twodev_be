@@ -320,21 +320,11 @@ function drawUnitGroupLayout(page, pdfDoc, index, group, startX, startY, rowHeig
 function drawUnitLayout(page, unitNumber, unitCode, unitTitle, startX, startY, rowHeight, font, fontBold) {
     return __awaiter(this, void 0, void 0, function* () {
         let y = startY;
-        let headerX = startX;
         const headerText = "Unit Kompetensi " + (unitNumber);
-        const w = 132;
-        page.drawRectangle({
-            x: headerX,
-            y: y - rowHeight * 2,
-            width: w,
-            height: rowHeight * 2,
-            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
-            borderWidth: 1,
-        });
-        const align = "center";
-        const titleY = y - rowHeight / 2 + rowHeight / 16;
-        drawCellText(page, headerText, headerX, titleY, w, rowHeight * 2, fontBold, 9, align);
-        headerX += w;
+        let leftColHeight = 0;
+        const leftColWidth = 132;
+        let headerX = leftColWidth;
+        headerX += leftColWidth;
         const headerData = [
             ["Kode Unit", ":", unitCode],
             ["Judul Unit", ":", unitTitle],
@@ -346,26 +336,10 @@ function drawUnitLayout(page, unitNumber, unitCode, unitTitle, startX, startY, r
             let maxRowHeight = rowHeight;
             // ukur tinggi maksimum row (karena ada teks wrap)
             const cellHeights = row.map((cell, idx) => {
-                const safeCell = cell !== null && cell !== void 0 ? cell : ""; // fallback
-                const words = safeCell.split(" ");
-                let line = "";
-                let lines = [];
-                for (const word of words) {
-                    const testLine = line ? line + " " + word : word;
-                    const testWidth = font.widthOfTextAtSize(testLine, 9);
-                    if (testWidth > colWidths[idx] - 8) {
-                        lines.push(line);
-                        line = word;
-                    }
-                    else {
-                        line = testLine;
-                    }
-                }
-                if (line)
-                    lines.push(line);
-                return lines.length * (9 + 4) + 6;
+                return calculateTextHeight(cell !== null && cell !== void 0 ? cell : "", colWidths[idx], font, 9);
             });
             maxRowHeight = Math.max(rowHeight, ...cellHeights);
+            leftColHeight += maxRowHeight;
             // draw cell
             row.forEach((cell, idx) => {
                 const w = colWidths[idx];
@@ -383,6 +357,19 @@ function drawUnitLayout(page, unitNumber, unitCode, unitTitle, startX, startY, r
             });
             y -= maxRowHeight;
         }
+        y = startY;
+        headerX = startX;
+        page.drawRectangle({
+            x: headerX,
+            y: y - leftColHeight,
+            width: leftColWidth,
+            height: leftColHeight,
+            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+            borderWidth: 1,
+        });
+        const align = "center";
+        const titleY = y - rowHeight / 2 + rowHeight / 16;
+        drawCellText(page, headerText, headerX, titleY, leftColWidth, rowHeight * 2, fontBold, 9, align);
         return y;
     });
 }
