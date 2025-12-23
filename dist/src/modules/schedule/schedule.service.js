@@ -353,7 +353,7 @@ class ScheduleService {
             console.log({ start, end, formattedDate, formattedTime, formattedEndDate });
             // === PDF SETUP ===
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
-            const [page1, page2, page3] = [pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936])];
+            let [page1, page2, page3] = [pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936]), pdfDoc.addPage([612, 936])];
             const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
             const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
             const color = (0, pdf_lib_1.rgb)(0, 0, 0);
@@ -414,7 +414,7 @@ class ScheduleService {
             y -= 40;
             drawSchemeTableHeader(page2, y, data_assessment, fontBold, FONTS.small, color);
             y -= 85;
-            drawUnitTable(page2, y, data_result, font, fontBold, FONTS.small, color);
+            ({ page: page2, y } = yield drawUnitTable(page2, pdfDoc, y, data_result, font, fontBold, FONTS.small, color));
             return yield pdfDoc.save();
             // === HELPER FUNCTIONS ===
             function drawSignatureSection(yStart, page) {
@@ -470,7 +470,7 @@ class ScheduleService {
                     (0, pdfDraw_helper_1.drawParagraph)(page, value, 215, y - 20 - 30 * i, fontBold, fontSize);
                 });
             }
-            function drawUnitTable(page, y, data, font, fontBold, fontSize, color) {
+            function drawUnitTable(page, pdfDoc, y, data, font, fontBold, fontSize, color) {
                 return __awaiter(this, void 0, void 0, function* () {
                     const x = 40;
                     const width = page.getWidth() - 80;
@@ -482,7 +482,7 @@ class ScheduleService {
                         const newData = [`${idx + 1}.`, (_a = data.unit_code) !== null && _a !== void 0 ? _a : "-", (_b = data.title) !== null && _b !== void 0 ? _b : "-"];
                         colData.push(newData);
                     });
-                    yield (0, helper_1.drawTable)(page, colData, colWidths, x, y, rowHeight, font, fontBold, fontSize);
+                    return yield (0, helper_1.drawTable)(page, pdfDoc, colData, colWidths, x, y, rowHeight, font, fontBold, 150, fontSize);
                 });
             }
         });

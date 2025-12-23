@@ -17,6 +17,13 @@ class ResultPdfController {
 }
 exports.ResultPdfController = ResultPdfController;
 _a = ResultPdfController;
+ResultPdfController.generateApl02 = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const resultId = Number(req.params.resultId);
+    const pdfBytes = yield result_pdf_service_1.ResultPdfService.generateApl02(resultId);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "attachment; filename=\"APL-02.pdf\"");
+    res.send(Buffer.from(pdfBytes));
+}));
 ResultPdfController.generateIA01 = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const resultId = Number(req.params.resultId);
     const pdfBytes = yield result_pdf_service_1.ResultPdfService.generateIA01(resultId);
@@ -29,6 +36,13 @@ ResultPdfController.generateAPL01 = (0, async_handler_1.asyncHandler)((req, res)
     const pdfBytes = yield result_pdf_service_1.ResultPdfService.generateAPL01(resultId);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", "attachment; filename=\"APL-01.pdf\"");
+    res.send(Buffer.from(pdfBytes));
+}));
+ResultPdfController.generateAK01 = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const resultId = Number(req.params.resultId);
+    const pdfBytes = yield result_pdf_service_1.ResultPdfService.generateAK01(resultId);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "attachment; filename=\"AK-01.pdf\"");
     res.send(Buffer.from(pdfBytes));
 }));
 ResultPdfController.generateAK02 = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

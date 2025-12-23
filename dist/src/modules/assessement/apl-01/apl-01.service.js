@@ -364,6 +364,9 @@ class APL1Service {
             const result = yield drizzle_1.db.query.result.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.result.id, result_id) });
             if (!result)
                 throw new error_1.NotFoundError('Result');
+            const resultDoc = yield drizzle_1.db.query.resultDoc.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.resultDoc.result_id, result.id) });
+            if (!resultDoc)
+                throw new error_1.NotFoundError('Result Document');
             const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, result.schedule_id) });
             if (!schedule)
                 throw new error_1.NotFoundError('Schedule');
@@ -375,6 +378,12 @@ class APL1Service {
             if (assesseeJobs.length === 0)
                 throw new error_1.NotFoundError('Assessee Jobs');
             const assesseeJob = assesseeJobs[0];
+            const admin = yield drizzle_1.db.query.admin.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.admin.id, resultDoc.admin_id) });
+            if (!admin)
+                throw new error_1.NotFoundError('Admin');
+            const adminUser = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, admin.user_id) });
+            if (!adminUser)
+                throw new error_1.NotFoundError('Admin User');
             const assessment = yield drizzle_1.db.query.assessment.findFirst({
                 where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id)
             });
@@ -408,7 +417,27 @@ class APL1Service {
                 occupation: occupation,
                 uc_apl02s,
             };
-            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob, assessment: resultAssessment, schedule: schedule });
+            const resulDoc = {
+                id: resultDoc.id,
+                admin_id: resultDoc.admin_id,
+                result_id: resultDoc.result_id,
+                purpose: resultDoc.purpose,
+                school_report_card: resultDoc.school_report_card,
+                field_work_practice_certificate: resultDoc.field_work_practice_certificate,
+                student_card: resultDoc.student_card,
+                family_card: resultDoc.family_card,
+                id_card: resultDoc.id_card,
+                approved: resultDoc.approved,
+                created_at: resultDoc.created_at,
+                updated_at: resultDoc.updated_at,
+            };
+            const adminData = {
+                id: admin.id,
+                user_id: admin.user_id,
+                full_name: adminUser.full_name,
+                email: adminUser.email,
+            };
+            return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob, assessment: resultAssessment, resultDoc: resulDoc, schedule: schedule, admin: adminData });
         });
     }
     static getResultDocsByResultId(result_id) {

@@ -98,7 +98,7 @@ router.get('/apl-02/result/units/:resultId/elements/:unitId', apl_02_controller_
 router.put('/apl-02/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, apl_02_controller_1.APL02Controller.approvedByAssessor);
 router.put('/apl-02/result/assessee/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, apl_02_controller_1.APL02Controller.approvedByAssessee);
 router.get('/apl-02/result/:resultId', apl_02_controller_1.APL02Controller.getResultDetails);
-// router.get('/apl-02/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateIA01);
+router.get('/apl-02/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateApl02);
 router.get('/ia-01/units/:resultId', ia_01_controller_1.IA01Controller.getIA01Groups);
 router.get('/ia-01/units/:resultId/elements/:unitId', ia_01_controller_1.IA01Controller.getElementsByUnitId);
 router.post('/ia-01/result/send', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_01_controller_1.IA01Controller.sendResult);
@@ -135,6 +135,7 @@ router.get('/ak-01/data/:resultId', ak_01_controller_1.AK01Controller.getDataFor
 router.put('/ak-01/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ak_01_controller_1.AK01Controller.approvedByAssessor);
 router.put('/ak-01/result/assessee/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ak_01_controller_1.AK01Controller.approvedByAssessee);
 router.get('/ak-01/result/:resultId', ak_01_controller_1.AK01Controller.getAK01ByResultId);
+router.get('/ak-01/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateAK01);
 router.post('/ak-02/result/send', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ak_02_controller_1.AK02Controller.sendResult);
 router.get('/ak-02/units/:resultId', ak_02_controller_1.AK02Controller.getUnits);
 router.get('/ak-02/result/:resultId', ak_02_controller_1.AK02Controller.getAK02ByResultId);

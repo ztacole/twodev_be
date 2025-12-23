@@ -18,6 +18,14 @@ exports.months = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
     "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
+function validateDate(d) {
+    if (!d)
+        return false;
+    const date = d instanceof Date ? d : new Date(d);
+    if (isNaN(date.getTime()))
+        return false;
+    return true;
+}
 // ============================================================================
 // 🔹 Utility Functions
 // ============================================================================
@@ -40,6 +48,8 @@ function extractDateParts(date, useUTC) {
  * Bisa memilih mode UTC (true) atau lokal (false).
  */
 function formatDate(d, useUTC = false) {
+    if (!validateDate(d))
+        return "-";
     const day = useUTC ? d.getUTCDate() : d.getDate();
     const month = useUTC ? d.getUTCMonth() : d.getMonth();
     const year = useUTC ? d.getUTCFullYear() : d.getFullYear();
@@ -50,6 +60,8 @@ function formatDate(d, useUTC = false) {
  * Bisa memilih mode UTC (true) atau lokal (false).
  */
 function formatDay(d, useUTC = false) {
+    if (!validateDate(d))
+        return "-";
     const dayIndex = useUTC ? d.getUTCDay() : d.getDay();
     return exports.days[dayIndex];
 }
