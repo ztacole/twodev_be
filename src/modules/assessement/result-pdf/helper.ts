@@ -827,7 +827,9 @@ async function drawElementIa01Layout(
                 const totalHeight = heights.reduce((a, b) => a + b, 0);
                 return totalHeight;
             } else {
-                return calculateTextHeight(cell ?? "", colWidths[idx], font, 9);
+                const height = calculateTextHeight(cell ?? "", colWidths[idx], font, 9);
+                detailsHeights.push([height]);
+                return height;
             }
         });
 

@@ -669,7 +669,9 @@ function drawElementIa01Layout(pdfDoc, page, elements, startX, startY, font, fon
                     return totalHeight;
                 }
                 else {
-                    return calculateTextHeight(cell !== null && cell !== void 0 ? cell : "", colWidths[idx], font, 9);
+                    const height = calculateTextHeight(cell !== null && cell !== void 0 ? cell : "", colWidths[idx], font, 9);
+                    detailsHeights.push([height]);
+                    return height;
                 }
             });
             // Hitung tinggi sejajar untuk setiap baris detail
