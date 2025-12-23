@@ -388,14 +388,15 @@ async function drawUnitLayout(
     let y = startY;
     const headerText = "Unit Kompetensi " + (unitNumber);
     let leftColHeight = 0;
-    const leftColWidth = 132;
-    let headerX = leftColWidth;
+    const leftColWidth = 130;
+    // Init for draw right col first
+    let headerX = startX + leftColWidth;
 
     const headerData = [
         ["Kode Unit", ":", unitCode],
         ["Judul Unit", ":", unitTitle],
     ];
-    const colWidths = [60, 11, 317];
+    const colWidths = [60, 11, 319];
 
     for (let i = 0; i < headerData.length; i++) {
         const row = headerData[i];
@@ -444,6 +445,9 @@ async function drawUnitLayout(
     const align = "center"
     const titleY = y - rowHeight / 2 + rowHeight / 16
     drawCellText(page, headerText, headerX, titleY, leftColWidth, rowHeight * 2, fontBold, 9, align);
+
+    // fall back to bottom of left col
+    y -= leftColHeight;
 
     return y;
 }
@@ -840,7 +844,7 @@ async function drawElementIa01Layout(
             detailRowHeights.reduce((a, b) => a + b, 0)
         );
 
-        if (y - maxRowHeight < bottomMargin) {
+        if (y < bottomMargin + maxRowHeight) {
             ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
         }
 
