@@ -615,22 +615,7 @@ function drawElementIa01Layout(pdfDoc, page, elements, startX, startY, font, fon
             let headerX = startX;
             let maxRowHeight = rowHeight;
             const cellHeights = mainHeader.map((cell, idx) => {
-                const words = cell.split(" ");
-                let line = "";
-                let lines = [];
-                for (const word of words) {
-                    const test = line ? line + " " + word : word;
-                    if (font.widthOfTextAtSize(test, 9) > colWidths[idx] - 8) {
-                        lines.push(line);
-                        line = word;
-                    }
-                    else {
-                        line = test;
-                    }
-                }
-                if (line)
-                    lines.push(line);
-                return lines.length * (9 + 4) + 6;
+                return calculateTextHeight(cell, colWidths[idx], fontBold, 9);
             });
             maxRowHeight = Math.max(rowHeight, ...cellHeights) + 10;
             mainHeader.forEach((cell, idx) => {
@@ -672,54 +657,10 @@ function drawElementIa01Layout(pdfDoc, page, elements, startX, startY, font, fon
             const detailsHeights = [];
             // Hitung tinggi per cell
             const cellHeights = row.map((cell, idx) => {
-                if (Array.isArray(cell)) {
-                    const heights = cell.map((detail) => {
-                        const safeText = detail !== null && detail !== void 0 ? detail : "";
-                        const words = safeText.split(" ");
-                        let line = "";
-                        let lines = [];
-                        for (const word of words) {
-                            const testLine = line ? line + " " + word : word;
-                            const maxWidth = (idx === 4)
-                                ? colWidths[idx] / 2 - 8
-                                : colWidths[idx] - 8;
-                            const testWidth = font.widthOfTextAtSize(testLine, 9);
-                            if (testWidth > maxWidth) {
-                                lines.push(line);
-                                line = word;
-                            }
-                            else {
-                                line = testLine;
-                            }
-                        }
-                        if (line)
-                            lines.push(line);
-                        return Math.max(lines.length * (9 + 4) + 6, rowHeight);
-                    });
-                    detailsHeights.push(heights);
-                    const totalHeight = heights.reduce((a, b) => a + b, 0);
-                    return totalHeight;
-                }
-                else {
-                    const safeCell = cell !== null && cell !== void 0 ? cell : "";
-                    const words = safeCell.split(" ");
-                    let line = "";
-                    let lines = [];
-                    for (const word of words) {
-                        const testLine = line ? line + " " + word : word;
-                        const testWidth = font.widthOfTextAtSize(testLine, 9);
-                        if (testWidth > colWidths[idx] - 8) {
-                            lines.push(line);
-                            line = word;
-                        }
-                        else {
-                            line = testLine;
-                        }
-                    }
-                    if (line)
-                        lines.push(line);
-                    return lines.length * (9 + 4) + 6;
-                }
+                if (Array.isArray(cell))
+                    calculateMultilineHeight(cell, colWidths[idx], font, 9);
+                else
+                    return calculateTextHeight(cell !== null && cell !== void 0 ? cell : "", colWidths[idx], font, 9);
             });
             // Hitung tinggi sejajar untuk setiap baris detail
             const detailCount = Math.max(...detailsHeights.map(h => h.length));
