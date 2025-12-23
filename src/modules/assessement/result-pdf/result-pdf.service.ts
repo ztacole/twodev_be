@@ -476,16 +476,18 @@ export class ResultPdfService {
 
         // === BUKTI YANG DIKUMPULKAN (2 kolom checkbox) ===
         const allEvidenceTypes = [
-            "Hasil Verifikasi Portofolio",
-            "Hasil Observasi Langsung",
-            "Hasil Tanya Jawab",
-            "Hasil Reviu Produk",
-            "Hasil Kegiatan Terstruktur",
+            "Verifikasi Portofolio",
+            "Observasi Langsung",
+            "Pertanyaan Lisan",
+            "Pertanyaan Wawancara",
+            "Review Produk",
+            "Kegiatan Terstruktur",
+            "Pertanyaan Tertulis",
             "Lainnya"
         ];
         const selectedEvidences = resultDetails.ak01_header.rows.map((row: any) => row.evidence.toLowerCase());
 
-        const evidenceBoxHeight = 80;
+        const evidenceBoxHeight = 90;
         
         // Label "Bukti yang dikumpulkan"
         page.drawRectangle({ x: 40, y: y - evidenceBoxHeight, width: schemeHeaderWidth + labelWidth, height: evidenceBoxHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
@@ -499,16 +501,17 @@ export class ResultPdfService {
         const evidenceAreaX = 40 + schemeHeaderWidth + labelWidth + colonWidth;
         page.drawRectangle({ x: evidenceAreaX, y: y - evidenceBoxHeight, width: valueWidth, height: evidenceBoxHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
 
-        // Draw checkboxes in 2 columns
+        // Draw checkboxes in 2 columns (4 rows x 2 columns = 8 items)
         const checkboxSize = 10;
         const colWidth = valueWidth / 2;
-        let checkY = y - 15;
+        const rowSpacing = 20;
+        let checkY = y - 12;
 
         for (let i = 0; i < allEvidenceTypes.length; i++) {
-            const col = i < 3 ? 0 : 1;
-            const row = i < 3 ? i : i - 3;
+            const col = i % 2; // 0 = left column, 1 = right column
+            const row = Math.floor(i / 2); // 0, 1, 2, 3
             const checkX = evidenceAreaX + 10 + (col * colWidth);
-            const itemY = checkY - (row * 22);
+            const itemY = checkY - (row * rowSpacing);
 
             // Checkbox
             page.drawRectangle({
