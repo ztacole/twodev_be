@@ -4,7 +4,8 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCellText, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawSignatureAPL01, drawFeedbackAK01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
+import { createNewPage, drawCellText, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawFeedbackAK01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
+import { IA03Service } from "../ia-03/ia-03.service";
 import { formatDate, formatDay } from "../../../helper/date.helper";
 import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
 import { APL1Service } from "../apl-01/apl-01.service";
@@ -667,6 +668,297 @@ export class ResultPdfService {
         }
 
         y = await drawFeedbackAK02(pdfDoc, page, resultDetails, 40, y, font, fontBold);
+
+        return await pdfDoc.save();
+    }
+
+    static async generateIA03(resultId: number) {
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
+
+        const resultDetails = await IA03Service.getResultDetails(resultId);
+        const groups = await IA03Service.getIA03Groups(resultId);
+
+        // ==== TITLE ====
+        page.drawText(
+            "FR.IA.03 - PERTANYAAN UNTUK MENDUKUNG OBSERVASI",
+            { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 }
+        );
+        y -= 30;
+
+        // ==== INFO SKEMA ====
+        const info = [
+            ["Judul", ":", resultDetails?.assessment?.occupation?.name ?? "-"],
+            ["Nomor", ":", resultDetails?.assessment?.code ?? "-"],
+            ["TUK", ":", resultDetails?.tuk ?? "-"],
+            ["Nama Asesor", ":", resultDetails?.assessor?.name ?? "-"],
+            ["Nama Asesi", ":", resultDetails?.assessee?.name ?? "-"],
+            ["Tanggal", ":", resultDetails?.created_at ? formatDate(resultDetails.created_at) : "-"],
+        ];
+        y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+        y -= 20;
+
+        // ==== LOOP GROUPS ====
+        for (let groupIdx = 0; groupIdx < groups.length; groupIdx++) {
+            const group = groups[groupIdx];
+
+            if (y < BASE_MARGIN) {
+                ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+            }
+
+            // === GROUP HEADER WITH MERGED CELL ===
+            y -= 20;
+            
+            // Calculate table height based on number of units
+            const unitRowHeight = 25;
+            const unitTableHeight = (group.units.length + 1) * unitRowHeight; // +1 for header
+            
+            // Left merged cell - "Kelompok Pekerjaan X"
+            const leftColWidth = 100;
+            const rightTableWidth = 415;
+            
+            page.drawRectangle({
+                x: 40,
+                y: y - unitTableHeight,
+                width: leftColWidth,
+                height: unitTableHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            
+            // Draw group name vertically centered
+            const groupText = `Kelompok`;
+            const groupText2 = `Pekerjaan ${groupIdx + 1}`;
+            const textY = y - (unitTableHeight / 2);
+            page.drawText(groupText, { x: 55, y: textY + 8, size: 10, font: fontBold });
+            page.drawText(groupText2, { x: 50, y: textY - 8, size: 10, font: fontBold });
+            
+            // Unit table headers
+            const unitColWidths = [35, 130, 250];
+            let tableX = 40 + leftColWidth;
+            let tableY = y;
+            
+            // Header row
+            const headers = ["No.", "Kode Unit", "Judul Unit"];
+            let headerX = tableX;
+            for (let i = 0; i < headers.length; i++) {
+                page.drawRectangle({
+                    x: headerX,
+                    y: tableY - unitRowHeight,
+                    width: unitColWidths[i],
+                    height: unitRowHeight,
+                    borderColor: rgb(0, 0, 0),
+                    borderWidth: 1,
+                });
+                drawCellText(page, headers[i], headerX, tableY, unitColWidths[i], unitRowHeight, fontBold, 9, "center");
+                headerX += unitColWidths[i];
+            }
+            tableY -= unitRowHeight;
+            
+            // Unit rows
+            for (let unitIdx = 0; unitIdx < group.units.length; unitIdx++) {
+                const unit = group.units[unitIdx];
+                let rowX = tableX;
+                const rowData = [String(unitIdx + 1) + ".", unit.unit_code, unit.title];
+                
+                for (let colIdx = 0; colIdx < rowData.length; colIdx++) {
+                    page.drawRectangle({
+                        x: rowX,
+                        y: tableY - unitRowHeight,
+                        width: unitColWidths[colIdx],
+                        height: unitRowHeight,
+                        borderColor: rgb(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    const align = colIdx === 0 ? "center" : "left";
+                    drawCellText(page, rowData[colIdx], rowX, tableY, unitColWidths[colIdx], unitRowHeight, font, 9, align);
+                    rowX += unitColWidths[colIdx];
+                }
+                tableY -= unitRowHeight;
+            }
+            
+            y = tableY - 20;
+
+            // === QUESTIONS TABLE ===
+            if (group.questions && group.questions.length > 0) {
+                if (y < BASE_MARGIN + 100) {
+                    ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+                }
+                
+                const noColWidth = 50;
+                const questionColWidth = 365;
+                const yaColWidth = 50;
+                const tdkColWidth = 50;
+                const totalWidth = noColWidth + questionColWidth + yaColWidth + tdkColWidth;
+                const qRowHeight = 30;
+                const tanggapanRowHeight = 70;
+                let qX = 40;
+                let qY = y;
+                
+                // Header row 1 - "Pertanyaan" merged (spans No + Question columns, 2 rows height)
+                page.drawRectangle({
+                    x: qX,
+                    y: qY - qRowHeight * 2,
+                    width: noColWidth + questionColWidth,
+                    height: qRowHeight * 2,
+                    borderColor: rgb(0, 0, 0),
+                    borderWidth: 1,
+                });
+                drawCellText(page, "Pertanyaan", qX, qY - qRowHeight / 2, noColWidth + questionColWidth, qRowHeight, fontBold, 10, "center");
+                
+                // "Pencapaian" header spanning Ya and Tdk
+                page.drawRectangle({
+                    x: qX + noColWidth + questionColWidth,
+                    y: qY - qRowHeight,
+                    width: yaColWidth + tdkColWidth,
+                    height: qRowHeight,
+                    borderColor: rgb(0, 0, 0),
+                    borderWidth: 1,
+                });
+                drawCellText(page, "Pencapaian", qX + noColWidth + questionColWidth, qY, yaColWidth + tdkColWidth, qRowHeight, fontBold, 9, "center");
+                
+                // Ya and Tdk sub-headers
+                page.drawRectangle({
+                    x: qX + noColWidth + questionColWidth,
+                    y: qY - qRowHeight * 2,
+                    width: yaColWidth,
+                    height: qRowHeight,
+                    borderColor: rgb(0, 0, 0),
+                    borderWidth: 1,
+                });
+                drawCellText(page, "Ya", qX + noColWidth + questionColWidth, qY - qRowHeight, yaColWidth, qRowHeight, fontBold, 9, "center");
+                
+                page.drawRectangle({
+                    x: qX + noColWidth + questionColWidth + yaColWidth,
+                    y: qY - qRowHeight * 2,
+                    width: tdkColWidth,
+                    height: qRowHeight,
+                    borderColor: rgb(0, 0, 0),
+                    borderWidth: 1,
+                });
+                drawCellText(page, "Tdk", qX + noColWidth + questionColWidth + yaColWidth, qY - qRowHeight, tdkColWidth, qRowHeight, fontBold, 9, "center");
+                
+                qY -= qRowHeight * 2;
+                
+                // Question rows
+                for (let qIdx = 0; qIdx < group.questions.length; qIdx++) {
+                    const q = group.questions[qIdx];
+                    const answer = q.result?.answer ?? "";
+                    const isApproved = q.result?.approved ?? false;
+                    const hasResult = q.result !== null;
+                    
+                    // Check if need page break (need space for question row + tanggapan row)
+                    if (qY - qRowHeight - tanggapanRowHeight < BASE_MARGIN) {
+                        ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+                        qY = y;
+                    }
+                    
+                    // === Question Row ===
+                    // No. cell
+                    page.drawRectangle({
+                        x: qX,
+                        y: qY - qRowHeight,
+                        width: noColWidth,
+                        height: qRowHeight,
+                        borderColor: rgb(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    drawCellText(page, `${qIdx + 1}.`, qX, qY, noColWidth, qRowHeight, font, 9, "center");
+                    
+                    // Question text cell (spans question + Ya + Tdk columns)
+                    page.drawRectangle({
+                        x: qX + noColWidth,
+                        y: qY - qRowHeight,
+                        width: questionColWidth + yaColWidth + tdkColWidth,
+                        height: qRowHeight,
+                        borderColor: rgb(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    drawCellText(page, q.question, qX + noColWidth, qY, questionColWidth + yaColWidth + tdkColWidth, qRowHeight, font, 9, "left");
+                    
+                    qY -= qRowHeight;
+                    
+                    // === Tanggapan Row ===
+                    // "Tanggapan:" label + answer area (spans No + Question columns)
+                    page.drawRectangle({
+                        x: qX,
+                        y: qY - tanggapanRowHeight,
+                        width: noColWidth + questionColWidth,
+                        height: tanggapanRowHeight,
+                        borderColor: rgb(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    page.drawText("Tanggapan:", { x: qX + 5, y: qY - 15, size: 9, font: fontBold });
+                    // Draw answer text if available
+                    if (answer) {
+                        drawCellText(page, answer, qX, qY - 20, noColWidth + questionColWidth, tanggapanRowHeight - 20, font, 9, "left");
+                    }
+                    
+                    // Ya checkbox cell
+                    page.drawRectangle({
+                        x: qX + noColWidth + questionColWidth,
+                        y: qY - tanggapanRowHeight,
+                        width: yaColWidth,
+                        height: tanggapanRowHeight,
+                        borderColor: rgb(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    // Draw checkbox
+                    const checkboxSize = 12;
+                    const checkboxX = qX + noColWidth + questionColWidth + (yaColWidth - checkboxSize) / 2;
+                    const checkboxY = qY - (tanggapanRowHeight / 2) - (checkboxSize / 2);
+                    page.drawRectangle({
+                        x: checkboxX,
+                        y: checkboxY,
+                        width: checkboxSize,
+                        height: checkboxSize,
+                        borderColor: rgb(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    if (isApproved) {
+                        page.drawText("V", { x: checkboxX + 2, y: checkboxY + 2, size: 10, font: fontBold });
+                    }
+                    
+                    // Tdk checkbox cell
+                    page.drawRectangle({
+                        x: qX + noColWidth + questionColWidth + yaColWidth,
+                        y: qY - tanggapanRowHeight,
+                        width: tdkColWidth,
+                        height: tanggapanRowHeight,
+                        borderColor: rgb(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    // Draw checkbox
+                    const checkboxX2 = qX + noColWidth + questionColWidth + yaColWidth + (tdkColWidth - checkboxSize) / 2;
+                    page.drawRectangle({
+                        x: checkboxX2,
+                        y: checkboxY,
+                        width: checkboxSize,
+                        height: checkboxSize,
+                        borderColor: rgb(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    if (!isApproved && hasResult) {
+                        page.drawText("V", { x: checkboxX2 + 2, y: checkboxY + 2, size: 10, font: fontBold });
+                    }
+                    
+                    qY -= tanggapanRowHeight;
+                }
+                
+                y = qY;
+            }
+
+            y -= 20;
+        }
+
+        // === SIGNATURE SECTION ===
+        if (y < BASE_MARGIN + 300) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        }
+        y = await drawFeedbackIA03(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
         return await pdfDoc.save();
     }

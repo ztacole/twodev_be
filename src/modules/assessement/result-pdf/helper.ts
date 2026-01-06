@@ -2005,4 +2005,223 @@ async function drawFeedbackAK01(
     return y;
 }
 
-export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01 };
+async function drawFeedbackIA03(
+    pdfDoc: PDFDocument,
+    page: PDFPage,
+    data: any,
+    startX: number,
+    startY: number,
+    rowHeight: number,
+    font: PDFFont,
+    fontBold: PDFFont
+): Promise<number> {
+    let y = startY;
+    const maxWidth = 520;
+    const rightSectionWidth = maxWidth / 2;
+    const rightSectionX = startX + rightSectionWidth;
+    const qrSize = 60;
+
+    // === PERNYATAAN SECTION ===
+    page.drawRectangle({
+        x: startX,
+        y: y - 80,
+        width: maxWidth,
+        height: 80,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    page.drawText("Catatan Asesor:", {
+        x: startX + 5,
+        y: y - 15,
+        size: 10,
+        font: fontBold,
+    });
+
+    page.drawText("Pertanyaan lisan telah digunakan untuk mendukung observasi demonstrasi asesi.", {
+        x: startX + 5,
+        y: y - 30,
+        size: 9,
+        font,
+    });
+
+    y -= 100;
+
+    // === SIGNATURE SECTION ===
+    let rowX = rightSectionX;
+
+    // Left Section - Placeholder for additional notes
+    page.drawRectangle({
+        x: startX,
+        y: y - 180,
+        width: rightSectionWidth,
+        height: 180,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    page.drawText("Catatan Tambahan:", { x: startX + 5, y: y - 15, size: 9, font: fontBold });
+
+    // == Asesi ==
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Asesi:", rightSectionX, y, rightSectionWidth, rowHeight, fontBold, 9, "left");
+
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Nama", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessee?.name ?? "-", rowX, y, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "left");
+
+    rowX = rightSectionX;
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 3,
+        width: rightSectionWidth / 3,
+        height: rowHeight * 3,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Tanda Tangan/ Tanggal", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 3,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight * 3,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    if (data.ia03_header?.approved_assessee) {
+        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
+        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionWidth * 2 / 3) / 2) - (qrSize / 2), y: y - qrSize - 2, width: qrSize, height: qrSize });
+    }
+    drawCellText(page, formatDate(data.ia03_header?.updated_at), rowX, y - qrSize + 5, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+
+    rowX = rightSectionX;
+    y -= rowHeight * 3;
+
+    // Assessor Section
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Asesor:", rightSectionX, y, rightSectionWidth, rowHeight, fontBold, 9, "left");
+
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Nama", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessor?.name ?? "-", rowX, y, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "left");
+
+    rowX = rightSectionX;
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "No. Reg", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessor?.no_reg_met ?? "-", rowX, y, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "left");
+
+    rowX = rightSectionX;
+    y -= rowHeight;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 3,
+        width: rightSectionWidth / 3,
+        height: rowHeight * 3,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Tanda Tangan/ Tanggal", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+
+    rowX += rightSectionWidth / 3;
+
+    page.drawRectangle({
+        x: rowX,
+        y: y - rowHeight * 3,
+        width: rightSectionWidth * 2 / 3,
+        height: rowHeight * 3,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    if (data.ia03_header?.approved_assessor) {
+        const asesorQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssessorUrl(data.assessor.id)));
+        page.drawImage(asesorQrImage, { x: rowX + ((rightSectionWidth * 2 / 3) / 2) - (qrSize / 2), y: y - qrSize - 2, width: qrSize, height: qrSize });
+    }
+    drawCellText(page, formatDate(data.ia03_header?.updated_at), rowX, y - qrSize + 5, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+
+    y -= rowHeight * 3;
+
+    return y;
+}
+
+export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01 };

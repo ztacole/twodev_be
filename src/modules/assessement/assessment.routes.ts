@@ -143,6 +143,7 @@ router.post('/ia-03/result/send', authenticateToken, assessorMiddleware, IA03Con
 router.put('/ia-03/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, IA03Controller.approvedByAssessor);
 router.put('/ia-03/result/assessee/:resultId/approve', authenticateToken, assesseeMiddleware, IA03Controller.approvedByAssessee);
 router.get('/ia-03/result/:resultId', IA03Controller.getResultDetails);
+router.get('/ia-03/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateIA03);
 
 router.get('/ia-05/questions/:scheduleId', IA05Controller.getQuestions);
 router.get('/ia-05/result/answers/keys/:scheduleId', IA05Controller.getAnswerKeys);
