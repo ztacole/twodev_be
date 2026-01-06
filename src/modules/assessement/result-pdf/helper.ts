@@ -2017,49 +2017,52 @@ async function drawFeedbackIA03(
 ): Promise<number> {
     let y = startY;
     const maxWidth = 520;
-    const rightSectionWidth = maxWidth / 2;
-    const rightSectionX = startX + rightSectionWidth;
-    const qrSize = 60;
 
-    // === PERNYATAAN SECTION ===
+    // === Kotak feedback ===
     page.drawRectangle({
         x: startX,
-        y: y - 80,
+        y: y - 100,
         width: maxWidth,
-        height: 80,
+        height: 90,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
     });
 
+    // === Judul bagian catatan asesor ===
     page.drawText("Catatan Asesor:", {
         x: startX + 5,
-        y: y - 15,
+        y: y - 25,
         size: 10,
         font: fontBold,
     });
 
     page.drawText("Pertanyaan lisan telah digunakan untuk mendukung observasi demonstrasi asesi.", {
         x: startX + 5,
-        y: y - 30,
+        y: y - 40,
         size: 9,
         font,
     });
 
-    y -= 100;
+    // === Left Section - Catatan Tambahan ===
+    y -= 120;
+    const leftRectY = y - 260;
 
-    // === SIGNATURE SECTION ===
-    let rowX = rightSectionX;
-
-    // Left Section - Placeholder for additional notes
     page.drawRectangle({
         x: startX,
-        y: y - 180,
-        width: rightSectionWidth,
-        height: 180,
+        y: leftRectY,
+        width: maxWidth / 2,
+        height: 260,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
     });
-    page.drawText("Catatan Tambahan:", { x: startX + 5, y: y - 15, size: 9, font: fontBold });
+
+    page.drawText("Catatan Tambahan:", { x: startX + 5, y: y - 12, size: 9, font: fontBold });
+
+    // == Right Section ==
+    const rightSectionWidth = maxWidth / 2;
+    const rightSectionX = startX + rightSectionWidth;
+    const qrSize = 60;
+    let rowX = rightSectionX;
 
     // == Asesi ==
     page.drawRectangle({
@@ -2101,9 +2104,9 @@ async function drawFeedbackIA03(
 
     page.drawRectangle({
         x: rowX,
-        y: y - rowHeight * 3,
+        y: y - rowHeight * 4,
         width: rightSectionWidth / 3,
-        height: rowHeight * 3,
+        height: rowHeight * 4,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
     });
@@ -2113,23 +2116,23 @@ async function drawFeedbackIA03(
 
     page.drawRectangle({
         x: rowX,
-        y: y - rowHeight * 3,
+        y: y - rowHeight * 4,
         width: rightSectionWidth * 2 / 3,
-        height: rowHeight * 3,
+        height: rowHeight * 4,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
     });
 
     if (data.ia03_header?.approved_assessee) {
         const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionWidth * 2 / 3) / 2) - (qrSize / 2), y: y - qrSize - 2, width: qrSize, height: qrSize });
+        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
     }
-    drawCellText(page, formatDate(data.ia03_header?.updated_at), rowX, y - qrSize + 5, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+    drawCellText(page, formatDate(data.ia03_header?.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
     rowX = rightSectionX;
-    y -= rowHeight * 3;
+    y -= rowHeight * 4;
 
-    // Assessor Section
+    // Assessor
     page.drawRectangle({
         x: rowX,
         y: y - rowHeight,
@@ -2175,7 +2178,7 @@ async function drawFeedbackIA03(
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
     });
-    drawCellText(page, "No. Reg", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
+    drawCellText(page, "No Reg.", rowX, y, rightSectionWidth / 3, rowHeight, font, 9, "left");
 
     rowX += rightSectionWidth / 3;
 
@@ -2194,9 +2197,9 @@ async function drawFeedbackIA03(
 
     page.drawRectangle({
         x: rowX,
-        y: y - rowHeight * 3,
+        y: y - rowHeight * 4,
         width: rightSectionWidth / 3,
-        height: rowHeight * 3,
+        height: rowHeight * 4,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
     });
@@ -2206,20 +2209,21 @@ async function drawFeedbackIA03(
 
     page.drawRectangle({
         x: rowX,
-        y: y - rowHeight * 3,
+        y: y - rowHeight * 4,
         width: rightSectionWidth * 2 / 3,
-        height: rowHeight * 3,
+        height: rowHeight * 4,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
     });
 
     if (data.ia03_header?.approved_assessor) {
         const asesorQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssessorUrl(data.assessor.id)));
-        page.drawImage(asesorQrImage, { x: rowX + ((rightSectionWidth * 2 / 3) / 2) - (qrSize / 2), y: y - qrSize - 2, width: qrSize, height: qrSize });
+        page.drawImage(asesorQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
     }
-    drawCellText(page, formatDate(data.ia03_header?.updated_at), rowX, y - qrSize + 5, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
+    drawCellText(page, formatDate(data.ia03_header?.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
-    y -= rowHeight * 3;
+    rowX = rightSectionX;
+    y -= rowHeight * 4;
 
     return y;
 }

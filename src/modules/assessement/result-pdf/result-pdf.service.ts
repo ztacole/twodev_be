@@ -705,16 +705,18 @@ export class ResultPdfService {
         for (let groupIdx = 0; groupIdx < groups.length; groupIdx++) {
             const group = groups[groupIdx];
 
-            if (y < BASE_MARGIN) {
-                ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
-            }
-
             // === GROUP HEADER WITH MERGED CELL ===
-            y -= 20;
             
             // Calculate table height based on number of units
             const unitRowHeight = 25;
             const unitTableHeight = (group.units.length + 1) * unitRowHeight; // +1 for header
+            
+            // Check if we need a page break before drawing the unit table
+            if (y - unitTableHeight - 20 < BASE_MARGIN) {
+                ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+            }
+            
+            y -= 20;
             
             // Left merged cell - "Kelompok Pekerjaan X"
             const leftColWidth = 100;
@@ -784,10 +786,6 @@ export class ResultPdfService {
 
             // === QUESTIONS TABLE ===
             if (group.questions && group.questions.length > 0) {
-                if (y < BASE_MARGIN + 100) {
-                    ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
-                }
-                
                 const noColWidth = 50;
                 const questionColWidth = 365;
                 const yaColWidth = 50;
@@ -795,6 +793,13 @@ export class ResultPdfService {
                 const totalWidth = noColWidth + questionColWidth + yaColWidth + tdkColWidth;
                 const qRowHeight = 30;
                 const tanggapanRowHeight = 70;
+                const headerHeight = qRowHeight * 2;
+                
+                // Check if we need a page break for the question table header
+                if (y - headerHeight < BASE_MARGIN) {
+                    ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+                }
+                
                 let qX = 40;
                 let qY = y;
                 
@@ -850,8 +855,11 @@ export class ResultPdfService {
                     const isApproved = q.result?.approved ?? false;
                     const hasResult = q.result !== null;
                     
+                    // Calculate total height needed for this question (question row + tanggapan row)
+                    const questionTotalHeight = qRowHeight + tanggapanRowHeight;
+                    
                     // Check if need page break (need space for question row + tanggapan row)
-                    if (qY - qRowHeight - tanggapanRowHeight < BASE_MARGIN) {
+                    if (qY - questionTotalHeight < BASE_MARGIN) {
                         ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
                         qY = y;
                     }
@@ -955,7 +963,7 @@ export class ResultPdfService {
         }
 
         // === SIGNATURE SECTION ===
-        if (y < BASE_MARGIN + 300) {
+        if (y < BASE_MARGIN + 470) {
             ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
         }
         y = await drawFeedbackIA03(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
