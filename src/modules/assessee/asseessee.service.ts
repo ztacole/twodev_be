@@ -48,6 +48,7 @@ export class AssesseeService {
             address: assesseeTable.address,
             postal_code: assesseeTable.postal_code,
             educational_qualifications: assesseeTable.educational_qualifications,
+            signature: assesseeTable.signature,
             job: assesseeJob
         }).from(assesseeTable)
             .leftJoin(userTable, eq(assesseeTable.user_id, userTable.id))
@@ -84,6 +85,7 @@ export class AssesseeService {
             address: assesseeTable.address,
             postal_code: assesseeTable.postal_code,
             educational_qualifications: assesseeTable.educational_qualifications,
+            signature: assesseeTable.signature,
             job: assesseeJob
         }).from(assesseeTable)
             .leftJoin(userTable, eq(assesseeTable.user_id, userTable.id))
@@ -119,6 +121,7 @@ export class AssesseeService {
             address: data.address,
             postal_code: data.postal_code ?? null as any,
             educational_qualifications: data.educational_qualifications,
+            signature: (data as any).signature ?? null as any,
         });
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.user_id, data.user_id) });
         if (!assessee) throw new NotFoundError('Assessee');
@@ -142,6 +145,7 @@ export class AssesseeService {
             address: data.address,
             postal_code: data.postal_code ?? null as any,
             educational_qualifications: data.educational_qualifications,
+            signature: (data as any).signature ?? null as any,
         }).where(eq(assesseeTable.id, id));
 
         const assessee = await db.query.assessee.findFirst({ where: eq(assesseeTable.id, id) });
@@ -172,6 +176,7 @@ export class AssesseeService {
             address: assessee.address,
             postal_code: assessee.postal_code,
             educational_qualifications: assessee.educational_qualifications,
+            signature: assessee.signature,
             job: assessee.job
         };
     }

@@ -21,6 +21,7 @@ import { AK05Controller } from "./ak-05/ak-05.controller";
 import { ResultPdfController } from "./result-pdf/result-pdf.controller";
 import { authenticateToken } from "../../middleware/auth.middleware";
 import { upload } from "./apl-01/upload-config";
+import { uploadSignature } from "./apl-01/signature-upload-config";
 // import { uploadIA02 } from "./ia-02/upload-conifg";
 import { requireApproval } from '../../middleware/approval.middleware';
 import { db } from "../../config/drizzle";
@@ -81,7 +82,7 @@ router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', authenticat
 router.get('/recap/:scheduleDetailId/pdf', authenticateToken, adminOrAssessorMiddleware, AssessmentController.generateRecaptPdf);
 
 
-router.post('/apl-01/create-self-data', authenticateToken, assesseeMiddleware, APL1Controller.createAssesseeAPL1);
+router.post('/apl-01/create-self-data', authenticateToken, assesseeMiddleware, uploadSignature, APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', authenticateToken, assesseeMiddleware, 
     uploadAPL01.any(), 
     APL1Controller.createOrUploadCertificateDocs

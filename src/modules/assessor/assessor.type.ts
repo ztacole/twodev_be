@@ -10,6 +10,7 @@ export interface AssessorResponse {
     institution: string;
     address: string;
     phone_no: string;
+    signature?: string;
     scheme: SchemeResponse;
     detail?: AssessorDetailResponse;
 }
@@ -42,4 +43,5 @@ export interface AssessorRequest {
     scheme_id: number;
     address: string;
     phone_no: string;
+    signature?: string;
 }

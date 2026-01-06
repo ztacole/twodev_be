@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../common/async.handler';
 import { AdminService } from './admin.service';
+import fs from 'fs';
+import path from 'path';
 
 export const AdminController = {
     getAdmins: asyncHandler(async (_req: Request, res: Response) => {
@@ -24,12 +26,19 @@ export const AdminController = {
             });
         }
 
+        let signatureUrl: string | undefined = undefined;
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+        if (files && files.signature && files.signature[0]) {
+            signatureUrl = `uploads/signatures/${files.signature[0].filename}`;
+        }
+
         const data = await AdminService.createAdmin({ 
             user_id,
             address, 
             phone_no, 
             birth_date,
-            can_approve: can_approve === undefined ? undefined : Boolean(Number(can_approve)) 
+            can_approve: can_approve === undefined ? undefined : Boolean(Number(can_approve)),
+            signature: signatureUrl
         });
         res.status(201).json({ 
             success: true, 
@@ -78,7 +87,7 @@ export const AdminController = {
 
     updateMyProfile: asyncHandler(async (req: Request, res: Response) => {
         const userId = (req as any).user?.id; // Get user ID from token
-        const { full_name, email, password, address, phone_no, birth_date } = req.body;
+        const { full_name, email, password, address, phone_no, birth_date, can_approve } = req.body;
 
         if (!userId) {
             return res.status(401).json({
@@ -87,11 +96,31 @@ export const AdminController = {
             });
         }
 
-        if (!full_name && !email && !password && !address && !phone_no && !birth_date) {
+        if (!full_name && !email && !password && !address && !phone_no && !birth_date && can_approve === undefined) {
             return res.status(400).json({
                 success: false,
-                message: 'Minimal satu field (full_name, email, password, address, phone_no, atau birth_date) harus diisi'
+                message: 'Minimal satu field (full_name, email, password, address, phone_no, birth_date, atau can_approve) harus diisi'
             });
+        }
+
+        let signatureUrl: string | undefined = undefined;
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+        
+        const allAdmins = await AdminService.getAdmins();
+        const existingAdmin = allAdmins.find((admin: any) => admin.user_id === userId);
+        
+        if (files && files.signature && files.signature[0]) {
+            if (existingAdmin?.signature) {
+                try {
+                    const oldFilePath = path.join(__dirname, '../../../public', existingAdmin.signature);
+                    if (fs.existsSync(oldFilePath)) {
+                        fs.unlinkSync(oldFilePath);
+                    }
+                } catch (error) {
+                    // Ignore error if file doesn't exist
+                }
+            }
+            signatureUrl = `uploads/signatures/${files.signature[0].filename}`;
         }
 
         const data = await AdminService.updateAdminByUserId(userId, {
@@ -100,7 +129,9 @@ export const AdminController = {
             password,
             address,
             phone_no,
-            birth_date
+            birth_date,
+            can_approve: can_approve === undefined ? undefined : Boolean(Number(can_approve)),
+            signature: signatureUrl
         });
 
         res.json({

@@ -24,7 +24,35 @@ export class AssessorController {
                 });
             }
 
-            const assessor = await AssessorService.createAssessor(req.body, files);
+            let existingAssessor = null;
+            try {
+                existingAssessor = await AssessorService.getAssessorByUserId(req.body.user_id);
+            } catch (error) {
+                // Ignore if assessor doesn't exist (will be created)
+            }
+
+            let signatureUrl: string | undefined = undefined;
+            const signatureFile = files.find((f: any) => f.fieldname === 'signature');
+            if (signatureFile) {
+                if (existingAssessor?.signature) {
+                    try {
+                        const fs = require('fs');
+                        const path = require('path');
+                        const oldFilePath = path.join(__dirname, '../../../public', existingAssessor.signature);
+                        if (fs.existsSync(oldFilePath)) {
+                            fs.unlinkSync(oldFilePath);
+                        }
+                    } catch (error) {
+                        // Ignore error if file doesn't exist
+                    }
+                }
+                signatureUrl = `uploads/signatures/${signatureFile.filename}`;
+            }
+
+            const assessor = await AssessorService.createAssessor({
+                ...req.body,
+                signature: signatureUrl
+            }, files);
             res.status(201).json({
                 success: true,
                 message: 'Data assessor berhasil dibuat',
@@ -223,6 +251,26 @@ export class AssessorController {
 
         const files = Array.isArray(req.files) ? req.files : [];
         
+        const existingAssessor = await AssessorService.getAssessorByUserId(userId);
+        
+        let signatureUrl: string | undefined = undefined;
+        const signatureFile = files.find((f: any) => f.fieldname === 'signature');
+        if (signatureFile) {
+            if (existingAssessor?.signature) {
+                try {
+                    const fs = require('fs');
+                    const path = require('path');
+                    const oldFilePath = path.join(__dirname, '../../../public', existingAssessor.signature);
+                    if (fs.existsSync(oldFilePath)) {
+                        fs.unlinkSync(oldFilePath);
+                    }
+                } catch (error) {
+                    // Ignore error if file doesn't exist
+                }
+            }
+            signatureUrl = `uploads/signatures/${signatureFile.filename}`;
+        }
+        
         const data = await AssessorService.updateAssessorByUserId(userId, {
             full_name,
             email,
@@ -233,7 +281,8 @@ export class AssessorController {
             no_reg_met,
             institution,
             address,
-            phone_no
+            phone_no,
+            signature: signatureUrl
         }, files);
 
         res.json({

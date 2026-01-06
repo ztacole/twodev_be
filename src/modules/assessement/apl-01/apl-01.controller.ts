@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { APL1Service } from './apl-01.service';
+import { AssesseeService } from '../../assessee/asseessee.service';
 import { asyncHandler } from '../../../common/async.handler';
 import { JwtPayload } from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
 
 export class APL1Controller {
     static createAssesseeAPL1 = asyncHandler(async (req: Request, res: Response) => {
@@ -21,7 +24,35 @@ export class APL1Controller {
                 }
             }
 
-            const assessee = await APL1Service.createOrUpdateAssessee(req.body);
+            let signatureUrl: string | undefined = undefined;
+            const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+            
+            if (req.body.id) {
+                try {
+                    const existingAssessee = await AssesseeService.getAssesseeById(Number(req.body.id));
+                    if (files && files.signature && files.signature[0] && existingAssessee?.signature) {
+                        try {
+                            const oldFilePath = path.join(__dirname, '../../../../public', existingAssessee.signature);
+                            if (fs.existsSync(oldFilePath)) {
+                                fs.unlinkSync(oldFilePath);
+                            }
+                        } catch (error) {
+                            // Ignore error if file doesn't exist
+                        }
+                    }
+                } catch (error) {
+                    // Ignore if assessee not found (might be create)
+                }
+            }
+            
+            if (files && files.signature && files.signature[0]) {
+                signatureUrl = `uploads/signatures/${files.signature[0].filename}`;
+            }
+
+            const assessee = await APL1Service.createOrUpdateAssessee({
+                ...req.body,
+                signature: signatureUrl
+            });
 
             res.status(201).json({
                 success: true,

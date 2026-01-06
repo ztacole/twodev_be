@@ -24,6 +24,7 @@ export class AssessorService {
             institution: assessorTable.institution,
             address: assessorTable.address,
             phone_no: assessorTable.phone_no,
+            signature: assessorTable.signature,
             scheme: schemeTable,
             detail: assessorDetailTable
         })
@@ -62,6 +63,7 @@ export class AssessorService {
             institution: assessorTable.institution,
             address: assessorTable.address,
             phone_no: assessorTable.phone_no,
+            signature: assessorTable.signature,
             scheme: schemeTable,
             detail: assessorDetailTable
         })
@@ -95,6 +97,7 @@ export class AssessorService {
             institution: assessorTable.institution,
             address: assessorTable.address,
             phone_no: assessorTable.phone_no,
+            signature: assessorTable.signature,
             scheme: schemeTable,
             detail: assessorDetailTable
         })
@@ -121,6 +124,7 @@ export class AssessorService {
             institution: assessorTable.institution,
             address: assessorTable.address,
             phone_no: assessorTable.phone_no,
+            signature: assessorTable.signature,
             scheme: schemeTable,
             detail: assessorDetailTable
         })
@@ -156,7 +160,8 @@ export class AssessorService {
                 no_reg_met: data.no_reg_met,
                 address: data.address,
                 phone_no: data.phone_no,
-                birth_date: new Date(data.birth_date) as any
+                birth_date: new Date(data.birth_date) as any,
+                signature: (data as any).signature ?? null as any
             })
         } else {
             const [id] = await db.insert(assessorTable).values({
@@ -168,6 +173,7 @@ export class AssessorService {
                 phone_no: data.phone_no,
                 birth_location: data.birth_location,
                 birth_date: new Date(data.birth_date) as any,
+                signature: (data as any).signature ?? null as any
             }).$returningId();
             assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, Number(id.id)) });
         }
@@ -255,6 +261,7 @@ export class AssessorService {
             institution: assessorTable.institution,
             address: assessorTable.address,
             phone_no: assessorTable.phone_no,
+            signature: assessorTable.signature,
             scheme: schemeTable,
             detail: assessorDetailTable
         })
@@ -462,6 +469,7 @@ export class AssessorService {
         institution?: string;
         address?: string;
         phone_no?: string;
+        signature?: string;
     }, files: any[] = []): Promise<AssessorResponse> {
         const existingAssessor = await db.query.assessor.findFirst({ where: eq(assessorTable.user_id, userId) });
         if (!existingAssessor) {
@@ -476,6 +484,7 @@ export class AssessorService {
         if (data.institution !== undefined) assessorUpdateData.institution = data.institution;
         if (data.address !== undefined) assessorUpdateData.address = data.address;
         if (data.phone_no !== undefined) assessorUpdateData.phone_no = data.phone_no;
+        if (data.signature !== undefined) assessorUpdateData.signature = data.signature;
 
         const userUpdateData: any = {};
         if (data.full_name !== undefined) userUpdateData.full_name = data.full_name;
@@ -561,6 +570,7 @@ export class AssessorService {
             institution: assessorTable.institution,
             address: assessorTable.address,
             phone_no: assessorTable.phone_no,
+            signature: assessorTable.signature,
             created_at: assessorTable.created_at,
             updated_at: assessorTable.updated_at,
             scheme: schemeTable,
@@ -587,6 +597,7 @@ export class AssessorService {
             institution: assessor.institution,
             address: assessor.address,
             phone_no: assessor.phone_no,
+            signature: assessor.signature,
             scheme: assessor.scheme,
             detail: assessor.detail || null
         };

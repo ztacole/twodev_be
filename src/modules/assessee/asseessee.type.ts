@@ -20,6 +20,7 @@ export interface AssesseeResponse {
     address: string;
     postal_code?: string;
     educational_qualifications: string;
+    signature?: string;
     job?: {
         id: number;
         assessee_id: number;
@@ -46,4 +47,5 @@ export interface AssesseeRequest {
     address: string;
     postal_code?: string;
     educational_qualifications: string;
+    signature?: string;
 }

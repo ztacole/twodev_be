@@ -81,6 +81,7 @@ export class APL1Service {
                     address: assesseeData.address,
                     postal_code: assesseeData.postal_code as any,
                     educational_qualifications: assesseeData.educational_qualifications,
+                    signature: (assesseeData as any).signature ?? null as any,
                 })
                 .where(eq(assesseeTable.id, id));
 
@@ -121,6 +122,7 @@ export class APL1Service {
                 address: assesseeData.address,
                 postal_code: assesseeData.postal_code as any,
                 educational_qualifications: assesseeData.educational_qualifications,
+                signature: (assesseeData as any).signature ?? null as any,
             }).$returningId();
 
             if (jobs && jobs.length > 0) {

@@ -33,6 +33,7 @@ export const admin = mysqlTable('admin', {
     phone_no: varchar('phone_no', { length: 255 }).notNull(),
     birth_date: date('birth_date').notNull(),
     can_approve: boolean('can_approve').notNull().default(false),
+    signature: varchar('signature', { length: 255 }),
     ...timestamps
 });
 
@@ -61,6 +62,7 @@ export const assessor = mysqlTable('assessor', {
     birth_location: varchar('birth_location', { length: 255 }).notNull(),
     institution: varchar('institution', { length: 255 }).notNull(),
     birth_date: date('birth_date').notNull(),
+    signature: varchar('signature', { length: 255 }),
     ...timestamps
 });
 
@@ -89,6 +91,7 @@ export const assessee = mysqlTable('assessee', {
     address: varchar('address', { length: 255 }).notNull(),
     postal_code: varchar('postal_code', { length: 255 }),
     educational_qualifications: varchar('educational_qualifications', { length: 255 }).notNull(),
+    signature: varchar('signature', { length: 255 }),
     ...timestamps
 });
 
