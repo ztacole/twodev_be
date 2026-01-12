@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '../../config/drizzle';
-import { role as roleTable, user as userTable } from '../../../drizzle/schema';
+import { role as roleTable, user as userTable, admin as adminTable, assessor as assessorTable, assessee as assesseeTable } from '../../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { RegisterRequest, LoginRequest, AuthResponse, JwtPayload } from './auth.type';
 import { DuplicateEntryError, NotFoundError, UnauthorizedError, ValidationError } from '../../common/error';
@@ -90,10 +90,34 @@ export class AuthService {
         }
 
         const role = await db.query.role.findFirst({ where: eq(roleTable.id, user.role_id) });
-        // assessor / assessee / admin relations can be fetched where needed in their modules
+        
+        // fetch signature based on user role
+        let signature: string | null = null;
+        
+        if (user.role_id === 1) {
+            // admin
+            const admin = await db.query.admin.findFirst({
+                where: eq(adminTable.user_id, userId),
+            });
+            signature = admin?.signature || null;
+        } else if (user.role_id === 2) {
+            // assessor
+            const assessor = await db.query.assessor.findFirst({
+                where: eq(assessorTable.user_id, userId),
+            });
+            signature = assessor?.signature || null;
+        } else if (user.role_id === 3) {
+            // assessee
+            const assessee = await db.query.assessee.findFirst({
+                where: eq(assesseeTable.user_id, userId),
+            });
+            signature = assessee?.signature || null;
+        }
+        
         return {
             ...user,
             role,
+            signature,
         };
     }
 
