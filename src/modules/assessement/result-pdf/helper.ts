@@ -7,6 +7,7 @@ import { getAssesseeUrl, getAssessorUrl } from "../../../helper/hashids";
 import { formatDate } from "../../../helper/date.helper";
 import { IA01Service } from "../ia-01/ia-01.service";
 import { text } from "stream/consumers";
+import { env } from "process";
 
 // Ukuran F4 = 210mm x 330mm
 const F4_WIDTH = 595.28;  // 210 mm
@@ -70,7 +71,46 @@ function calculateMultilineHeight(
     return height;
 }
 
+// Helper function to draw signature or QR code as fallback
+async function drawSignatureOrQR(
+    pdfDoc: PDFDocument,
+    page: PDFPage,
+    signatureUrl: string | null | undefined,
+    qrUrl: string,
+    x: number,
+    y: number,
+    size: number
+): Promise<void> {
+    if (signatureUrl) {
+        try {
+            // Try to load signature image
+            console.log(process.env.BASE_URL + signatureUrl);
+            const signatureResponse = await fetch(process.env.BASE_URL + signatureUrl);
+            const signatureBuffer = await signatureResponse.arrayBuffer();
+
+            // Try PNG first, then JPEG
+            let signatureImage;
+            try {
+                signatureImage = await pdfDoc.embedPng(signatureBuffer);
+            } catch {
+                signatureImage = await pdfDoc.embedJpg(signatureBuffer);
+            }
+
+            page.drawImage(signatureImage, { x, y, width: size, height: size });
+        } catch (error) {
+            // If signature fails, fall back to QR code
+            const qrImage = await pdfDoc.embedPng(await generateQrDataURL(qrUrl));
+            page.drawImage(qrImage, { x, y, width: size, height: size });
+        }
+    } else {
+        // No signature, use QR code
+        const qrImage = await pdfDoc.embedPng(await generateQrDataURL(qrUrl));
+        page.drawImage(qrImage, { x, y, width: size, height: size });
+    }
+}
+
 function drawCellText(
+
     page: PDFPage,
     text: string | undefined,
     x: number,
@@ -622,8 +662,15 @@ export async function drawFeedbackAPL02(
     })
 
     if (data.apl02_header.approved_assessee) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessee?.signature,
+            getAssesseeUrl(data.assessee.id),
+            rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.apl02_header.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
@@ -715,8 +762,15 @@ export async function drawFeedbackAPL02(
     })
 
     if (data.apl02_header.approved_assessee) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessor?.signature,
+            getAssessorUrl(data.assessor.id),
+            rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.apl02_header.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
@@ -1118,8 +1172,15 @@ async function drawFeedbackIA01(
     })
 
     if (data.ia01_header.approved_assessee) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessee?.signature,
+            getAssesseeUrl(data.assessee.id),
+            rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.ia01_header.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
@@ -1211,8 +1272,15 @@ async function drawFeedbackIA01(
     })
 
     if (data.ia01_header.approved_assessee) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessor?.signature,
+            getAssessorUrl(data.assessor.id),
+            rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.ia01_header.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
@@ -1520,9 +1588,15 @@ async function drawFeedbackAK02(
     })
 
     if (data.ak02_headers.approved_assessee) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
-        const startXQr = rowX + ((startX * 2 / 3) - qrSize) + qrSize * 2 / 3;
-        page.drawImage(asesiQrImage, { x: startXQr, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessee?.signature,
+            getAssesseeUrl(data.assessee.id),
+            rowX + ((startX * 2 / 3) - qrSize) + qrSize * 2 / 3,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.ak02_headers.updated_at), rowX, y - qrSize, tableWidth * 2 / 3, rowHeight, fontBold, 9, "center");
     rowX = startX;
@@ -1612,10 +1686,16 @@ async function drawFeedbackAK02(
         borderWidth: 1,
     })
 
-    if (data.ak02_headers.approved_assessee) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
-        const startXQr = rowX + ((startX * 2 / 3) - qrSize) + qrSize * 2 / 3;
-        page.drawImage(asesiQrImage, { x: startXQr, y: y - qrSize - 5, width: qrSize, height: qrSize });
+    if (data.ak02_headers.approved_assessor) {
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessor?.signature,
+            getAssessorUrl(data.assessor.id),
+            rowX + ((startX * 2 / 3) - qrSize) + qrSize * 2 / 3,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.ak02_headers.updated_at), rowX, y - qrSize, tableWidth * 2 / 3, rowHeight, fontBold, 9, "center");
     rowX = startX;
@@ -1766,15 +1846,22 @@ async function drawSignatureAPL01(
     })
 
     if (data.resultDoc.approved) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.signature,
+            getAssesseeUrl(data.id),
+            rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.resultDoc.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
     rowX = rightSectionX;
     y -= rowHeight * 4;
 
-    // Assessor
+    // Admin
     page.drawRectangle({
         x: rowX,
         y: y - rowHeight,
@@ -1834,8 +1921,15 @@ async function drawSignatureAPL01(
     })
 
     if (data.resultDoc.approved) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.admin.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.admin?.signature,
+            getAssesseeUrl(data.admin.id),
+            rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.resultDoc.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
@@ -1977,9 +2071,16 @@ async function drawFeedbackAK01(
     });
 
     if (data.ak01_header.approved_assessor) {
-        const asesorQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssessorUrl(data.assessor.id)));
         const qrX = startX + (halfWidth / 2) - (qrSize / 2);
-        page.drawImage(asesorQrImage, { x: qrX, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessor?.signature,
+            getAssessorUrl(data.assessor.id),
+            qrX,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, `Tanda Tangan / ${formatDate(data.ak01_header.updated_at)}`, startX, y - signatureHeight + 5, halfWidth, rowHeight, font, 8, "center");
 
@@ -1994,9 +2095,16 @@ async function drawFeedbackAK01(
     });
 
     if (data.ak01_header.approved_assessee) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
         const qrX = startX + halfWidth + (halfWidth / 2) - (qrSize / 2);
-        page.drawImage(asesiQrImage, { x: qrX, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessee?.signature,
+            getAssesseeUrl(data.assessee.id),
+            qrX,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, `Tanda Tangan / ${formatDate(data.ak01_header.updated_at)}`, startX + halfWidth, y - signatureHeight + 5, halfWidth, rowHeight, font, 8, "center");
 
@@ -2124,8 +2232,15 @@ async function drawFeedbackIA03(
     });
 
     if (data.ia03_header?.approved_assessee) {
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
-        page.drawImage(asesiQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessee?.signature,
+            getAssesseeUrl(data.assessee.id),
+            rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.ia03_header?.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
@@ -2217,8 +2332,15 @@ async function drawFeedbackIA03(
     });
 
     if (data.ia03_header?.approved_assessor) {
-        const asesorQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssessorUrl(data.assessor.id)));
-        page.drawImage(asesorQrImage, { x: rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4, y: y - qrSize - 5, width: qrSize, height: qrSize });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessor?.signature,
+            getAssessorUrl(data.assessor.id),
+            rowX + ((rightSectionX * 2 / 3) / 2 - qrSize) + qrSize / 4,
+            y - qrSize - 5,
+            qrSize
+        );
     }
     drawCellText(page, formatDate(data.ia03_header?.updated_at), rowX, y - qrSize, rightSectionWidth * 2 / 3, rowHeight, fontBold, 9, "center");
 
@@ -2699,16 +2821,18 @@ async function drawFeedbackIA05(
         borderWidth: 1,
     });
 
-    // Add QR code if approved
+    // Add signature or QR code if approved
     if (data.ia05_header?.approved_assessee) {
         const qrSize = 50;
-        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
-        page.drawImage(asesiQrImage, {
-            x: startX + labelWidth + colonWidth + 10,
-            y: y - signatureHeight + 5,
-            width: qrSize,
-            height: qrSize
-        });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessee?.signature,
+            getAssesseeUrl(data.assessee.id),
+            startX + labelWidth + colonWidth + 10,
+            y - signatureHeight + 5,
+            qrSize
+        );
         drawCellText(page, formatDate(data.ia05_header.updated_at), startX + labelWidth + colonWidth + qrSize + 15, y - signatureHeight / 2, valueWidth - qrSize - 15, signatureHeight, font, 9, "left");
     }
 
@@ -2843,16 +2967,18 @@ async function drawFeedbackIA05(
         borderWidth: 1,
     });
 
-    // Add QR code if approved
+    // Add signature or QR code if approved
     if (data.ia05_header?.approved_assessor) {
         const qrSize = 50;
-        const asesorQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssessorUrl(data.assessor.id)));
-        page.drawImage(asesorQrImage, {
-            x: startX + labelWidth + colonWidth + 10,
-            y: y - signatureHeight + 5,
-            width: qrSize,
-            height: qrSize
-        });
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessor?.signature,
+            getAssessorUrl(data.assessor.id),
+            startX + labelWidth + colonWidth + 10,
+            y - signatureHeight + 5,
+            qrSize
+        );
         drawCellText(page, formatDate(data.ia05_header.updated_at), startX + labelWidth + colonWidth + qrSize + 15, y - signatureHeight / 2, valueWidth - qrSize - 15, signatureHeight, font, 9, "left");
     }
 

@@ -488,6 +488,7 @@ export class APL1Service {
             user_id: admin.user_id,
             full_name: adminUser.full_name,
             email: adminUser.email,
+            signature: admin?.signature,
         }
 
         return {
