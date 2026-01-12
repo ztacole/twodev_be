@@ -92,8 +92,31 @@ class AuthService {
                 throw new error_1.NotFoundError('Pengguna');
             }
             const role = yield drizzle_1.db.query.role.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.role.id, user.role_id) });
-            // assessor / assessee / admin relations can be fetched where needed in their modules
-            return Object.assign(Object.assign({}, user), { role });
+            // fetch signature based on user role
+            let signature = null;
+            if (user.role_id === 1) {
+                // admin
+                const admin = yield drizzle_1.db.query.admin.findFirst({
+                    where: (0, drizzle_orm_1.eq)(schema_1.admin.user_id, userId),
+                });
+                signature = (admin === null || admin === void 0 ? void 0 : admin.signature) || null;
+            }
+            else if (user.role_id === 2) {
+                // assessor
+                const assessor = yield drizzle_1.db.query.assessor.findFirst({
+                    where: (0, drizzle_orm_1.eq)(schema_1.assessor.user_id, userId),
+                });
+                signature = (assessor === null || assessor === void 0 ? void 0 : assessor.signature) || null;
+            }
+            else if (user.role_id === 3) {
+                // assessee
+                const assessee = yield drizzle_1.db.query.assessee.findFirst({
+                    where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, userId),
+                });
+                signature = (assessee === null || assessee === void 0 ? void 0 : assessee.signature) || null;
+            }
+            return Object.assign(Object.assign({}, user), { role,
+                signature });
         });
     }
     static verifyToken(token) {

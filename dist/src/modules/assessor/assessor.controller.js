@@ -35,7 +35,32 @@ AssessorController.createAssessor = (0, async_handler_1.asyncHandler)((req, res)
                 message: 'File belum lengkap.',
             });
         }
-        const assessor = yield assessor_service_1.AssessorService.createAssessor(req.body, files);
+        let existingAssessor = null;
+        try {
+            existingAssessor = yield assessor_service_1.AssessorService.getAssessorByUserId(req.body.user_id);
+        }
+        catch (error) {
+            // Ignore if assessor doesn't exist (will be created)
+        }
+        let signatureUrl = undefined;
+        const signatureFile = files.find((f) => f.fieldname === 'signature');
+        if (signatureFile) {
+            if (existingAssessor === null || existingAssessor === void 0 ? void 0 : existingAssessor.signature) {
+                try {
+                    const fs = require('fs');
+                    const path = require('path');
+                    const oldFilePath = path.join(__dirname, '../../../public', existingAssessor.signature);
+                    if (fs.existsSync(oldFilePath)) {
+                        fs.unlinkSync(oldFilePath);
+                    }
+                }
+                catch (error) {
+                    // Ignore error if file doesn't exist
+                }
+            }
+            signatureUrl = `uploads/signatures/${signatureFile.filename}`;
+        }
+        const assessor = yield assessor_service_1.AssessorService.createAssessor(Object.assign(Object.assign({}, req.body), { signature: signatureUrl }), files);
         res.status(201).json({
             success: true,
             message: 'Data assessor berhasil dibuat',
@@ -203,6 +228,25 @@ AssessorController.updateMyProfile = (0, async_handler_1.asyncHandler)((req, res
         });
     }
     const files = Array.isArray(req.files) ? req.files : [];
+    const existingAssessor = yield assessor_service_1.AssessorService.getAssessorByUserId(userId);
+    let signatureUrl = undefined;
+    const signatureFile = files.find((f) => f.fieldname === 'signature');
+    if (signatureFile) {
+        if (existingAssessor === null || existingAssessor === void 0 ? void 0 : existingAssessor.signature) {
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const oldFilePath = path.join(__dirname, '../../../public', existingAssessor.signature);
+                if (fs.existsSync(oldFilePath)) {
+                    fs.unlinkSync(oldFilePath);
+                }
+            }
+            catch (error) {
+                // Ignore error if file doesn't exist
+            }
+        }
+        signatureUrl = `uploads/signatures/${signatureFile.filename}`;
+    }
     const data = yield assessor_service_1.AssessorService.updateAssessorByUserId(userId, {
         full_name,
         email,
@@ -213,7 +257,8 @@ AssessorController.updateMyProfile = (0, async_handler_1.asyncHandler)((req, res
         no_reg_met,
         institution,
         address,
-        phone_no
+        phone_no,
+        signature: signatureUrl
     }, files);
     res.json({
         success: true,

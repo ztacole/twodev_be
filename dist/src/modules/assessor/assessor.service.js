@@ -38,6 +38,7 @@ class AssessorService {
                 institution: schema_1.assessor.institution,
                 address: schema_1.assessor.address,
                 phone_no: schema_1.assessor.phone_no,
+                signature: schema_1.assessor.signature,
                 scheme: schema_1.scheme,
                 detail: schema_1.assessorDetail
             })
@@ -69,6 +70,7 @@ class AssessorService {
                 institution: schema_1.assessor.institution,
                 address: schema_1.assessor.address,
                 phone_no: schema_1.assessor.phone_no,
+                signature: schema_1.assessor.signature,
                 scheme: schema_1.scheme,
                 detail: schema_1.assessorDetail
             })
@@ -95,6 +97,7 @@ class AssessorService {
                 institution: schema_1.assessor.institution,
                 address: schema_1.assessor.address,
                 phone_no: schema_1.assessor.phone_no,
+                signature: schema_1.assessor.signature,
                 scheme: schema_1.scheme,
                 detail: schema_1.assessorDetail
             })
@@ -122,6 +125,7 @@ class AssessorService {
                 institution: schema_1.assessor.institution,
                 address: schema_1.assessor.address,
                 phone_no: schema_1.assessor.phone_no,
+                signature: schema_1.assessor.signature,
                 scheme: schema_1.scheme,
                 detail: schema_1.assessorDetail
             })
@@ -137,6 +141,7 @@ class AssessorService {
     }
     static createAssessor(data, files) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             const user = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, data.user_id) });
             if (!user || user.role_id !== 2) {
                 for (const file of files) {
@@ -154,7 +159,8 @@ class AssessorService {
                     no_reg_met: data.no_reg_met,
                     address: data.address,
                     phone_no: data.phone_no,
-                    birth_date: new Date(data.birth_date)
+                    birth_date: new Date(data.birth_date),
+                    signature: (_a = data.signature) !== null && _a !== void 0 ? _a : null
                 });
             }
             else {
@@ -167,6 +173,7 @@ class AssessorService {
                     phone_no: data.phone_no,
                     birth_location: data.birth_location,
                     birth_date: new Date(data.birth_date),
+                    signature: (_b = data.signature) !== null && _b !== void 0 ? _b : null
                 }).$returningId();
                 assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, Number(id.id)) });
             }
@@ -214,7 +221,7 @@ class AssessorService {
                     try {
                         fs_1.default.unlinkSync(filePath);
                     }
-                    catch (_a) { }
+                    catch (_c) { }
                 }
             }
             for (const file of files) {
@@ -250,6 +257,7 @@ class AssessorService {
                 institution: schema_1.assessor.institution,
                 address: schema_1.assessor.address,
                 phone_no: schema_1.assessor.phone_no,
+                signature: schema_1.assessor.signature,
                 scheme: schema_1.scheme,
                 detail: schema_1.assessorDetail
             })
@@ -433,6 +441,8 @@ class AssessorService {
                 assessorUpdateData.address = data.address;
             if (data.phone_no !== undefined)
                 assessorUpdateData.phone_no = data.phone_no;
+            if (data.signature !== undefined)
+                assessorUpdateData.signature = data.signature;
             const userUpdateData = {};
             if (data.full_name !== undefined)
                 userUpdateData.full_name = data.full_name;
@@ -506,6 +516,7 @@ class AssessorService {
                 institution: schema_1.assessor.institution,
                 address: schema_1.assessor.address,
                 phone_no: schema_1.assessor.phone_no,
+                signature: schema_1.assessor.signature,
                 created_at: schema_1.assessor.created_at,
                 updated_at: schema_1.assessor.updated_at,
                 scheme: schema_1.scheme,
@@ -531,6 +542,7 @@ class AssessorService {
             institution: assessor.institution,
             address: assessor.address,
             phone_no: assessor.phone_no,
+            signature: assessor.signature,
             scheme: assessor.scheme,
             detail: assessor.detail || null
         };

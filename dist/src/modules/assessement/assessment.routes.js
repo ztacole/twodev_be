@@ -24,6 +24,7 @@ const ak_04_controller_1 = require("./ak-04/ak-04.controller");
 const ak_05_controller_1 = require("./ak-05/ak-05.controller");
 const result_pdf_controller_1 = require("./result-pdf/result-pdf.controller");
 const auth_middleware_2 = require("../../middleware/auth.middleware");
+const signature_upload_config_1 = require("./apl-01/signature-upload-config");
 // import { uploadIA02 } from "./ia-02/upload-conifg";
 const approval_middleware_1 = require("../../middleware/approval.middleware");
 const uploadAPL01 = (0, upload_helper_1.createUploader)({
@@ -71,7 +72,7 @@ router.get('/navigation/admin/:resultId', auth_middleware_2.authenticateToken, a
 router.get('/assessment-recapt/:scheduleDetailId', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, assessment_controller_1.AssessmentController.getAssessmentRecapt);
 router.get('/assessment-recapt/admin/:scheduleDetailId/:assessorId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, assessment_controller_1.AssessmentController.getAssessmentRecaptForAdmin);
 router.get('/recap/:scheduleDetailId/pdf', auth_middleware_2.authenticateToken, auth_middleware_1.adminOrAssessorMiddleware, assessment_controller_1.AssessmentController.generateRecaptPdf);
-router.post('/apl-01/create-self-data', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, apl_01_controller_1.APL1Controller.createAssesseeAPL1);
+router.post('/apl-01/create-self-data', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, signature_upload_config_1.uploadSignature, apl_01_controller_1.APL1Controller.createAssesseeAPL1);
 router.post('/apl-01/create-certificate-docs', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, uploadAPL01.any(), apl_01_controller_1.APL1Controller.createOrUploadCertificateDocs);
 router.get('/uploads/apl-01/:folder/:filename', auth_middleware_1.authUpload, (req, res) => {
     const { folder, filename } = req.params;
@@ -119,6 +120,7 @@ router.post('/ia-03/result/send', auth_middleware_2.authenticateToken, auth_midd
 router.put('/ia-03/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_03_controller_1.IA03Controller.approvedByAssessor);
 router.put('/ia-03/result/assessee/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ia_03_controller_1.IA03Controller.approvedByAssessee);
 router.get('/ia-03/result/:resultId', ia_03_controller_1.IA03Controller.getResultDetails);
+router.get('/ia-03/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateIA03);
 router.get('/ia-05/questions/:scheduleId', ia_05_controller_1.IA05Controller.getQuestions);
 router.get('/ia-05/result/answers/keys/:scheduleId', ia_05_controller_1.IA05Controller.getAnswerKeys);
 router.get('/ia-05/result/answers/:resultId', ia_05_controller_1.IA05Controller.getAssesseeAnswers);
@@ -127,6 +129,7 @@ router.post('/ia-05/result/assessor/send', auth_middleware_2.authenticateToken, 
 router.put('/ia-05/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_05_controller_1.IA05Controller.approvedByAssessor);
 router.put('/ia-05/result/assessee/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ia_05_controller_1.IA05Controller.approvedByAssessee);
 router.get('/ia-05/result/:resultId', ia_05_controller_1.IA05Controller.getResultDetails);
+router.get('/ia-05/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateIA05);
 router.post('/ak-01', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ak_01_controller_1.AK01Controller.createAK01);
 router.get('/ak-01/:id', ak_01_controller_1.AK01Controller.getAK01ById);
 router.put('/ak-01/:id', ak_01_controller_1.AK01Controller.updateAK01);
@@ -151,4 +154,5 @@ router.put('/ak-04/result/assessee/:resultId/approve', auth_middleware_2.authent
 router.post('/ak-05', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ak_05_controller_1.AK05Controller.createAK05);
 router.get('/ak-05/:result_id', ak_05_controller_1.AK05Controller.getAK05ByResultId);
 router.put('/ak-05/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ak_05_controller_1.AK05Controller.approvedByAssessor);
+router.get('/ak-05/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateAK05);
 exports.default = router;

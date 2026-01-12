@@ -57,6 +57,7 @@ class AssesseeService {
                 address: schema_1.assessee.address,
                 postal_code: schema_1.assessee.postal_code,
                 educational_qualifications: schema_1.assessee.educational_qualifications,
+                signature: schema_1.assessee.signature,
                 job: schema_1.assesseeJob
             }).from(schema_1.assessee)
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
@@ -87,6 +88,7 @@ class AssesseeService {
                 address: schema_1.assessee.address,
                 postal_code: schema_1.assessee.postal_code,
                 educational_qualifications: schema_1.assessee.educational_qualifications,
+                signature: schema_1.assessee.signature,
                 job: schema_1.assesseeJob
             }).from(schema_1.assessee)
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
@@ -101,7 +103,7 @@ class AssesseeService {
     }
     static createAssessee(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c;
+            var _a, _b, _c, _d;
             const existing = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, data.user_id) });
             if (existing)
                 throw new error_1.DuplicateEntryError('Assessee untuk user_id', data.user_id.toString());
@@ -118,6 +120,7 @@ class AssesseeService {
                 address: data.address,
                 postal_code: (_c = data.postal_code) !== null && _c !== void 0 ? _c : null,
                 educational_qualifications: data.educational_qualifications,
+                signature: (_d = data.signature) !== null && _d !== void 0 ? _d : null,
             });
             const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, data.user_id) });
             if (!assessee)
@@ -127,7 +130,7 @@ class AssesseeService {
     }
     static updateAssessee(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c;
+            var _a, _b, _c, _d;
             const existing = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, id) });
             if (!existing)
                 throw new error_1.NotFoundError('Assessee');
@@ -144,6 +147,7 @@ class AssesseeService {
                 address: data.address,
                 postal_code: (_c = data.postal_code) !== null && _c !== void 0 ? _c : null,
                 educational_qualifications: data.educational_qualifications,
+                signature: (_d = data.signature) !== null && _d !== void 0 ? _d : null,
             }).where((0, drizzle_orm_1.eq)(schema_1.assessee.id, id));
             const assessee = yield drizzle_1.db.query.assessee.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessee.id, id) });
             if (!assessee)
@@ -176,6 +180,7 @@ class AssesseeService {
             address: assessee.address,
             postal_code: assessee.postal_code,
             educational_qualifications: assessee.educational_qualifications,
+            signature: assessee.signature,
             job: assessee.job
         };
     }

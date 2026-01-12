@@ -33,6 +33,7 @@ const TUK_VALUES = {
 class APL1Service {
     static createOrUpdateAssessee(data) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             const { jobs, id, user_id, full_name } = data, assesseeData = __rest(data, ["jobs", "id", "user_id", "full_name"]);
             const existingUser = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, user_id) });
             if (!existingUser)
@@ -61,6 +62,7 @@ class APL1Service {
                     address: assesseeData.address,
                     postal_code: assesseeData.postal_code,
                     educational_qualifications: assesseeData.educational_qualifications,
+                    signature: (_a = assesseeData.signature) !== null && _a !== void 0 ? _a : null,
                 })
                     .where((0, drizzle_orm_1.eq)(schema_1.assessee.id, id));
                 // replace jobs
@@ -100,6 +102,7 @@ class APL1Service {
                     address: assesseeData.address,
                     postal_code: assesseeData.postal_code,
                     educational_qualifications: assesseeData.educational_qualifications,
+                    signature: (_b = assesseeData.signature) !== null && _b !== void 0 ? _b : null,
                 }).$returningId();
                 if (jobs && jobs.length > 0) {
                     for (const j of jobs) {
@@ -436,6 +439,7 @@ class APL1Service {
                 user_id: admin.user_id,
                 full_name: adminUser.full_name,
                 email: adminUser.email,
+                signature: admin === null || admin === void 0 ? void 0 : admin.signature,
             };
             return Object.assign(Object.assign({}, assessee), { full_name: user === null || user === void 0 ? void 0 : user.full_name, job: assesseeJob, assessment: resultAssessment, resultDoc: resulDoc, schedule: schedule, admin: adminData });
         });

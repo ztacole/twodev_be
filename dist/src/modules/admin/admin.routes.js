@@ -3,12 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../../middleware/auth.middleware");
 const admin_controller_1 = require("./admin.controller");
+const upload_config_1 = require("./upload-config");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware);
 router.get('/', admin_controller_1.AdminController.getAdmins);
 router.get('/:id', admin_controller_1.AdminController.getAdminById);
-router.post('/', admin_controller_1.AdminController.createAdmin);
+router.post('/', upload_config_1.uploadAdminSignature, admin_controller_1.AdminController.createAdmin);
 router.put('/:id', admin_controller_1.AdminController.updateAdmin);
-router.put('/profile/me', admin_controller_1.AdminController.updateMyProfile); // Token-based update
+router.put('/profile/me', upload_config_1.uploadAdminSignature, admin_controller_1.AdminController.updateMyProfile);
 router.delete('/:id', admin_controller_1.AdminController.deleteAdmin);
 exports.default = router;

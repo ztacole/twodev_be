@@ -8,11 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.APL1Controller = void 0;
 const apl_01_service_1 = require("./apl-01.service");
+const asseessee_service_1 = require("../../assessee/asseessee.service");
 const async_handler_1 = require("../../../common/async.handler");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 class APL1Controller {
 }
 exports.APL1Controller = APL1Controller;
@@ -32,7 +38,31 @@ APL1Controller.createAssesseeAPL1 = (0, async_handler_1.asyncHandler)((req, res)
                 });
             }
         }
-        const assessee = yield apl_01_service_1.APL1Service.createOrUpdateAssessee(req.body);
+        let signatureUrl = undefined;
+        const files = req.files;
+        if (req.body.id) {
+            try {
+                const existingAssessee = yield asseessee_service_1.AssesseeService.getAssesseeById(Number(req.body.id));
+                if (files && files.signature && files.signature[0] && (existingAssessee === null || existingAssessee === void 0 ? void 0 : existingAssessee.signature)) {
+                    try {
+                        const oldFilePath = path_1.default.join(__dirname, '../../../../public', existingAssessee.signature);
+                        if (fs_1.default.existsSync(oldFilePath)) {
+                            fs_1.default.unlinkSync(oldFilePath);
+                        }
+                    }
+                    catch (error) {
+                        // Ignore error if file doesn't exist
+                    }
+                }
+            }
+            catch (error) {
+                // Ignore if assessee not found (might be create)
+            }
+        }
+        if (files && files.signature && files.signature[0]) {
+            signatureUrl = `uploads/signatures/${files.signature[0].filename}`;
+        }
+        const assessee = yield apl_01_service_1.APL1Service.createOrUpdateAssessee(Object.assign(Object.assign({}, req.body), { signature: signatureUrl }));
         res.status(201).json({
             success: true,
             message: 'Data assessee berhasil disimpan',

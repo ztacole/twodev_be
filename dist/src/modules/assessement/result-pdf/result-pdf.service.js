@@ -13,6 +13,7 @@ exports.ResultPdfService = void 0;
 const pdf_lib_1 = require("pdf-lib");
 const ia_01_service_1 = require("../ia-01/ia-01.service");
 const helper_1 = require("./helper");
+const ia_03_service_1 = require("../ia-03/ia-03.service");
 const date_helper_1 = require("../../../helper/date.helper");
 const pdfDraw_helper_1 = require("../../../helper/pdfDraw.helper");
 const apl_01_service_1 = require("../apl-01/apl-01.service");
@@ -20,13 +21,15 @@ const asseessee_service_1 = require("../../assessee/asseessee.service");
 const ak_02_service_1 = require("../ak-02/ak-02.service");
 const ak_01_service_1 = require("../ak-01/ak-01.service");
 const apl_02_service_1 = require("../apl-02/apl-02.service");
+const ia_05_service_1 = require("../ia-05/ia-05.service");
+const ak_05_service_1 = require("../ak-05/ak-05.service");
 const BASE_MARGIN = 150;
 const ELEMENT_ROW_HEIGHT = 20;
 const headerImage = "../../public/images/kop-surat-lsp-smkn24j.png";
 class ResultPdfService {
     static generateApl02(resultId) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
             const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
             const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
@@ -42,7 +45,7 @@ class ResultPdfService {
                 ["TUK", ":", (_f = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.tuk) !== null && _f !== void 0 ? _f : "-"],
                 ["Nama Assesor", ":", (_h = (_g = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessor) === null || _g === void 0 ? void 0 : _g.name) !== null && _h !== void 0 ? _h : "-"],
                 ["Nama Asesee", ":", (_k = (_j = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessee) === null || _j === void 0 ? void 0 : _j.name) !== null && _k !== void 0 ? _k : "-"],
-                ["Tanggal", ":", (_l = (0, date_helper_1.formatDate)(resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.created_at)) !== null && _l !== void 0 ? _l : "-"],
+                ["Tanggal", ":", (resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.created_at) ? `${(0, date_helper_1.formatDay)(resultDetails.created_at)}, ${(0, date_helper_1.formatDate)(resultDetails.created_at)}` : "-"],
             ];
             y = yield (0, helper_1.drawCertificateLayout)(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
             y -= 30;
@@ -63,12 +66,15 @@ class ResultPdfService {
                 ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
             }
             y = yield (0, helper_1.drawFeedbackAPL02)(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
-            return yield pdfDoc.save();
+            return {
+                pdfBytes: yield pdfDoc.save(),
+                assesseeName: (_m = (_l = resultDetails.assessee) === null || _l === void 0 ? void 0 : _l.name) !== null && _m !== void 0 ? _m : "unknown",
+            };
         });
     }
     static generateIA01(resultId) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
             const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
             const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
@@ -85,7 +91,7 @@ class ResultPdfService {
                 ["TUK", ":", (_f = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.tuk) !== null && _f !== void 0 ? _f : "-"],
                 ["Nama Assesor", ":", (_h = (_g = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessor) === null || _g === void 0 ? void 0 : _g.name) !== null && _h !== void 0 ? _h : "-"],
                 ["Nama Asesi", ":", (_k = (_j = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessee) === null || _j === void 0 ? void 0 : _j.name) !== null && _k !== void 0 ? _k : "-"],
-                ["Tanggal", ":", ((_l = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessment) === null || _l === void 0 ? void 0 : _l.created_at) ? `${(0, date_helper_1.formatDay)(resultDetails.assessment.created_at)}, ${(0, date_helper_1.formatDate)(resultDetails.assessment.created_at)}` : "-"],
+                ["Tanggal", ":", (resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.created_at) ? `${(0, date_helper_1.formatDay)(resultDetails.created_at)}, ${(0, date_helper_1.formatDate)(resultDetails.created_at)}` : "-"],
             ];
             y = yield (0, helper_1.drawCertificateLayout)(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
             // ==== LOOP GROUPS ====
@@ -114,12 +120,15 @@ class ResultPdfService {
                 ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
             }
             y = yield (0, helper_1.drawFeedbackIA01)(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
-            return yield pdfDoc.save();
+            return {
+                pdfBytes: yield pdfDoc.save(),
+                assesseeName: (_m = (_l = resultDetails.assessee) === null || _l === void 0 ? void 0 : _l.name) !== null && _m !== void 0 ? _m : "unknown",
+            };
         });
     }
     static generateAPL01(resultId) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
             const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
             const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
@@ -207,7 +216,10 @@ class ResultPdfService {
             ], 40, y, 20, font, fontIcon);
             y -= 20;
             yield (0, helper_1.drawSignatureAPL01)(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
-            return yield pdfDoc.save();
+            return {
+                pdfBytes: yield pdfDoc.save(),
+                assesseeName: (_m = resultDetails.full_name) !== null && _m !== void 0 ? _m : "unknown",
+            };
             function drawSchemeTableHeader(page, y, data, fontBold, fontSize, color) {
                 const w = page.getWidth() - 80;
                 const x = 40;
@@ -262,7 +274,7 @@ class ResultPdfService {
     }
     static generateAK01(resultId) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
             const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
             const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
@@ -320,7 +332,7 @@ class ResultPdfService {
                 ["TUK", ":", (_g = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.tuk) !== null && _g !== void 0 ? _g : "-"],
                 ["Nama Asesor", ":", (_j = (_h = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessor) === null || _h === void 0 ? void 0 : _h.name) !== null && _j !== void 0 ? _j : "-"],
                 ["Nama Asesi", ":", (_l = (_k = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessee) === null || _k === void 0 ? void 0 : _k.name) !== null && _l !== void 0 ? _l : "-"],
-                ["Tanggal", ":", (_m = (0, date_helper_1.formatDate)(resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.created_at)) !== null && _m !== void 0 ? _m : "-"],
+                ["Tanggal", ":", (resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.created_at) ? `${(0, date_helper_1.formatDay)(resultDetails.created_at)}, ${(0, date_helper_1.formatDate)(resultDetails.created_at)}` : "-"],
             ];
             for (const row of detailData) {
                 let x = 40;
@@ -386,16 +398,16 @@ class ResultPdfService {
             }
             y -= evidenceBoxHeight;
             // === PELAKSANAAN ASESMEN ===
-            const startDate = ((_o = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.schedule) === null || _o === void 0 ? void 0 : _o.start_date)
+            const startDate = ((_m = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.schedule) === null || _m === void 0 ? void 0 : _m.start_date)
                 ? `${(0, date_helper_1.formatDay)(resultDetails.schedule.start_date)}, ${(0, date_helper_1.formatDate)(resultDetails.schedule.start_date)}`
                 : "-";
-            const endDate = ((_p = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.schedule) === null || _p === void 0 ? void 0 : _p.end_date)
+            const endDate = ((_o = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.schedule) === null || _o === void 0 ? void 0 : _o.end_date)
                 ? `${(0, date_helper_1.formatDay)(resultDetails.schedule.end_date)}, ${(0, date_helper_1.formatDate)(resultDetails.schedule.end_date)}`
                 : "-";
             const scheduleData = [
                 ["Hari / Tanggal", ":", `${startDate} s.d. ${endDate}`],
                 ["Waktu", ":", "Pukul 07.00 s.d. 17.00 WIB"],
-                ["TUK", ":", (_q = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.tuk) !== null && _q !== void 0 ? _q : "-"],
+                ["TUK", ":", (_p = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.tuk) !== null && _p !== void 0 ? _p : "-"],
             ];
             // Header "Pelaksanaan asesmen disepakati pada"
             const scheduleHeaderHeight = 60;
@@ -424,12 +436,15 @@ class ResultPdfService {
                 ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
             }
             y = yield (0, helper_1.drawFeedbackAK01)(pdfDoc, page, resultDetails, 40, y, font, fontBold);
-            return yield pdfDoc.save();
+            return {
+                pdfBytes: yield pdfDoc.save(),
+                assesseeName: (_r = (_q = resultDetails.assessee) === null || _q === void 0 ? void 0 : _q.name) !== null && _r !== void 0 ? _r : "unknown",
+            };
         });
     }
     static generateAK02(resultId) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
             const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
             const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
@@ -495,7 +510,328 @@ class ResultPdfService {
                 ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
             }
             y = yield (0, helper_1.drawFeedbackAK02)(pdfDoc, page, resultDetails, 40, y, font, fontBold);
-            return yield pdfDoc.save();
+            return {
+                pdfBytes: yield pdfDoc.save(),
+                assesseeName: (_m = (_l = resultDetails.assessee) === null || _l === void 0 ? void 0 : _l.name) !== null && _m !== void 0 ? _m : "unknown",
+            };
+        });
+    }
+    static generateIA03(resultId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;
+            const pdfDoc = yield pdf_lib_1.PDFDocument.create();
+            const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
+            const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
+            let { page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold);
+            const resultDetails = yield ia_03_service_1.IA03Service.getResultDetails(resultId);
+            const groups = yield ia_03_service_1.IA03Service.getIA03Groups(resultId);
+            // ==== TITLE ====
+            page.drawText("FR.IA.03 - PERTANYAAN UNTUK MENDUKUNG OBSERVASI", { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 });
+            y -= 30;
+            // ==== INFO SKEMA ====
+            const info = [
+                ["Judul", ":", (_c = (_b = (_a = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessment) === null || _a === void 0 ? void 0 : _a.occupation) === null || _b === void 0 ? void 0 : _b.name) !== null && _c !== void 0 ? _c : "-"],
+                ["Nomor", ":", (_e = (_d = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessment) === null || _d === void 0 ? void 0 : _d.code) !== null && _e !== void 0 ? _e : "-"],
+                ["TUK", ":", (_f = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.tuk) !== null && _f !== void 0 ? _f : "-"],
+                ["Nama Asesor", ":", (_h = (_g = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessor) === null || _g === void 0 ? void 0 : _g.name) !== null && _h !== void 0 ? _h : "-"],
+                ["Nama Asesi", ":", (_k = (_j = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessee) === null || _j === void 0 ? void 0 : _j.name) !== null && _k !== void 0 ? _k : "-"],
+                ["Tanggal", ":", (resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.created_at) ? `${(0, date_helper_1.formatDay)(resultDetails.created_at)}, ${(0, date_helper_1.formatDate)(resultDetails.created_at)}` : "-"],
+            ];
+            y = yield (0, helper_1.drawCertificateLayout)(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+            y -= 20;
+            // ==== LOOP GROUPS ====
+            for (let groupIdx = 0; groupIdx < groups.length; groupIdx++) {
+                const group = groups[groupIdx];
+                // === GROUP HEADER WITH MERGED CELL ===
+                // Calculate table height based on number of units
+                const unitRowHeight = 25;
+                const unitTableHeight = (group.units.length + 1) * unitRowHeight; // +1 for header
+                // Check if we need a page break before drawing the unit table
+                if (y - unitTableHeight - 20 < BASE_MARGIN) {
+                    ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
+                }
+                y -= 20;
+                y = yield (0, helper_1.drawUnitGroupLayout)(page, pdfDoc, groupIdx, group, 40, y, 20, font, fontBold);
+                y -= 20;
+                // === QUESTIONS TABLE ===
+                if (group.questions && group.questions.length > 0) {
+                    const noColWidth = 50;
+                    const questionColWidth = 370;
+                    const yaColWidth = 50;
+                    const tdkColWidth = 50;
+                    const totalWidth = noColWidth + questionColWidth + yaColWidth + tdkColWidth;
+                    const qRowHeight = 30;
+                    const tanggapanRowHeight = 70;
+                    const headerHeight = qRowHeight * 2;
+                    // Check if we need a page break for the question table header
+                    if (y - headerHeight < BASE_MARGIN) {
+                        ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
+                    }
+                    let qX = 40;
+                    let qY = y;
+                    // Header row 1 - "Pertanyaan" merged (spans No + Question columns, 2 rows height)
+                    page.drawRectangle({
+                        x: qX,
+                        y: qY - qRowHeight * 2,
+                        width: noColWidth + questionColWidth,
+                        height: qRowHeight * 2,
+                        borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    (0, helper_1.drawCellText)(page, "Pertanyaan", qX, qY - qRowHeight / 2, noColWidth + questionColWidth, qRowHeight, fontBold, 10, "center");
+                    // "Pencapaian" header spanning Ya and Tdk
+                    page.drawRectangle({
+                        x: qX + noColWidth + questionColWidth,
+                        y: qY - qRowHeight,
+                        width: yaColWidth + tdkColWidth,
+                        height: qRowHeight,
+                        borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    (0, helper_1.drawCellText)(page, "Pencapaian", qX + noColWidth + questionColWidth, qY, yaColWidth + tdkColWidth, qRowHeight, fontBold, 9, "center");
+                    // Ya and Tdk sub-headers
+                    page.drawRectangle({
+                        x: qX + noColWidth + questionColWidth,
+                        y: qY - qRowHeight * 2,
+                        width: yaColWidth,
+                        height: qRowHeight,
+                        borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    (0, helper_1.drawCellText)(page, "Ya", qX + noColWidth + questionColWidth, qY - qRowHeight, yaColWidth, qRowHeight, fontBold, 9, "center");
+                    page.drawRectangle({
+                        x: qX + noColWidth + questionColWidth + yaColWidth,
+                        y: qY - qRowHeight * 2,
+                        width: tdkColWidth,
+                        height: qRowHeight,
+                        borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                        borderWidth: 1,
+                    });
+                    (0, helper_1.drawCellText)(page, "Tdk", qX + noColWidth + questionColWidth + yaColWidth, qY - qRowHeight, tdkColWidth, qRowHeight, fontBold, 9, "center");
+                    qY -= qRowHeight * 2;
+                    // Question rows
+                    for (let qIdx = 0; qIdx < group.questions.length; qIdx++) {
+                        const q = group.questions[qIdx];
+                        const answer = (_m = (_l = q.result) === null || _l === void 0 ? void 0 : _l.answer) !== null && _m !== void 0 ? _m : "";
+                        const isApproved = (_p = (_o = q.result) === null || _o === void 0 ? void 0 : _o.approved) !== null && _p !== void 0 ? _p : false;
+                        const hasResult = q.result !== null;
+                        // Calculate total height needed for this question (question row + tanggapan row)
+                        const questionTotalHeight = qRowHeight + tanggapanRowHeight;
+                        // Check if need page break (need space for question row + tanggapan row)
+                        if (qY - questionTotalHeight < BASE_MARGIN) {
+                            ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
+                            qY = y;
+                        }
+                        // === Question Row ===
+                        // No. cell
+                        page.drawRectangle({
+                            x: qX,
+                            y: qY - qRowHeight,
+                            width: noColWidth,
+                            height: qRowHeight,
+                            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                            borderWidth: 1,
+                        });
+                        (0, helper_1.drawCellText)(page, `${qIdx + 1}.`, qX, qY, noColWidth, qRowHeight, font, 9, "center");
+                        // Question text cell (spans question + Ya + Tdk columns)
+                        page.drawRectangle({
+                            x: qX + noColWidth,
+                            y: qY - qRowHeight,
+                            width: questionColWidth + yaColWidth + tdkColWidth,
+                            height: qRowHeight,
+                            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                            borderWidth: 1,
+                        });
+                        (0, helper_1.drawCellText)(page, q.question, qX + noColWidth, qY, questionColWidth + yaColWidth + tdkColWidth, qRowHeight, font, 9, "left");
+                        qY -= qRowHeight;
+                        // === Tanggapan Row ===
+                        // "Tanggapan:" label + answer area (spans No + Question columns)
+                        page.drawRectangle({
+                            x: qX,
+                            y: qY - tanggapanRowHeight,
+                            width: noColWidth + questionColWidth,
+                            height: tanggapanRowHeight,
+                            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                            borderWidth: 1,
+                        });
+                        page.drawText("Tanggapan:", { x: qX + 5, y: qY - 15, size: 9, font: fontBold });
+                        // Draw answer text if available
+                        if (answer) {
+                            (0, helper_1.drawCellText)(page, answer, qX, qY - 20, noColWidth + questionColWidth, tanggapanRowHeight - 20, font, 9, "left");
+                        }
+                        // Ya checkbox cell
+                        page.drawRectangle({
+                            x: qX + noColWidth + questionColWidth,
+                            y: qY - tanggapanRowHeight,
+                            width: yaColWidth,
+                            height: tanggapanRowHeight,
+                            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                            borderWidth: 1,
+                        });
+                        // Draw checkbox
+                        const checkboxSize = 12;
+                        const checkboxX = qX + noColWidth + questionColWidth + (yaColWidth - checkboxSize) / 2;
+                        const checkboxY = qY - (tanggapanRowHeight / 2) - (checkboxSize / 2);
+                        page.drawRectangle({
+                            x: checkboxX,
+                            y: checkboxY,
+                            width: checkboxSize,
+                            height: checkboxSize,
+                            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                            borderWidth: 1,
+                        });
+                        if (isApproved) {
+                            page.drawText("V", { x: checkboxX + 2, y: checkboxY + 2, size: 10, font: fontBold });
+                        }
+                        // Tdk checkbox cell
+                        page.drawRectangle({
+                            x: qX + noColWidth + questionColWidth + yaColWidth,
+                            y: qY - tanggapanRowHeight,
+                            width: tdkColWidth,
+                            height: tanggapanRowHeight,
+                            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                            borderWidth: 1,
+                        });
+                        // Draw checkbox
+                        const checkboxX2 = qX + noColWidth + questionColWidth + yaColWidth + (tdkColWidth - checkboxSize) / 2;
+                        page.drawRectangle({
+                            x: checkboxX2,
+                            y: checkboxY,
+                            width: checkboxSize,
+                            height: checkboxSize,
+                            borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                            borderWidth: 1,
+                        });
+                        if (!isApproved && hasResult) {
+                            page.drawText("V", { x: checkboxX2 + 2, y: checkboxY + 2, size: 10, font: fontBold });
+                        }
+                        qY -= tanggapanRowHeight;
+                    }
+                    y = qY;
+                }
+                y -= 20;
+            }
+            // === SIGNATURE SECTION ===
+            if (y < BASE_MARGIN + 470) {
+                ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
+            }
+            y = yield (0, helper_1.drawFeedbackIA03)(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
+            return {
+                pdfBytes: yield pdfDoc.save(),
+                assesseeName: (_r = (_q = resultDetails.assessee) === null || _q === void 0 ? void 0 : _q.name) !== null && _r !== void 0 ? _r : "unknown",
+            };
+        });
+    }
+    static generateIA05(resultId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+            const pdfDoc = yield pdf_lib_1.PDFDocument.create();
+            const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
+            const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
+            let { page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold);
+            const resultDetails = yield ia_05_service_1.IA05Service.getResultDetails(resultId);
+            const ia05Answers = yield ia_05_service_1.IA05Service.getAssesseeAnswers(resultId);
+            // ==== TITLE ====
+            page.drawText("FR.IA.05.C. LEMBAR JAWABAN PILIHAN GANDA", { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 });
+            y -= 30;
+            // ==== INFO SKEMA ====
+            const info = [
+                ["Judul", ":", (_c = (_b = (_a = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessment) === null || _a === void 0 ? void 0 : _a.occupation) === null || _b === void 0 ? void 0 : _b.name) !== null && _c !== void 0 ? _c : "-"],
+                ["Nomor", ":", (_e = (_d = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessment) === null || _d === void 0 ? void 0 : _d.code) !== null && _e !== void 0 ? _e : "-"],
+                ["TUK", ":", (_f = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.tuk) !== null && _f !== void 0 ? _f : "-"],
+                ["Nama Assesor", ":", (_h = (_g = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessor) === null || _g === void 0 ? void 0 : _g.name) !== null && _h !== void 0 ? _h : "-"],
+                ["Nama Asesi", ":", (_k = (_j = resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.assessee) === null || _j === void 0 ? void 0 : _j.name) !== null && _k !== void 0 ? _k : "-"],
+                ["Tanggal", ":", (resultDetails === null || resultDetails === void 0 ? void 0 : resultDetails.created_at) ? `${(0, date_helper_1.formatDay)(resultDetails.created_at)}, ${(0, date_helper_1.formatDate)(resultDetails.created_at)}` : "-"],
+            ];
+            y = yield (0, helper_1.drawCertificateLayout)(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+            y -= 30;
+            // ==== DRAW QUESTION TABLE ====
+            ({ page, y } = yield (0, helper_1.drawIA05QuestionTable)(pdfDoc, page, ia05Answers, 40, y, font, fontBold, headerImage, BASE_MARGIN));
+            y -= 30;
+            // ==== DRAW FEEDBACK SECTION ====
+            if (y < BASE_MARGIN + 200) {
+                ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
+            }
+            y = yield (0, helper_1.drawFeedbackIA05)(pdfDoc, page, resultDetails, 40, y, font, fontBold);
+            return {
+                pdfBytes: yield pdfDoc.save(),
+                assesseeName: (_m = (_l = resultDetails.assessee) === null || _l === void 0 ? void 0 : _l.name) !== null && _m !== void 0 ? _m : "unknown",
+            };
+        });
+    }
+    static generateAK05(resultId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+            const pdfDoc = yield pdf_lib_1.PDFDocument.create();
+            const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
+            const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
+            let { page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold);
+            const resultDetails = yield ak_05_service_1.AK05Service.getAK05ByResultId(resultId);
+            if (!resultDetails) {
+                throw new Error('AK05 data not found');
+            }
+            // ==== TITLE ====
+            page.drawText("FR.AK.05. LAPORAN ASESMEN", { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 });
+            y -= 30;
+            // ==== INFO SKEMA ====
+            const assessment = resultDetails.result.assessment;
+            const info = [
+                ["Judul", ":", (_b = (_a = assessment === null || assessment === void 0 ? void 0 : assessment.occupation) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : "-"],
+                ["Nomor", ":", (_c = assessment === null || assessment === void 0 ? void 0 : assessment.code) !== null && _c !== void 0 ? _c : "-"],
+                ["TUK", ":", (_d = resultDetails.result.tuk) !== null && _d !== void 0 ? _d : "-"],
+                ["Nama Asesor", ":", (_f = (_e = resultDetails.result.assessor) === null || _e === void 0 ? void 0 : _e.name) !== null && _f !== void 0 ? _f : "-"],
+                ["Tanggal", ":", resultDetails.result.created_at ? `${(0, date_helper_1.formatDay)(new Date(resultDetails.result.created_at))}, ${(0, date_helper_1.formatDate)(new Date(resultDetails.result.created_at))}` : "-"],
+            ];
+            y = yield (0, helper_1.drawCertificateLayout)(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+            y -= 30;
+            // ==== TABEL REKOMENDASI ====
+            const tableHeaders = [
+                ["No.", "Nama Asesi", "Rekomendasi", "Keterangan"],
+                ["1.", (_h = (_g = resultDetails.result.assessee) === null || _g === void 0 ? void 0 : _g.name) !== null && _h !== void 0 ? _h : "-", resultDetails.is_competent ? "K" : "BK", resultDetails.is_competent ? "Kompeten" : "Belum Kompeten"],
+            ];
+            let tableY = y;
+            const colWidths = [40, 200, 100, 180];
+            const rowHeight = 20;
+            // Draw header row
+            let x = 40;
+            tableHeaders[0].forEach((cell, idx) => {
+                page.drawRectangle({
+                    x,
+                    y: tableY - rowHeight,
+                    width: colWidths[idx],
+                    height: rowHeight,
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                (0, helper_1.drawCellText)(page, cell, x, tableY, colWidths[idx], rowHeight, fontBold, 9, "center");
+                x += colWidths[idx];
+            });
+            tableY -= rowHeight;
+            // Draw data row
+            x = 40;
+            tableHeaders[1].forEach((cell, idx) => {
+                page.drawRectangle({
+                    x,
+                    y: tableY - rowHeight,
+                    width: colWidths[idx],
+                    height: rowHeight,
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                (0, helper_1.drawCellText)(page, cell, x, tableY, colWidths[idx], rowHeight, font, 9, "left");
+                x += colWidths[idx];
+            });
+            tableY -= rowHeight;
+            y = tableY - 20;
+            // ==== FEEDBACK SECTION ====
+            if (y < BASE_MARGIN + 300) {
+                ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
+            }
+            y = yield (0, helper_1.drawFeedbackAK05)(pdfDoc, page, resultDetails.result, 40, y, 20, font, fontBold);
+            return {
+                pdfBytes: yield pdfDoc.save(),
+                assesseeName: (_k = (_j = resultDetails.result.assessee) === null || _j === void 0 ? void 0 : _j.name) !== null && _k !== void 0 ? _k : "unknown",
+            };
         });
     }
 }
