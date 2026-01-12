@@ -183,5 +183,6 @@ router.put('/ak-04/result/assessee/:resultId/approve', authenticateToken, assess
 router.post('/ak-05', authenticateToken, assessorMiddleware, AK05Controller.createAK05);
 router.get('/ak-05/:result_id', AK05Controller.getAK05ByResultId);
 router.put('/ak-05/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, AK05Controller.approvedByAssessor);
+router.get('/ak-05/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateAK05);
 
 export default router;

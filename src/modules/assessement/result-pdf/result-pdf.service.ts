@@ -4,7 +4,7 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCellText, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawFeedbackAK01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight, drawIA05QuestionTable, drawFeedbackIA05 } from "./helper";
+import { createNewPage, drawCellText, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawFeedbackAK01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight, drawIA05QuestionTable, drawFeedbackIA05, drawFeedbackAK05 } from "./helper";
 import { IA03Service } from "../ia-03/ia-03.service";
 import { formatDate, formatDay } from "../../../helper/date.helper";
 import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
@@ -15,6 +15,7 @@ import { AK01Service } from "../ak-01/ak-01.service";
 import { he } from "@faker-js/faker/.";
 import { APL02Service } from "../apl-02/apl-02.service";
 import { IA05Service } from "../ia-05/ia-05.service";
+import { AK05Service } from "../ak-05/ak-05.service";
 
 const BASE_MARGIN = 150;
 const ELEMENT_ROW_HEIGHT = 20;
@@ -108,7 +109,10 @@ export class ResultPdfService {
         }
         y = await drawFeedbackAPL02(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
-        return await pdfDoc.save();
+        return {
+            pdfBytes: await pdfDoc.save(),
+            assesseeName: resultDetails.assessee?.name ?? "unknown",
+        };
     }
 
     static async generateIA01(resultId: number) {
@@ -186,7 +190,10 @@ export class ResultPdfService {
         }
         y = await drawFeedbackIA01(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
-        return await pdfDoc.save();
+        return {
+            pdfBytes: await pdfDoc.save(),
+            assesseeName: resultDetails.assessee?.name ?? "unknown",
+        };
     }
 
     static async generateAPL01(resultId: number) {
@@ -327,7 +334,10 @@ export class ResultPdfService {
 
         await drawSignatureAPL01(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
-        return await pdfDoc.save();
+        return {
+            pdfBytes: await pdfDoc.save(),
+            assesseeName: resultDetails.full_name ?? "unknown",
+        };
 
         function drawSchemeTableHeader(page: PDFPage, y: number, data: any, fontBold: PDFFont, fontSize: number, color: RGB) {
             const w = page.getWidth() - 80;
@@ -588,7 +598,10 @@ export class ResultPdfService {
         }
         y = await drawFeedbackAK01(pdfDoc, page, resultDetails, 40, y, font, fontBold);
 
-        return await pdfDoc.save();
+        return {
+            pdfBytes: await pdfDoc.save(),
+            assesseeName: resultDetails.assessee?.name ?? "unknown",
+        };
     }
 
     static async generateAK02(resultId: number) {
@@ -670,7 +683,10 @@ export class ResultPdfService {
 
         y = await drawFeedbackAK02(pdfDoc, page, resultDetails, 40, y, font, fontBold);
 
-        return await pdfDoc.save();
+        return {
+            pdfBytes: await pdfDoc.save(),
+            assesseeName: resultDetails.assessee?.name ?? "unknown",
+        };
     }
 
     static async generateIA03(resultId: number) {
@@ -907,7 +923,10 @@ export class ResultPdfService {
         }
         y = await drawFeedbackIA03(pdfDoc, page, resultDetails, 40, y, 20, font, fontBold);
 
-        return await pdfDoc.save();
+        return {
+            pdfBytes: await pdfDoc.save(),
+            assesseeName: resultDetails.assessee?.name ?? "unknown",
+        };
     }
 
     static async generateIA05(resultId: number) {
@@ -952,6 +971,96 @@ export class ResultPdfService {
         }
         y = await drawFeedbackIA05(pdfDoc, page, resultDetails, 40, y, font, fontBold);
 
-        return await pdfDoc.save();
+        return {
+            pdfBytes: await pdfDoc.save(),
+            assesseeName: resultDetails.assessee?.name ?? "unknown",
+        };
+    }
+
+    static async generateAK05(resultId: number) {
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
+
+        const resultDetails = await AK05Service.getAK05ByResultId(resultId);
+        if (!resultDetails) {
+            throw new Error('AK05 data not found');
+        }
+
+        // ==== TITLE ====
+        page.drawText(
+            "FR.AK.05. LAPORAN ASESMEN",
+            { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 }
+        );
+        y -= 30;
+
+        // ==== INFO SKEMA ====
+        const assessment = resultDetails.result.assessment as any;
+        const info = [
+            ["Judul", ":", assessment?.occupation?.name ?? "-"],
+            ["Nomor", ":", assessment?.code ?? "-"],
+            ["TUK", ":", resultDetails.result.tuk ?? "-"],
+            ["Nama Asesor", ":", resultDetails.result.assessor?.name ?? "-"],
+            ["Tanggal", ":", resultDetails.result.created_at ? `${formatDay(new Date(resultDetails.result.created_at))}, ${formatDate(new Date(resultDetails.result.created_at))}` : "-"],
+        ];
+        y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+        y -= 30;
+
+        // ==== TABEL REKOMENDASI ====
+        const tableHeaders = [
+            ["No.", "Nama Asesi", "Rekomendasi", "Keterangan"],
+            ["1.", resultDetails.result.assessee?.name ?? "-", resultDetails.is_competent ? "K" : "BK", resultDetails.is_competent ? "Kompeten" : "Belum Kompeten"],
+        ];
+
+        let tableY = y;
+        const colWidths = [40, 200, 100, 180];
+        const rowHeight = 20;
+
+        // Draw header row
+        let x = 40;
+        tableHeaders[0].forEach((cell, idx) => {
+            page.drawRectangle({
+                x,
+                y: tableY - rowHeight,
+                width: colWidths[idx],
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            drawCellText(page, cell, x, tableY, colWidths[idx], rowHeight, fontBold, 9, "center");
+            x += colWidths[idx];
+        });
+        tableY -= rowHeight;
+
+        // Draw data row
+        x = 40;
+        tableHeaders[1].forEach((cell, idx) => {
+            page.drawRectangle({
+                x,
+                y: tableY - rowHeight,
+                width: colWidths[idx],
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            drawCellText(page, cell, x, tableY, colWidths[idx], rowHeight, font, 9, "left");
+            x += colWidths[idx];
+        });
+        tableY -= rowHeight;
+
+        y = tableY - 20;
+
+        // ==== FEEDBACK SECTION ====
+        if (y < BASE_MARGIN + 300) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        }
+        y = await drawFeedbackAK05(pdfDoc, page, resultDetails.result, 40, y, 20, font, fontBold);
+
+        return {
+            pdfBytes: await pdfDoc.save(),
+            assesseeName: resultDetails.result.assessee?.name ?? "unknown",
+        };
     }
 }

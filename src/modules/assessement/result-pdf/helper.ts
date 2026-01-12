@@ -121,6 +121,7 @@ function drawCellText(
     size = 9,
     align: "left" | "center" | "right" = "left"
 ) {
+    if (text?.includes("\n")) text = text.replace(/\n/g, "; ");
     const safeText = text ?? ""; // fallback
     const words = safeText.split(" ");
     let line = "";
@@ -2987,7 +2988,210 @@ async function drawFeedbackIA05(
     return y;
 }
 
+async function drawFeedbackAK05(
+    pdfDoc: PDFDocument,
+    page: PDFPage,
+    data: any,
+    startX: number,
+    startY: number,
+    rowHeight: number,
+    font: PDFFont,
+    fontBold: PDFFont
+): Promise<number> {
+    let y = startY;
+    const maxWidth = 520;
+    const qrSize = 60;
 
-export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01, drawIA05AnswerTable as drawIA05QuestionTable, drawFeedbackIA05 };
+    const labelWidth = 200;
+    const valueWidth = maxWidth - labelWidth;
+    let x = startX;
+
+    const baseHeight = rowHeight * 3;
+
+    // === Aspek Negatif dan Positif ===
+    page.drawRectangle({
+        x: x,
+        y: y - baseHeight,
+        width: labelWidth,
+        height: baseHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Aspek Negatif dan Positif dalam Asesmen", x, y, labelWidth, baseHeight, fontBold, 9, "left");
+    x += labelWidth;
+
+    page.drawRectangle({
+        x: x,
+        y: y - baseHeight,
+        width: valueWidth,
+        height: baseHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.result_ak05?.negative_positive_aspects ?? "-", x + 5, y, valueWidth, baseHeight, font, 9, "left");
+    y -= baseHeight;
+    x = startX;
+
+    // === Pencatatan Penolakan Hasil Asesmen ===
+    page.drawRectangle({
+        x: x,
+        y: y - baseHeight,
+        width: labelWidth,
+        height: baseHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Pencatatan Penolakan Hasil Asesmen", x, y, labelWidth, baseHeight, fontBold, 9, "left");
+    x += labelWidth;
+
+    page.drawRectangle({
+        x: x,
+        y: y - baseHeight,
+        width: valueWidth,
+        height: baseHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.result_ak05?.rejection_notes ?? "-", x + 5, y, valueWidth, baseHeight, font, 9, "left");
+    y -= baseHeight;
+    x = startX;
+
+    // === Saran Perbaikan (Asesor/Personil Terkait) ===
+    page.drawRectangle({
+        x: x,
+        y: y - baseHeight,
+        width: labelWidth,
+        height: baseHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Saran Perbaikan :", x, y, labelWidth, baseHeight, fontBold, 9, "left");
+    x += labelWidth;
+
+    page.drawRectangle({
+        x: x,
+        y: y - baseHeight,
+        width: valueWidth,
+        height: baseHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.result_ak05?.improvement_suggestions ?? "-", x + 5, y, valueWidth, baseHeight, font, 9, "left");
+    y -= baseHeight;
+    x = startX;
+
+    y -= 15;
+
+    // === Left Section - Catatan ===
+    const leftWidth = maxWidth / 2;
+    const rightWidth = maxWidth / 2;
+
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight * 7,
+        width: leftWidth,
+        height: rowHeight * 7,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Catatan :", startX, y, leftWidth, rowHeight, fontBold, 9, "left");
+
+    // === Right Section - Asesor ===
+    const rightX = startX + leftWidth;
+    page.drawRectangle({
+        x: rightX,
+        y: y - rowHeight,
+        width: rightWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Asesor :", rightX, y, rightWidth, rowHeight, fontBold, 9, "left");
+    y -= rowHeight;
+
+    // Asesor - Nama
+    page.drawRectangle({
+        x: rightX,
+        y: y - rowHeight,
+        width: rightWidth / 2,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Nama", rightX, y, rightWidth / 2, rowHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: rightX + rightWidth / 2,
+        y: y - rowHeight,
+        width: rightWidth / 2,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessor?.name ?? "-", rightX + rightWidth / 2, y, rightWidth / 2, rowHeight, fontBold, 9, "left");
+    y -= rowHeight;
+
+    // Asesor - No Reg
+    page.drawRectangle({
+        x: rightX,
+        y: y - rowHeight,
+        width: rightWidth / 2,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "No. Reg", rightX, y, rightWidth / 2, rowHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: rightX + rightWidth / 2,
+        y: y - rowHeight,
+        width: rightWidth / 2,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessor?.no_reg_met ?? "-", rightX + rightWidth / 2, y, rightWidth / 2, rowHeight, fontBold, 9, "left");
+    y -= rowHeight;
+
+    // Asesor - Tanda Tangan/Tanggal
+    page.drawRectangle({
+        x: rightX,
+        y: y - rowHeight * 4,
+        width: rightWidth / 2,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Tanda tangan/ Tanggal", rightX, y, rightWidth / 2, rowHeight * 4, font, 9, "left");
+
+    page.drawRectangle({
+        x: rightX + rightWidth / 2,
+        y: y - rowHeight * 4,
+        width: rightWidth / 2,
+        height: rowHeight * 4,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    if (data.result_ak05?.approved_assessor) {
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessor?.signature,
+            getAssessorUrl(data.assessor.id),
+            rightX + rightWidth / 2 + (rightWidth / 2 / 2 - qrSize / 2),
+            y - qrSize - 5,
+            qrSize
+        );
+    }
+    drawCellText(page, formatDate(new Date()), rightX + rightWidth / 2, y - qrSize, rightWidth / 2, rowHeight, fontBold, 9, "center");
+
+    y -= rowHeight * 2;
+
+    return y;
+}
+
+
+export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01, drawIA05AnswerTable as drawIA05QuestionTable, drawFeedbackIA05, drawFeedbackAK05 };
 
 

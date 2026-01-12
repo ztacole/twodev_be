@@ -26,6 +26,7 @@ interface AssesseeResponse {
     office_phone_no?: string;
     address: string;
     postal_code: string;
+    signature?: string;
     educational_qualifications: string;
     job: AssesseeJobResponse;
     assessment: AssessmentDetailsResponse;

@@ -5,11 +5,11 @@ import { asyncHandler } from "../../../common/async.handler";
 export class ResultPdfController {
     static generateApl02 = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
-        const pdfBytes = await ResultPdfService.generateApl02(resultId);
+        const { pdfBytes, assesseeName } = await ResultPdfService.generateApl02(resultId);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            "attachment; filename=\"APL-02.pdf\""
+            `attachment; filename="${assesseeName}-APL-02.pdf"`
         );
         res.send(Buffer.from(pdfBytes));
     })
@@ -17,11 +17,11 @@ export class ResultPdfController {
     static generateIA01 = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
 
-        const pdfBytes = await ResultPdfService.generateIA01(resultId);
+        const { pdfBytes, assesseeName } = await ResultPdfService.generateIA01(resultId);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            "attachment; filename=\"IA-01.pdf\""
+            `attachment; filename="${assesseeName}-IA-01.pdf"`
         );
         res.send(Buffer.from(pdfBytes));
     })
@@ -29,11 +29,11 @@ export class ResultPdfController {
     static generateAPL01 = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
 
-        const pdfBytes = await ResultPdfService.generateAPL01(resultId);
+        const {pdfBytes, assesseeName} = await ResultPdfService.generateAPL01(resultId);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            "attachment; filename=\"APL-01.pdf\""
+            `attachment; filename="${assesseeName}-APL-01.pdf"`
         );
         res.send(Buffer.from(pdfBytes));
     });
@@ -41,11 +41,11 @@ export class ResultPdfController {
     static generateAK01 = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
 
-        const pdfBytes = await ResultPdfService.generateAK01(resultId);
+        const {pdfBytes, assesseeName} = await ResultPdfService.generateAK01(resultId);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            "attachment; filename=\"AK-01.pdf\""
+            `attachment; filename="${assesseeName}-AK-01.pdf"`
         );
         res.send(Buffer.from(pdfBytes));
     })
@@ -53,11 +53,11 @@ export class ResultPdfController {
     static generateAK02 = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
 
-        const pdfBytes = await ResultPdfService.generateAK02(resultId);
+        const {pdfBytes, assesseeName} = await ResultPdfService.generateAK02(resultId);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            "attachment; filename=\"AK-02.pdf\""
+            `attachment; filename="${assesseeName}-AK-02.pdf"`
         );
         res.send(Buffer.from(pdfBytes));
     })
@@ -65,11 +65,11 @@ export class ResultPdfController {
     static generateIA03 = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
 
-        const pdfBytes = await ResultPdfService.generateIA03(resultId);
+        const {pdfBytes, assesseeName} = await ResultPdfService.generateIA03(resultId);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            "attachment; filename=\"IA-03.pdf\""
+            `attachment; filename="${assesseeName}-IA-03.pdf"`
         );
         res.send(Buffer.from(pdfBytes));
     })
@@ -77,11 +77,23 @@ export class ResultPdfController {
     static generateIA05 = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
 
-        const pdfBytes = await ResultPdfService.generateIA05(resultId);
+        const {pdfBytes, assesseeName} = await ResultPdfService.generateIA05(resultId);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            "attachment; filename=\"IA-05.pdf\""
+            `attachment; filename="${assesseeName}-IA-05.pdf"`
+        );
+        res.send(Buffer.from(pdfBytes));
+    })
+
+    static generateAK05 = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+
+        const {pdfBytes, assesseeName} = await ResultPdfService.generateAK05(resultId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${assesseeName}-AK-05.pdf"`
         );
         res.send(Buffer.from(pdfBytes));
     })
