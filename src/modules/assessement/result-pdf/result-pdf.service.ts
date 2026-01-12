@@ -4,7 +4,7 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCellText, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawFeedbackAK01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight } from "./helper";
+import { createNewPage, drawCellText, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawFeedbackAK01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight, drawIA05QuestionTable, drawFeedbackIA05 } from "./helper";
 import { IA03Service } from "../ia-03/ia-03.service";
 import { formatDate, formatDay } from "../../../helper/date.helper";
 import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
@@ -14,6 +14,7 @@ import { AK02Service } from "../ak-02/ak-02.service";
 import { AK01Service } from "../ak-01/ak-01.service";
 import { he } from "@faker-js/faker/.";
 import { APL02Service } from "../apl-02/apl-02.service";
+import { IA05Service } from "../ia-05/ia-05.service";
 
 const BASE_MARGIN = 150;
 const ELEMENT_ROW_HEIGHT = 20;
@@ -68,7 +69,7 @@ export class ResultPdfService {
             ["TUK", ":", resultDetails?.tuk ?? "-"],
             ["Nama Assesor", ":", resultDetails?.assessor?.name ?? "-"],
             ["Nama Asesee", ":", resultDetails?.assessee?.name ?? "-"],
-            ["Tanggal", ":", formatDate(resultDetails?.created_at) ?? "-"],
+            ["Tanggal", ":", resultDetails?.created_at ? `${formatDay(resultDetails.created_at)}, ${formatDate(resultDetails.created_at)}` : "-"],
         ];
         y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
         y -= 30;
@@ -135,7 +136,7 @@ export class ResultPdfService {
             ["TUK", ":", resultDetails?.tuk ?? "-"],
             ["Nama Assesor", ":", resultDetails?.assessor?.name ?? "-"],
             ["Nama Asesi", ":", resultDetails?.assessee?.name ?? "-"],
-            ["Tanggal", ":", resultDetails?.assessment?.created_at ? `${formatDay(resultDetails.assessment.created_at)}, ${formatDate(resultDetails.assessment.created_at)}` : "-"],
+            ["Tanggal", ":", resultDetails?.created_at ? `${formatDay(resultDetails.created_at)}, ${formatDate(resultDetails.created_at)}` : "-"],
         ];
         y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
 
@@ -456,7 +457,7 @@ export class ResultPdfService {
             ["TUK", ":", resultDetails?.tuk ?? "-"],
             ["Nama Asesor", ":", resultDetails?.assessor?.name ?? "-"],
             ["Nama Asesi", ":", resultDetails?.assessee?.name ?? "-"],
-            ["Tanggal", ":", formatDate(resultDetails?.created_at) ?? "-"],
+            ["Tanggal", ":", resultDetails?.created_at ? `${formatDay(resultDetails.created_at)}, ${formatDate(resultDetails.created_at)}` : "-"],
         ];
 
         for (const row of detailData) {
@@ -489,7 +490,7 @@ export class ResultPdfService {
         const selectedEvidences = resultDetails.ak01_header.rows.map((row: any) => row.evidence.toLowerCase());
 
         const evidenceBoxHeight = 90;
-        
+
         // Label "Bukti yang dikumpulkan"
         page.drawRectangle({ x: 40, y: y - evidenceBoxHeight, width: schemeHeaderWidth + labelWidth, height: evidenceBoxHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
         drawCellText(page, "Bukti yang dikumpulkan", 40, y - evidenceBoxHeight / 2 + 10, schemeHeaderWidth + labelWidth, 20, font, 9, "left");
@@ -525,8 +526,8 @@ export class ResultPdfService {
             });
 
             // Check if selected
-            const isSelected = selectedEvidences.some((sel: string) => 
-                sel.includes(allEvidenceTypes[i].toLowerCase()) || 
+            const isSelected = selectedEvidences.some((sel: string) =>
+                sel.includes(allEvidenceTypes[i].toLowerCase()) ||
                 allEvidenceTypes[i].toLowerCase().includes(sel)
             );
             if (isSelected) {
@@ -540,10 +541,10 @@ export class ResultPdfService {
         y -= evidenceBoxHeight;
 
         // === PELAKSANAAN ASESMEN ===
-        const startDate = resultDetails?.schedule?.start_date 
+        const startDate = resultDetails?.schedule?.start_date
             ? `${formatDay(resultDetails.schedule.start_date)}, ${formatDate(resultDetails.schedule.start_date)}`
             : "-";
-        const endDate = resultDetails?.schedule?.end_date 
+        const endDate = resultDetails?.schedule?.end_date
             ? `${formatDay(resultDetails.schedule.end_date)}, ${formatDate(resultDetails.schedule.end_date)}`
             : "-";
 
@@ -696,7 +697,7 @@ export class ResultPdfService {
             ["TUK", ":", resultDetails?.tuk ?? "-"],
             ["Nama Asesor", ":", resultDetails?.assessor?.name ?? "-"],
             ["Nama Asesi", ":", resultDetails?.assessee?.name ?? "-"],
-            ["Tanggal", ":", resultDetails?.created_at ? formatDate(resultDetails.created_at) : "-"],
+            ["Tanggal", ":", resultDetails?.created_at ? `${formatDay(resultDetails.created_at)}, ${formatDate(resultDetails.created_at)}` : "-"],
         ];
         y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
         y -= 20;
@@ -706,103 +707,41 @@ export class ResultPdfService {
             const group = groups[groupIdx];
 
             // === GROUP HEADER WITH MERGED CELL ===
-            
+
             // Calculate table height based on number of units
             const unitRowHeight = 25;
             const unitTableHeight = (group.units.length + 1) * unitRowHeight; // +1 for header
-            
+
             // Check if we need a page break before drawing the unit table
             if (y - unitTableHeight - 20 < BASE_MARGIN) {
                 ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
             }
-            
+
             y -= 20;
-            
-            // Left merged cell - "Kelompok Pekerjaan X"
-            const leftColWidth = 100;
-            const rightTableWidth = 415;
-            
-            page.drawRectangle({
-                x: 40,
-                y: y - unitTableHeight,
-                width: leftColWidth,
-                height: unitTableHeight,
-                borderColor: rgb(0, 0, 0),
-                borderWidth: 1,
-            });
-            
-            // Draw group name vertically centered
-            const groupText = `Kelompok`;
-            const groupText2 = `Pekerjaan ${groupIdx + 1}`;
-            const textY = y - (unitTableHeight / 2);
-            page.drawText(groupText, { x: 55, y: textY + 8, size: 10, font: fontBold });
-            page.drawText(groupText2, { x: 50, y: textY - 8, size: 10, font: fontBold });
-            
-            // Unit table headers
-            const unitColWidths = [35, 130, 250];
-            let tableX = 40 + leftColWidth;
-            let tableY = y;
-            
-            // Header row
-            const headers = ["No.", "Kode Unit", "Judul Unit"];
-            let headerX = tableX;
-            for (let i = 0; i < headers.length; i++) {
-                page.drawRectangle({
-                    x: headerX,
-                    y: tableY - unitRowHeight,
-                    width: unitColWidths[i],
-                    height: unitRowHeight,
-                    borderColor: rgb(0, 0, 0),
-                    borderWidth: 1,
-                });
-                drawCellText(page, headers[i], headerX, tableY, unitColWidths[i], unitRowHeight, fontBold, 9, "center");
-                headerX += unitColWidths[i];
-            }
-            tableY -= unitRowHeight;
-            
-            // Unit rows
-            for (let unitIdx = 0; unitIdx < group.units.length; unitIdx++) {
-                const unit = group.units[unitIdx];
-                let rowX = tableX;
-                const rowData = [String(unitIdx + 1) + ".", unit.unit_code, unit.title];
-                
-                for (let colIdx = 0; colIdx < rowData.length; colIdx++) {
-                    page.drawRectangle({
-                        x: rowX,
-                        y: tableY - unitRowHeight,
-                        width: unitColWidths[colIdx],
-                        height: unitRowHeight,
-                        borderColor: rgb(0, 0, 0),
-                        borderWidth: 1,
-                    });
-                    const align = colIdx === 0 ? "center" : "left";
-                    drawCellText(page, rowData[colIdx], rowX, tableY, unitColWidths[colIdx], unitRowHeight, font, 9, align);
-                    rowX += unitColWidths[colIdx];
-                }
-                tableY -= unitRowHeight;
-            }
-            
-            y = tableY - 20;
+
+            y = await drawUnitGroupLayout(page, pdfDoc, groupIdx, group, 40, y, 20, font, fontBold);
+
+            y -= 20;
 
             // === QUESTIONS TABLE ===
             if (group.questions && group.questions.length > 0) {
                 const noColWidth = 50;
-                const questionColWidth = 365;
+                const questionColWidth = 370;
                 const yaColWidth = 50;
                 const tdkColWidth = 50;
                 const totalWidth = noColWidth + questionColWidth + yaColWidth + tdkColWidth;
                 const qRowHeight = 30;
                 const tanggapanRowHeight = 70;
                 const headerHeight = qRowHeight * 2;
-                
+
                 // Check if we need a page break for the question table header
                 if (y - headerHeight < BASE_MARGIN) {
                     ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
                 }
-                
+
                 let qX = 40;
                 let qY = y;
-                
+
                 // Header row 1 - "Pertanyaan" merged (spans No + Question columns, 2 rows height)
                 page.drawRectangle({
                     x: qX,
@@ -813,7 +752,7 @@ export class ResultPdfService {
                     borderWidth: 1,
                 });
                 drawCellText(page, "Pertanyaan", qX, qY - qRowHeight / 2, noColWidth + questionColWidth, qRowHeight, fontBold, 10, "center");
-                
+
                 // "Pencapaian" header spanning Ya and Tdk
                 page.drawRectangle({
                     x: qX + noColWidth + questionColWidth,
@@ -824,7 +763,7 @@ export class ResultPdfService {
                     borderWidth: 1,
                 });
                 drawCellText(page, "Pencapaian", qX + noColWidth + questionColWidth, qY, yaColWidth + tdkColWidth, qRowHeight, fontBold, 9, "center");
-                
+
                 // Ya and Tdk sub-headers
                 page.drawRectangle({
                     x: qX + noColWidth + questionColWidth,
@@ -835,7 +774,7 @@ export class ResultPdfService {
                     borderWidth: 1,
                 });
                 drawCellText(page, "Ya", qX + noColWidth + questionColWidth, qY - qRowHeight, yaColWidth, qRowHeight, fontBold, 9, "center");
-                
+
                 page.drawRectangle({
                     x: qX + noColWidth + questionColWidth + yaColWidth,
                     y: qY - qRowHeight * 2,
@@ -845,25 +784,25 @@ export class ResultPdfService {
                     borderWidth: 1,
                 });
                 drawCellText(page, "Tdk", qX + noColWidth + questionColWidth + yaColWidth, qY - qRowHeight, tdkColWidth, qRowHeight, fontBold, 9, "center");
-                
+
                 qY -= qRowHeight * 2;
-                
+
                 // Question rows
                 for (let qIdx = 0; qIdx < group.questions.length; qIdx++) {
                     const q = group.questions[qIdx];
                     const answer = q.result?.answer ?? "";
                     const isApproved = q.result?.approved ?? false;
                     const hasResult = q.result !== null;
-                    
+
                     // Calculate total height needed for this question (question row + tanggapan row)
                     const questionTotalHeight = qRowHeight + tanggapanRowHeight;
-                    
+
                     // Check if need page break (need space for question row + tanggapan row)
                     if (qY - questionTotalHeight < BASE_MARGIN) {
                         ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
                         qY = y;
                     }
-                    
+
                     // === Question Row ===
                     // No. cell
                     page.drawRectangle({
@@ -875,7 +814,7 @@ export class ResultPdfService {
                         borderWidth: 1,
                     });
                     drawCellText(page, `${qIdx + 1}.`, qX, qY, noColWidth, qRowHeight, font, 9, "center");
-                    
+
                     // Question text cell (spans question + Ya + Tdk columns)
                     page.drawRectangle({
                         x: qX + noColWidth,
@@ -886,9 +825,9 @@ export class ResultPdfService {
                         borderWidth: 1,
                     });
                     drawCellText(page, q.question, qX + noColWidth, qY, questionColWidth + yaColWidth + tdkColWidth, qRowHeight, font, 9, "left");
-                    
+
                     qY -= qRowHeight;
-                    
+
                     // === Tanggapan Row ===
                     // "Tanggapan:" label + answer area (spans No + Question columns)
                     page.drawRectangle({
@@ -904,7 +843,7 @@ export class ResultPdfService {
                     if (answer) {
                         drawCellText(page, answer, qX, qY - 20, noColWidth + questionColWidth, tanggapanRowHeight - 20, font, 9, "left");
                     }
-                    
+
                     // Ya checkbox cell
                     page.drawRectangle({
                         x: qX + noColWidth + questionColWidth,
@@ -929,7 +868,7 @@ export class ResultPdfService {
                     if (isApproved) {
                         page.drawText("V", { x: checkboxX + 2, y: checkboxY + 2, size: 10, font: fontBold });
                     }
-                    
+
                     // Tdk checkbox cell
                     page.drawRectangle({
                         x: qX + noColWidth + questionColWidth + yaColWidth,
@@ -952,10 +891,10 @@ export class ResultPdfService {
                     if (!isApproved && hasResult) {
                         page.drawText("V", { x: checkboxX2 + 2, y: checkboxY + 2, size: 10, font: fontBold });
                     }
-                    
+
                     qY -= tanggapanRowHeight;
                 }
-                
+
                 y = qY;
             }
 
@@ -971,5 +910,48 @@ export class ResultPdfService {
         return await pdfDoc.save();
     }
 
+    static async generateIA05(resultId: number) {
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
+        let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
+
+        const resultDetails = await IA05Service.getResultDetails(resultId);
+
+        const ia05Answers = await IA05Service.getAssesseeAnswers(resultId);
+
+        // ==== TITLE ====
+        page.drawText(
+            "FR.IA.05.C. LEMBAR JAWABAN PILIHAN GANDA",
+            { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 }
+        );
+        y -= 30;
+
+        // ==== INFO SKEMA ====
+        const info = [
+            ["Judul", ":", resultDetails?.assessment?.occupation?.name ?? "-"],
+            ["Nomor", ":", resultDetails?.assessment?.code ?? "-"],
+            ["TUK", ":", resultDetails?.tuk ?? "-"],
+            ["Nama Assesor", ":", resultDetails?.assessor?.name ?? "-"],
+            ["Nama Asesi", ":", resultDetails?.assessee?.name ?? "-"],
+            ["Tanggal", ":", resultDetails?.created_at ? `${formatDay(resultDetails.created_at)}, ${formatDate(resultDetails.created_at)}` : "-"],
+        ];
+        y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+
+        y -= 30;
+
+        // ==== DRAW QUESTION TABLE ====
+        ({ page, y } = await drawIA05QuestionTable(pdfDoc, page, ia05Answers, 40, y, font, fontBold, headerImage, BASE_MARGIN));
+
+        y -= 30;
+
+        // ==== DRAW FEEDBACK SECTION ====
+        if (y < BASE_MARGIN + 200) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+        }
+        y = await drawFeedbackIA05(pdfDoc, page, resultDetails, 40, y, font, fontBold);
+
+        return await pdfDoc.save();
+    }
 }

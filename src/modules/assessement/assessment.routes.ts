@@ -153,6 +153,7 @@ router.post('/ia-05/result/assessor/send', authenticateToken, assessorMiddleware
 router.put('/ia-05/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, IA05Controller.approvedByAssessor);
 router.put('/ia-05/result/assessee/:resultId/approve', authenticateToken, assesseeMiddleware, IA05Controller.approvedByAssessee);
 router.get('/ia-05/result/:resultId', IA05Controller.getResultDetails);
+router.get('/ia-05/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateIA05);
 
 router.post('/ak-01', authenticateToken, assessorMiddleware, AK01Controller.createAK01);
 router.get('/ak-01/:id', AK01Controller.getAK01ById);

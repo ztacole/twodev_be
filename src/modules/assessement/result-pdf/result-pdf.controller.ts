@@ -73,4 +73,16 @@ export class ResultPdfController {
         );
         res.send(Buffer.from(pdfBytes));
     })
+
+    static generateIA05 = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+
+        const pdfBytes = await ResultPdfService.generateIA05(resultId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            "attachment; filename=\"IA-05.pdf\""
+        );
+        res.send(Buffer.from(pdfBytes));
+    })
 }

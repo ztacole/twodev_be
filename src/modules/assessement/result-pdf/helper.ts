@@ -519,7 +519,7 @@ export async function drawElementApl02Layout(
     ]);
     drawHeader();
     ({ page, y } = await drawTable(page, pdfDoc, data, colWidths, startX, y, rowHeight, font, fontBold, bottomMargin, 9, "left", false));
-    
+
 
     return { page, y };
 }
@@ -1639,7 +1639,7 @@ async function drawSignatureAPL01(
     const leftSectionWidth = maxWidth / 2;
     const leftSectionX = startX;
     const initialY = y;
-    
+
     const leftSectionHeight = rowHeight * 12;
 
     page.drawRectangle({
@@ -1656,7 +1656,7 @@ async function drawSignatureAPL01(
         y: y - 12,
         size: 9,
         font: fontBold,
-    });      
+    });
     drawMixedParagraph(
         page,
         [
@@ -1692,7 +1692,7 @@ async function drawSignatureAPL01(
         data.note ?? "",
         leftSectionX + 5,
         catatanY - 24,
-        font, 
+        font,
         9,
         "left",
         rgb(0, 0, 0),
@@ -2228,4 +2228,640 @@ async function drawFeedbackIA03(
     return y;
 }
 
-export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01 };
+async function drawIA05AnswerTable(
+    pdfDoc: PDFDocument,
+    page: PDFPage,
+    questions: any[],
+    startX: number,
+    startY: number,
+    font: PDFFont,
+    fontBold: PDFFont,
+    headerImage: any,
+    bottomMargin: number
+): Promise<{ page: PDFPage, y: number }> {
+    let y = startY;
+    const pageWidth = page.getWidth();
+    const margin = 40;
+    const totalWidth = pageWidth - (margin * 2);
+    const columnGap = 20;
+    const columnWidth = (totalWidth - columnGap) / 2;
+
+    // Column widths for each table
+    const noColWidth = 30;
+    const checkboxColWidth = 36;
+    const jawabanColWidth = columnWidth - noColWidth - (checkboxColWidth * 2);
+
+    const baseRowHeight = 20;
+
+    // Split questions into two columns
+    const questionsPerColumn = Math.ceil(questions.length / 2);
+    const leftQuestions = questions.slice(0, questionsPerColumn);
+    const rightQuestions = questions.slice(questionsPerColumn);
+
+    // Draw headers for both columns
+    const drawColumnHeader = (x: number) => {
+        let headerX = x;
+        const headers = ["No.", "Jawaban", "Pencapaian"];
+        const widths = [noColWidth, jawabanColWidth, checkboxColWidth * 2];
+
+        let maxRowHeight = baseRowHeight;
+
+        const cellHeights = headers.map((cell, idx) => {
+            return calculateTextHeight(cell, widths[idx], fontBold, 9);
+        });
+
+        maxRowHeight = Math.max(baseRowHeight, ...cellHeights) + /* Font size 9*2 + text height 4/2 */((9 * 2) + (4 / 2));
+
+        headers.forEach((cell, idx) => {
+            const w = widths[idx];
+            page.drawRectangle({
+                x: headerX,
+                y: y - maxRowHeight,
+                width: w,
+                height: maxRowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+
+            drawCellText(page, cell, headerX, y, w, maxRowHeight, fontBold, 9, "center");
+
+            if (idx === 2) {
+                const half = w / 2;
+                page.drawRectangle({ x: headerX, y: y - maxRowHeight, width: half, height: maxRowHeight / 2, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+                page.drawRectangle({ x: headerX + half, y: y - maxRowHeight, width: half, height: maxRowHeight / 2, borderColor: rgb(0, 0, 0), borderWidth: 1 });
+
+                drawCellText(page, "Ya", headerX, y - maxRowHeight / 2, half, maxRowHeight, fontBold, 9, "center");
+                drawCellText(page, "Tidak", headerX + half, y - maxRowHeight / 2, half, maxRowHeight, fontBold, 9, "center");
+            }
+
+            headerX += w;
+        });
+    };
+
+    // Draw both column headers
+    drawColumnHeader(startX);
+    drawColumnHeader(startX + columnWidth + columnGap);
+
+    y -= baseRowHeight * 2.5;
+
+    // Draw question rows
+    const maxRows = Math.max(leftQuestions.length, rightQuestions.length);
+
+    for (let i = 0; i < maxRows; i++) {
+        // Calculate row height based on answer text length
+        let rowHeight = baseRowHeight;
+
+        // Check left question answer length
+        if (i < leftQuestions.length && leftQuestions[i].answers?.option) {
+            const leftAnswerHeight = calculateTextHeight(
+                leftQuestions[i].answers.option,
+                jawabanColWidth,
+                font,
+                9
+            );
+            rowHeight = Math.max(rowHeight, leftAnswerHeight);
+        }
+
+        // Check right question answer length
+        if (i < rightQuestions.length && rightQuestions[i].answers?.option) {
+            const rightAnswerHeight = calculateTextHeight(
+                rightQuestions[i].answers.option,
+                jawabanColWidth,
+                font,
+                9
+            );
+            rowHeight = Math.max(rowHeight, rightAnswerHeight);
+        }
+
+        // Check if we need a new page
+        if (y - rowHeight < bottomMargin) {
+            ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+            // Redraw headers on new page
+            drawColumnHeader(startX);
+            drawColumnHeader(startX + columnWidth + columnGap);
+            y -= baseRowHeight * 2;
+        }
+
+        // Draw left column question
+        if (i < leftQuestions.length) {
+            const question = leftQuestions[i];
+            const questionNo = i + 1;
+            const answerText = question.answers?.option ?? "";
+            const isCorrect = question.answers?.approved ?? false;
+
+            let x = startX;
+
+            // No. column
+            page.drawRectangle({
+                x,
+                y: y - rowHeight,
+                width: noColWidth,
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            drawCellText(page, `${questionNo}.`, x, y, noColWidth, rowHeight, font, 9, "center");
+            x += noColWidth;
+
+            // Jawaban column with answer text
+            page.drawRectangle({
+                x,
+                y: y - rowHeight,
+                width: jawabanColWidth,
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            if (answerText) {
+                drawCellText(page, answerText, x, y, jawabanColWidth, rowHeight, font, 9, "left");
+            }
+            x += jawabanColWidth;
+
+            // Ya checkbox
+            page.drawRectangle({
+                x,
+                y: y - rowHeight,
+                width: checkboxColWidth,
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            // Draw checkbox
+            const checkboxSize = 10;
+            const checkboxX = x + (checkboxColWidth - checkboxSize) / 2;
+            const checkboxY = y - rowHeight / 2 - checkboxSize / 2;
+            page.drawRectangle({
+                x: checkboxX,
+                y: checkboxY,
+                width: checkboxSize,
+                height: checkboxSize,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            // Mark if correct
+            if (isCorrect) {
+                page.drawText("V", {
+                    x: checkboxX + 1,
+                    y: checkboxY + 1,
+                    size: 9,
+                    font: fontBold
+                });
+            }
+            x += checkboxColWidth;
+
+            // Tidak checkbox
+            page.drawRectangle({
+                x,
+                y: y - rowHeight,
+                width: checkboxColWidth,
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            // Draw checkbox
+            const checkboxX2 = x + (checkboxColWidth - checkboxSize) / 2;
+            page.drawRectangle({
+                x: checkboxX2,
+                y: checkboxY,
+                width: checkboxSize,
+                height: checkboxSize,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            // Mark if incorrect
+            if (!isCorrect && answerText) {
+                page.drawText("V", {
+                    x: checkboxX2 + 1,
+                    y: checkboxY + 1,
+                    size: 9,
+                    font: fontBold
+                });
+            }
+        }
+
+        // Draw right column question
+        if (i < rightQuestions.length) {
+            const question = rightQuestions[i];
+            const questionNo = questionsPerColumn + i + 1;
+            const answerText = question.answers?.option ?? "";
+            const isCorrect = question.answers?.approved ?? false;
+
+            let x = startX + columnWidth + columnGap;
+
+            // No. column
+            page.drawRectangle({
+                x,
+                y: y - rowHeight,
+                width: noColWidth,
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            drawCellText(page, `${questionNo}.`, x, y, noColWidth, rowHeight, font, 9, "center");
+            x += noColWidth;
+
+            // Jawaban column with answer text
+            page.drawRectangle({
+                x,
+                y: y - rowHeight,
+                width: jawabanColWidth,
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            if (answerText) {
+                drawCellText(page, answerText, x, y, jawabanColWidth, rowHeight, font, 9, "left");
+            }
+            x += jawabanColWidth;
+
+            // Ya checkbox
+            page.drawRectangle({
+                x,
+                y: y - rowHeight,
+                width: checkboxColWidth,
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            // Draw checkbox
+            const checkboxSize = 10;
+            const checkboxX = x + (checkboxColWidth - checkboxSize) / 2;
+            const checkboxY = y - rowHeight / 2 - checkboxSize / 2;
+            page.drawRectangle({
+                x: checkboxX,
+                y: checkboxY,
+                width: checkboxSize,
+                height: checkboxSize,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            // Mark if correct
+            if (isCorrect) {
+                page.drawText("V", {
+                    x: checkboxX + 1,
+                    y: checkboxY + 1,
+                    size: 9,
+                    font: fontBold
+                });
+            }
+            x += checkboxColWidth;
+
+            // Tidak checkbox
+            page.drawRectangle({
+                x,
+                y: y - rowHeight,
+                width: checkboxColWidth,
+                height: rowHeight,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            // Draw checkbox
+            const checkboxX2 = x + (checkboxColWidth - checkboxSize) / 2;
+            page.drawRectangle({
+                x: checkboxX2,
+                y: checkboxY,
+                width: checkboxSize,
+                height: checkboxSize,
+                borderColor: rgb(0, 0, 0),
+                borderWidth: 1,
+            });
+            // Mark if incorrect
+            if (!isCorrect && answerText) {
+                page.drawText("V", {
+                    x: checkboxX2 + 1,
+                    y: checkboxY + 1,
+                    size: 9,
+                    font: fontBold
+                });
+            }
+        }
+
+        y -= rowHeight;
+    }
+
+    return { page, y };
+}
+
+async function drawFeedbackIA05(
+    pdfDoc: PDFDocument,
+    page: PDFPage,
+    data: any,
+    startX: number,
+    startY: number,
+    font: PDFFont,
+    fontBold: PDFFont
+): Promise<number> {
+    let y = startY;
+    const maxWidth = 520;
+    const labelWidth = 150;
+    const colonWidth = 11;
+    const valueWidth = maxWidth - labelWidth - colonWidth;
+
+    // === Umpan balik untuk asesi (kotak besar) ===
+    const feedbackHeight = 80;
+
+    // Draw outer box
+    page.drawRectangle({
+        x: startX,
+        y: y - feedbackHeight,
+        width: labelWidth,
+        height: feedbackHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Umpan balik untuk asesi", startX, y, labelWidth, feedbackHeight, fontBold, 9, "left");
+
+    // Draw colon
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - feedbackHeight,
+        width: colonWidth,
+        height: feedbackHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, feedbackHeight, font, 9, "center");
+
+    // Draw feedback content
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - feedbackHeight,
+        width: valueWidth,
+        height: feedbackHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    const feedbackText1 = `Aspek pengetahuan seluruh unit kompetensi yang diujikan (${data.ia05_header.is_achieved ? "tercapai" : "belum tercapai"})`;
+    const feedbackText2 = `Tuliskan unit/elemen/KUK jika belum tercapai: ....`;
+
+    let feedbackY = y - 15;
+    feedbackY = drawParagraph(page, feedbackText1, startX + labelWidth + colonWidth + 5, feedbackY, font, 9, "left", rgb(0, 0, 0), valueWidth - 10, 12);
+    feedbackY = drawParagraph(page, feedbackText2, startX + labelWidth + colonWidth + 5, feedbackY - 5, font, 9, "left", rgb(0, 0, 0), valueWidth - 10, 12);
+
+    y -= feedbackHeight;
+
+    // === Asesi Section ===
+    const rowHeight = 20;
+
+    // Asesi header
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Asesi :", startX, y, labelWidth, rowHeight, fontBold, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    y -= rowHeight;
+
+    // Nama
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Nama", startX, y, labelWidth, rowHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, rowHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessee?.name ?? "-", startX + labelWidth + colonWidth, y, valueWidth, rowHeight, font, 9, "left");
+
+    y -= rowHeight;
+
+    // Tanda tangan/Tanggal
+    const signatureHeight = rowHeight * 3;
+    page.drawRectangle({
+        x: startX,
+        y: y - signatureHeight,
+        width: labelWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Tanda tangan/Tanggal", startX, y, labelWidth, signatureHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - signatureHeight,
+        width: colonWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, signatureHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - signatureHeight,
+        width: valueWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    // Add QR code if approved
+    if (data.ia05_header?.approved_assessee) {
+        const qrSize = 50;
+        const asesiQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssesseeUrl(data.assessee.id)));
+        page.drawImage(asesiQrImage, {
+            x: startX + labelWidth + colonWidth + 10,
+            y: y - signatureHeight + 5,
+            width: qrSize,
+            height: qrSize
+        });
+        drawCellText(page, formatDate(data.ia05_header.updated_at), startX + labelWidth + colonWidth + qrSize + 15, y - signatureHeight / 2, valueWidth - qrSize - 15, signatureHeight, font, 9, "left");
+    }
+
+    y -= signatureHeight;
+
+    // === Asesor Section ===
+
+    // Asesor header
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Asesor :", startX, y, labelWidth, rowHeight, fontBold, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    y -= rowHeight;
+
+    // Nama
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Nama", startX, y, labelWidth, rowHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, rowHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessor?.name ?? "-", startX + labelWidth + colonWidth, y, valueWidth, rowHeight, font, 9, "left");
+
+    y -= rowHeight;
+
+    // No. Reg
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "No. Reg", startX, y, labelWidth, rowHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, rowHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessor?.no_reg_met ?? "-", startX + labelWidth + colonWidth, y, valueWidth, rowHeight, font, 9, "left");
+
+    y -= rowHeight;
+
+    // Tanda tangan/Tanggal
+    page.drawRectangle({
+        x: startX,
+        y: y - signatureHeight,
+        width: labelWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Tanda tangan/Tanggal", startX, y, labelWidth, signatureHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - signatureHeight,
+        width: colonWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, signatureHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - signatureHeight,
+        width: valueWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    // Add QR code if approved
+    if (data.ia05_header?.approved_assessor) {
+        const qrSize = 50;
+        const asesorQrImage = await pdfDoc.embedPng(await generateQrDataURL(getAssessorUrl(data.assessor.id)));
+        page.drawImage(asesorQrImage, {
+            x: startX + labelWidth + colonWidth + 10,
+            y: y - signatureHeight + 5,
+            width: qrSize,
+            height: qrSize
+        });
+        drawCellText(page, formatDate(data.ia05_header.updated_at), startX + labelWidth + colonWidth + qrSize + 15, y - signatureHeight / 2, valueWidth - qrSize - 15, signatureHeight, font, 9, "left");
+    }
+
+    y -= signatureHeight;
+
+    return y;
+}
+
+
+export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01, drawIA05AnswerTable as drawIA05QuestionTable, drawFeedbackIA05 };
+
+
