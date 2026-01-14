@@ -92,8 +92,8 @@ async function buildAK05Response(ak05: any): Promise<AK05Response> {
       id: result.id,
       schedule: schedule,
       assessment: assessment ? { ...assessment, occupation: occupation ? { ...occupation, scheme } : null } : null,
-      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email } as any : null,
-      assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met } as any : null,
+      assessee: assessee && assesseeUser ? { id: assessee.id, name: assesseeUser.full_name, email: assesseeUser.email, signature: assessee.signature } as any : null,
+      assessor: assessor && assessorUser ? { id: assessor.id, name: assessorUser.full_name, email: assessorUser.email, no_reg_met: assessor.no_reg_met, signature: assessor.signature } as any : null,
       tuk: result.tuk,
       created_at: result.created_at,
       result_ak05: {
