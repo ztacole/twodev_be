@@ -1108,7 +1108,7 @@ class AssessmentService {
                 throw new error_1.NotFoundError('Result Document');
             const tabs = [
                 { name: 'APL-01', status: 'Tuntas' },
-                { name: 'Data Sertifikasi', status: doc.approved ? 'Tuntas' : 'Belum Tuntas' },
+                // { name: 'Data Sertifikasi', status: doc.approved ? 'Tuntas' : 'Belum Tuntas' },
                 { name: 'APL-02', status: 'Belum Tuntas' },
                 { name: 'AK-01', status: 'Belum Tuntas' },
                 { name: 'IA-02', status: 'Belum Tuntas' },
