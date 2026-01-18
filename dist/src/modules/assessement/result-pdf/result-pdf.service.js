@@ -23,6 +23,7 @@ const ak_01_service_1 = require("../ak-01/ak-01.service");
 const apl_02_service_1 = require("../apl-02/apl-02.service");
 const ia_05_service_1 = require("../ia-05/ia-05.service");
 const ak_05_service_1 = require("../ak-05/ak-05.service");
+const ak_03_service_1 = require("../ak-03/ak-03.service");
 const BASE_MARGIN = 150;
 const ELEMENT_ROW_HEIGHT = 20;
 const headerImage = "../../public/images/kop-surat-lsp-smkn24j.png";
@@ -756,6 +757,37 @@ class ResultPdfService {
             return {
                 pdfBytes: yield pdfDoc.save(),
                 assesseeName: (_m = (_l = resultDetails.assessee) === null || _l === void 0 ? void 0 : _l.name) !== null && _m !== void 0 ? _m : "unknown",
+            };
+        });
+    }
+    static generateAK03(resultId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c, _d, _e, _f, _g, _h;
+            const pdfDoc = yield pdf_lib_1.PDFDocument.create();
+            const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
+            const fontBold = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.HelveticaBold);
+            let { page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold);
+            const resultDetails = yield ak_03_service_1.AK03Service.getResultDetails(resultId);
+            if (!resultDetails) {
+                throw new Error('AK03 data not found');
+            }
+            page.drawText("FR.AK.03. UMPAN BALIK DAN CATATAN ASESMEN", { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 });
+            y -= 30;
+            // ==== INFO SKEMA ====
+            const assessment = resultDetails.assessment;
+            const info = [
+                ["Judul", ":", (_b = (_a = assessment === null || assessment === void 0 ? void 0 : assessment.occupation) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : "-"],
+                ["Nomor", ":", (_c = assessment === null || assessment === void 0 ? void 0 : assessment.code) !== null && _c !== void 0 ? _c : "-"],
+                ["TUK", ":", (_d = resultDetails.tuk) !== null && _d !== void 0 ? _d : "-"],
+                ["Nama Asesor", ":", (_f = (_e = resultDetails.assessor) === null || _e === void 0 ? void 0 : _e.name) !== null && _f !== void 0 ? _f : "-"],
+                ["Tanggal", ":", resultDetails.created_at ? `${(0, date_helper_1.formatDay)(new Date(resultDetails.created_at))}, ${(0, date_helper_1.formatDate)(new Date(resultDetails.created_at))}` : "-"],
+            ];
+            y = yield (0, helper_1.drawCertificateLayout)(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+            y -= 30;
+            ({ page, y } = yield (0, helper_1.drawAK03QuestionTable)(pdfDoc, page, resultDetails.result_ak03.answers, 40, y, font, fontBold, headerImage, BASE_MARGIN));
+            return {
+                pdfBytes: yield pdfDoc.save(),
+                assesseeName: (_h = (_g = resultDetails.assessee) === null || _g === void 0 ? void 0 : _g.name) !== null && _h !== void 0 ? _h : "unknown",
             };
         });
     }

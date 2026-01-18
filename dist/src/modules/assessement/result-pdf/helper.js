@@ -29,6 +29,7 @@ exports.drawFeedbackAK02 = drawFeedbackAK02;
 exports.drawFeedbackAK01 = drawFeedbackAK01;
 exports.drawIA05QuestionTable = drawIA05AnswerTable;
 exports.drawFeedbackIA05 = drawFeedbackIA05;
+exports.drawAK03QuestionTable = drawAK03QuestionTable;
 exports.drawFeedbackAK05 = drawFeedbackAK05;
 const pdf_lib_1 = require("pdf-lib");
 const pdfAssets_helper_1 = require("../../../helper/pdfAssets.helper");
@@ -2336,6 +2337,162 @@ function drawFeedbackIA05(pdfDoc, page, data, startX, startY, font, fontBold) {
         }
         y -= signatureHeight;
         return y;
+    });
+}
+function drawAK03QuestionTable(pdfDoc, page, questions, startX, startY, font, fontBold, headerImage, bottomMargin) {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b, _c;
+        let y = startY;
+        const pageWidth = page.getWidth();
+        const margin = 40;
+        const totalWidth = pageWidth - (margin * 2);
+        const columnWidth = totalWidth;
+        // Column widths for each table
+        const checkboxColWidth = 36;
+        const commentColWidth = 120;
+        const komponenColWidth = columnWidth - (checkboxColWidth * 2) - commentColWidth;
+        const baseRowHeight = 20;
+        // Draw headers for both columns
+        const drawColumnHeader = (x) => {
+            let headerX = x;
+            const headers = ["Komponen", "Hasil", "Catatan/Komentar Asesi"];
+            const widths = [komponenColWidth, checkboxColWidth * 2, commentColWidth];
+            let maxRowHeight = baseRowHeight;
+            const cellHeights = headers.map((_) => {
+                return maxRowHeight;
+            });
+            maxRowHeight = Math.max(baseRowHeight, ...cellHeights) + /* Font size 9*2 + text height 4/2 */ ((9 * 2) + (4 / 2));
+            headers.forEach((cell, idx) => {
+                const w = widths[idx];
+                page.drawRectangle({
+                    x: headerX,
+                    y: y - maxRowHeight,
+                    width: w,
+                    height: maxRowHeight,
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                drawCellText(page, cell, headerX, y, w, maxRowHeight, fontBold, 9, "center");
+                if (idx === 1) {
+                    const half = w / 2;
+                    page.drawRectangle({ x: headerX, y: y - maxRowHeight, width: half, height: maxRowHeight / 2, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                    page.drawRectangle({ x: headerX + half, y: y - maxRowHeight, width: half, height: maxRowHeight / 2, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1 });
+                    drawCellText(page, "Ya", headerX, y - maxRowHeight / 2, half, maxRowHeight, fontBold, 9, "center");
+                    drawCellText(page, "Tidak", headerX + half, y - maxRowHeight / 2, half, maxRowHeight, fontBold, 9, "center");
+                }
+                headerX += w;
+            });
+        };
+        // Draw both column headers
+        drawColumnHeader(startX);
+        y -= baseRowHeight * 2.5;
+        const rowHeight = questions.map((cell) => {
+            return calculateTextHeight(cell.question, komponenColWidth, fontBold, 9);
+        });
+        for (let i = 0; i < questions.length; i++) {
+            // Calculate row height based on answer text length
+            // Check if we need a new page
+            if (y - rowHeight[i] < bottomMargin) {
+                ({ page, y } = yield createNewPage(pdfDoc, headerImage, fontBold));
+                // Redraw headers on new page
+                drawColumnHeader(startX);
+                y -= baseRowHeight * 2;
+            }
+            // Draw left column question
+            if (i < questions.length) {
+                const question = questions[i];
+                const answerText = (_a = question.question) !== null && _a !== void 0 ? _a : "";
+                const commentText = (_b = question.comment) !== null && _b !== void 0 ? _b : "";
+                const isCorrect = (_c = question.answer) !== null && _c !== void 0 ? _c : false;
+                let x = startX;
+                // Komponen column with komponen text
+                page.drawRectangle({
+                    x,
+                    y: y - rowHeight[i],
+                    width: komponenColWidth,
+                    height: rowHeight[i],
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                if (answerText) {
+                    drawCellText(page, answerText, x, y, komponenColWidth, rowHeight[i], font, 9, "left");
+                }
+                x += komponenColWidth;
+                // Ya checkbox
+                page.drawRectangle({
+                    x,
+                    y: y - rowHeight[i],
+                    width: checkboxColWidth,
+                    height: rowHeight[i],
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                // Draw checkbox
+                const checkboxSize = 10;
+                const checkboxX = x + (checkboxColWidth - checkboxSize) / 2;
+                const checkboxY = y - rowHeight[i] / 2 - checkboxSize / 2;
+                page.drawRectangle({
+                    x: checkboxX,
+                    y: checkboxY,
+                    width: checkboxSize,
+                    height: checkboxSize,
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                // Mark if correct
+                if (isCorrect) {
+                    page.drawText("V", {
+                        x: checkboxX + 1,
+                        y: checkboxY + 1,
+                        size: 9,
+                        font: fontBold
+                    });
+                }
+                x += checkboxColWidth;
+                // Tidak checkbox
+                page.drawRectangle({
+                    x,
+                    y: y - rowHeight[i],
+                    width: checkboxColWidth,
+                    height: rowHeight[i],
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                // Draw checkbox
+                const checkboxX2 = x + (checkboxColWidth - checkboxSize) / 2;
+                page.drawRectangle({
+                    x: checkboxX2,
+                    y: checkboxY,
+                    width: checkboxSize,
+                    height: checkboxSize,
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                // Mark if incorrect
+                if (!isCorrect && answerText) {
+                    page.drawText("V", {
+                        x: checkboxX2 + 1,
+                        y: checkboxY + 1,
+                        size: 9,
+                        font: fontBold
+                    });
+                }
+                x += checkboxColWidth;
+                page.drawRectangle({
+                    x,
+                    y: y - rowHeight[i],
+                    width: commentColWidth,
+                    height: rowHeight[i],
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                });
+                if (commentText) {
+                    drawCellText(page, commentText, x, y, commentColWidth, rowHeight[i], font, 9, "left");
+                }
+            }
+            y -= rowHeight[i];
+        }
+        return { page, y };
     });
 }
 function drawFeedbackAK05(pdfDoc, page, data, startX, startY, rowHeight, font, fontBold) {

@@ -66,6 +66,13 @@ ResultPdfController.generateIA05 = (0, async_handler_1.asyncHandler)((req, res) 
     res.setHeader("Content-Disposition", `attachment; filename="${assesseeName}-IA-05.pdf"`);
     res.send(Buffer.from(pdfBytes));
 }));
+ResultPdfController.generateAK03 = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const resultId = Number(req.params.resultId);
+    const { pdfBytes, assesseeName } = yield result_pdf_service_1.ResultPdfService.generateAK03(resultId);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${assesseeName}-AK-03.pdf"`);
+    res.send(Buffer.from(pdfBytes));
+}));
 ResultPdfController.generateAK05 = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const resultId = Number(req.params.resultId);
     const { pdfBytes, assesseeName } = yield result_pdf_service_1.ResultPdfService.generateAK05(resultId);

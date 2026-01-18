@@ -148,6 +148,7 @@ router.get('/ak-02/result/:resultId/export', auth_middleware_2.authenticateToken
 router.post('/ak-03', ak_03_controller_1.AK03Controller.createAK03);
 router.post('/ak-03/answer', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ak_03_controller_1.AK03Controller.createAnswerAK03);
 router.get('/ak-03/:result_id', ak_03_controller_1.AK03Controller.getAK03ByResultId);
+router.get('/ak-03/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateAK03);
 router.post('/ak-04', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ak_04_controller_1.AK04Controller.createAK04);
 router.get('/ak-04/:resultId', ak_04_controller_1.AK04Controller.getAK04ByResultId);
 router.put('/ak-04/result/assessee/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assesseeMiddleware, ak_04_controller_1.AK04Controller.approvedByAssessee);
