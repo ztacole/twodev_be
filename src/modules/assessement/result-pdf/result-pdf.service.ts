@@ -4,7 +4,7 @@ import path from "path";
 import { kopSurat } from "../../../helper/pdfAssets.helper";
 import { elementIAResponse, GroupIA01Response } from "../ia-01/ia-01.type";
 import { IA01Service } from "../ia-01/ia-01.service";
-import { createNewPage, drawCellText, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawFeedbackAK01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight, drawIA05QuestionTable, drawFeedbackIA05, drawFeedbackAK05 } from "./helper";
+import { createNewPage, drawCellText, drawCertificateLayout, drawCertificateLayoutAK02, drawChecklistTable, drawElementApl02Layout, drawElementIa01Layout, drawFeedbackAK02, drawFeedbackAPL02, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawFeedbackAK01, drawTable, drawUnitGroupLayout, drawUnitLayout, measureElementLayoutHeight, measureUnitLayoutHeight, drawIA05QuestionTable, drawFeedbackIA05, drawAK03QuestionTable, drawFeedbackAK05 } from "./helper";
 import { IA03Service } from "../ia-03/ia-03.service";
 import { formatDate, formatDay } from "../../../helper/date.helper";
 import { drawField, drawParagraph } from "../../../helper/pdfDraw.helper";
@@ -16,6 +16,7 @@ import { he } from "@faker-js/faker/.";
 import { APL02Service } from "../apl-02/apl-02.service";
 import { IA05Service } from "../ia-05/ia-05.service";
 import { AK05Service } from "../ak-05/ak-05.service";
+import { AK03Service } from "../ak-03/ak-03.service";
 
 const BASE_MARGIN = 150;
 const ELEMENT_ROW_HEIGHT = 20;
@@ -970,6 +971,45 @@ export class ResultPdfService {
             ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
         }
         y = await drawFeedbackIA05(pdfDoc, page, resultDetails, 40, y, font, fontBold);
+
+        return {
+            pdfBytes: await pdfDoc.save(),
+            assesseeName: resultDetails.assessee?.name ?? "unknown",
+        };
+    }
+    
+    static async generateAK03(resultId: number) {
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        let { page, y } = await createNewPage(pdfDoc, headerImage, fontBold);
+
+        const resultDetails = await AK03Service.getResultDetails(resultId);
+        if (!resultDetails) {
+            throw new Error('AK03 data not found');
+        }
+
+        page.drawText(
+            "FR.AK.03. UMPAN BALIK DAN CATATAN ASESMEN",
+            { x: 40, y, size: 12, font: fontBold, maxWidth: 520, lineHeight: 16 }
+        );
+        y -= 30;
+
+        // ==== INFO SKEMA ====
+        const assessment = resultDetails.assessment as any;
+        const info = [
+            ["Judul", ":", assessment?.occupation?.name ?? "-"],
+            ["Nomor", ":", assessment?.code ?? "-"],
+            ["TUK", ":", resultDetails.tuk ?? "-"],
+            ["Nama Asesor", ":", resultDetails.assessor?.name ?? "-"],
+            ["Tanggal", ":", resultDetails.created_at ? `${formatDay(new Date(resultDetails.created_at))}, ${formatDate(new Date(resultDetails.created_at))}` : "-"],
+        ];
+        y = await drawCertificateLayout(page, info, [132, 11, 377], 40, y, 20, font, fontBold);
+        
+        y -= 30;
+
+        ({ page, y } = await drawAK03QuestionTable(pdfDoc, page, resultDetails.result_ak03.answers, 40, y, font, fontBold, headerImage, BASE_MARGIN));
 
         return {
             pdfBytes: await pdfDoc.save(),

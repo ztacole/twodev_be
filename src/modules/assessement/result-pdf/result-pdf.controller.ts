@@ -86,6 +86,18 @@ export class ResultPdfController {
         res.send(Buffer.from(pdfBytes));
     })
 
+    static generateAK03 = asyncHandler(async (req: Request, res: Response) => {
+        const resultId = Number(req.params.resultId);
+
+        const {pdfBytes, assesseeName} = await ResultPdfService.generateAK03(resultId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${assesseeName}-AK-03.pdf"`
+        );
+        res.send(Buffer.from(pdfBytes));
+    })
+
     static generateAK05 = asyncHandler(async (req: Request, res: Response) => {
         const resultId = Number(req.params.resultId);
 

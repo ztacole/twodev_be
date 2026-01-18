@@ -175,6 +175,7 @@ router.get('/ak-02/result/:resultId/export', authenticateToken, adminMiddleware,
 router.post('/ak-03', AK03Controller.createAK03);
 router.post('/ak-03/answer', authenticateToken, assesseeMiddleware, AK03Controller.createAnswerAK03);
 router.get('/ak-03/:result_id', AK03Controller.getAK03ByResultId);
+router.get('/ak-03/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateAK03);
 
 router.post('/ak-04', authenticateToken, assesseeMiddleware, AK04Controller.createAK04);
 router.get('/ak-04/:resultId', AK04Controller.getAK04ByResultId);
