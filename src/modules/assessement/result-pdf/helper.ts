@@ -2114,6 +2114,285 @@ async function drawFeedbackAK01(
     return y;
 }
 
+async function drawFeedbackIA02(
+    pdfDoc: PDFDocument,
+    page: PDFPage,
+    data: any,
+    startX: number,
+    startY: number,
+    font: PDFFont,
+    fontBold: PDFFont
+): Promise<number> {
+    let y = startY;
+    const maxWidth = 520;
+    const labelWidth = 150;
+    const colonWidth = 11;
+    const valueWidth = maxWidth - labelWidth - colonWidth;
+
+    // === Asesi Section ===
+    const rowHeight = 20;
+
+    // Asesi header
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Asesi :", startX, y, labelWidth, rowHeight, fontBold, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    y -= rowHeight;
+
+    // Nama
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Nama", startX, y, labelWidth, rowHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, rowHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessee?.name ?? "-", startX + labelWidth + colonWidth, y, valueWidth, rowHeight, font, 9, "left");
+
+    y -= rowHeight;
+
+    // Tanda tangan/Tanggal
+    const signatureHeight = rowHeight * 3;
+    page.drawRectangle({
+        x: startX,
+        y: y - signatureHeight,
+        width: labelWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Tanda tangan/Tanggal", startX, y, labelWidth, signatureHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - signatureHeight,
+        width: colonWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, signatureHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - signatureHeight,
+        width: valueWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    // Add signature or QR code if approved
+    if (data.ia02_header?.approved_assessee) {
+        const qrSize = 50;
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessee?.signature,
+            getAssesseeUrl(data.assessee.id),
+            startX + labelWidth + colonWidth + 10,
+            y - signatureHeight + 5,
+            qrSize
+        );
+        drawCellText(page, formatDate(data.ia02_header.updated_at), startX + labelWidth + colonWidth + qrSize + 15, y - signatureHeight / 2, valueWidth - qrSize - 15, signatureHeight, font, 9, "left");
+    }
+
+    y -= signatureHeight;
+
+    // === Asesor Section ===
+
+    // Asesor header
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Asesor :", startX, y, labelWidth, rowHeight, fontBold, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    y -= rowHeight;
+
+    // Nama
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Nama", startX, y, labelWidth, rowHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, rowHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessor?.name ?? "-", startX + labelWidth + colonWidth, y, valueWidth, rowHeight, font, 9, "left");
+
+    y -= rowHeight;
+
+    // No. Reg
+    page.drawRectangle({
+        x: startX,
+        y: y - rowHeight,
+        width: labelWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "No. Reg", startX, y, labelWidth, rowHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - rowHeight,
+        width: colonWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, rowHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - rowHeight,
+        width: valueWidth,
+        height: rowHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, data.assessor?.no_reg_met ?? "-", startX + labelWidth + colonWidth, y, valueWidth, rowHeight, font, 9, "left");
+
+    y -= rowHeight;
+
+    // Tanda tangan/Tanggal
+    page.drawRectangle({
+        x: startX,
+        y: y - signatureHeight,
+        width: labelWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, "Tanda tangan/Tanggal", startX, y, labelWidth, signatureHeight, font, 9, "left");
+
+    page.drawRectangle({
+        x: startX + labelWidth,
+        y: y - signatureHeight,
+        width: colonWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+    drawCellText(page, ":", startX + labelWidth, y, colonWidth, signatureHeight, font, 9, "center");
+
+    page.drawRectangle({
+        x: startX + labelWidth + colonWidth,
+        y: y - signatureHeight,
+        width: valueWidth,
+        height: signatureHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 1,
+    });
+
+    // Add signature or QR code if approved
+    if (data.ia02_header?.approved_assessor) {
+        const qrSize = 50;
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            data.assessor?.signature,
+            getAssessorUrl(data.assessor.id),
+            startX + labelWidth + colonWidth + 10,
+            y - signatureHeight + 5,
+            qrSize
+        );
+        drawCellText(page, formatDate(data.ia02_header.updated_at), startX + labelWidth + colonWidth + qrSize + 15, y - signatureHeight / 2, valueWidth - qrSize - 15, signatureHeight, font, 9, "left");
+    }
+
+    y -= signatureHeight;
+
+    return y;
+}
+
 async function drawFeedbackIA03(
     pdfDoc: PDFDocument,
     page: PDFPage,
@@ -3380,6 +3659,6 @@ async function drawFeedbackAK05(
 }
 
 
-export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01, drawIA05AnswerTable as drawIA05QuestionTable, drawFeedbackIA05, drawAK03QuestionTable, drawFeedbackAK05 };
+export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA02, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01, drawIA05AnswerTable as drawIA05QuestionTable, drawFeedbackIA05, drawAK03QuestionTable, drawFeedbackAK05 };
 
 

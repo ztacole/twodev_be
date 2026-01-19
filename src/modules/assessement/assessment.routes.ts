@@ -137,6 +137,7 @@ router.post(
     IA02Controller.uploadPdf
 );
 router.get('/ia-02/pdf/:scheduleId', IA02Controller.getPdf);
+router.get('/ia-02/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateIA02);
 
 router.get('/ia-03/units/:resultId', IA03Controller.getIA03Groups);
 router.post('/ia-03/result/send', authenticateToken, assessorMiddleware, IA03Controller.sendResult);

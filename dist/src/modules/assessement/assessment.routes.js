@@ -115,6 +115,7 @@ router.put('/ia-02/result/assessee/:resultId/approve', auth_middleware_2.authent
 router.get('/ia-02/result/:resultId', ia_02_controller_1.IA02Controller.getResultDetails);
 router.post('/ia-02/upload-pdf/:assessmentId', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, uploadIA02.single('pdf'), ia_02_controller_1.IA02Controller.uploadPdf);
 router.get('/ia-02/pdf/:scheduleId', ia_02_controller_1.IA02Controller.getPdf);
+router.get('/ia-02/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateIA02);
 router.get('/ia-03/units/:resultId', ia_03_controller_1.IA03Controller.getIA03Groups);
 router.post('/ia-03/result/send', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_03_controller_1.IA03Controller.sendResult);
 router.put('/ia-03/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ia_03_controller_1.IA03Controller.approvedByAssessor);
