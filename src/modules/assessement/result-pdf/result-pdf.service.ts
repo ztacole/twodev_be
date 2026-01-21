@@ -154,8 +154,8 @@ export class ResultPdfService {
                 ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
             }
 
-            y = await drawUnitGroupLayout(page, pdfDoc, i, group, 40, y, 20, font, fontBold);
-
+            ({ page, y } = await drawUnitGroupLayout(page, pdfDoc, i, group, 40, y, 20, font, fontBold));
+            
             let unitIdx = 0;
 
             for (const unit of group.units) {
@@ -780,7 +780,7 @@ export class ResultPdfService {
 
             y -= 20;
 
-            y = await drawUnitGroupLayout(page, pdfDoc, groupIdx, group, 40, y, 20, font, fontBold);
+            ({ page, y } = await drawUnitGroupLayout(page, pdfDoc, groupIdx, group, 40, y, 20, font, fontBold));
 
             y -= 20;
 

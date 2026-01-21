@@ -71,6 +71,29 @@ function calculateMultilineHeight(
     return height;
 }
 
+function measureTableHeight(
+    data: string[][],
+    colWidths: number[],
+    rowHeight: number,
+    font: PDFFont,
+    fontSize: number = 9
+) {
+    let totalHeight = 0;
+    const rowHeights: number[] = [];
+
+    for (const row of data) {
+        const cellHeights = row.map((cell, idx) =>
+            calculateTextHeight(cell ?? "", colWidths[idx], font, fontSize)
+        );
+
+        const h = Math.max(rowHeight, ...cellHeights);
+        rowHeights.push(h);
+        totalHeight += h;
+    }
+
+    return { totalHeight, rowHeights };
+}
+
 // Helper function to draw signature or QR code as fallback
 async function drawSignatureOrQR(
     pdfDoc: PDFDocument,
@@ -380,8 +403,9 @@ async function drawUnitGroupLayout(
     startY: number,
     rowHeight: number,
     font: PDFFont,
-    fontBold: PDFFont
-): Promise<number> {
+    fontBold: PDFFont,
+    bottomMargin: number = 150,
+) {
     let y = startY - 48;
     page.drawLine({ start: { x: 40, y: y + 18 }, end: { x: page.getWidth() - 40, y: y + 18 }, thickness: 1, color: rgb(0, 0, 0), opacity: 0.3 });
     page.drawText(`KELOMPOK PEKERJAAN ${index + 1}`, { x: 40, y: y, size: 11, font: fontBold });
@@ -393,26 +417,36 @@ async function drawUnitGroupLayout(
     const headerX = startX + headerWidth;
 
     // Tabel unit
-    const unitHeader = [["No", "Kode Unit", "Judul Unit"]];
+    const unitHeader = ["No", "Kode Unit", "Judul Unit"];
     const unitRows = group.units.map((u, idx) => [String(idx + 1), u.unit_code, u.title]);
-    const mergedData = [...unitHeader, ...unitRows];
+    const mergedData = [unitHeader, ...unitRows];
     const colWidths = [20, 110, 230];
 
-    ({ page, y } = await drawTable(page, pdfDoc, mergedData, colWidths, headerX, y, rowHeight, font, fontBold));
+    const { totalHeight, rowHeights } = measureTableHeight(
+        mergedData,
+        colWidths,
+        rowHeight,
+        font
+    );
+
+    if (y - totalHeight < bottomMargin) {
+        ({ page, y } = await createNewPage(pdfDoc, headerImage, fontBold));
+    }
 
     page.drawRectangle({
         x: startX,
-        y: y - (y - headerY),
+        y: y - totalHeight,
         width: headerWidth,
-        height: y - headerY,
+        height: totalHeight,
         borderColor: rgb(0, 0, 0),
         borderWidth: 1,
     });
     const align = "center"
-    const titleY = y - (y - headerY) / 2 + rowHeight * (group.units.length + 1) / (group.units.length % 2 === 0 ? 6 : 4)
-    drawCellText(page, group.name, startX, titleY, headerWidth, y - headerY, fontBold, 9, align);
+    drawCellText(page, group.name, startX, y, headerWidth, totalHeight, fontBold, 9, align);
 
-    return y;
+    ({ page, y } = await drawTable(page, pdfDoc, mergedData, colWidths, headerX, y, rowHeight, font, fontBold));
+
+    return { page, y };
 }
 
 async function drawUnitLayout(
@@ -3659,6 +3693,6 @@ async function drawFeedbackAK05(
 }
 
 
-export { createNewPage, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA02, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01, drawIA05AnswerTable as drawIA05QuestionTable, drawFeedbackIA05, drawAK03QuestionTable, drawFeedbackAK05 };
+export { createNewPage, measureTableHeight, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA02, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01, drawIA05AnswerTable as drawIA05QuestionTable, drawFeedbackIA05, drawAK03QuestionTable, drawFeedbackAK05 };
 
 
