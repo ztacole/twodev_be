@@ -102,7 +102,7 @@ class ResultPdfService {
                 if (y < BASE_MARGIN) {
                     ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
                 }
-                y = yield (0, helper_1.drawUnitGroupLayout)(page, pdfDoc, i, group, 40, y, 20, font, fontBold);
+                ({ page, y } = yield (0, helper_1.drawUnitGroupLayout)(page, pdfDoc, i, group, 40, y, 20, font, fontBold));
                 let unitIdx = 0;
                 for (const unit of group.units) {
                     const elements = yield ia_01_service_1.IA01Service.getElementsByUnitId(resultId, unit.id);
@@ -588,7 +588,7 @@ class ResultPdfService {
                     ({ page, y } = yield (0, helper_1.createNewPage)(pdfDoc, headerImage, fontBold));
                 }
                 y -= 20;
-                y = yield (0, helper_1.drawUnitGroupLayout)(page, pdfDoc, groupIdx, group, 40, y, 20, font, fontBold);
+                ({ page, y } = yield (0, helper_1.drawUnitGroupLayout)(page, pdfDoc, groupIdx, group, 40, y, 20, font, fontBold));
                 y -= 20;
                 // === QUESTIONS TABLE ===
                 if (group.questions && group.questions.length > 0) {
