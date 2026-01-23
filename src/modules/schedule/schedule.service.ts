@@ -20,6 +20,8 @@ import {
     resultAk02Header as resultAk02HeaderTable,
     resultAk03Header as resultAk03HeaderTable,
     resultAk05 as resultAk05Table,
+    result,
+    assessment,
 } from '../../../drizzle/schema';
 import { and, between, eq, gte, inArray, lte } from 'drizzle-orm';
 import { ActiveScheduleResponse, DetailResponse, LetterAssignmentRequest, ScheduleRequest, ScheduleResponse, updateScheduleRequest } from './schedule.type';
@@ -186,7 +188,12 @@ export class ScheduleService {
             const rawResults = await db.select().from(resultTable).where(eq(resultTable.assessee_id, assessee.id));
             if (rawResults.length === 0) continue;
 
+            console.log(assessee);
+            
             for (const r of rawResults) {
+                const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.id, r.schedule_id) });
+                if (!schedule) continue;
+
                 // Ambil semua header sekaligus
                 const headers: Record<string, any> = {};
                 for (const config of headerConfigs) {
@@ -227,7 +234,12 @@ export class ScheduleService {
                     (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
                     r.is_competent
                 ) status = "Competent";
-                results.push({ status, detail: await buildActiveScheduleResponse(r) });
+                try {
+                    var detail = await buildActiveScheduleResponse(schedule, assessee.id);
+                    results.push({ status, detail});
+                } catch (error: any) {
+                    console.log(error);
+                }
             }
         }
 
@@ -628,39 +640,93 @@ async function buildScheduleResponse(schedule: any, user: Assessee[] | null = nu
         schedule_details: detailed,
     } as any;
 }
-async function buildActiveScheduleResponse(result: any): Promise<DetailResponse> {
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, result.assessment_id) });
-    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
-    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
-    const schedule = await db.query.assessmentSchedule.findFirst({ where: eq(scheduleTable.assessment_id, result.assessment_id) });
-    const detail = await db.query.scheduleDetail.findFirst({ where: and(eq(scheduleDetailTable.schedule_id, schedule!.id), eq(scheduleDetailTable.assessor_id, result.assessor_id)) });
-    const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, detail!.assessor_id) });
-    const assessorUser = await db.query.user.findFirst({ where: eq(userTable.id, assessor!.user_id) });
+async function buildActiveScheduleResponse(result: any, assessee_id: number): Promise<DetailResponse> {
+    const assessment = await db.query.assessment.findFirst({
+        where: eq(assessmentTable.id, result.id)
+    })
+    if (!assessment) {
+        throw new Error(`Assessment not found for result ${result.assessment_id}`);
+    }
+    
+
+    const occupation = await db.query.occupation.findFirst({
+        where: eq(occupationTable.id, assessment.occupation_id),
+    });
+    if (!occupation) {
+        throw new Error(`Occupation not found for assessment ${assessment.id}`);
+    }
+
+    const scheme = await db.query.scheme.findFirst({
+        where: eq(schemeTable.id, occupation.scheme_id),
+    });
+    if (!scheme) {
+        throw new Error(`Scheme not found for occupation ${occupation.id}`);
+    }
+
+    const schedule = await db.query.assessmentSchedule.findFirst({
+        where: eq(scheduleTable.assessment_id, result.assessment_id),
+    });
+    console.log(schedule);
+    if (!schedule) {
+        throw new Error(`Schedule not found for assessment ${assessment.id}`);
+    }
+
+    const resulttable = await db.query.result.findFirst({
+        where: eq(resultTable.assessee_id, assessee_id) ,
+    });
+    if (!resulttable) {
+        throw new Error(`Result not found (schedule ${schedule.id}, assessee ${assessee_id})`);
+    }
+
+    const detail = await db.query.scheduleDetail.findFirst({
+        where: and(
+            eq(scheduleDetailTable.schedule_id, schedule.id),
+            eq(scheduleDetailTable.assessor_id, resulttable.assessor_id)
+        ),
+    });
+    if (!detail) {
+        throw new Error(`Schedule detail not found (schedule ${schedule.id}, assessor ${result.assessor_id})`);
+    }
+
+    const assessor = await db.query.assessor.findFirst({
+        where: eq(assessorTable.id, detail.assessor_id),
+    });
+    if (!assessor) {
+        throw new Error(`Assessor not found for detail ${detail.id}`);
+    }
+
+    const assessorUser = await db.query.user.findFirst({
+        where: eq(userTable.id, assessor.user_id),
+    });
+    if (!assessorUser) {
+        throw new Error(`User not found for assessor ${assessor.id}`);
+    }
+
     return {
-        id: schedule!.id,
+        id: schedule.id,
         assessment: {
-            id: assessment!.id,
-            code: assessment!.code,
+            id: assessment.id,
+            code: assessment.code,
             occupation: {
-                id: occupation!.id,
-                name: occupation!.name,
+                id: occupation.id,
+                name: occupation.name,
                 scheme: {
-                    id: scheme!.id,
-                    code: scheme!.code,
-                    name: scheme!.name,
+                    id: scheme.id,
+                    code: scheme.code,
+                    name: scheme.name,
                 },
             },
         },
-        start_date: schedule!.start_date.toISOString(),
-        end_date: schedule!.end_date.toISOString(),
+        start_date: schedule.start_date.toISOString(),
+        end_date: schedule.end_date.toISOString(),
         schedule_details: {
-            id: detail!.id,
+            id: detail.id,
             assessor: {
-                id: assessor!.id,
-                full_name: assessorUser!.full_name,
-                phone_no: assessor!.phone_no,
+                id: assessor.id,
+                full_name: assessorUser.full_name,
+                phone_no: assessor.phone_no,
             },
-            location: detail!.location,
+            location: detail.location,
         },
-    }
+    };
 }
