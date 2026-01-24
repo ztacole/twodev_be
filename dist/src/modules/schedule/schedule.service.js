@@ -168,7 +168,11 @@ class ScheduleService {
                 const rawResults = yield drizzle_1.db.select().from(schema_1.result).where((0, drizzle_orm_1.eq)(schema_1.result.assessee_id, assessee.id));
                 if (rawResults.length === 0)
                     continue;
+                console.log(assessee);
                 for (const r of rawResults) {
+                    const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, r.schedule_id) });
+                    if (!schedule)
+                        continue;
                     // Ambil semua header sekaligus
                     const headers = {};
                     for (const config of headerConfigs) {
@@ -206,7 +210,13 @@ class ScheduleService {
                         (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
                         r.is_competent)
                         status = "Competent";
-                    results.push({ status, detail: yield buildActiveScheduleResponse(r) });
+                    try {
+                        var detail = yield buildActiveScheduleResponse(schedule, assessee.id);
+                        results.push({ status, detail });
+                    }
+                    catch (error) {
+                        console.log(error);
+                    }
                 }
             }
             return results;
@@ -532,15 +542,57 @@ function buildScheduleResponse(schedule_1) {
         };
     });
 }
-function buildActiveScheduleResponse(result) {
+function buildActiveScheduleResponse(result, assessee_id) {
     return __awaiter(this, void 0, void 0, function* () {
-        const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.assessment_id) });
-        const occupation = assessment ? yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id) }) : null;
-        const scheme = occupation ? yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id) }) : null;
-        const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, result.assessment_id) });
-        const detail = yield drizzle_1.db.query.scheduleDetail.findFirst({ where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, schedule.id), (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.assessor_id, result.assessor_id)) });
-        const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, detail.assessor_id) });
-        const assessorUser = yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) });
+        const assessment = yield drizzle_1.db.query.assessment.findFirst({
+            where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.id)
+        });
+        if (!assessment) {
+            throw new Error(`Assessment not found for result ${result.assessment_id}`);
+        }
+        const occupation = yield drizzle_1.db.query.occupation.findFirst({
+            where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id),
+        });
+        if (!occupation) {
+            throw new Error(`Occupation not found for assessment ${assessment.id}`);
+        }
+        const scheme = yield drizzle_1.db.query.scheme.findFirst({
+            where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id),
+        });
+        if (!scheme) {
+            throw new Error(`Scheme not found for occupation ${occupation.id}`);
+        }
+        const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({
+            where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, result.assessment_id),
+        });
+        console.log(schedule);
+        if (!schedule) {
+            throw new Error(`Schedule not found for assessment ${assessment.id}`);
+        }
+        const resulttable = yield drizzle_1.db.query.result.findFirst({
+            where: (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, assessee_id),
+        });
+        if (!resulttable) {
+            throw new Error(`Result not found (schedule ${schedule.id}, assessee ${assessee_id})`);
+        }
+        const detail = yield drizzle_1.db.query.scheduleDetail.findFirst({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, schedule.id), (0, drizzle_orm_1.eq)(schema_1.scheduleDetail.assessor_id, resulttable.assessor_id)),
+        });
+        if (!detail) {
+            throw new Error(`Schedule detail not found (schedule ${schedule.id}, assessor ${result.assessor_id})`);
+        }
+        const assessor = yield drizzle_1.db.query.assessor.findFirst({
+            where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, detail.assessor_id),
+        });
+        if (!assessor) {
+            throw new Error(`Assessor not found for detail ${detail.id}`);
+        }
+        const assessorUser = yield drizzle_1.db.query.user.findFirst({
+            where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id),
+        });
+        if (!assessorUser) {
+            throw new Error(`User not found for assessor ${assessor.id}`);
+        }
         return {
             id: schedule.id,
             assessment: {
