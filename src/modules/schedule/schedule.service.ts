@@ -640,9 +640,10 @@ async function buildScheduleResponse(schedule: any, user: Assessee[] | null = nu
         schedule_details: detailed,
     } as any;
 }
+
 async function buildActiveScheduleResponse(result: any, assessee_id: number): Promise<DetailResponse> {
     const assessment = await db.query.assessment.findFirst({
-        where: eq(assessmentTable.id, result.id)
+        where: eq(assessmentTable.id, result.assessment_id)
     })
     if (!assessment) {
         throw new Error(`Assessment not found for result ${result.assessment_id}`);

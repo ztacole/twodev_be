@@ -545,7 +545,7 @@ function buildScheduleResponse(schedule_1) {
 function buildActiveScheduleResponse(result, assessee_id) {
     return __awaiter(this, void 0, void 0, function* () {
         const assessment = yield drizzle_1.db.query.assessment.findFirst({
-            where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.id)
+            where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, result.assessment_id)
         });
         if (!assessment) {
             throw new Error(`Assessment not found for result ${result.assessment_id}`);
