@@ -3693,6 +3693,6 @@ async function drawFeedbackAK05(
 }
 
 
-export { createNewPage, measureTableHeight, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA02, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01, drawIA05AnswerTable as drawIA05QuestionTable, drawFeedbackIA05, drawAK03QuestionTable, drawFeedbackAK05 };
+export { createNewPage, measureTableHeight, drawCellText, drawTable, drawCertificateLayout, drawUnitGroupLayout, drawUnitLayout, drawSignatureOrQR, drawElementIa01Layout, drawFeedbackIA01, drawFeedbackIA02, drawFeedbackIA03, drawSignatureAPL01, drawChecklistTable, drawCertificateLayoutAK02, drawFeedbackAK02, drawFeedbackAK01, drawIA05AnswerTable as drawIA05QuestionTable, drawFeedbackIA05, drawAK03QuestionTable, drawFeedbackAK05 };
 
 

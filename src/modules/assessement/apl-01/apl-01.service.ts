@@ -69,18 +69,6 @@ export class APL1Service {
             // update assessee
             await db.update(assesseeTable)
                 .set({
-                    user_id: user_id,
-                    identity_number: assesseeData.identity_number,
-                    gender,
-                    birth_date: new Date(assesseeData.birth_date) as any,
-                    birth_location: assesseeData.birth_location,
-                    nationality: assesseeData.nationality,
-                    phone_no: assesseeData.phone_no,
-                    house_phone_no: assesseeData.house_phone_no as any,
-                    office_phone_no: assesseeData.office_phone_no as any,
-                    address: assesseeData.address,
-                    postal_code: assesseeData.postal_code as any,
-                    educational_qualifications: assesseeData.educational_qualifications,
                     signature: (assesseeData as any).signature ?? null as any,
                 })
                 .where(eq(assesseeTable.id, id));

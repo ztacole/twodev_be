@@ -50,18 +50,6 @@ class APL1Service {
                 // update assessee
                 yield drizzle_1.db.update(schema_1.assessee)
                     .set({
-                    user_id: user_id,
-                    identity_number: assesseeData.identity_number,
-                    gender,
-                    birth_date: new Date(assesseeData.birth_date),
-                    birth_location: assesseeData.birth_location,
-                    nationality: assesseeData.nationality,
-                    phone_no: assesseeData.phone_no,
-                    house_phone_no: assesseeData.house_phone_no,
-                    office_phone_no: assesseeData.office_phone_no,
-                    address: assesseeData.address,
-                    postal_code: assesseeData.postal_code,
-                    educational_qualifications: assesseeData.educational_qualifications,
                     signature: (_a = assesseeData.signature) !== null && _a !== void 0 ? _a : null,
                 })
                     .where((0, drizzle_orm_1.eq)(schema_1.assessee.id, id));

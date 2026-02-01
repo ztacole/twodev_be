@@ -1275,7 +1275,8 @@ class AssessmentService {
                         location: scheduleDetail.location,
                         assessor: {
                             id: assessor.id,
-                            full_name: assessorUser.full_name
+                            full_name: assessorUser.full_name,
+                            signature: assessor.signature
                         }
                     },
                     assessees: assessees,
@@ -1408,6 +1409,7 @@ class AssessmentService {
     }
     static generateRecaptPDF(assessment) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const schedule = assessment.schedule;
             // Format date
             const start = new Date(schedule.start_date);
@@ -1573,9 +1575,12 @@ class AssessmentService {
             (0, pdfDraw_helper_1.drawParagraph)(page, `${assessor_name}`, signatureX, signatureY - 15, font, fontSizeSmall, "right");
             signatureY -= 20;
             const signatureNameLength = font.widthOfTextAtSize(assessor_name, fontSizeSmall);
-            const qrData = (0, hashids_1.getAssessorUrl)(assessment.schedule.assessor.id);
-            const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
-            page.drawImage(qrCode, { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth });
+            // const qrData = getAssessorUrl(assessment.schedule.assessor.id);
+            // const qrCode = await embedQrCode(pdfDoc, qrData);
+            // page.drawImage(qrCode,
+            //     { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
+            // );
+            yield (0, helper_1.drawSignatureOrQR)(pdfDoc, page, (_a = assessment.schedule.assessor) === null || _a === void 0 ? void 0 : _a.signature, (0, hashids_1.getAssessorUrl)(assessment.schedule.assessor.id), page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, signatureY - signatureWidth, signatureWidth);
             const pdfBytes = yield pdfDoc.save();
             return pdfBytes;
         });
@@ -1605,6 +1610,7 @@ class AssessmentService {
                 // Assessor fields
                 assessor_id: schema_1.assessor.id,
                 assessor_no_reg_met: schema_1.assessor.no_reg_met,
+                assessor_signature: schema_1.assessor.signature,
                 // Assessor user fields
                 assessor_user_full_name: schema_1.user.full_name,
                 // Result fields
@@ -1657,6 +1663,7 @@ class AssessmentService {
                     assessorMap.set(row.assessor_id, {
                         id: row.assessor_id,
                         full_name: row.assessor_user_full_name,
+                        signature: row.assessor_signature,
                         no_reg_met: row.assessor_no_reg_met,
                         assessees: [],
                     });
@@ -1699,7 +1706,7 @@ class AssessmentService {
     }
     static generateUkkEvaluationPdf(schedule_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d;
+            var _a, _b, _c, _d, _e;
             const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, schedule_id) });
             if (!schedule) {
                 throw new error_1.NotFoundError('Schedule not found');
@@ -1895,9 +1902,12 @@ class AssessmentService {
                 (0, pdfDraw_helper_1.drawParagraph)(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
                 y = (0, pdfDraw_helper_1.drawParagraph)(page, `Assessor`, signatureX + (signatureNameLength / 2) - (signatureWidth / 2), signatureY - 15, font, fontSizeSmall, "right");
                 signatureY -= 20;
-                const qrData = (0, hashids_1.getAssessorUrl)((_d = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].id) !== null && _d !== void 0 ? _d : 0);
-                const qrCode = yield (0, pdfAssets_helper_1.embedQrCode)(pdfDoc, qrData);
-                page.drawImage(qrCode, { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth });
+                // const qrData = getAssessorUrl(results?.assessors[assessorIdx].id ?? 0);
+                // const qrCode = await embedQrCode(pdfDoc, qrData);
+                // page.drawImage(qrCode,
+                //     { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
+                // );
+                yield (0, helper_1.drawSignatureOrQR)(pdfDoc, page, (_d = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].signature) !== null && _d !== void 0 ? _d : "", (0, hashids_1.getAssessorUrl)((_e = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].id) !== null && _e !== void 0 ? _e : 0), page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, signatureY - signatureWidth, signatureWidth);
                 (0, pdfDraw_helper_1.drawParagraph)(page, `${assessor_name}`, signatureX, signatureY - signatureWidth - 12, font, fontSizeSmall, "right");
             }
             return yield pdfDoc.save();

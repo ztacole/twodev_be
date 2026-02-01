@@ -65,7 +65,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { embedQrCode, kopSurat } from "../../helper/pdfAssets.helper";
 import { drawParagraph, drawMixedParagraph, loadAndEmbedImage } from "../../helper/pdfDraw.helper";
 import { getAssessorUrl } from "../../helper/hashids";
-import { createNewPage, drawCellText, drawTable } from './result-pdf/helper';
+import { createNewPage, drawCellText, drawSignatureOrQR, drawTable } from './result-pdf/helper';
 import { formatDate, formatDay } from '../../helper/date.helper';
 
 export class AssessmentService {
@@ -1362,7 +1362,8 @@ export class AssessmentService {
                     location: scheduleDetail.location,
                     assessor: {
                         id: assessor.id,
-                        full_name: assessorUser.full_name
+                        full_name: assessorUser.full_name,
+                        signature: assessor.signature
                     }
                 },
                 assessees: assessees,
@@ -1696,10 +1697,19 @@ export class AssessmentService {
 
         const signatureNameLength = font.widthOfTextAtSize(assessor_name, fontSizeSmall);
 
-        const qrData = getAssessorUrl(assessment.schedule.assessor.id);
-        const qrCode = await embedQrCode(pdfDoc, qrData);
-        page.drawImage(qrCode,
-            { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
+        // const qrData = getAssessorUrl(assessment.schedule.assessor.id);
+        // const qrCode = await embedQrCode(pdfDoc, qrData);
+        // page.drawImage(qrCode,
+        //     { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
+        // );
+        await drawSignatureOrQR(
+            pdfDoc,
+            page,
+            assessment.schedule.assessor?.signature,
+            getAssessorUrl(assessment.schedule.assessor.id),
+            page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9,
+            signatureY - signatureWidth,
+            signatureWidth
         );
 
         const pdfBytes = await pdfDoc.save();
@@ -1736,6 +1746,7 @@ export class AssessmentService {
                 // Assessor fields
                 assessor_id: assessor.id,
                 assessor_no_reg_met: assessor.no_reg_met,
+                assessor_signature: assessor.signature,
 
                 // Assessor user fields
                 assessor_user_full_name: userTable.full_name,
@@ -1794,6 +1805,7 @@ export class AssessmentService {
         const assessorMap = new Map<number, {
             id: number;
             full_name: string;
+            signature: string | null;
             no_reg_met: string;
             assessees: {
                 result_id: number;
@@ -1812,6 +1824,7 @@ export class AssessmentService {
                 assessorMap.set(row.assessor_id, {
                     id: row.assessor_id,
                     full_name: row.assessor_user_full_name,
+                    signature: row.assessor_signature,
                     no_reg_met: row.assessor_no_reg_met,
                     assessees: [],
                 });
@@ -2076,10 +2089,19 @@ export class AssessmentService {
             y = drawParagraph(page, `Assessor`, signatureX + (signatureNameLength / 2) - (signatureWidth / 2), signatureY - 15, font, fontSizeSmall, "right");
             signatureY -= 20;
 
-            const qrData = getAssessorUrl(results?.assessors[assessorIdx].id ?? 0);
-            const qrCode = await embedQrCode(pdfDoc, qrData);
-            page.drawImage(qrCode,
-                { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
+            // const qrData = getAssessorUrl(results?.assessors[assessorIdx].id ?? 0);
+            // const qrCode = await embedQrCode(pdfDoc, qrData);
+            // page.drawImage(qrCode,
+            //     { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
+            // );
+            await drawSignatureOrQR(
+                pdfDoc,
+                page,
+                results?.assessors[assessorIdx].signature ?? "",
+                getAssessorUrl(results?.assessors[assessorIdx].id ?? 0),
+                page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9,
+                signatureY - signatureWidth,
+                signatureWidth
             );
             drawParagraph(page, `${assessor_name}`, signatureX, signatureY - signatureWidth - 12, font, fontSizeSmall, "right");
         }

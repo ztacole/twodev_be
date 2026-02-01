@@ -562,13 +562,7 @@ function buildActiveScheduleResponse(result, assessee_id) {
         if (!scheme) {
             throw new Error(`Scheme not found for occupation ${occupation.id}`);
         }
-        const schedule = yield drizzle_1.db.query.assessmentSchedule.findFirst({
-            where: (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, result.assessment_id),
-        });
-        console.log(schedule);
-        if (!schedule) {
-            throw new Error(`Schedule not found for assessment ${assessment.id}`);
-        }
+        const schedule = result;
         const resulttable = yield drizzle_1.db.query.result.findFirst({
             where: (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, assessee_id),
         });

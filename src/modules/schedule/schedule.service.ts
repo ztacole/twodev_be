@@ -664,13 +664,7 @@ async function buildActiveScheduleResponse(result: any, assessee_id: number): Pr
         throw new Error(`Scheme not found for occupation ${occupation.id}`);
     }
 
-    const schedule = await db.query.assessmentSchedule.findFirst({
-        where: eq(scheduleTable.assessment_id, result.assessment_id),
-    });
-    console.log(schedule);
-    if (!schedule) {
-        throw new Error(`Schedule not found for assessment ${assessment.id}`);
-    }
+    const schedule = result;
 
     const resulttable = await db.query.result.findFirst({
         where: eq(resultTable.assessee_id, assessee_id) ,

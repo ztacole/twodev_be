@@ -20,6 +20,7 @@ exports.drawTable = drawTable;
 exports.drawCertificateLayout = drawCertificateLayout;
 exports.drawUnitGroupLayout = drawUnitGroupLayout;
 exports.drawUnitLayout = drawUnitLayout;
+exports.drawSignatureOrQR = drawSignatureOrQR;
 exports.drawElementIa01Layout = drawElementIa01Layout;
 exports.drawFeedbackIA01 = drawFeedbackIA01;
 exports.drawFeedbackIA02 = drawFeedbackIA02;

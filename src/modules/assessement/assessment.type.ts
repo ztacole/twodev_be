@@ -355,6 +355,7 @@ export interface AssessmentResultGrouped {
   assessors: {
     id: number;
     full_name: string;
+    signature: string | null;
     no_reg_met: string;
     assessees: {
       result_id: number;
