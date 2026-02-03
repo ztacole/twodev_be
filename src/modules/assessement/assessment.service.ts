@@ -7,6 +7,7 @@ import {
     occupation as occupationTable,
     scheme as schemeTable,
     assessmentSchedule as assessmentScheduleTable,
+    assessmentReport as assessmentReportTable,
     scheduleDetail as scheduleDetailTable,
     ucApl02 as ucApl02Table,
     elementApl02 as elementApl02Table,
@@ -1263,6 +1264,10 @@ export class AssessmentService {
         const scheme = await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) });
         if (!scheme) throw new NotFoundError('Scheme');
 
+        const objReport = await db.query.assessmentReport.findFirst({ 
+            where: eq(assessmentReportTable.assessment_id, assessment.id) 
+        });
+
         const results = await db.select({
             id: resultTable.id,
             schedule_id: assessmentScheduleTable.id,
@@ -1367,8 +1372,9 @@ export class AssessmentService {
                     }
                 },
                 assessees: assessees,
-                summary: summary
-            }
+                summary: summary,
+                report: objReport ?? null
+            },
         };
     }
 
@@ -1499,48 +1505,42 @@ export class AssessmentService {
 
     static async generateRecaptPDF(assessment: any) {
         const schedule = assessment.schedule;
-
         // Format date
         const start = new Date(schedule.start_date);
         const end = new Date(schedule.end_date);
-
         const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
         const months = [
             "Januari", "Februari", "Maret", "April", "Mei", "Juni",
             "Juli", "Agustus", "September", "Oktober", "November", "Desember"
         ];
-
         const startDay = days[end.getDay()];
         const startDate = end.getDate();
         const startMonth = months[end.getMonth()];
         const startYear = end.getFullYear();
-
         const startHour = (`0${start.getHours()}`).slice(-2);
         const startMinute = (`0${start.getMinutes()}`).slice(-2);
         const endHour = (`0${end.getHours()}`).slice(-2);
         const endMinute = (`0${end.getMinutes()}`).slice(-2);
-
+        
         // === Create a new PDF document ===
         const pdfDoc = await PDFDocument.create();
         const page = pdfDoc.addPage([612, 936]);
-
+        
         // === Fonts ===
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
         const iconFont = await pdfDoc.embedFont(StandardFonts.ZapfDingbats);
-
+        
         let y = page.getHeight() - 50;
-
         const fontSizeSmall = 11;
-
         const lineGap = 4;
         const lLineGap = 12;
         const xlLineGap = 20;
-
+        
         // === HEADER ===
         const image = "../../public/images/kop-surat-lsp-smkn24j.png";
         y = await kopSurat(pdfDoc, page, image);
-
+        
         // === TITLE ===
         const headerText = [
             "BERITA ACARA",
@@ -1550,7 +1550,7 @@ export class AssessmentService {
         headerText.forEach(text => {
             y = drawParagraph(page, text, 40, y, fontBold, fontSizeSmall, "center");
         });
-
+        
         // === INTRODUCTION PARAGRAPH ===
         const textParts = [
             { text: "Pada hari ini ", font },
@@ -1573,7 +1573,7 @@ export class AssessmentService {
         ];
         y = drawMixedParagraph(page, textParts, 40, y - lLineGap, 12, rgb(0, 0, 0), 540, 18);
         y -= xlLineGap;
-
+        
         // === TABLE CONTENT ===
         const tableData = (assessment.assessees as { name: string; status: string }[]).map(
             (assessee, index) => ({
@@ -1583,16 +1583,15 @@ export class AssessmentService {
                 bk: assessee.status === "Not Competent" ? "✓" : "",
             })
         );
-
+        
         const tableTop = y + 7;
         const rowHeight = 25;
         const colWidths: any = [30, 260, 110, 110];
         const headerColor = rgb(1, 0.95, 0.7);
-
+        
         // === TABLE HEADER ===
         let x = 50;
-
-        // Column No
+        
         page.drawRectangle({
             x, y: tableTop - rowHeight * 2,
             width: colWidths[0], height: rowHeight * 3 - 11,
@@ -1600,8 +1599,7 @@ export class AssessmentService {
         });
         page.drawText("No", { x: x + 8, y: tableTop - rowHeight + 2, size: fontSizeSmall, font: fontBold });
         x += colWidths[0];
-
-        // Column Name
+        
         page.drawRectangle({
             x, y: tableTop - rowHeight * 2,
             width: colWidths[1], height: rowHeight * 3 - 11,
@@ -1609,7 +1607,7 @@ export class AssessmentService {
         });
         page.drawText("Nama Peserta", { x: x + colWidths[1] / 2 - 40, y: tableTop - rowHeight + 2, size: fontSizeSmall, font: fontBold });
         x += colWidths[1];
-
+        
         // Kolom Rekomendasi (gabungan K & BK)
         page.drawRectangle({
             x, y: tableTop - rowHeight * 2 + 11,
@@ -1619,6 +1617,7 @@ export class AssessmentService {
         });
         page.drawText("REKOMENDASI", { x: x + (colWidths[2] + colWidths[3]) / 2 - 45, y: tableTop - 5, size: fontSizeSmall, font: fontBold });
         page.drawText("ASISTEN PEMROGRAMAN JUNIOR", { x: x + 15, y: tableTop - rowHeight + 7, size: fontSizeSmall, font: fontBold });
+        
         // Subkolom K
         page.drawRectangle({
             x, y: tableTop - rowHeight * 2,
@@ -1629,6 +1628,7 @@ export class AssessmentService {
             borderWidth: 1
         });
         page.drawText("K", { x: x + colWidths[2] / 2 - 2, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
+        
         // Subkolom BK
         page.drawRectangle({
             x: x + colWidths[2],
@@ -1640,68 +1640,121 @@ export class AssessmentService {
             borderWidth: 1
         });
         page.drawText("BK", { x: x + colWidths[2] + colWidths[3] / 2 - 6, y: tableTop - rowHeight * 2 + 7, size: fontSizeSmall, font: fontBold });
-
+        
         // === TABLE CONTENT ===
         let currentY = tableTop - rowHeight * 3;
-
         tableData.forEach(row => {
             let x = 50;
             page.drawRectangle({ x, y: currentY, width: colWidths[0], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
             page.drawText(String(row.no), { x: x + 8, y: currentY + 7, size: fontSizeSmall, font });
             x += colWidths[0];
-
+            
             page.drawRectangle({ x, y: currentY, width: colWidths[1], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
             page.drawText(row.name, { x: x + 5, y: currentY + 7, size: fontSizeSmall, font });
             x += colWidths[1];
-
+            
             page.drawRectangle({ x, y: currentY, width: colWidths[2], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
             page.drawText(row.k, { x: x + colWidths[2] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
             x += colWidths[2];
-
+            
             page.drawRectangle({ x, y: currentY, width: colWidths[3], height: rowHeight, borderColor: rgb(0, 0, 0), borderWidth: 1 });
             page.drawText(row.bk, { x: x + colWidths[3] / 2 - 2, y: currentY + 7, size: fontSizeSmall, font: iconFont });
-
+            
             currentY -= rowHeight;
         });
         y = currentY;
-
+        
         // === NOTE ===
         y = drawParagraph(page, "Selama pelaksanaan rekomendasi telah terjadi hal penting sebagai berikut :", 50, y, font, fontSizeSmall) + lLineGap;
-
+        
         const boxSize = 12;
         const boxX = 50;
         let boxY = y - boxSize * 2 + 10 - 6;
-
-        page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: rgb(0, 0, 0), borderWidth: 1, color: rgb(1, 1, 1) });
+        
+        const report = assessment.report;
+        let isFirstChecked = false;
+        let isSecondChecked = false;
+        let noteText = "";
+        
+        if (!report) {
+            isFirstChecked = true;
+        } else {
+            if (report.is_competent && report.statement) {
+                isSecondChecked = true
+                noteText = report.statement || "";
+            } else {
+                isSecondChecked = true;
+                noteText = report.statement || "";
+            }
+        }
+        
+        // Checkbox 1: Tertib dan lancar
+        page.drawRectangle({ 
+            x: boxX, 
+            y: boxY - boxSize + 10, 
+            width: boxSize, 
+            height: boxSize, 
+            borderColor: rgb(0, 0, 0), 
+            borderWidth: 1, 
+            color: rgb(1, 1, 1) 
+        });
+        if (isFirstChecked) {
+            page.drawText("✓", { 
+                x: boxX + 2, 
+                y: boxY - boxSize + 11, 
+                size: fontSizeSmall, 
+                font: iconFont 
+            });
+        }
         drawParagraph(page, "Tertib dan lancar", boxX + boxSize + 5, boxY, font, fontSizeSmall);
         boxY -= lineGap;
-        page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: rgb(0, 0, 0), borderWidth: 1, color: rgb(1, 1, 1) });
+        
+        // Checkbox 2: Tertib dan lancar dengan catatan
+        page.drawRectangle({ 
+            x: boxX, 
+            y: boxY - boxSize * 2 + 10, 
+            width: boxSize, 
+            height: boxSize, 
+            borderColor: rgb(0, 0, 0), 
+            borderWidth: 1, 
+            color: rgb(1, 1, 1) 
+        });
+        if (isSecondChecked) {
+            page.drawText("✓", { 
+                x: boxX + 2, 
+                y: boxY - boxSize * 2 + 11, 
+                size: fontSizeSmall, 
+                font: iconFont 
+            });
+        }
         drawParagraph(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);
         boxY -= lineGap;
-        drawParagraph(page, "catatan : ...........................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
-        drawParagraph(page, "................................................................................................................................................................", 50, boxY - boxSize * 3, font, fontSizeSmall);
-
+        
+        const catatanLine = noteText 
+            ? `catatan : ${noteText}`
+            : "catatan : ...........................................................................................................................................";
+        drawParagraph(page, catatanLine, boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
+        
+        if (!noteText) {
+            drawParagraph(page, "................................................................................................................................................................", 50, boxY - boxSize * 3, font, fontSizeSmall);
+        }
+        
         y = boxY - boxSize * 4 - lineGap;
         drawParagraph(page, "Demikianlah, berita acara ini dibuat sesuai dengan kejadian yang sebenernya, untuk digunakan sebagaimana mestinya.", 50, y, font, fontSizeSmall);
-
+        
         // === SIGNATURE ===
         const signatureX = 50;
         let signatureY = y - 50;
         const signatureWidth = 60;
-
         const signatureDate = `Jakarta, ${startDate + " " + startMonth + " " + startYear}`;
         const assessor_name = assessment.schedule.assessor.full_name;
+        
         drawParagraph(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
         drawParagraph(page, `${assessor_name}`, signatureX, signatureY - 15, font, fontSizeSmall, "right");
         signatureY -= 20;
-
+        
         const signatureNameLength = font.widthOfTextAtSize(assessor_name, fontSizeSmall);
-
-        // const qrData = getAssessorUrl(assessment.schedule.assessor.id);
-        // const qrCode = await embedQrCode(pdfDoc, qrData);
-        // page.drawImage(qrCode,
-        //     { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
-        // );
+        
         await drawSignatureOrQR(
             pdfDoc,
             page,
@@ -1711,7 +1764,7 @@ export class AssessmentService {
             signatureY - signatureWidth,
             signatureWidth
         );
-
+        
         const pdfBytes = await pdfDoc.save();
         return pdfBytes;
     }
@@ -1873,28 +1926,30 @@ export class AssessmentService {
         if (!schedule) {
             throw new NotFoundError('Schedule not found');
         }
-
         const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
         if (!existingAssessment) {
             throw new NotFoundError('Assessment not found');
         }
-
+        
+        // Ambil data report untuk assessment ini
+        const objReport = await db.query.assessmentReport.findFirst({ 
+            where: eq(assessmentReportTable.assessment_id, existingAssessment.id) 
+        });
+        
         const results = await this.getResultsByAssessmentGroupedByAssessor(schedule_id);
-
         const pdfDoc = await PDFDocument.create();
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
         const image = "../../public/images/kop-surat-lsp-smkn24j.png";
-
+        
         for (let assessorIdx = 0; assessorIdx < (!results ? 0 : results?.assessors.length); assessorIdx++) {
             let { page, y } = await createNewPage(pdfDoc, image, fontBold);
-
             // === Fonts === 
             const iconFont = await pdfDoc.embedFont(StandardFonts.ZapfDingbats);
             const fontSizeSmall = 11;
             const fontSizeLarge = 14;
             const rowHeight = 24;
-
+            
             // === TITLE ===
             const headerText = [
                 "FORM PENILAIAN",
@@ -1903,13 +1958,11 @@ export class AssessmentService {
             headerText.forEach(text => {
                 y = drawParagraph(page, text, 40, y, fontBold, fontSizeLarge, "center");
             });
-            y += 8
-
+            y += 8;
+            
             const colWidths: any = [30, 265, 75, 75, 75];
             const headerColor = rgb(1, 0.95, 0.7);
-
             let startX = 40;
-
             const scoreHeaderTexts = [`SKOR PENILAIAN`, results?.occupation.name.toUpperCase() ?? "OKUPASI"];
             const scoreHeaderHeights = scoreHeaderTexts.map((cell: string) => {
                 const words = cell.split(" ");
@@ -1927,11 +1980,12 @@ export class AssessmentService {
                 }
                 if (line) lines.push(line);
                 return Math.max(rowHeight, lines.length * (9 + 4) + 6);
-            })
+            });
+            
             const scoreHeaderWidth = colWidths[2] + colWidths[3] + colWidths[4];
             let scoreHeaderX = startX + colWidths[0] + colWidths[1];
             let scoreHeaderY = y;
-
+            
             // === Kolom Gabungan Rekomendasi (K, BK, SK) ===
             let scoreTextY = scoreHeaderY;
             page.drawRectangle({
@@ -1944,7 +1998,7 @@ export class AssessmentService {
             scoreTextY -= scoreHeaderHeights[0] - fontSizeSmall / 2 - 4;
             drawCellText(page, scoreHeaderTexts[1], scoreHeaderX, scoreTextY - scoreHeaderHeights.reduce((a, b) => a + b, 0) / 2 + fontSizeSmall / 2 + 10, scoreHeaderWidth, scoreHeaderHeights[1], fontBold, fontSizeSmall, "center");
             scoreHeaderY -= scoreHeaderHeights.reduce((a, b) => a + b, 0) + fontSizeSmall / 2 - 8;
-
+            
             const subColumnScoreTexts = ['< 85   BELUM KOMPETEN', '85 - 90 KOMPETEN', '91 - 100 SANGAT KOMPETEN'];
             const subColumnScoreHeights = subColumnScoreTexts.map((cell: string, idx: number) => {
                 const words = cell.split(" ");
@@ -1963,8 +2017,8 @@ export class AssessmentService {
                 if (line) lines.push(line);
                 return lines.length * (9 + 4) + 6;
             });
+            
             const maxSubColumnScoreHeight = Math.max(rowHeight, ...subColumnScoreHeights);
-
             subColumnScoreTexts.forEach((cell, idx) => {
                 const w = colWidths[idx + 2];
                 page.drawRectangle({
@@ -1979,10 +2033,9 @@ export class AssessmentService {
                 drawCellText(page, cell, scoreHeaderX, scoreHeaderY - 2, w, maxSubColumnScoreHeight - fontSizeSmall / 2 - 16, fontBold, fontSizeSmall, "center");
                 scoreHeaderX += w;
             });
-
             scoreHeaderY -= maxSubColumnScoreHeight - fontSizeSmall / 2;
-
-            const headerTexts = ['NO', 'NAMA PESERTA']
+            
+            const headerTexts = ['NO', 'NAMA PESERTA'];
             headerTexts.forEach((cell, idx) => {
                 const w = colWidths[idx];
                 page.drawRectangle({
@@ -1991,27 +2044,25 @@ export class AssessmentService {
                     width: w,
                     height: y - scoreHeaderY + fontSizeSmall / 2 - 16,
                     color: headerColor, borderColor: rgb(0, 0, 0), borderWidth: 1
-                })
+                });
                 drawCellText(page, cell, startX, scoreHeaderY + (y - scoreHeaderY + fontSizeSmall / 2) / 2 + 4, w, rowHeight - fontSizeSmall / 2 - 16, fontBold, fontSizeSmall, "center");
                 startX += w;
-            })
-
-            y = scoreHeaderY
-            startX = 40
-
+            });
+            y = scoreHeaderY;
+            startX = 40;
+            
             const data: string[][] = results?.assessors[assessorIdx].assessees.map((assessee: any, idx: number) => {
                 return [`${idx + 1}.`, assessee.assessee_name, assessee.score < 85 && assessee.score >= 0 ? assessee.score.toString() : assessee.score < 0 ? "" : "", assessee.score >= 85 && assessee.score <= 90 ? assessee.score.toString() : "", assessee.score > 90 ? assessee.score.toString() : ""];
             }) ?? [];
+            
             for (let i = 0; i < (data.length < 12 ? 12 : data.length); i++) {
                 let row = data[i];
                 if (!row) row = [`${i + 1}.`, '', '', '', ''];
-
                 let x = startX;
                 let maxRowHeight = rowHeight;
-
-                // ukur tinggi maksimum row (karena ada teks wrap)
+                
                 const cellHeights = row.map((cell, idx) => {
-                    const safeCell = cell ?? ""; // fallback
+                    const safeCell = cell ?? "";
                     const words = safeCell.split(" ");
                     let line = "";
                     let lines: string[] = [];
@@ -2028,9 +2079,8 @@ export class AssessmentService {
                     if (line) lines.push(line);
                     return lines.length * (9 + 4) + 6;
                 });
-
                 maxRowHeight = Math.max(rowHeight, ...cellHeights);
-
+                
                 // draw cell
                 row.forEach((cell, idx) => {
                     const w = colWidths[idx];
@@ -2046,54 +2096,103 @@ export class AssessmentService {
                     drawCellText(page, cell, x, y, w, maxRowHeight, font, fontSizeSmall, align);
                     x += w;
                 });
-
                 y -= maxRowHeight;
             }
-
             y -= 24;
-
+            
             const l2LineGap = 8;
             const lLineGap = 12;
-
+            
             // === NOTE ===
             y = drawParagraph(page, "Selama pelaksanaan uji kompetensi keahlian telah terjadi hal penting sebagai berikut :", 50, y, font, fontSizeSmall) + lLineGap;
-
+            
             const boxSize = 12;
             const boxX = 50;
             let boxY = y - boxSize * 2 + 10 - 6;
-
-            page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: rgb(0, 0, 0), borderWidth: 1, color: rgb(1, 1, 1) });
+            
+            let isFirstChecked = false;
+            let isSecondChecked = false;
+            let noteText = "";
+            
+            if (!objReport) {
+                isFirstChecked = true;
+            } else {
+                if (objReport.is_competent) {
+                    isSecondChecked = true
+                    noteText = objReport.statement || "";
+                } else {
+                    isSecondChecked = true;
+                    noteText = objReport.statement || "";
+                }
+            }
+            
+            // Checkbox 1: Tertib dan lancar
+            page.drawRectangle({ 
+                x: boxX, 
+                y: boxY - boxSize + 10, 
+                width: boxSize, 
+                height: boxSize, 
+                borderColor: rgb(0, 0, 0), 
+                borderWidth: 1, 
+                color: rgb(1, 1, 1) 
+            });
+            if (isFirstChecked) {
+                page.drawText("✓", { 
+                    x: boxX + 2, 
+                    y: boxY - boxSize + 11, 
+                    size: fontSizeSmall, 
+                    font: iconFont 
+                });
+            }
             drawParagraph(page, "Tertib dan lancar", boxX + boxSize + 5, boxY, font, fontSizeSmall);
             boxY -= l2LineGap;
-            page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: rgb(0, 0, 0), borderWidth: 1, color: rgb(1, 1, 1) });
+            
+            // Checkbox 2: Tertib dan lancar dengan catatan
+            page.drawRectangle({ 
+                x: boxX, 
+                y: boxY - boxSize * 2 + 10, 
+                width: boxSize, 
+                height: boxSize, 
+                borderColor: rgb(0, 0, 0), 
+                borderWidth: 1, 
+                color: rgb(1, 1, 1) 
+            });
+            if (isSecondChecked) {
+                page.drawText("✓", { 
+                    x: boxX + 2, 
+                    y: boxY - boxSize * 2 + 11, 
+                    size: fontSizeSmall, 
+                    font: iconFont 
+                });
+            }
             drawParagraph(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);
             boxY -= l2LineGap;
-            y = drawParagraph(page, "catatan : ....................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
+            
+            const catatanLine = noteText 
+                ? `catatan : ${noteText}`
+                : "catatan : ....................................................................................................................................";
+            y = drawParagraph(page, catatanLine, boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
             boxY -= l2LineGap;
-            y = drawParagraph(page, "............................................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 3, font, fontSizeSmall);
-
+            
+            if (!noteText) {
+                y = drawParagraph(page, "............................................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 3, font, fontSizeSmall);
+            }
+            
             drawParagraph(page, "Demikian, form penilaian ini dibuat sesuai dengan kejadian yang sebenarnya, untuk digunakan sebagaimana mestinya.", 50, y, font, fontSizeSmall);
-
+            
             // === SIGNATURE ===
             const signatureX = 50;
             let signatureY = y - 50;
             const signatureWidth = 60;
-
             const date = `${formatDay(results!.schedule_end_date)} ${formatDate(results!.schedule_end_date)}`;
-
             const signatureDate = `Jakarta, ${date}`;
             const assessor_name = results?.assessors[assessorIdx].full_name;
             const signatureNameLength = font.widthOfTextAtSize(results?.assessors[assessorIdx].full_name ?? "", fontSizeSmall);
-
+            
             drawParagraph(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
             y = drawParagraph(page, `Assessor`, signatureX + (signatureNameLength / 2) - (signatureWidth / 2), signatureY - 15, font, fontSizeSmall, "right");
             signatureY -= 20;
-
-            // const qrData = getAssessorUrl(results?.assessors[assessorIdx].id ?? 0);
-            // const qrCode = await embedQrCode(pdfDoc, qrData);
-            // page.drawImage(qrCode,
-            //     { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
-            // );
+            
             await drawSignatureOrQR(
                 pdfDoc,
                 page,
@@ -2105,10 +2204,9 @@ export class AssessmentService {
             );
             drawParagraph(page, `${assessor_name}`, signatureX, signatureY - signatureWidth - 12, font, fontSizeSmall, "right");
         }
-
         return await pdfDoc.save();
     }
-
+    
     static async inputScore(result_id: number, score: number) {
         const existingResults = await db.query.result.findFirst({
             where: eq(resultTable.id, result_id),

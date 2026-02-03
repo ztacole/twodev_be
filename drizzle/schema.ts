@@ -1,4 +1,4 @@
-import { mysqlTable, int, varchar, date, boolean, text, mysqlEnum, unique, timestamp, datetime } from 'drizzle-orm/mysql-core';
+import { mysqlTable, int, varchar, date, boolean, text, mysqlEnum, unique, timestamp, datetime, tinyint } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { time } from 'console';
 
@@ -492,6 +492,15 @@ export const approvalRequest = mysqlTable('approval_request', {
     approved_at: datetime('approved_at'),
     ...timestamps
 });
+
+export const assessmentReport = mysqlTable('assessment_report', {
+    id: int('id').primaryKey().autoincrement(),
+    assessment_id: int('assessment_id').notNull().references(() => assessment.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    is_competent: tinyint('is_competent').notNull(),
+    statement: varchar('statement', { length: 255 }),
+    ...timestamps
+});
+
 
 // // ========= Relations =========
 // export const roleRelations = relations(role, ({ many }) => ({

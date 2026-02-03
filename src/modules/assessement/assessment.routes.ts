@@ -27,6 +27,8 @@ import { requireApproval } from '../../middleware/approval.middleware';
 import { db } from "../../config/drizzle";
 import { assessmentSchedule } from "../../../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { ro } from "@faker-js/faker/.";
+import { AssessmentReportController } from "./report/assessmentReport.controller";
 
 const uploadAPL01 = createUploader({
     basePath: '../../public/uploads/apl-01',
@@ -186,5 +188,9 @@ router.post('/ak-05', authenticateToken, assessorMiddleware, AK05Controller.crea
 router.get('/ak-05/:result_id', AK05Controller.getAK05ByResultId);
 router.put('/ak-05/result/assessor/:resultId/approve', authenticateToken, assessorMiddleware, AK05Controller.approvedByAssessor);
 router.get('/ak-05/result/:resultId/export', authenticateToken, adminMiddleware, ResultPdfController.generateAK05);
+
+router.get('/report/:assessmentId', authenticateToken, adminOrAssessorMiddleware, AssessmentReportController.getAssessmentReport);
+router.post('/report', authenticateToken, assessorMiddleware, AssessmentReportController.createAssessmentReport);
+router.put('/report/:assessmentId', authenticateToken, assessorMiddleware, AssessmentReportController.updateAssessmentReport);
 
 export default router;
