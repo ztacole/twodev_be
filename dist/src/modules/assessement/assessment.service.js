@@ -1186,6 +1186,9 @@ class AssessmentService {
             const scheme = yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id) });
             if (!scheme)
                 throw new error_1.NotFoundError('Scheme');
+            const objReport = yield drizzle_1.db.query.assessmentReport.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.assessmentReport.assessment_id, assessment.id)
+            });
             const results = yield drizzle_1.db.select({
                 id: schema_1.result.id,
                 schedule_id: schema_1.assessmentSchedule.id,
@@ -1253,6 +1256,16 @@ class AssessmentService {
                     (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
                     res.is_competent)
                     status = "Competent";
+                // console.log(
+                //     `resultAPL02: ${resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee ? 'true' : 'false'}, ` +
+                //     `resultIA01: ${resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee ? 'true' : 'false'}, ` +
+                //     `resultIA02: ${resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee ? 'true' : 'false'}, ` +
+                //     `resultIA03: ${resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee ? 'true' : 'false'}, ` +
+                //     `resultIA05: ${resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true ? 'true' : 'false'}, ` +
+                //     `resultAK01: ${resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee ? 'true' : 'false'}, ` +
+                //     `resultAK02: ${resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee ? 'true' : 'false'}, ` +
+                //     `resultAK05: ${resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent ? 'true' : 'false'}, ` +
+                //     `res.is_competent: ${res.is_competent ? 'true' : 'false'}`);
                 assessees.push({ id: assessee.id, name: user === null || user === void 0 ? void 0 : user.full_name, status, score: (_a = res.score) !== null && _a !== void 0 ? _a : null });
                 summary.total_assessees++;
                 if (status === 'Competent')
@@ -1280,8 +1293,9 @@ class AssessmentService {
                         }
                     },
                     assessees: assessees,
-                    summary: summary
-                }
+                    summary: summary,
+                    report: objReport !== null && objReport !== void 0 ? objReport : null
+                },
             };
         });
     }
@@ -1486,7 +1500,6 @@ class AssessmentService {
             const headerColor = (0, pdf_lib_1.rgb)(1, 0.95, 0.7);
             // === TABLE HEADER ===
             let x = 50;
-            // Column No
             page.drawRectangle({
                 x, y: tableTop - rowHeight * 2,
                 width: colWidths[0], height: rowHeight * 3 - 11,
@@ -1494,7 +1507,6 @@ class AssessmentService {
             });
             page.drawText("No", { x: x + 8, y: tableTop - rowHeight + 2, size: fontSizeSmall, font: fontBold });
             x += colWidths[0];
-            // Column Name
             page.drawRectangle({
                 x, y: tableTop - rowHeight * 2,
                 width: colWidths[1], height: rowHeight * 3 - 11,
@@ -1555,14 +1567,70 @@ class AssessmentService {
             const boxSize = 12;
             const boxX = 50;
             let boxY = y - boxSize * 2 + 10 - 6;
-            page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
+            const report = assessment.report;
+            let isFirstChecked = false;
+            let isSecondChecked = false;
+            let noteText = "";
+            if (!report) {
+                isFirstChecked = true;
+            }
+            else {
+                if (report.is_competent && report.statement) {
+                    isSecondChecked = true;
+                    noteText = report.statement || "";
+                }
+                else {
+                    isSecondChecked = true;
+                    noteText = report.statement || "";
+                }
+            }
+            // Checkbox 1: Tertib dan lancar
+            page.drawRectangle({
+                x: boxX,
+                y: boxY - boxSize + 10,
+                width: boxSize,
+                height: boxSize,
+                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                borderWidth: 1,
+                color: (0, pdf_lib_1.rgb)(1, 1, 1)
+            });
+            if (isFirstChecked) {
+                page.drawText("✓", {
+                    x: boxX + 2,
+                    y: boxY - boxSize + 11,
+                    size: fontSizeSmall,
+                    font: iconFont
+                });
+            }
             (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar", boxX + boxSize + 5, boxY, font, fontSizeSmall);
             boxY -= lineGap;
-            page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
+            // Checkbox 2: Tertib dan lancar dengan catatan
+            page.drawRectangle({
+                x: boxX,
+                y: boxY - boxSize * 2 + 10,
+                width: boxSize,
+                height: boxSize,
+                borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                borderWidth: 1,
+                color: (0, pdf_lib_1.rgb)(1, 1, 1)
+            });
+            if (isSecondChecked) {
+                page.drawText("✓", {
+                    x: boxX + 2,
+                    y: boxY - boxSize * 2 + 11,
+                    size: fontSizeSmall,
+                    font: iconFont
+                });
+            }
             (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);
             boxY -= lineGap;
-            (0, pdfDraw_helper_1.drawParagraph)(page, "catatan : ...........................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
-            (0, pdfDraw_helper_1.drawParagraph)(page, "................................................................................................................................................................", 50, boxY - boxSize * 3, font, fontSizeSmall);
+            const catatanLine = noteText
+                ? `catatan : ${noteText}`
+                : "catatan : ...........................................................................................................................................";
+            (0, pdfDraw_helper_1.drawParagraph)(page, catatanLine, boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
+            if (!noteText) {
+                (0, pdfDraw_helper_1.drawParagraph)(page, "................................................................................................................................................................", 50, boxY - boxSize * 3, font, fontSizeSmall);
+            }
             y = boxY - boxSize * 4 - lineGap;
             (0, pdfDraw_helper_1.drawParagraph)(page, "Demikianlah, berita acara ini dibuat sesuai dengan kejadian yang sebenernya, untuk digunakan sebagaimana mestinya.", 50, y, font, fontSizeSmall);
             // === SIGNATURE ===
@@ -1575,11 +1643,6 @@ class AssessmentService {
             (0, pdfDraw_helper_1.drawParagraph)(page, `${assessor_name}`, signatureX, signatureY - 15, font, fontSizeSmall, "right");
             signatureY -= 20;
             const signatureNameLength = font.widthOfTextAtSize(assessor_name, fontSizeSmall);
-            // const qrData = getAssessorUrl(assessment.schedule.assessor.id);
-            // const qrCode = await embedQrCode(pdfDoc, qrData);
-            // page.drawImage(qrCode,
-            //     { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
-            // );
             yield (0, helper_1.drawSignatureOrQR)(pdfDoc, page, (_a = assessment.schedule.assessor) === null || _a === void 0 ? void 0 : _a.signature, (0, hashids_1.getAssessorUrl)(assessment.schedule.assessor.id), page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, signatureY - signatureWidth, signatureWidth);
             const pdfBytes = yield pdfDoc.save();
             return pdfBytes;
@@ -1715,6 +1778,10 @@ class AssessmentService {
             if (!existingAssessment) {
                 throw new error_1.NotFoundError('Assessment not found');
             }
+            // Ambil data report untuk assessment ini
+            const objReport = yield drizzle_1.db.query.assessmentReport.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.assessmentReport.assessment_id, existingAssessment.id)
+            });
             const results = yield this.getResultsByAssessmentGroupedByAssessor(schedule_id);
             const pdfDoc = yield pdf_lib_1.PDFDocument.create();
             const font = yield pdfDoc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
@@ -1834,9 +1901,8 @@ class AssessmentService {
                         row = [`${i + 1}.`, '', '', '', ''];
                     let x = startX;
                     let maxRowHeight = rowHeight;
-                    // ukur tinggi maksimum row (karena ada teks wrap)
                     const cellHeights = row.map((cell, idx) => {
-                        const safeCell = cell !== null && cell !== void 0 ? cell : ""; // fallback
+                        const safeCell = cell !== null && cell !== void 0 ? cell : "";
                         const words = safeCell.split(" ");
                         let line = "";
                         let lines = [];
@@ -1881,15 +1947,70 @@ class AssessmentService {
                 const boxSize = 12;
                 const boxX = 50;
                 let boxY = y - boxSize * 2 + 10 - 6;
-                page.drawRectangle({ x: boxX, y: boxY - boxSize + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
+                let isFirstChecked = false;
+                let isSecondChecked = false;
+                let noteText = "";
+                if (!objReport) {
+                    isFirstChecked = true;
+                }
+                else {
+                    if (objReport.is_competent) {
+                        isSecondChecked = true;
+                        noteText = objReport.statement || "";
+                    }
+                    else {
+                        isSecondChecked = true;
+                        noteText = objReport.statement || "";
+                    }
+                }
+                // Checkbox 1: Tertib dan lancar
+                page.drawRectangle({
+                    x: boxX,
+                    y: boxY - boxSize + 10,
+                    width: boxSize,
+                    height: boxSize,
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                    color: (0, pdf_lib_1.rgb)(1, 1, 1)
+                });
+                if (isFirstChecked) {
+                    page.drawText("✓", {
+                        x: boxX + 2,
+                        y: boxY - boxSize + 11,
+                        size: fontSizeSmall,
+                        font: iconFont
+                    });
+                }
                 (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar", boxX + boxSize + 5, boxY, font, fontSizeSmall);
                 boxY -= l2LineGap;
-                page.drawRectangle({ x: boxX, y: boxY - boxSize * 2 + 10, width: boxSize, height: boxSize, borderColor: (0, pdf_lib_1.rgb)(0, 0, 0), borderWidth: 1, color: (0, pdf_lib_1.rgb)(1, 1, 1) });
+                // Checkbox 2: Tertib dan lancar dengan catatan
+                page.drawRectangle({
+                    x: boxX,
+                    y: boxY - boxSize * 2 + 10,
+                    width: boxSize,
+                    height: boxSize,
+                    borderColor: (0, pdf_lib_1.rgb)(0, 0, 0),
+                    borderWidth: 1,
+                    color: (0, pdf_lib_1.rgb)(1, 1, 1)
+                });
+                if (isSecondChecked) {
+                    page.drawText("✓", {
+                        x: boxX + 2,
+                        y: boxY - boxSize * 2 + 11,
+                        size: fontSizeSmall,
+                        font: iconFont
+                    });
+                }
                 (0, pdfDraw_helper_1.drawParagraph)(page, "Tertib dan lancar dengan", boxX + boxSize + 5, boxY - boxSize, font, fontSizeSmall);
                 boxY -= l2LineGap;
-                y = (0, pdfDraw_helper_1.drawParagraph)(page, "catatan : ....................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
+                const catatanLine = noteText
+                    ? `catatan : ${noteText}`
+                    : "catatan : ....................................................................................................................................";
+                y = (0, pdfDraw_helper_1.drawParagraph)(page, catatanLine, boxX + boxSize + 5, boxY - boxSize * 2, font, fontSizeSmall);
                 boxY -= l2LineGap;
-                y = (0, pdfDraw_helper_1.drawParagraph)(page, "............................................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 3, font, fontSizeSmall);
+                if (!noteText) {
+                    y = (0, pdfDraw_helper_1.drawParagraph)(page, "............................................................................................................................................................", boxX + boxSize + 5, boxY - boxSize * 3, font, fontSizeSmall);
+                }
                 (0, pdfDraw_helper_1.drawParagraph)(page, "Demikian, form penilaian ini dibuat sesuai dengan kejadian yang sebenarnya, untuk digunakan sebagaimana mestinya.", 50, y, font, fontSizeSmall);
                 // === SIGNATURE ===
                 const signatureX = 50;
@@ -1902,11 +2023,6 @@ class AssessmentService {
                 (0, pdfDraw_helper_1.drawParagraph)(page, `${signatureDate}`, signatureX, signatureY, font, fontSizeSmall, "right");
                 y = (0, pdfDraw_helper_1.drawParagraph)(page, `Assessor`, signatureX + (signatureNameLength / 2) - (signatureWidth / 2), signatureY - 15, font, fontSizeSmall, "right");
                 signatureY -= 20;
-                // const qrData = getAssessorUrl(results?.assessors[assessorIdx].id ?? 0);
-                // const qrCode = await embedQrCode(pdfDoc, qrData);
-                // page.drawImage(qrCode,
-                //     { x: page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, y: signatureY - signatureWidth, width: signatureWidth, height: signatureWidth }
-                // );
                 yield (0, helper_1.drawSignatureOrQR)(pdfDoc, page, (_d = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].signature) !== null && _d !== void 0 ? _d : "", (0, hashids_1.getAssessorUrl)((_e = results === null || results === void 0 ? void 0 : results.assessors[assessorIdx].id) !== null && _e !== void 0 ? _e : 0), page.getWidth() - signatureWidth * 2 - (signatureNameLength / 2) + (signatureWidth / 2) + 9, signatureY - signatureWidth, signatureWidth);
                 (0, pdfDraw_helper_1.drawParagraph)(page, `${assessor_name}`, signatureX, signatureY - signatureWidth - 12, font, fontSizeSmall, "right");
             }

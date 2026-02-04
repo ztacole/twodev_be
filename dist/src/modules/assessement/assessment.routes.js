@@ -27,6 +27,7 @@ const auth_middleware_2 = require("../../middleware/auth.middleware");
 const signature_upload_config_1 = require("./apl-01/signature-upload-config");
 // import { uploadIA02 } from "./ia-02/upload-conifg";
 const approval_middleware_1 = require("../../middleware/approval.middleware");
+const assessmentReport_controller_1 = require("./report/assessmentReport.controller");
 const uploadAPL01 = (0, upload_helper_1.createUploader)({
     basePath: '../../public/uploads/apl-01',
     folderResolver: (req) => {
@@ -157,4 +158,7 @@ router.post('/ak-05', auth_middleware_2.authenticateToken, auth_middleware_1.ass
 router.get('/ak-05/:result_id', ak_05_controller_1.AK05Controller.getAK05ByResultId);
 router.put('/ak-05/result/assessor/:resultId/approve', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, ak_05_controller_1.AK05Controller.approvedByAssessor);
 router.get('/ak-05/result/:resultId/export', auth_middleware_2.authenticateToken, auth_middleware_1.adminMiddleware, result_pdf_controller_1.ResultPdfController.generateAK05);
+router.get('/report/:assessmentId', auth_middleware_2.authenticateToken, auth_middleware_1.adminOrAssessorMiddleware, assessmentReport_controller_1.AssessmentReportController.getAssessmentReport);
+router.post('/report', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, assessmentReport_controller_1.AssessmentReportController.createAssessmentReport);
+router.put('/report/:assessmentId', auth_middleware_2.authenticateToken, auth_middleware_1.assessorMiddleware, assessmentReport_controller_1.AssessmentReportController.updateAssessmentReport);
 exports.default = router;
