@@ -820,6 +820,15 @@ export class AssessmentService {
         const ak04 = await db.query.resultAk04.findFirst({ where: eq(resultAk04.id, result.id) });
         const ak05 = await db.query.resultAk05.findFirst({ where: eq(resultAk05.id, result.id) });
 
+        let ia05Options: boolean | null = null;
+        if (ia05Header) {
+            const ia05 = await db.query.resultIa05.findFirst({
+                where: eq(resultIa05.header_id, ia05Header.id),
+            });
+    
+            ia05Options = !!ia05;
+        }
+
         return [
             {
                 id: result.id,
@@ -837,6 +846,7 @@ export class AssessmentService {
                 ia02_header: ia02Header,
                 ia03_header: ia03Header,
                 ia05_header: ia05Header,
+                ia05_options: ia05Options,
                 ak01_header: ak01Header,
                 ak02_header: ak02Header,
                 ak03_header: ak03Header,
@@ -1344,16 +1354,6 @@ export class AssessmentService {
                 (resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent) &&
                 res.is_competent
             ) status = "Competent";
-            // console.log(
-            //     `resultAPL02: ${resultAPL02 && resultAPL02.is_continue && resultAPL02.approved_assessor && resultAPL02.approved_assessee ? 'true' : 'false'}, ` +
-            //     `resultIA01: ${resultIA01 && resultIA01.is_competent && resultIA01.approved_assessor && resultIA01.approved_assessee ? 'true' : 'false'}, ` +
-            //     `resultIA02: ${resultIA02 && resultIA02.approved_assessor && resultIA02.approved_assessee ? 'true' : 'false'}, ` +
-            //     `resultIA03: ${resultIA03 && resultIA03.approved_assessor && resultIA03.approved_assessee ? 'true' : 'false'}, ` +
-            //     `resultIA05: ${resultIA05 ? (resultIA05.approved_assessor && resultIA05.approved_assessee && resultIA05.is_achieved) : true ? 'true' : 'false'}, ` +
-            //     `resultAK01: ${resultAK01 && resultAK01.approved_assessor && resultAK01.approved_assessee ? 'true' : 'false'}, ` +
-            //     `resultAK02: ${resultAK02 && resultAK02.approved_assessor && resultAK02.approved_assessee ? 'true' : 'false'}, ` +
-            //     `resultAK05: ${resultAK05 && resultAK05.approved_assessor && resultAK05.is_competent ? 'true' : 'false'}, ` +
-            //     `res.is_competent: ${res.is_competent ? 'true' : 'false'}`);
 
             assessees.push({ id: assessee.id, name: user?.full_name, status, score: res.score ?? null });
 
