@@ -217,372 +217,366 @@ export class AssessmentService {
     }
 
     static async updateAssessment(id: number, data: UpdateAssessmentRequest) {
-        // 1. Update assessment utama
+        // Validate before transaction
         const existingAssessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, id) });
         if (!existingAssessment) throw new NotFoundError('Assessment');
 
-        // Update occupation jika berubah
         const occupation = await db.query.occupation.findFirst({
             where: eq(occupationTable.id, data.occupation_id)
         });
         if (!occupation) throw new NotFoundError('Occupation');
-        await db.update(assessmentTable).set({
-            code: data.code,
-            occupation_id: occupation.id
-        }).where(eq(assessmentTable.id, id));
 
-        // === UCAPL02 ===
-        // Ambil semua id uc_apl02 lama
-        const oldUCs = await db.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, id));
-        const oldUCIds = new Set(oldUCs.map(u => u.id));
-        const newUCIds = new Set((data.uc_apl02s || []).filter(u => u.id).map(u => u.id));
+        // Perform all updates in a transaction
+        return await db.transaction(async (tx) => {
+            // 1. Update assessment utama
+            await tx.update(assessmentTable).set({
+                code: data.code,
+                occupation_id: occupation.id
+            }).where(eq(assessmentTable.id, id));
 
-        // Hapus UC yang tidak ada di payload
-        for (const old of oldUCs) {
-            if (!newUCIds.has(old.id)) {
-                // Hapus child (elements, details)
-                const elements = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, old.id));
-                for (const el of elements) {
-                    await db.delete(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, el.id));
-                }
-                await db.delete(elementApl02Table).where(eq(elementApl02Table.uc_id, old.id));
-                await db.delete(ucApl02Table).where(eq(ucApl02Table.id, old.id));
-            }
-        }
+            // === UCAPL02 ===
+            const oldUCs = await tx.select().from(ucApl02Table).where(eq(ucApl02Table.assessment_id, id));
+            const oldUCIds = new Set(oldUCs.map(u => u.id));
+            const newUCIds = new Set((data.uc_apl02s || []).filter(u => u.id).map(u => u.id));
 
-        // Insert/update UC dan turunannya
-        for (const uc of data.uc_apl02s || []) {
-            let ucId = uc.id;
-            if (uc.id) {
-                // Update
-                await db.update(ucApl02Table).set({
-                    unit_code: uc.unit_code,
-                    title: uc.title
-                }).where(eq(ucApl02Table.id, uc.id));
-            } else {
-                // Insert
-                const [ucRow] = await db.insert(ucApl02Table).values({
-                    assessment_id: id,
-                    unit_code: uc.unit_code,
-                    title: uc.title
-                }).$returningId();
-                ucId = ucRow.id;
-            }
-
-            // Elements
-            const oldEls = await db.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, ucId!));
-            const oldElIds = new Set(oldEls.map(e => e.id));
-            const newElIds = new Set((uc.elements || []).filter(e => e.id).map(e => e.id));
-            // Hapus element yang tidak ada di payload
-            for (const old of oldEls) {
-                if (!newElIds.has(old.id)) {
-                    await db.delete(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, old.id));
-                    await db.delete(elementApl02Table).where(eq(elementApl02Table.id, old.id));
+            for (const old of oldUCs) {
+                if (!newUCIds.has(old.id)) {
+                    const elements = await tx.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, old.id));
+                    for (const el of elements) {
+                        await tx.delete(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, el.id));
+                    }
+                    await tx.delete(elementApl02Table).where(eq(elementApl02Table.uc_id, old.id));
+                    await tx.delete(ucApl02Table).where(eq(ucApl02Table.id, old.id));
                 }
             }
-            // Insert/update element dan details
-            for (const el of uc.elements || []) {
-                let elId = el.id;
-                if (el.id) {
-                    await db.update(elementApl02Table).set({
-                        title: el.title
-                    }).where(eq(elementApl02Table.id, el.id));
+
+            for (const uc of data.uc_apl02s || []) {
+                let ucId = uc.id;
+                if (uc.id) {
+                    await tx.update(ucApl02Table).set({
+                        unit_code: uc.unit_code,
+                        title: uc.title
+                    }).where(eq(ucApl02Table.id, uc.id));
                 } else {
-                    const [elRow] = await db.insert(elementApl02Table).values({
-                        uc_id: ucId!,
-                        title: el.title
+                    const [ucRow] = await tx.insert(ucApl02Table).values({
+                        assessment_id: id,
+                        unit_code: uc.unit_code,
+                        title: uc.title
                     }).$returningId();
-                    elId = elRow.id;
+                    ucId = ucRow.id;
                 }
-                // Details
-                const oldDets = await db.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, elId!));
-                const oldDetIds = new Set(oldDets.map(d => d.id));
-                const newDetIds = new Set((el.details || []).filter(d => d.id).map(d => d.id));
-                for (const old of oldDets) {
-                    if (!newDetIds.has(old.id)) {
-                        await db.delete(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.id, old.id));
-                    }
-                }
-                for (const det of el.details || []) {
-                    if (det.id) {
-                        await db.update(elementDetailsApl02Table).set({
-                            description: det.description
-                        }).where(eq(elementDetailsApl02Table.id, det.id));
-                    } else {
-                        await db.insert(elementDetailsApl02Table).values({
-                            element_id: elId!,
-                            description: det.description
-                        });
-                    }
-                }
-            }
-        }
 
-        // === GROUP IA01 ===
-        const oldGroupsIa01 = await db.select().from(groupIa01Table).where(eq(groupIa01Table.assessment_id, id));
-        const oldGroupsIa01Ids = new Set(oldGroupsIa01.map(g => g.id));
-        const newGroupsIa01Ids = new Set((data.groups_ia01 || []).filter(g => g.id).map(g => g.id));
-        for (const old of oldGroupsIa01) {
-            if (!newGroupsIa01Ids.has(old.id)) {
-                // Hapus child units & elements
-                const units = await db.select().from(ucIa01Table).where(eq(ucIa01Table.group_id, old.id));
-                for (const unit of units) {
-                    const elements = await db.select().from(elementIaTable).where(eq(elementIaTable.uc_id, unit.id));
-                    for (const el of elements) {
-                        await db.delete(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, el.id));
-                    }
-                    await db.delete(elementIaTable).where(eq(elementIaTable.uc_id, unit.id));
-                    await db.delete(ucIa01Table).where(eq(ucIa01Table.id, unit.id));
-                }
-                await db.delete(groupIa01Table).where(eq(groupIa01Table.id, old.id));
-            }
-        }
-        for (const group of data.groups_ia01 || []) {
-            let groupId = group.id;
-            if (group.id) {
-                await db.update(groupIa01Table).set({ name: group.name }).where(eq(groupIa01Table.id, group.id));
-            } else {
-                const [groupRow] = await db.insert(groupIa01Table).values({ assessment_id: id, name: group.name }).$returningId();
-                groupId = groupRow.id;
-            }
-            if (!groupId) continue; // skip jika gagal dapat id
-            // Units
-            const oldUnits = await db.select().from(ucIa01Table).where(eq(ucIa01Table.group_id, groupId));
-            const oldUnitIds = new Set(oldUnits.map(u => u.id));
-            const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
-            for (const old of oldUnits) {
-                if (!newUnitIds.has(old.id)) {
-                    const elements = await db.select().from(elementIaTable).where(eq(elementIaTable.uc_id, old.id));
-                    for (const el of elements) {
-                        await db.delete(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, el.id));
-                    }
-                    await db.delete(elementIaTable).where(eq(elementIaTable.uc_id, old.id));
-                    await db.delete(ucIa01Table).where(eq(ucIa01Table.id, old.id));
-                }
-            }
-            for (const unit of group.units || []) {
-                let unitId = unit.id;
-                if (unit.id) {
-                    await db.update(ucIa01Table).set({ unit_code: unit.unit_code, title: unit.title }).where(eq(ucIa01Table.id, unit.id));
-                } else {
-                    if (!groupId) continue;
-                    const [unitRow] = await db.insert(ucIa01Table).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title }).$returningId();
-                    unitId = unitRow.id;
-                }
-                if (!unitId) continue;
-                // Elements
-                const oldEls = await db.select().from(elementIaTable).where(eq(elementIaTable.uc_id, unitId));
-                const oldElIds = new Set(oldEls.map(e => e.id));
-                const newElIds = new Set((unit.elements || []).filter(e => e.id).map(e => e.id));
+                const oldEls = await tx.select().from(elementApl02Table).where(eq(elementApl02Table.uc_id, ucId!));
+                const newElIds = new Set((uc.elements || []).filter(e => e.id).map(e => e.id));
                 for (const old of oldEls) {
                     if (!newElIds.has(old.id)) {
-                        await db.delete(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, old.id));
-                        await db.delete(elementIaTable).where(eq(elementIaTable.id, old.id));
+                        await tx.delete(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, old.id));
+                        await tx.delete(elementApl02Table).where(eq(elementApl02Table.id, old.id));
                     }
                 }
-                for (const el of unit.elements || []) {
+
+                for (const el of uc.elements || []) {
                     let elId = el.id;
                     if (el.id) {
-                        await db.update(elementIaTable).set({ title: el.title }).where(eq(elementIaTable.id, el.id));
+                        await tx.update(elementApl02Table).set({
+                            title: el.title
+                        }).where(eq(elementApl02Table.id, el.id));
                     } else {
-                        if (!unitId) continue;
-                        const [elRow] = await db.insert(elementIaTable).values({ uc_id: unitId, title: el.title }).$returningId();
+                        const [elRow] = await tx.insert(elementApl02Table).values({
+                            uc_id: ucId!,
+                            title: el.title
+                        }).$returningId();
                         elId = elRow.id;
                     }
-                    if (!elId) continue;
-                    // Details
-                    const oldDets = await db.select().from(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, elId));
-                    const oldDetIds = new Set(oldDets.map(d => d.id));
+
+                    const oldDets = await tx.select().from(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.element_id, elId!));
                     const newDetIds = new Set((el.details || []).filter(d => d.id).map(d => d.id));
                     for (const old of oldDets) {
                         if (!newDetIds.has(old.id)) {
-                            await db.delete(elementDetailsIaTable).where(eq(elementDetailsIaTable.id, old.id));
+                            await tx.delete(elementDetailsApl02Table).where(eq(elementDetailsApl02Table.id, old.id));
                         }
                     }
+
                     for (const det of el.details || []) {
                         if (det.id) {
-                            await db.update(elementDetailsIaTable).set({ description: det.description, benchmark: det.benchmark }).where(eq(elementDetailsIaTable.id, det.id));
+                            await tx.update(elementDetailsApl02Table).set({
+                                description: det.description
+                            }).where(eq(elementDetailsApl02Table.id, det.id));
                         } else {
-                            if (!elId) continue;
-                            await db.insert(elementDetailsIaTable).values({ element_id: elId, description: det.description, benchmark: det.benchmark });
+                            await tx.insert(elementDetailsApl02Table).values({
+                                element_id: elId!,
+                                description: det.description
+                            }).execute();
                         }
                     }
                 }
             }
-        }
 
-        // === GROUP IA02 ===
-        const oldGroupsIa02 = await db.select().from(groupIa02Table).where(eq(groupIa02Table.assessment_id, id));
-        const oldGroupsIa02Ids = new Set(oldGroupsIa02.map(g => g.id));
-        const newGroupsIa02Ids = new Set((data.groups_ia02 || []).filter(g => g.id).map(g => g.id));
-        for (const old of oldGroupsIa02) {
-            if (!newGroupsIa02Ids.has(old.id)) {
-                await db.delete(ucIa02Table).where(eq(ucIa02Table.group_id, old.id));
-                await db.delete(ia02ToolTable).where(eq(ia02ToolTable.group_id, old.id));
-                await db.delete(groupIa02Table).where(eq(groupIa02Table.id, old.id));
-            }
-        }
-        for (const group of data.groups_ia02 || []) {
-            let groupId = group.id;
-            if (group.id) {
-                await db.update(groupIa02Table).set({ name: group.name, scenario: group.scenario, duration: group.duration }).where(eq(groupIa02Table.id, group.id));
-            } else {
-                const [groupRow] = await db.insert(groupIa02Table).values({ assessment_id: id, name: group.name, scenario: group.scenario, duration: group.duration }).$returningId();
-                groupId = groupRow.id;
-            }
-            if (!groupId) continue;
-            // Units
-            const oldUnits = await db.select().from(ucIa02Table).where(eq(ucIa02Table.group_id, groupId));
-            const oldUnitIds = new Set(oldUnits.map(u => u.id));
-            const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
-            for (const old of oldUnits) {
-                if (!newUnitIds.has(old.id)) {
-                    await db.delete(ucIa02Table).where(eq(ucIa02Table.id, old.id));
+            // === GROUP IA01 ===
+            const oldGroupsIa01 = await tx.select().from(groupIa01Table).where(eq(groupIa01Table.assessment_id, id));
+            const newGroupsIa01Ids = new Set((data.groups_ia01 || []).filter(g => g.id).map(g => g.id));
+            for (const old of oldGroupsIa01) {
+                if (!newGroupsIa01Ids.has(old.id)) {
+                    const units = await tx.select().from(ucIa01Table).where(eq(ucIa01Table.group_id, old.id));
+                    for (const unit of units) {
+                        const elements = await tx.select().from(elementIaTable).where(eq(elementIaTable.uc_id, unit.id));
+                        for (const el of elements) {
+                            await tx.delete(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, el.id));
+                        }
+                        await tx.delete(elementIaTable).where(eq(elementIaTable.uc_id, unit.id));
+                        await tx.delete(ucIa01Table).where(eq(ucIa01Table.id, unit.id));
+                    }
+                    await tx.delete(groupIa01Table).where(eq(groupIa01Table.id, old.id));
                 }
             }
-            for (const unit of group.units || []) {
-                if (unit.id) {
-                    await db.update(ucIa02Table).set({ unit_code: unit.unit_code, title: unit.title }).where(eq(ucIa02Table.id, unit.id));
-                } else {
-                    if (!groupId) continue;
-                    await db.insert(ucIa02Table).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title });
-                }
-            }
-            // Tools
-            const oldTools = await db.select().from(ia02ToolTable).where(eq(ia02ToolTable.group_id, groupId));
-            const oldToolIds = new Set(oldTools.map(t => t.id));
-            const newToolIds = new Set((group.tools || []).filter(t => t.id).map(t => t.id));
-            for (const old of oldTools) {
-                if (!newToolIds.has(old.id)) {
-                    await db.delete(ia02ToolTable).where(eq(ia02ToolTable.id, old.id));
-                }
-            }
-            for (const tool of group.tools || []) {
-                if (tool.id) {
-                    await db.update(ia02ToolTable).set({ name: tool.name }).where(eq(ia02ToolTable.id, tool.id));
-                } else {
-                    if (!groupId) continue;
-                    await db.insert(ia02ToolTable).values({ group_id: groupId, name: tool.name });
-                }
-            }
-        }
 
-        // === GROUP IA03 ===
-        const oldGroupsIa03 = await db.select().from(groupIa03Table).where(eq(groupIa03Table.assessment_id, id));
-        const oldGroupsIa03Ids = new Set(oldGroupsIa03.map(g => g.id));
-        const newGroupsIa03Ids = new Set((data.groups_ia03 || []).filter(g => g.id).map(g => g.id));
-        for (const old of oldGroupsIa03) {
-            if (!newGroupsIa03Ids.has(old.id)) {
-                await db.delete(ucIa03Table).where(eq(ucIa03Table.group_id, old.id));
-                await db.delete(ia03QuestionTable).where(eq(ia03QuestionTable.group_id, old.id));
-                await db.delete(groupIa03Table).where(eq(groupIa03Table.id, old.id));
-            }
-        }
-        for (const group of data.groups_ia03 || []) {
-            let groupId = group.id;
-            if (group.id) {
-                await db.update(groupIa03Table).set({ name: group.name }).where(eq(groupIa03Table.id, group.id));
-            } else {
-                const [groupRow] = await db.insert(groupIa03Table).values({ assessment_id: id, name: group.name }).$returningId();
-                groupId = groupRow.id;
-            }
-            if (!groupId) continue;
-            // Units
-            const oldUnits = await db.select().from(ucIa03Table).where(eq(ucIa03Table.group_id, groupId));
-            const oldUnitIds = new Set(oldUnits.map(u => u.id));
-            const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
-            for (const old of oldUnits) {
-                if (!newUnitIds.has(old.id)) {
-                    await db.delete(ucIa03Table).where(eq(ucIa03Table.id, old.id));
-                }
-            }
-            for (const unit of group.units || []) {
-                if (unit.id) {
-                    await db.update(ucIa03Table).set({ unit_code: unit.unit_code, title: unit.title }).where(eq(ucIa03Table.id, unit.id));
+            for (const group of data.groups_ia01 || []) {
+                let groupId = group.id;
+                if (group.id) {
+                    await tx.update(groupIa01Table).set({ name: group.name }).where(eq(groupIa01Table.id, group.id));
                 } else {
-                    if (!groupId) continue;
-                    await db.insert(ucIa03Table).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title });
+                    const [groupRow] = await tx.insert(groupIa01Table).values({ assessment_id: id, name: group.name }).$returningId();
+                    groupId = groupRow.id;
                 }
-            }
-            // QA
-            const oldQas = await db.select().from(ia03QuestionTable).where(eq(ia03QuestionTable.group_id, groupId));
-            const oldQaIds = new Set(oldQas.map(q => q.id));
-            const newQaIds = new Set((group.qa_ia03 || []).filter(q => q.id).map(q => q.id));
-            for (const old of oldQas) {
-                if (!newQaIds.has(old.id)) {
-                    await db.delete(ia03QuestionTable).where(eq(ia03QuestionTable.id, old.id));
-                }
-            }
-            for (const qa of group.qa_ia03 || []) {
-                if (qa.id) {
-                    await db.update(ia03QuestionTable).set({ question: qa.question }).where(eq(ia03QuestionTable.id, qa.id));
-                } else {
-                    if (!groupId) continue;
-                    await db.insert(ia03QuestionTable).values({ group_id: groupId, question: qa.question });
-                }
-            }
-        }
+                if (!groupId) continue;
 
-        // === IA05 ===
-        if (data.ia05_questions) {
-            const oldQ5s = await db.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, id));
-            const oldQ5Ids = new Set(oldQ5s.map(q => q.id));
-            const newQ5Ids = new Set((data.ia05_questions || []).filter(q => q.id).map(q => q.id));
-            for (const old of oldQ5s) {
-                if (!newQ5Ids.has(old.id)) {
-                    await db.delete(questionOptionTable).where(eq(questionOptionTable.question_id, old.id));
-                    await db.delete(ia05QuestionTable).where(eq(ia05QuestionTable.id, old.id));
-                }
-            }
-            for (const q of data.ia05_questions || []) {
-                let qId = q.id;
-                if (q.id) {
-                    await db.update(ia05QuestionTable).set({ order: q.order, question: q.question }).where(eq(ia05QuestionTable.id, q.id));
-                } else {
-                    const [qRow] = await db.insert(ia05QuestionTable).values({ assessment_id: id, order: q.order, question: q.question }).$returningId();
-                    qId = qRow.id;
-                }
-                if (!qId) continue;
-                // Options
-                const oldOpts = await db.select().from(questionOptionTable).where(eq(questionOptionTable.question_id, qId));
-                const oldOptIds = new Set(oldOpts.map(o => o.id));
-                const newOptIds = new Set((q.options || []).filter(o => o.id).map(o => o.id));
-                for (const old of oldOpts) {
-                    if (!newOptIds.has(old.id)) {
-                        await db.delete(questionOptionTable).where(eq(questionOptionTable.id, old.id));
+                const oldUnits = await tx.select().from(ucIa01Table).where(eq(ucIa01Table.group_id, groupId));
+                const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
+                for (const old of oldUnits) {
+                    if (!newUnitIds.has(old.id)) {
+                        const elements = await tx.select().from(elementIaTable).where(eq(elementIaTable.uc_id, old.id));
+                        for (const el of elements) {
+                            await tx.delete(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, el.id));
+                        }
+                        await tx.delete(elementIaTable).where(eq(elementIaTable.uc_id, old.id));
+                        await tx.delete(ucIa01Table).where(eq(ucIa01Table.id, old.id));
                     }
                 }
-                for (const opt of q.options || []) {
-                    if (opt.id) {
-                        await db.update(questionOptionTable).set({ option: opt.option, is_answer: opt.is_answer }).where(eq(questionOptionTable.id, opt.id));
+
+                for (const unit of group.units || []) {
+                    let unitId = unit.id;
+                    if (unit.id) {
+                        await tx.update(ucIa01Table).set({ unit_code: unit.unit_code, title: unit.title }).where(eq(ucIa01Table.id, unit.id));
                     } else {
-                        if (!qId) continue;
-                        await db.insert(questionOptionTable).values({ question_id: qId, option: opt.option, is_answer: opt.is_answer });
+                        if (!groupId) continue;
+                        const [unitRow] = await tx.insert(ucIa01Table).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title }).$returningId();
+                        unitId = unitRow.id;
+                    }
+                    if (!unitId) continue;
+
+                    const oldEls = await tx.select().from(elementIaTable).where(eq(elementIaTable.uc_id, unitId));
+                    const newElIds = new Set((unit.elements || []).filter(e => e.id).map(e => e.id));
+                    for (const old of oldEls) {
+                        if (!newElIds.has(old.id)) {
+                            await tx.delete(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, old.id));
+                            await tx.delete(elementIaTable).where(eq(elementIaTable.id, old.id));
+                        }
+                    }
+
+                    for (const el of unit.elements || []) {
+                        let elId = el.id;
+                        if (el.id) {
+                            await tx.update(elementIaTable).set({ title: el.title }).where(eq(elementIaTable.id, el.id));
+                        } else {
+                            if (!unitId) continue;
+                            const [elRow] = await tx.insert(elementIaTable).values({ uc_id: unitId, title: el.title }).$returningId();
+                            elId = elRow.id;
+                        }
+                        if (!elId) continue;
+
+                        const oldDets = await tx.select().from(elementDetailsIaTable).where(eq(elementDetailsIaTable.element_id, elId));
+                        const newDetIds = new Set((el.details || []).filter(d => d.id).map(d => d.id));
+                        for (const old of oldDets) {
+                            if (!newDetIds.has(old.id)) {
+                                await tx.delete(elementDetailsIaTable).where(eq(elementDetailsIaTable.id, old.id));
+                            }
+                        }
+
+                        for (const det of el.details || []) {
+                            if (det.id) {
+                                await tx.update(elementDetailsIaTable).set({ description: det.description, benchmark: det.benchmark }).where(eq(elementDetailsIaTable.id, det.id));
+                            } else {
+                                if (!elId) continue;
+                                await tx.insert(elementDetailsIaTable).values({ element_id: elId, description: det.description, benchmark: det.benchmark }).execute();
+                            }
+                        }
                     }
                 }
             }
-        }
 
-        // === IA07 ===
-        if (data.ia07_questions) {
-            const oldQ7s = await db.select().from(ia07QuestionTable).where(eq(ia07QuestionTable.assessment_id, id));
-            const oldQ7Ids = new Set(oldQ7s.map(q => q.id));
-            const newQ7Ids = new Set((data.ia07_questions || []).filter(q => q.id).map(q => q.id));
-            for (const old of oldQ7s) {
-                if (!newQ7Ids.has(old.id)) {
-                    await db.delete(ia07QuestionTable).where(eq(ia07QuestionTable.id, old.id));
+            // === GROUP IA02 ===
+            const oldGroupsIa02 = await tx.select().from(groupIa02Table).where(eq(groupIa02Table.assessment_id, id));
+            const newGroupsIa02Ids = new Set((data.groups_ia02 || []).filter(g => g.id).map(g => g.id));
+            for (const old of oldGroupsIa02) {
+                if (!newGroupsIa02Ids.has(old.id)) {
+                    await tx.delete(ucIa02Table).where(eq(ucIa02Table.group_id, old.id));
+                    await tx.delete(ia02ToolTable).where(eq(ia02ToolTable.group_id, old.id));
+                    await tx.delete(groupIa02Table).where(eq(groupIa02Table.id, old.id));
                 }
             }
-            for (const q of data.ia07_questions || []) {
-                if (q.id) {
-                    await db.update(ia07QuestionTable).set({ question: q.question, answer_key: q.answer_key }).where(eq(ia07QuestionTable.id, q.id));
+
+            for (const group of data.groups_ia02 || []) {
+                let groupId = group.id;
+                if (group.id) {
+                    await tx.update(groupIa02Table).set({ name: group.name, scenario: group.scenario, duration: group.duration }).where(eq(groupIa02Table.id, group.id));
                 } else {
-                    await db.insert(ia07QuestionTable).values({ assessment_id: id, question: q.question, answer_key: q.answer_key });
+                    const [groupRow] = await tx.insert(groupIa02Table).values({ assessment_id: id, name: group.name, scenario: group.scenario, duration: group.duration }).$returningId();
+                    groupId = groupRow.id;
+                }
+                if (!groupId) continue;
+
+                const oldUnits = await tx.select().from(ucIa02Table).where(eq(ucIa02Table.group_id, groupId));
+                const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
+                for (const old of oldUnits) {
+                    if (!newUnitIds.has(old.id)) {
+                        await tx.delete(ucIa02Table).where(eq(ucIa02Table.id, old.id));
+                    }
+                }
+
+                for (const unit of group.units || []) {
+                    if (unit.id) {
+                        await tx.update(ucIa02Table).set({ unit_code: unit.unit_code, title: unit.title }).where(eq(ucIa02Table.id, unit.id));
+                    } else {
+                        if (!groupId) continue;
+                        await tx.insert(ucIa02Table).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title });
+                    }
+                }
+
+                const oldTools = await tx.select().from(ia02ToolTable).where(eq(ia02ToolTable.group_id, groupId));
+                const newToolIds = new Set((group.tools || []).filter(t => t.id).map(t => t.id));
+                for (const old of oldTools) {
+                    if (!newToolIds.has(old.id)) {
+                        await tx.delete(ia02ToolTable).where(eq(ia02ToolTable.id, old.id));
+                    }
+                }
+
+                for (const tool of group.tools || []) {
+                    if (tool.id) {
+                        await tx.update(ia02ToolTable).set({ name: tool.name }).where(eq(ia02ToolTable.id, tool.id));
+                    } else {
+                        if (!groupId) continue;
+                        await tx.insert(ia02ToolTable).values({ group_id: groupId, name: tool.name });
+                    }
                 }
             }
-        }
 
-        return { id: id };
+            // === GROUP IA03 ===
+            const oldGroupsIa03 = await tx.select().from(groupIa03Table).where(eq(groupIa03Table.assessment_id, id));
+            const newGroupsIa03Ids = new Set((data.groups_ia03 || []).filter(g => g.id).map(g => g.id));
+            for (const old of oldGroupsIa03) {
+                if (!newGroupsIa03Ids.has(old.id)) {
+                    await tx.delete(ucIa03Table).where(eq(ucIa03Table.group_id, old.id));
+                    await tx.delete(ia03QuestionTable).where(eq(ia03QuestionTable.group_id, old.id));
+                    await tx.delete(groupIa03Table).where(eq(groupIa03Table.id, old.id));
+                }
+            }
+
+            for (const group of data.groups_ia03 || []) {
+                let groupId = group.id;
+                if (group.id) {
+                    await tx.update(groupIa03Table).set({ name: group.name }).where(eq(groupIa03Table.id, group.id));
+                } else {
+                    const [groupRow] = await tx.insert(groupIa03Table).values({ assessment_id: id, name: group.name }).$returningId();
+                    groupId = groupRow.id;
+                }
+                if (!groupId) continue;
+
+                const oldUnits = await tx.select().from(ucIa03Table).where(eq(ucIa03Table.group_id, groupId));
+                const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
+                for (const old of oldUnits) {
+                    if (!newUnitIds.has(old.id)) {
+                        await tx.delete(ucIa03Table).where(eq(ucIa03Table.id, old.id));
+                    }
+                }
+
+                for (const unit of group.units || []) {
+                    if (unit.id) {
+                        await tx.update(ucIa03Table).set({ unit_code: unit.unit_code, title: unit.title }).where(eq(ucIa03Table.id, unit.id));
+                    } else {
+                        if (!groupId) continue;
+                        await tx.insert(ucIa03Table).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title });
+                    }
+                }
+
+                const oldQas = await tx.select().from(ia03QuestionTable).where(eq(ia03QuestionTable.group_id, groupId));
+                const newQaIds = new Set((group.qa_ia03 || []).filter(q => q.id).map(q => q.id));
+                for (const old of oldQas) {
+                    if (!newQaIds.has(old.id)) {
+                        await tx.delete(ia03QuestionTable).where(eq(ia03QuestionTable.id, old.id));
+                    }
+                }
+
+                for (const qa of group.qa_ia03 || []) {
+                    if (qa.id) {
+                        await tx.update(ia03QuestionTable).set({ question: qa.question }).where(eq(ia03QuestionTable.id, qa.id));
+                    } else {
+                        if (!groupId) continue;
+                        await tx.insert(ia03QuestionTable).values({ group_id: groupId, question: qa.question });
+                    }
+                }
+            }
+
+            // === IA05 ===
+            if (data.ia05_questions) {
+                const oldQ5s = await tx.select().from(ia05QuestionTable).where(eq(ia05QuestionTable.assessment_id, id));
+                const newQ5Ids = new Set((data.ia05_questions || []).filter(q => q.id).map(q => q.id));
+                for (const old of oldQ5s) {
+                    if (!newQ5Ids.has(old.id)) {
+                        await tx.delete(questionOptionTable).where(eq(questionOptionTable.question_id, old.id));
+                        await tx.delete(ia05QuestionTable).where(eq(ia05QuestionTable.id, old.id));
+                    }
+                }
+
+                for (const q of data.ia05_questions || []) {
+                    let qId = q.id;
+                    if (q.id) {
+                        await tx.update(ia05QuestionTable).set({ order: q.order, question: q.question }).where(eq(ia05QuestionTable.id, q.id));
+                    } else {
+                        const [qRow] = await tx.insert(ia05QuestionTable).values({ assessment_id: id, order: q.order, question: q.question }).$returningId();
+                        qId = qRow.id;
+                    }
+                    if (!qId) continue;
+
+                    const oldOpts = await tx.select().from(questionOptionTable).where(eq(questionOptionTable.question_id, qId));
+                    const newOptIds = new Set((q.options || []).filter(o => o.id).map(o => o.id));
+                    for (const old of oldOpts) {
+                        if (!newOptIds.has(old.id)) {
+                            await tx.delete(questionOptionTable).where(eq(questionOptionTable.id, old.id));
+                        }
+                    }
+
+                    for (const opt of q.options || []) {
+                        if (opt.id) {
+                            await tx.update(questionOptionTable).set({ option: opt.option, is_answer: opt.is_answer }).where(eq(questionOptionTable.id, opt.id));
+                        } else {
+                            if (!qId) continue;
+                            await tx.insert(questionOptionTable).values({ question_id: qId, option: opt.option, is_answer: opt.is_answer }).execute();
+                        }
+                    }
+                }
+            }
+
+            // === IA07 ===
+            if (data.ia07_questions) {
+                const oldQ7s = await tx.select().from(ia07QuestionTable).where(eq(ia07QuestionTable.assessment_id, id));
+                const newQ7Ids = new Set((data.ia07_questions || []).filter(q => q.id).map(q => q.id));
+                for (const old of oldQ7s) {
+                    if (!newQ7Ids.has(old.id)) {
+                        await tx.delete(ia07QuestionTable).where(eq(ia07QuestionTable.id, old.id));
+                    }
+                }
+
+                for (const q of data.ia07_questions || []) {
+                    if (q.id) {
+                        await tx.update(ia07QuestionTable).set({ question: q.question, answer_key: q.answer_key }).where(eq(ia07QuestionTable.id, q.id));
+                    } else {
+                        await tx.insert(ia07QuestionTable).values({ assessment_id: id, question: q.question, answer_key: q.answer_key }).execute();
+                    }
+                }
+            }
+
+            return { id: id };
+        });
     }
 
     static async getAssessments(): Promise<AssessmentResponse[]> {
