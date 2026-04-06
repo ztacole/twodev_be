@@ -150,393 +150,362 @@ class AssessmentService {
     }
     static updateAssessment(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            // 1. Update assessment utama
+            // Validate before transaction
             const existingAssessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, id) });
             if (!existingAssessment)
                 throw new error_1.NotFoundError('Assessment');
-            // Update occupation jika berubah
             const occupation = yield drizzle_1.db.query.occupation.findFirst({
                 where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, data.occupation_id)
             });
             if (!occupation)
                 throw new error_1.NotFoundError('Occupation');
-            yield drizzle_1.db.update(schema_1.assessment).set({
-                code: data.code,
-                occupation_id: occupation.id
-            }).where((0, drizzle_orm_1.eq)(schema_1.assessment.id, id));
-            // === UCAPL02 ===
-            // Ambil semua id uc_apl02 lama
-            const oldUCs = yield drizzle_1.db.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, id));
-            const oldUCIds = new Set(oldUCs.map(u => u.id));
-            const newUCIds = new Set((data.uc_apl02s || []).filter(u => u.id).map(u => u.id));
-            // Hapus UC yang tidak ada di payload
-            for (const old of oldUCs) {
-                if (!newUCIds.has(old.id)) {
-                    // Hapus child (elements, details)
-                    const elements = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, old.id));
-                    for (const el of elements) {
-                        yield drizzle_1.db.delete(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.element_id, el.id));
-                    }
-                    yield drizzle_1.db.delete(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, old.id));
-                    yield drizzle_1.db.delete(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.id, old.id));
-                }
-            }
-            // Insert/update UC dan turunannya
-            for (const uc of data.uc_apl02s || []) {
-                let ucId = uc.id;
-                if (uc.id) {
-                    // Update
-                    yield drizzle_1.db.update(schema_1.ucApl02).set({
-                        unit_code: uc.unit_code,
-                        title: uc.title
-                    }).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.id, uc.id));
-                }
-                else {
-                    // Insert
-                    const [ucRow] = yield drizzle_1.db.insert(schema_1.ucApl02).values({
-                        assessment_id: id,
-                        unit_code: uc.unit_code,
-                        title: uc.title
-                    }).$returningId();
-                    ucId = ucRow.id;
-                }
-                // Elements
-                const oldEls = yield drizzle_1.db.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, ucId));
-                const oldElIds = new Set(oldEls.map(e => e.id));
-                const newElIds = new Set((uc.elements || []).filter(e => e.id).map(e => e.id));
-                // Hapus element yang tidak ada di payload
-                for (const old of oldEls) {
-                    if (!newElIds.has(old.id)) {
-                        yield drizzle_1.db.delete(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.element_id, old.id));
-                        yield drizzle_1.db.delete(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.id, old.id));
+            // Perform all updates in a transaction
+            return yield drizzle_1.db.transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+                // 1. Update assessment utama
+                yield tx.update(schema_1.assessment).set({
+                    code: data.code,
+                    occupation_id: occupation.id
+                }).where((0, drizzle_orm_1.eq)(schema_1.assessment.id, id));
+                // === UCAPL02 ===
+                const oldUCs = yield tx.select().from(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.assessment_id, id));
+                const oldUCIds = new Set(oldUCs.map(u => u.id));
+                const newUCIds = new Set((data.uc_apl02s || []).filter(u => u.id).map(u => u.id));
+                for (const old of oldUCs) {
+                    if (!newUCIds.has(old.id)) {
+                        const elements = yield tx.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, old.id));
+                        for (const el of elements) {
+                            yield tx.delete(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.element_id, el.id));
+                        }
+                        yield tx.delete(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, old.id));
+                        yield tx.delete(schema_1.ucApl02).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.id, old.id));
                     }
                 }
-                // Insert/update element dan details
-                for (const el of uc.elements || []) {
-                    let elId = el.id;
-                    if (el.id) {
-                        yield drizzle_1.db.update(schema_1.elementApl02).set({
-                            title: el.title
-                        }).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.id, el.id));
+                for (const uc of data.uc_apl02s || []) {
+                    let ucId = uc.id;
+                    if (uc.id) {
+                        yield tx.update(schema_1.ucApl02).set({
+                            unit_code: uc.unit_code,
+                            title: uc.title
+                        }).where((0, drizzle_orm_1.eq)(schema_1.ucApl02.id, uc.id));
                     }
                     else {
-                        const [elRow] = yield drizzle_1.db.insert(schema_1.elementApl02).values({
-                            uc_id: ucId,
-                            title: el.title
+                        const [ucRow] = yield tx.insert(schema_1.ucApl02).values({
+                            assessment_id: id,
+                            unit_code: uc.unit_code,
+                            title: uc.title
                         }).$returningId();
-                        elId = elRow.id;
+                        ucId = ucRow.id;
                     }
-                    // Details
-                    const oldDets = yield drizzle_1.db.select().from(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.element_id, elId));
-                    const oldDetIds = new Set(oldDets.map(d => d.id));
-                    const newDetIds = new Set((el.details || []).filter(d => d.id).map(d => d.id));
-                    for (const old of oldDets) {
-                        if (!newDetIds.has(old.id)) {
-                            yield drizzle_1.db.delete(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.id, old.id));
-                        }
-                    }
-                    for (const det of el.details || []) {
-                        if (det.id) {
-                            yield drizzle_1.db.update(schema_1.elementDetailsApl02).set({
-                                description: det.description
-                            }).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.id, det.id));
-                        }
-                        else {
-                            yield drizzle_1.db.insert(schema_1.elementDetailsApl02).values({
-                                element_id: elId,
-                                description: det.description
-                            });
-                        }
-                    }
-                }
-            }
-            // === GROUP IA01 ===
-            const oldGroupsIa01 = yield drizzle_1.db.select().from(schema_1.groupIa01).where((0, drizzle_orm_1.eq)(schema_1.groupIa01.assessment_id, id));
-            const oldGroupsIa01Ids = new Set(oldGroupsIa01.map(g => g.id));
-            const newGroupsIa01Ids = new Set((data.groups_ia01 || []).filter(g => g.id).map(g => g.id));
-            for (const old of oldGroupsIa01) {
-                if (!newGroupsIa01Ids.has(old.id)) {
-                    // Hapus child units & elements
-                    const units = yield drizzle_1.db.select().from(schema_1.ucIa01).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.group_id, old.id));
-                    for (const unit of units) {
-                        const elements = yield drizzle_1.db.select().from(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, unit.id));
-                        for (const el of elements) {
-                            yield drizzle_1.db.delete(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.element_id, el.id));
-                        }
-                        yield drizzle_1.db.delete(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, unit.id));
-                        yield drizzle_1.db.delete(schema_1.ucIa01).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.id, unit.id));
-                    }
-                    yield drizzle_1.db.delete(schema_1.groupIa01).where((0, drizzle_orm_1.eq)(schema_1.groupIa01.id, old.id));
-                }
-            }
-            for (const group of data.groups_ia01 || []) {
-                let groupId = group.id;
-                if (group.id) {
-                    yield drizzle_1.db.update(schema_1.groupIa01).set({ name: group.name }).where((0, drizzle_orm_1.eq)(schema_1.groupIa01.id, group.id));
-                }
-                else {
-                    const [groupRow] = yield drizzle_1.db.insert(schema_1.groupIa01).values({ assessment_id: id, name: group.name }).$returningId();
-                    groupId = groupRow.id;
-                }
-                if (!groupId)
-                    continue; // skip jika gagal dapat id
-                // Units
-                const oldUnits = yield drizzle_1.db.select().from(schema_1.ucIa01).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.group_id, groupId));
-                const oldUnitIds = new Set(oldUnits.map(u => u.id));
-                const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
-                for (const old of oldUnits) {
-                    if (!newUnitIds.has(old.id)) {
-                        const elements = yield drizzle_1.db.select().from(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, old.id));
-                        for (const el of elements) {
-                            yield drizzle_1.db.delete(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.element_id, el.id));
-                        }
-                        yield drizzle_1.db.delete(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, old.id));
-                        yield drizzle_1.db.delete(schema_1.ucIa01).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.id, old.id));
-                    }
-                }
-                for (const unit of group.units || []) {
-                    let unitId = unit.id;
-                    if (unit.id) {
-                        yield drizzle_1.db.update(schema_1.ucIa01).set({ unit_code: unit.unit_code, title: unit.title }).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.id, unit.id));
-                    }
-                    else {
-                        if (!groupId)
-                            continue;
-                        const [unitRow] = yield drizzle_1.db.insert(schema_1.ucIa01).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title }).$returningId();
-                        unitId = unitRow.id;
-                    }
-                    if (!unitId)
-                        continue;
-                    // Elements
-                    const oldEls = yield drizzle_1.db.select().from(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, unitId));
-                    const oldElIds = new Set(oldEls.map(e => e.id));
-                    const newElIds = new Set((unit.elements || []).filter(e => e.id).map(e => e.id));
+                    const oldEls = yield tx.select().from(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.uc_id, ucId));
+                    const newElIds = new Set((uc.elements || []).filter(e => e.id).map(e => e.id));
                     for (const old of oldEls) {
                         if (!newElIds.has(old.id)) {
-                            yield drizzle_1.db.delete(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.element_id, old.id));
-                            yield drizzle_1.db.delete(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.id, old.id));
+                            yield tx.delete(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.element_id, old.id));
+                            yield tx.delete(schema_1.elementApl02).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.id, old.id));
                         }
                     }
-                    for (const el of unit.elements || []) {
+                    for (const el of uc.elements || []) {
                         let elId = el.id;
                         if (el.id) {
-                            yield drizzle_1.db.update(schema_1.elementIa).set({ title: el.title }).where((0, drizzle_orm_1.eq)(schema_1.elementIa.id, el.id));
+                            yield tx.update(schema_1.elementApl02).set({
+                                title: el.title
+                            }).where((0, drizzle_orm_1.eq)(schema_1.elementApl02.id, el.id));
                         }
                         else {
-                            if (!unitId)
-                                continue;
-                            const [elRow] = yield drizzle_1.db.insert(schema_1.elementIa).values({ uc_id: unitId, title: el.title }).$returningId();
+                            const [elRow] = yield tx.insert(schema_1.elementApl02).values({
+                                uc_id: ucId,
+                                title: el.title
+                            }).$returningId();
                             elId = elRow.id;
                         }
-                        if (!elId)
-                            continue;
-                        // Details
-                        const oldDets = yield drizzle_1.db.select().from(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.element_id, elId));
-                        const oldDetIds = new Set(oldDets.map(d => d.id));
+                        const oldDets = yield tx.select().from(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.element_id, elId));
                         const newDetIds = new Set((el.details || []).filter(d => d.id).map(d => d.id));
                         for (const old of oldDets) {
                             if (!newDetIds.has(old.id)) {
-                                yield drizzle_1.db.delete(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.id, old.id));
+                                yield tx.delete(schema_1.elementDetailsApl02).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.id, old.id));
                             }
                         }
                         for (const det of el.details || []) {
                             if (det.id) {
-                                yield drizzle_1.db.update(schema_1.elementDetailsIa).set({ description: det.description, benchmark: det.benchmark }).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.id, det.id));
+                                yield tx.update(schema_1.elementDetailsApl02).set({
+                                    description: det.description
+                                }).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsApl02.id, det.id));
                             }
                             else {
-                                if (!elId)
-                                    continue;
-                                yield drizzle_1.db.insert(schema_1.elementDetailsIa).values({ element_id: elId, description: det.description, benchmark: det.benchmark });
+                                yield tx.insert(schema_1.elementDetailsApl02).values({
+                                    element_id: elId,
+                                    description: det.description
+                                }).execute();
                             }
                         }
                     }
                 }
-            }
-            // === GROUP IA02 ===
-            const oldGroupsIa02 = yield drizzle_1.db.select().from(schema_1.groupIa02).where((0, drizzle_orm_1.eq)(schema_1.groupIa02.assessment_id, id));
-            const oldGroupsIa02Ids = new Set(oldGroupsIa02.map(g => g.id));
-            const newGroupsIa02Ids = new Set((data.groups_ia02 || []).filter(g => g.id).map(g => g.id));
-            for (const old of oldGroupsIa02) {
-                if (!newGroupsIa02Ids.has(old.id)) {
-                    yield drizzle_1.db.delete(schema_1.ucIa02).where((0, drizzle_orm_1.eq)(schema_1.ucIa02.group_id, old.id));
-                    yield drizzle_1.db.delete(schema_1.ia02Tool).where((0, drizzle_orm_1.eq)(schema_1.ia02Tool.group_id, old.id));
-                    yield drizzle_1.db.delete(schema_1.groupIa02).where((0, drizzle_orm_1.eq)(schema_1.groupIa02.id, old.id));
-                }
-            }
-            for (const group of data.groups_ia02 || []) {
-                let groupId = group.id;
-                if (group.id) {
-                    yield drizzle_1.db.update(schema_1.groupIa02).set({ name: group.name, scenario: group.scenario, duration: group.duration }).where((0, drizzle_orm_1.eq)(schema_1.groupIa02.id, group.id));
-                }
-                else {
-                    const [groupRow] = yield drizzle_1.db.insert(schema_1.groupIa02).values({ assessment_id: id, name: group.name, scenario: group.scenario, duration: group.duration }).$returningId();
-                    groupId = groupRow.id;
-                }
-                if (!groupId)
-                    continue;
-                // Units
-                const oldUnits = yield drizzle_1.db.select().from(schema_1.ucIa02).where((0, drizzle_orm_1.eq)(schema_1.ucIa02.group_id, groupId));
-                const oldUnitIds = new Set(oldUnits.map(u => u.id));
-                const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
-                for (const old of oldUnits) {
-                    if (!newUnitIds.has(old.id)) {
-                        yield drizzle_1.db.delete(schema_1.ucIa02).where((0, drizzle_orm_1.eq)(schema_1.ucIa02.id, old.id));
+                // === GROUP IA01 ===
+                const oldGroupsIa01 = yield tx.select().from(schema_1.groupIa01).where((0, drizzle_orm_1.eq)(schema_1.groupIa01.assessment_id, id));
+                const newGroupsIa01Ids = new Set((data.groups_ia01 || []).filter(g => g.id).map(g => g.id));
+                for (const old of oldGroupsIa01) {
+                    if (!newGroupsIa01Ids.has(old.id)) {
+                        const units = yield tx.select().from(schema_1.ucIa01).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.group_id, old.id));
+                        for (const unit of units) {
+                            const elements = yield tx.select().from(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, unit.id));
+                            for (const el of elements) {
+                                yield tx.delete(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.element_id, el.id));
+                            }
+                            yield tx.delete(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, unit.id));
+                            yield tx.delete(schema_1.ucIa01).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.id, unit.id));
+                        }
+                        yield tx.delete(schema_1.groupIa01).where((0, drizzle_orm_1.eq)(schema_1.groupIa01.id, old.id));
                     }
                 }
-                for (const unit of group.units || []) {
-                    if (unit.id) {
-                        yield drizzle_1.db.update(schema_1.ucIa02).set({ unit_code: unit.unit_code, title: unit.title }).where((0, drizzle_orm_1.eq)(schema_1.ucIa02.id, unit.id));
+                for (const group of data.groups_ia01 || []) {
+                    let groupId = group.id;
+                    if (group.id) {
+                        yield tx.update(schema_1.groupIa01).set({ name: group.name }).where((0, drizzle_orm_1.eq)(schema_1.groupIa01.id, group.id));
                     }
                     else {
-                        if (!groupId)
-                            continue;
-                        yield drizzle_1.db.insert(schema_1.ucIa02).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title });
+                        const [groupRow] = yield tx.insert(schema_1.groupIa01).values({ assessment_id: id, name: group.name }).$returningId();
+                        groupId = groupRow.id;
                     }
-                }
-                // Tools
-                const oldTools = yield drizzle_1.db.select().from(schema_1.ia02Tool).where((0, drizzle_orm_1.eq)(schema_1.ia02Tool.group_id, groupId));
-                const oldToolIds = new Set(oldTools.map(t => t.id));
-                const newToolIds = new Set((group.tools || []).filter(t => t.id).map(t => t.id));
-                for (const old of oldTools) {
-                    if (!newToolIds.has(old.id)) {
-                        yield drizzle_1.db.delete(schema_1.ia02Tool).where((0, drizzle_orm_1.eq)(schema_1.ia02Tool.id, old.id));
-                    }
-                }
-                for (const tool of group.tools || []) {
-                    if (tool.id) {
-                        yield drizzle_1.db.update(schema_1.ia02Tool).set({ name: tool.name }).where((0, drizzle_orm_1.eq)(schema_1.ia02Tool.id, tool.id));
-                    }
-                    else {
-                        if (!groupId)
-                            continue;
-                        yield drizzle_1.db.insert(schema_1.ia02Tool).values({ group_id: groupId, name: tool.name });
-                    }
-                }
-            }
-            // === GROUP IA03 ===
-            const oldGroupsIa03 = yield drizzle_1.db.select().from(schema_1.groupIa03).where((0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, id));
-            const oldGroupsIa03Ids = new Set(oldGroupsIa03.map(g => g.id));
-            const newGroupsIa03Ids = new Set((data.groups_ia03 || []).filter(g => g.id).map(g => g.id));
-            for (const old of oldGroupsIa03) {
-                if (!newGroupsIa03Ids.has(old.id)) {
-                    yield drizzle_1.db.delete(schema_1.ucIa03).where((0, drizzle_orm_1.eq)(schema_1.ucIa03.group_id, old.id));
-                    yield drizzle_1.db.delete(schema_1.ia03Question).where((0, drizzle_orm_1.eq)(schema_1.ia03Question.group_id, old.id));
-                    yield drizzle_1.db.delete(schema_1.groupIa03).where((0, drizzle_orm_1.eq)(schema_1.groupIa03.id, old.id));
-                }
-            }
-            for (const group of data.groups_ia03 || []) {
-                let groupId = group.id;
-                if (group.id) {
-                    yield drizzle_1.db.update(schema_1.groupIa03).set({ name: group.name }).where((0, drizzle_orm_1.eq)(schema_1.groupIa03.id, group.id));
-                }
-                else {
-                    const [groupRow] = yield drizzle_1.db.insert(schema_1.groupIa03).values({ assessment_id: id, name: group.name }).$returningId();
-                    groupId = groupRow.id;
-                }
-                if (!groupId)
-                    continue;
-                // Units
-                const oldUnits = yield drizzle_1.db.select().from(schema_1.ucIa03).where((0, drizzle_orm_1.eq)(schema_1.ucIa03.group_id, groupId));
-                const oldUnitIds = new Set(oldUnits.map(u => u.id));
-                const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
-                for (const old of oldUnits) {
-                    if (!newUnitIds.has(old.id)) {
-                        yield drizzle_1.db.delete(schema_1.ucIa03).where((0, drizzle_orm_1.eq)(schema_1.ucIa03.id, old.id));
-                    }
-                }
-                for (const unit of group.units || []) {
-                    if (unit.id) {
-                        yield drizzle_1.db.update(schema_1.ucIa03).set({ unit_code: unit.unit_code, title: unit.title }).where((0, drizzle_orm_1.eq)(schema_1.ucIa03.id, unit.id));
-                    }
-                    else {
-                        if (!groupId)
-                            continue;
-                        yield drizzle_1.db.insert(schema_1.ucIa03).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title });
-                    }
-                }
-                // QA
-                const oldQas = yield drizzle_1.db.select().from(schema_1.ia03Question).where((0, drizzle_orm_1.eq)(schema_1.ia03Question.group_id, groupId));
-                const oldQaIds = new Set(oldQas.map(q => q.id));
-                const newQaIds = new Set((group.qa_ia03 || []).filter(q => q.id).map(q => q.id));
-                for (const old of oldQas) {
-                    if (!newQaIds.has(old.id)) {
-                        yield drizzle_1.db.delete(schema_1.ia03Question).where((0, drizzle_orm_1.eq)(schema_1.ia03Question.id, old.id));
-                    }
-                }
-                for (const qa of group.qa_ia03 || []) {
-                    if (qa.id) {
-                        yield drizzle_1.db.update(schema_1.ia03Question).set({ question: qa.question }).where((0, drizzle_orm_1.eq)(schema_1.ia03Question.id, qa.id));
-                    }
-                    else {
-                        if (!groupId)
-                            continue;
-                        yield drizzle_1.db.insert(schema_1.ia03Question).values({ group_id: groupId, question: qa.question });
-                    }
-                }
-            }
-            // === IA05 ===
-            if (data.ia05_questions) {
-                const oldQ5s = yield drizzle_1.db.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, id));
-                const oldQ5Ids = new Set(oldQ5s.map(q => q.id));
-                const newQ5Ids = new Set((data.ia05_questions || []).filter(q => q.id).map(q => q.id));
-                for (const old of oldQ5s) {
-                    if (!newQ5Ids.has(old.id)) {
-                        yield drizzle_1.db.delete(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, old.id));
-                        yield drizzle_1.db.delete(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.id, old.id));
-                    }
-                }
-                for (const q of data.ia05_questions || []) {
-                    let qId = q.id;
-                    if (q.id) {
-                        yield drizzle_1.db.update(schema_1.ia05Question).set({ order: q.order, question: q.question }).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.id, q.id));
-                    }
-                    else {
-                        const [qRow] = yield drizzle_1.db.insert(schema_1.ia05Question).values({ assessment_id: id, order: q.order, question: q.question }).$returningId();
-                        qId = qRow.id;
-                    }
-                    if (!qId)
+                    if (!groupId)
                         continue;
-                    // Options
-                    const oldOpts = yield drizzle_1.db.select().from(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, qId));
-                    const oldOptIds = new Set(oldOpts.map(o => o.id));
-                    const newOptIds = new Set((q.options || []).filter(o => o.id).map(o => o.id));
-                    for (const old of oldOpts) {
-                        if (!newOptIds.has(old.id)) {
-                            yield drizzle_1.db.delete(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.id, old.id));
+                    const oldUnits = yield tx.select().from(schema_1.ucIa01).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.group_id, groupId));
+                    const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
+                    for (const old of oldUnits) {
+                        if (!newUnitIds.has(old.id)) {
+                            const elements = yield tx.select().from(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, old.id));
+                            for (const el of elements) {
+                                yield tx.delete(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.element_id, el.id));
+                            }
+                            yield tx.delete(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, old.id));
+                            yield tx.delete(schema_1.ucIa01).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.id, old.id));
                         }
                     }
-                    for (const opt of q.options || []) {
-                        if (opt.id) {
-                            yield drizzle_1.db.update(schema_1.questionOption).set({ option: opt.option, is_answer: opt.is_answer }).where((0, drizzle_orm_1.eq)(schema_1.questionOption.id, opt.id));
+                    for (const unit of group.units || []) {
+                        let unitId = unit.id;
+                        if (unit.id) {
+                            yield tx.update(schema_1.ucIa01).set({ unit_code: unit.unit_code, title: unit.title }).where((0, drizzle_orm_1.eq)(schema_1.ucIa01.id, unit.id));
                         }
                         else {
-                            if (!qId)
+                            if (!groupId)
                                 continue;
-                            yield drizzle_1.db.insert(schema_1.questionOption).values({ question_id: qId, option: opt.option, is_answer: opt.is_answer });
+                            const [unitRow] = yield tx.insert(schema_1.ucIa01).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title }).$returningId();
+                            unitId = unitRow.id;
+                        }
+                        if (!unitId)
+                            continue;
+                        const oldEls = yield tx.select().from(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.uc_id, unitId));
+                        const newElIds = new Set((unit.elements || []).filter(e => e.id).map(e => e.id));
+                        for (const old of oldEls) {
+                            if (!newElIds.has(old.id)) {
+                                yield tx.delete(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.element_id, old.id));
+                                yield tx.delete(schema_1.elementIa).where((0, drizzle_orm_1.eq)(schema_1.elementIa.id, old.id));
+                            }
+                        }
+                        for (const el of unit.elements || []) {
+                            let elId = el.id;
+                            if (el.id) {
+                                yield tx.update(schema_1.elementIa).set({ title: el.title }).where((0, drizzle_orm_1.eq)(schema_1.elementIa.id, el.id));
+                            }
+                            else {
+                                if (!unitId)
+                                    continue;
+                                const [elRow] = yield tx.insert(schema_1.elementIa).values({ uc_id: unitId, title: el.title }).$returningId();
+                                elId = elRow.id;
+                            }
+                            if (!elId)
+                                continue;
+                            const oldDets = yield tx.select().from(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.element_id, elId));
+                            const newDetIds = new Set((el.details || []).filter(d => d.id).map(d => d.id));
+                            for (const old of oldDets) {
+                                if (!newDetIds.has(old.id)) {
+                                    yield tx.delete(schema_1.elementDetailsIa).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.id, old.id));
+                                }
+                            }
+                            for (const det of el.details || []) {
+                                if (det.id) {
+                                    yield tx.update(schema_1.elementDetailsIa).set({ description: det.description, benchmark: det.benchmark }).where((0, drizzle_orm_1.eq)(schema_1.elementDetailsIa.id, det.id));
+                                }
+                                else {
+                                    if (!elId)
+                                        continue;
+                                    yield tx.insert(schema_1.elementDetailsIa).values({ element_id: elId, description: det.description, benchmark: det.benchmark }).execute();
+                                }
+                            }
                         }
                     }
                 }
-            }
-            // === IA07 ===
-            if (data.ia07_questions) {
-                const oldQ7s = yield drizzle_1.db.select().from(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, id));
-                const oldQ7Ids = new Set(oldQ7s.map(q => q.id));
-                const newQ7Ids = new Set((data.ia07_questions || []).filter(q => q.id).map(q => q.id));
-                for (const old of oldQ7s) {
-                    if (!newQ7Ids.has(old.id)) {
-                        yield drizzle_1.db.delete(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.id, old.id));
+                // === GROUP IA02 ===
+                const oldGroupsIa02 = yield tx.select().from(schema_1.groupIa02).where((0, drizzle_orm_1.eq)(schema_1.groupIa02.assessment_id, id));
+                const newGroupsIa02Ids = new Set((data.groups_ia02 || []).filter(g => g.id).map(g => g.id));
+                for (const old of oldGroupsIa02) {
+                    if (!newGroupsIa02Ids.has(old.id)) {
+                        yield tx.delete(schema_1.ucIa02).where((0, drizzle_orm_1.eq)(schema_1.ucIa02.group_id, old.id));
+                        yield tx.delete(schema_1.ia02Tool).where((0, drizzle_orm_1.eq)(schema_1.ia02Tool.group_id, old.id));
+                        yield tx.delete(schema_1.groupIa02).where((0, drizzle_orm_1.eq)(schema_1.groupIa02.id, old.id));
                     }
                 }
-                for (const q of data.ia07_questions || []) {
-                    if (q.id) {
-                        yield drizzle_1.db.update(schema_1.ia07Question).set({ question: q.question, answer_key: q.answer_key }).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.id, q.id));
+                for (const group of data.groups_ia02 || []) {
+                    let groupId = group.id;
+                    if (group.id) {
+                        yield tx.update(schema_1.groupIa02).set({ name: group.name, scenario: group.scenario, duration: group.duration }).where((0, drizzle_orm_1.eq)(schema_1.groupIa02.id, group.id));
                     }
                     else {
-                        yield drizzle_1.db.insert(schema_1.ia07Question).values({ assessment_id: id, question: q.question, answer_key: q.answer_key });
+                        const [groupRow] = yield tx.insert(schema_1.groupIa02).values({ assessment_id: id, name: group.name, scenario: group.scenario, duration: group.duration }).$returningId();
+                        groupId = groupRow.id;
+                    }
+                    if (!groupId)
+                        continue;
+                    const oldUnits = yield tx.select().from(schema_1.ucIa02).where((0, drizzle_orm_1.eq)(schema_1.ucIa02.group_id, groupId));
+                    const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
+                    for (const old of oldUnits) {
+                        if (!newUnitIds.has(old.id)) {
+                            yield tx.delete(schema_1.ucIa02).where((0, drizzle_orm_1.eq)(schema_1.ucIa02.id, old.id));
+                        }
+                    }
+                    for (const unit of group.units || []) {
+                        if (unit.id) {
+                            yield tx.update(schema_1.ucIa02).set({ unit_code: unit.unit_code, title: unit.title }).where((0, drizzle_orm_1.eq)(schema_1.ucIa02.id, unit.id));
+                        }
+                        else {
+                            if (!groupId)
+                                continue;
+                            yield tx.insert(schema_1.ucIa02).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title });
+                        }
+                    }
+                    const oldTools = yield tx.select().from(schema_1.ia02Tool).where((0, drizzle_orm_1.eq)(schema_1.ia02Tool.group_id, groupId));
+                    const newToolIds = new Set((group.tools || []).filter(t => t.id).map(t => t.id));
+                    for (const old of oldTools) {
+                        if (!newToolIds.has(old.id)) {
+                            yield tx.delete(schema_1.ia02Tool).where((0, drizzle_orm_1.eq)(schema_1.ia02Tool.id, old.id));
+                        }
+                    }
+                    for (const tool of group.tools || []) {
+                        if (tool.id) {
+                            yield tx.update(schema_1.ia02Tool).set({ name: tool.name }).where((0, drizzle_orm_1.eq)(schema_1.ia02Tool.id, tool.id));
+                        }
+                        else {
+                            if (!groupId)
+                                continue;
+                            yield tx.insert(schema_1.ia02Tool).values({ group_id: groupId, name: tool.name });
+                        }
                     }
                 }
-            }
-            return { id: id };
+                // === GROUP IA03 ===
+                const oldGroupsIa03 = yield tx.select().from(schema_1.groupIa03).where((0, drizzle_orm_1.eq)(schema_1.groupIa03.assessment_id, id));
+                const newGroupsIa03Ids = new Set((data.groups_ia03 || []).filter(g => g.id).map(g => g.id));
+                for (const old of oldGroupsIa03) {
+                    if (!newGroupsIa03Ids.has(old.id)) {
+                        yield tx.delete(schema_1.ucIa03).where((0, drizzle_orm_1.eq)(schema_1.ucIa03.group_id, old.id));
+                        yield tx.delete(schema_1.ia03Question).where((0, drizzle_orm_1.eq)(schema_1.ia03Question.group_id, old.id));
+                        yield tx.delete(schema_1.groupIa03).where((0, drizzle_orm_1.eq)(schema_1.groupIa03.id, old.id));
+                    }
+                }
+                for (const group of data.groups_ia03 || []) {
+                    let groupId = group.id;
+                    if (group.id) {
+                        yield tx.update(schema_1.groupIa03).set({ name: group.name }).where((0, drizzle_orm_1.eq)(schema_1.groupIa03.id, group.id));
+                    }
+                    else {
+                        const [groupRow] = yield tx.insert(schema_1.groupIa03).values({ assessment_id: id, name: group.name }).$returningId();
+                        groupId = groupRow.id;
+                    }
+                    if (!groupId)
+                        continue;
+                    const oldUnits = yield tx.select().from(schema_1.ucIa03).where((0, drizzle_orm_1.eq)(schema_1.ucIa03.group_id, groupId));
+                    const newUnitIds = new Set((group.units || []).filter(u => u.id).map(u => u.id));
+                    for (const old of oldUnits) {
+                        if (!newUnitIds.has(old.id)) {
+                            yield tx.delete(schema_1.ucIa03).where((0, drizzle_orm_1.eq)(schema_1.ucIa03.id, old.id));
+                        }
+                    }
+                    for (const unit of group.units || []) {
+                        if (unit.id) {
+                            yield tx.update(schema_1.ucIa03).set({ unit_code: unit.unit_code, title: unit.title }).where((0, drizzle_orm_1.eq)(schema_1.ucIa03.id, unit.id));
+                        }
+                        else {
+                            if (!groupId)
+                                continue;
+                            yield tx.insert(schema_1.ucIa03).values({ group_id: groupId, unit_code: unit.unit_code, title: unit.title });
+                        }
+                    }
+                    const oldQas = yield tx.select().from(schema_1.ia03Question).where((0, drizzle_orm_1.eq)(schema_1.ia03Question.group_id, groupId));
+                    const newQaIds = new Set((group.qa_ia03 || []).filter(q => q.id).map(q => q.id));
+                    for (const old of oldQas) {
+                        if (!newQaIds.has(old.id)) {
+                            yield tx.delete(schema_1.ia03Question).where((0, drizzle_orm_1.eq)(schema_1.ia03Question.id, old.id));
+                        }
+                    }
+                    for (const qa of group.qa_ia03 || []) {
+                        if (qa.id) {
+                            yield tx.update(schema_1.ia03Question).set({ question: qa.question }).where((0, drizzle_orm_1.eq)(schema_1.ia03Question.id, qa.id));
+                        }
+                        else {
+                            if (!groupId)
+                                continue;
+                            yield tx.insert(schema_1.ia03Question).values({ group_id: groupId, question: qa.question });
+                        }
+                    }
+                }
+                // === IA05 ===
+                if (data.ia05_questions) {
+                    const oldQ5s = yield tx.select().from(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.assessment_id, id));
+                    const newQ5Ids = new Set((data.ia05_questions || []).filter(q => q.id).map(q => q.id));
+                    for (const old of oldQ5s) {
+                        if (!newQ5Ids.has(old.id)) {
+                            yield tx.delete(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, old.id));
+                            yield tx.delete(schema_1.ia05Question).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.id, old.id));
+                        }
+                    }
+                    for (const q of data.ia05_questions || []) {
+                        let qId = q.id;
+                        if (q.id) {
+                            yield tx.update(schema_1.ia05Question).set({ order: q.order, question: q.question }).where((0, drizzle_orm_1.eq)(schema_1.ia05Question.id, q.id));
+                        }
+                        else {
+                            const [qRow] = yield tx.insert(schema_1.ia05Question).values({ assessment_id: id, order: q.order, question: q.question }).$returningId();
+                            qId = qRow.id;
+                        }
+                        if (!qId)
+                            continue;
+                        const oldOpts = yield tx.select().from(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.question_id, qId));
+                        const newOptIds = new Set((q.options || []).filter(o => o.id).map(o => o.id));
+                        for (const old of oldOpts) {
+                            if (!newOptIds.has(old.id)) {
+                                yield tx.delete(schema_1.questionOption).where((0, drizzle_orm_1.eq)(schema_1.questionOption.id, old.id));
+                            }
+                        }
+                        for (const opt of q.options || []) {
+                            if (opt.id) {
+                                yield tx.update(schema_1.questionOption).set({ option: opt.option, is_answer: opt.is_answer }).where((0, drizzle_orm_1.eq)(schema_1.questionOption.id, opt.id));
+                            }
+                            else {
+                                if (!qId)
+                                    continue;
+                                yield tx.insert(schema_1.questionOption).values({ question_id: qId, option: opt.option, is_answer: opt.is_answer }).execute();
+                            }
+                        }
+                    }
+                }
+                // === IA07 ===
+                if (data.ia07_questions) {
+                    const oldQ7s = yield tx.select().from(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.assessment_id, id));
+                    const newQ7Ids = new Set((data.ia07_questions || []).filter(q => q.id).map(q => q.id));
+                    for (const old of oldQ7s) {
+                        if (!newQ7Ids.has(old.id)) {
+                            yield tx.delete(schema_1.ia07Question).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.id, old.id));
+                        }
+                    }
+                    for (const q of data.ia07_questions || []) {
+                        if (q.id) {
+                            yield tx.update(schema_1.ia07Question).set({ question: q.question, answer_key: q.answer_key }).where((0, drizzle_orm_1.eq)(schema_1.ia07Question.id, q.id));
+                        }
+                        else {
+                            yield tx.insert(schema_1.ia07Question).values({ assessment_id: id, question: q.question, answer_key: q.answer_key }).execute();
+                        }
+                    }
+                }
+                return { id: id };
+            }));
         });
     }
     static getAssessments() {
