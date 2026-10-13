@@ -1,60 +1,83 @@
-import express from 'express';
-import path from 'path';
-import { authUpload } from './middleware/auth.middleware';
-import { errorHandler } from './middleware/error.middleware';
-const cors = require('cors');
-const dotenv = require('dotenv');
+import express from "express";
+import path from "path";
+import { authUpload } from "./middleware/auth.middleware";
+import { errorHandler } from "./middleware/error.middleware";
+const cors = require("cors");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
 const app = express();
+
+// whitelist domain from env
+const whitelist = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : [];
+
+const corsOptions = {
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: Boolean) => void,
+  ) => {
+    if (!origin || whitelist.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS Policy blocks access from origin: ${origin}`));
+    }
+  },
+};
+
 app.use(cors());
-    
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ limit: '100mb', extended: true }));
+
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ limit: "100mb", extended: true }));
 
 // ROUTES
-import userRoutes from './modules/user/user.routes';
-import authRoutes from './modules/auth/auth.routes';
-import approvalRoutes from './modules/admin/approval/approval.routes';
-import adminRoutes from './modules/admin/admin.routes';
-import dashboardRoutes from './modules/dashboard/dashboard.routes';
-import occupationRoutes from './modules/occupation/occupation.routes';
-import schemeRoutes from './modules/scheme/scheme.routes';
-import assessmentRoutes from './modules/assessement/assessment.routes';
-import verificationRoutes from './modules/assessement/verification/verification.routes';
-import uploadsRoutes from './modules/assessement/uploads/uploads.routes';
-import scheduleRoutes from './modules/schedule/schedule.routes';
-import assessorRoutes from './modules/assessor/assessor.routes';
-import assessorDetailRoutes from './modules/assessor-detail/assessor-detail.routes';
-import assesseeRoutes from './modules/assessee/asseesee.routes';
-import roleRoutes from './modules/role/role.routes';
-import publicRoutes from './modules/public/public.routes';
+import userRoutes from "./modules/user/user.routes";
+import authRoutes from "./modules/auth/auth.routes";
+import approvalRoutes from "./modules/admin/approval/approval.routes";
+import adminRoutes from "./modules/admin/admin.routes";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes";
+import occupationRoutes from "./modules/occupation/occupation.routes";
+import schemeRoutes from "./modules/scheme/scheme.routes";
+import assessmentRoutes from "./modules/assessement/assessment.routes";
+import verificationRoutes from "./modules/assessement/verification/verification.routes";
+import uploadsRoutes from "./modules/assessement/uploads/uploads.routes";
+import scheduleRoutes from "./modules/schedule/schedule.routes";
+import assessorRoutes from "./modules/assessor/assessor.routes";
+import assessorDetailRoutes from "./modules/assessor-detail/assessor-detail.routes";
+import assesseeRoutes from "./modules/assessee/asseesee.routes";
+import roleRoutes from "./modules/role/role.routes";
+import publicRoutes from "./modules/public/public.routes";
+import { Callback } from "bcryptjs";
 
 // Public routes
-app.use('/twodev/api/public', publicRoutes);
-app.use('/twodev/api/uploads', express.static(path.join(__dirname, '../public/uploads')));
+app.use("/twodev/api/public", publicRoutes);
+app.use(
+  "/twodev/api/uploads",
+  express.static(path.join(__dirname, "../public/uploads")),
+);
 
 // Modules
-app.use('/twodev/api/assessments', assessmentRoutes);
-app.use('/twodev/api/assessments', verificationRoutes);
-app.use('/twodev/api/schedules', scheduleRoutes);
+app.use("/twodev/api/assessments", assessmentRoutes);
+app.use("/twodev/api/assessments", verificationRoutes);
+app.use("/twodev/api/schedules", scheduleRoutes);
 // app.use('/twodev/api/uploads', uploadsRoutes);
 
 // 📁 Serve uploads (tanpa cache)
 
-app.use('/twodev/api/roles', roleRoutes);
-app.use('/twodev/api/users', userRoutes);
-app.use('/twodev/api/auth', authRoutes);
-app.use('/twodev/api/dashboard', dashboardRoutes);
-app.use('/twodev/api/approval', approvalRoutes);
-app.use('/twodev/api/admins', adminRoutes);
-app.use('/twodev/api/occupations', occupationRoutes);
-app.use('/twodev/api/schemes', schemeRoutes);
-app.use('/twodev/api/assessor', assessorRoutes);
-app.use('/twodev/api/assessor-detail', assessorDetailRoutes);
-app.use('/twodev/api/assessee', assesseeRoutes);
-app.use('/twodev/api/user', userRoutes);
+app.use("/twodev/api/roles", roleRoutes);
+app.use("/twodev/api/users", userRoutes);
+app.use("/twodev/api/auth", authRoutes);
+app.use("/twodev/api/dashboard", dashboardRoutes);
+app.use("/twodev/api/approval", approvalRoutes);
+app.use("/twodev/api/admins", adminRoutes);
+app.use("/twodev/api/occupations", occupationRoutes);
+app.use("/twodev/api/schemes", schemeRoutes);
+app.use("/twodev/api/assessor", assessorRoutes);
+app.use("/twodev/api/assessor-detail", assessorDetailRoutes);
+app.use("/twodev/api/assessee", assesseeRoutes);
+app.use("/twodev/api/user", userRoutes);
 
 // Error handler
 app.use(errorHandler);
