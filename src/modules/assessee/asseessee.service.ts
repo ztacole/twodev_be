@@ -41,9 +41,26 @@ const translateGenderToId = (gender: string): 'LAKI-LAKI' | 'PEREMPUAN' => {
 };
 
 export class AssesseeService {
-    static async getAssessees(page: number = 1, limit: number = 10, keyword?: string): Promise<{ data: AssesseeResponse[]; meta: PagingMeta }> {
+    static async getAssessees(page: number = 1, limit: number = 10, keyword?: string, occupation_id?: number): Promise<{ data: AssesseeResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
-        const assessees = await db.select({
+        const conditions = [];
+        
+        if (keyword) {
+            conditions.push(
+                or(
+                    like(userTable.full_name, `%${keyword}%`),
+                    like(userTable.email, `%${keyword}%`),
+                    like(assesseeTable.identity_number, `%${keyword}%`),
+                    like(assesseeTable.phone_no, `%${keyword}%`)
+                )
+            );
+        }
+
+        if (occupation_id) {
+            conditions.push(eq(occupationTable.id, occupation_id));
+        }
+
+        const query = db.selectDistinct({
             id: assesseeTable.id,
             user_id: assesseeTable.user_id,
             name: userTable.full_name,
@@ -64,16 +81,31 @@ export class AssesseeService {
         }).from(assesseeTable)
             .leftJoin(userTable, eq(assesseeTable.user_id, userTable.id))
             .leftJoin(assesseeJob, eq(assesseeJob.assessee_id, assesseeTable.id))
-            .where(
-                or(
-                    keyword ? like(userTable.full_name, `%${keyword}%`) : undefined,
-                    keyword ? like(userTable.email, `%${keyword}%`) : undefined,
-                    keyword ? like(assesseeTable.identity_number, `%${keyword}%`) : undefined,
-                    keyword ? like(assesseeTable.phone_no, `%${keyword}%`) : undefined
-                )
-            )
-            .limit(limit).offset(offset);
-        const countRows = await db.select({ count: sql<number>`COUNT(*)` }).from(assesseeTable);
+            .leftJoin(resultTable, eq(resultTable.assessee_id, assesseeTable.id))
+            .leftJoin(assessmentScheduleTable, eq(resultTable.schedule_id, assessmentScheduleTable.id))
+            .leftJoin(assessmentTable, eq(assessmentScheduleTable.assessment_id, assessmentTable.id))
+            .leftJoin(occupationTable, eq(assessmentTable.occupation_id, occupationTable.id));
+
+        if (conditions.length > 0) {
+            query.where(and(...conditions));
+        }
+
+        const assessees = await query.limit(limit).offset(offset);
+
+        // Count query
+        const countQuery = db.select({ count: sql<number>`COUNT(DISTINCT ${assesseeTable.id})` })
+            .from(assesseeTable)
+            .leftJoin(userTable, eq(assesseeTable.user_id, userTable.id))
+            .leftJoin(resultTable, eq(resultTable.assessee_id, assesseeTable.id))
+            .leftJoin(assessmentScheduleTable, eq(resultTable.schedule_id, assessmentScheduleTable.id))
+            .leftJoin(assessmentTable, eq(assessmentScheduleTable.assessment_id, assessmentTable.id))
+            .leftJoin(occupationTable, eq(assessmentTable.occupation_id, occupationTable.id));
+
+        if (conditions.length > 0) {
+            countQuery.where(and(...conditions));
+        }
+
+        const countRows = await countQuery;
         const total = Number(countRows?.[0]?.count ?? 0);
         const totalPages = Math.max(1, Math.ceil(total / limit));
         return { data: assessees.map(this.formatAssesseeResponse), meta: { current_page: page, limit, total, total_pages: totalPages } };

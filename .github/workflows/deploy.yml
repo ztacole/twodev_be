@@ -71,9 +71,10 @@ jobs:
             source /home/lspsmkn5/nodevenv/repositories/TwoDev/be/22/bin/activate
             npm install --omit=dev
 
-            # 4. Trigger restart Node.js Passenger
+            # 4. Trigger restart LiteSpeed Node.js
             mkdir -p tmp
             touch tmp/restart.txt
+            pkill -u $USER -f lsnode || true
 
             echo "✅ Deployment twodev_be selesai dan aplikasi berhasil di-restart!"
           EOF
