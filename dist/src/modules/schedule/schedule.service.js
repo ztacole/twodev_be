@@ -113,7 +113,7 @@ class ScheduleService {
     static getSchedules() {
         return __awaiter(this, void 0, void 0, function* () {
             const schedules = yield drizzle_1.db.select().from(schema_1.assessmentSchedule);
-            return Promise.all(schedules.map(s => buildScheduleResponse(s)));
+            return buildBatchScheduleResponses(schedules);
         });
     }
     static getScheduleById(id) {
@@ -133,7 +133,7 @@ class ScheduleService {
             }
             const now = new Date();
             const schedules = yield drizzle_1.db.select().from(schema_1.assessmentSchedule).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.lte)(schema_1.assessmentSchedule.start_date, now), (0, drizzle_orm_1.gte)(schema_1.assessmentSchedule.end_date, now)));
-            return Promise.all(schedules.map(s => buildScheduleResponse(s, assessee)));
+            return buildBatchScheduleResponses(schedules, assessee);
         });
     }
     static getActiveSchedulesAssessor(user) {
@@ -144,7 +144,7 @@ class ScheduleService {
             }
             const now = new Date();
             const schedules = yield drizzle_1.db.select().from(schema_1.assessmentSchedule).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.lte)(schema_1.assessmentSchedule.start_date, now), (0, drizzle_orm_1.gte)(schema_1.assessmentSchedule.end_date, now)));
-            return Promise.all(schedules.map(s => buildScheduleResponse(s)));
+            return buildBatchScheduleResponses(schedules);
         });
     }
     static getCompletedSchedules(user) {
@@ -499,47 +499,110 @@ class ScheduleService {
     }
 }
 exports.ScheduleService = ScheduleService;
-function buildScheduleResponse(schedule_1) {
-    return __awaiter(this, arguments, void 0, function* (schedule, user = null) {
-        const assessment = yield drizzle_1.db.query.assessment.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessment.id, schedule.assessment_id) });
-        const occupation = assessment ? yield drizzle_1.db.query.occupation.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.occupation.id, assessment.occupation_id) }) : null;
-        const scheme = occupation ? yield drizzle_1.db.query.scheme.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.scheme.id, occupation.scheme_id) }) : null;
-        const details = yield drizzle_1.db.select().from(schema_1.scheduleDetail).where((0, drizzle_orm_1.eq)(schema_1.scheduleDetail.schedule_id, schedule.id));
-        const detailed = yield Promise.all(details.map((detail) => __awaiter(this, void 0, void 0, function* () {
-            const assessor = yield drizzle_1.db.query.assessor.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.assessor.id, detail.assessor_id) });
-            const assessorUser = assessor ? yield drizzle_1.db.query.user.findFirst({ where: (0, drizzle_orm_1.eq)(schema_1.user.id, assessor.user_id) }) : null;
-            const results = yield drizzle_1.db.select().from(schema_1.result).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.result.schedule_id, schedule.id), (0, drizzle_orm_1.eq)(schema_1.result.assessor_id, detail.assessor_id)));
-            const onGoing = user ? results.find(r => user.find(a => a.id === r.assessee_id)) : null;
+function buildBatchScheduleResponses(schedules_1) {
+    return __awaiter(this, arguments, void 0, function* (schedules, user = null) {
+        if (!schedules || schedules.length === 0)
+            return [];
+        const scheduleIds = schedules.map(s => s.id).filter(Boolean);
+        const assessmentIds = Array.from(new Set(schedules.map(s => s.assessment_id).filter(Boolean)));
+        // 1. Fetch assessments
+        const assessments = assessmentIds.length > 0
+            ? yield drizzle_1.db.select().from(schema_1.assessment).where((0, drizzle_orm_1.inArray)(schema_1.assessment.id, assessmentIds))
+            : [];
+        const assessmentMap = new Map(assessments.map(a => [a.id, a]));
+        // 2. Fetch occupations
+        const occupationIds = Array.from(new Set(assessments.map(a => a.occupation_id).filter(Boolean)));
+        const occupations = occupationIds.length > 0
+            ? yield drizzle_1.db.select().from(schema_1.occupation).where((0, drizzle_orm_1.inArray)(schema_1.occupation.id, occupationIds))
+            : [];
+        const occupationMap = new Map(occupations.map(o => [o.id, o]));
+        // 3. Fetch schemes
+        const schemeIds = Array.from(new Set(occupations.map(o => o.scheme_id).filter(Boolean)));
+        const schemes = schemeIds.length > 0
+            ? yield drizzle_1.db.select().from(schema_1.scheme).where((0, drizzle_orm_1.inArray)(schema_1.scheme.id, schemeIds))
+            : [];
+        const schemeMap = new Map(schemes.map(s => [s.id, s]));
+        // 4. Fetch schedule details
+        const allDetails = scheduleIds.length > 0
+            ? yield drizzle_1.db.select().from(schema_1.scheduleDetail).where((0, drizzle_orm_1.inArray)(schema_1.scheduleDetail.schedule_id, scheduleIds))
+            : [];
+        const detailsBySchedule = new Map();
+        for (const d of allDetails) {
+            const list = detailsBySchedule.get(d.schedule_id) || [];
+            list.push(d);
+            detailsBySchedule.set(d.schedule_id, list);
+        }
+        // 5. Fetch assessors
+        const assessorIds = Array.from(new Set(allDetails.map(d => d.assessor_id).filter(Boolean)));
+        const assessors = assessorIds.length > 0
+            ? yield drizzle_1.db.select().from(schema_1.assessor).where((0, drizzle_orm_1.inArray)(schema_1.assessor.id, assessorIds))
+            : [];
+        const assessorMap = new Map(assessors.map(a => [a.id, a]));
+        // 6. Fetch assessor users
+        const userIds = Array.from(new Set(assessors.map(a => a.user_id).filter(Boolean)));
+        const users = userIds.length > 0
+            ? yield drizzle_1.db.select().from(schema_1.user).where((0, drizzle_orm_1.inArray)(schema_1.user.id, userIds))
+            : [];
+        const userMap = new Map(users.map(u => [u.id, u]));
+        // 7. Fetch results for all schedules
+        const allResults = scheduleIds.length > 0
+            ? yield drizzle_1.db.select().from(schema_1.result).where((0, drizzle_orm_1.inArray)(schema_1.result.schedule_id, scheduleIds))
+            : [];
+        const resultsByScheduleAssessor = new Map();
+        for (const r of allResults) {
+            const key = `${r.schedule_id}_${r.assessor_id}`;
+            const list = resultsByScheduleAssessor.get(key) || [];
+            list.push(r);
+            resultsByScheduleAssessor.set(key, list);
+        }
+        // 8. Assemble response in memory
+        return schedules.map(schedule => {
+            const assessment = assessmentMap.get(schedule.assessment_id);
+            const occupation = assessment ? occupationMap.get(assessment.occupation_id) : null;
+            const scheme = occupation ? schemeMap.get(occupation.scheme_id) : null;
+            const details = detailsBySchedule.get(schedule.id) || [];
+            const detailed = details.map(detail => {
+                const assessor = assessorMap.get(detail.assessor_id);
+                const assessorUser = assessor ? userMap.get(assessor.user_id) : null;
+                const results = resultsByScheduleAssessor.get(`${schedule.id}_${detail.assessor_id}`) || [];
+                const onGoing = user ? results.find(r => user.find(a => a.id === r.assessee_id)) : null;
+                return {
+                    id: detail.id,
+                    assessor: assessor && assessorUser ? {
+                        id: assessor.id,
+                        full_name: assessorUser.full_name,
+                        phone_no: assessor.phone_no,
+                    } : null,
+                    location: detail.location,
+                    on_going: onGoing ? { result_id: onGoing.id, assessee_id: onGoing.assessee_id } : null,
+                };
+            });
             return {
-                id: detail.id,
-                assessor: assessor && assessorUser ? {
-                    id: assessor.id,
-                    full_name: assessorUser.full_name,
-                    phone_no: assessor.phone_no,
-                } : null,
-                location: detail.location,
-                on_going: onGoing ? { result_id: onGoing.id, assessee_id: onGoing.assessee_id } : null,
-            };
-        })));
-        return {
-            id: schedule.id,
-            assessment: {
-                id: assessment === null || assessment === void 0 ? void 0 : assessment.id,
-                code: assessment === null || assessment === void 0 ? void 0 : assessment.code,
-                occupation: {
-                    id: occupation === null || occupation === void 0 ? void 0 : occupation.id,
-                    name: occupation === null || occupation === void 0 ? void 0 : occupation.name,
-                    scheme: {
-                        id: scheme === null || scheme === void 0 ? void 0 : scheme.id,
-                        code: scheme === null || scheme === void 0 ? void 0 : scheme.code,
-                        name: scheme === null || scheme === void 0 ? void 0 : scheme.name,
+                id: schedule.id,
+                assessment: {
+                    id: assessment === null || assessment === void 0 ? void 0 : assessment.id,
+                    code: assessment === null || assessment === void 0 ? void 0 : assessment.code,
+                    occupation: {
+                        id: occupation === null || occupation === void 0 ? void 0 : occupation.id,
+                        name: occupation === null || occupation === void 0 ? void 0 : occupation.name,
+                        scheme: {
+                            id: scheme === null || scheme === void 0 ? void 0 : scheme.id,
+                            code: scheme === null || scheme === void 0 ? void 0 : scheme.code,
+                            name: scheme === null || scheme === void 0 ? void 0 : scheme.name,
+                        },
                     },
                 },
-            },
-            start_date: schedule.start_date,
-            end_date: schedule.end_date,
-            schedule_details: detailed,
-        };
+                start_date: schedule.start_date,
+                end_date: schedule.end_date,
+                schedule_details: detailed,
+            };
+        });
+    });
+}
+function buildScheduleResponse(schedule_1) {
+    return __awaiter(this, arguments, void 0, function* (schedule, user = null) {
+        const [res] = yield buildBatchScheduleResponses([schedule], user);
+        return res;
     });
 }
 function buildActiveScheduleResponse(result, assessee_id) {

@@ -10,6 +10,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust reverse proxy (LiteSpeed) so rate-limiter and client IP work correctly
+app.set("trust proxy", 1);
+
 // whitelist domain from env
 const whitelist = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())

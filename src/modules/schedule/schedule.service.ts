@@ -132,7 +132,7 @@ export class ScheduleService {
 
     static async getSchedules(): Promise<ScheduleResponse[]> {
         const schedules = await db.select().from(scheduleTable);
-        return Promise.all(schedules.map(s => buildScheduleResponse(s)));
+        return buildBatchScheduleResponses(schedules);
     }
 
     static async getScheduleById(id: number): Promise<ScheduleResponse> {
@@ -152,7 +152,7 @@ export class ScheduleService {
 
         const now = new Date();
         const schedules = await db.select().from(scheduleTable).where(and(lte(scheduleTable.start_date, now as any), gte(scheduleTable.end_date, now as any)));
-        return Promise.all(schedules.map(s => buildScheduleResponse(s, assessee as any)));
+        return buildBatchScheduleResponses(schedules, assessee as any);
     }
 
     static async getActiveSchedulesAssessor(user: JwtPayload): Promise<ScheduleResponse[]> {
@@ -163,7 +163,7 @@ export class ScheduleService {
 
         const now = new Date();
         const schedules = await db.select().from(scheduleTable).where(and(lte(scheduleTable.start_date, now as any), gte(scheduleTable.end_date, now as any)));
-        return Promise.all(schedules.map(s => buildScheduleResponse(s)));
+        return buildBatchScheduleResponses(schedules);
     }
 
     static async getCompletedSchedules(user: JwtPayload): Promise<ActiveScheduleResponse[]> {
@@ -598,47 +598,121 @@ interface Assessee {
     user_id: number;
 }
 
-async function buildScheduleResponse(schedule: any, user: Assessee[] | null = null): Promise<ScheduleResponse> {
-    const assessment = await db.query.assessment.findFirst({ where: eq(assessmentTable.id, schedule.assessment_id) });
-    const occupation = assessment ? await db.query.occupation.findFirst({ where: eq(occupationTable.id, assessment.occupation_id) }) : null;
-    const scheme = occupation ? await db.query.scheme.findFirst({ where: eq(schemeTable.id, occupation.scheme_id) }) : null;
-    const details = await db.select().from(scheduleDetailTable).where(eq(scheduleDetailTable.schedule_id, schedule.id));
-    const detailed = await Promise.all(details.map(async (detail) => {
-        const assessor = await db.query.assessor.findFirst({ where: eq(assessorTable.id, detail.assessor_id) });
-        const assessorUser = assessor ? await db.query.user.findFirst({ where: eq(userTable.id, assessor.user_id) }) : null;
-        const results = await db.select().from(resultTable).where(and(eq(resultTable.schedule_id, schedule.id), eq(resultTable.assessor_id, detail.assessor_id)));
-        const onGoing = user ? results.find(r => user.find(a => a.id === r.assessee_id)) : null;
-        return {
-            id: detail.id,
-            assessor: assessor && assessorUser ? {
-                id: assessor.id,
-                full_name: assessorUser.full_name,
-                phone_no: assessor.phone_no,
-            } : null,
-            location: detail.location,
-            on_going: onGoing ? { result_id: onGoing.id, assessee_id: onGoing.assessee_id } : null,
-        };
-    }));
+async function buildBatchScheduleResponses(schedules: any[], user: Assessee[] | null = null): Promise<ScheduleResponse[]> {
+    if (!schedules || schedules.length === 0) return [];
 
-    return {
-        id: schedule.id,
-        assessment: {
-            id: assessment?.id,
-            code: assessment?.code,
-            occupation: {
-                id: occupation?.id,
-                name: occupation?.name,
-                scheme: {
-                    id: scheme?.id,
-                    code: scheme?.code,
-                    name: scheme?.name,
+    const scheduleIds = schedules.map(s => s.id).filter(Boolean);
+    const assessmentIds = Array.from(new Set(schedules.map(s => s.assessment_id).filter(Boolean)));
+
+    // 1. Fetch assessments
+    const assessments = assessmentIds.length > 0
+        ? await db.select().from(assessmentTable).where(inArray(assessmentTable.id, assessmentIds))
+        : [];
+    const assessmentMap = new Map(assessments.map(a => [a.id, a]));
+
+    // 2. Fetch occupations
+    const occupationIds = Array.from(new Set(assessments.map(a => a.occupation_id).filter(Boolean)));
+    const occupations = occupationIds.length > 0
+        ? await db.select().from(occupationTable).where(inArray(occupationTable.id, occupationIds))
+        : [];
+    const occupationMap = new Map(occupations.map(o => [o.id, o]));
+
+    // 3. Fetch schemes
+    const schemeIds = Array.from(new Set(occupations.map(o => o.scheme_id).filter(Boolean)));
+    const schemes = schemeIds.length > 0
+        ? await db.select().from(schemeTable).where(inArray(schemeTable.id, schemeIds))
+        : [];
+    const schemeMap = new Map(schemes.map(s => [s.id, s]));
+
+    // 4. Fetch schedule details
+    const allDetails = scheduleIds.length > 0
+        ? await db.select().from(scheduleDetailTable).where(inArray(scheduleDetailTable.schedule_id, scheduleIds))
+        : [];
+
+    const detailsBySchedule = new Map<number, any[]>();
+    for (const d of allDetails) {
+        const list = detailsBySchedule.get(d.schedule_id) || [];
+        list.push(d);
+        detailsBySchedule.set(d.schedule_id, list);
+    }
+
+    // 5. Fetch assessors
+    const assessorIds = Array.from(new Set(allDetails.map(d => d.assessor_id).filter(Boolean)));
+    const assessors = assessorIds.length > 0
+        ? await db.select().from(assessorTable).where(inArray(assessorTable.id, assessorIds))
+        : [];
+    const assessorMap = new Map(assessors.map(a => [a.id, a]));
+
+    // 6. Fetch assessor users
+    const userIds = Array.from(new Set(assessors.map(a => a.user_id).filter(Boolean)));
+    const users = userIds.length > 0
+        ? await db.select().from(userTable).where(inArray(userTable.id, userIds))
+        : [];
+    const userMap = new Map(users.map(u => [u.id, u]));
+
+    // 7. Fetch results for all schedules
+    const allResults = scheduleIds.length > 0
+        ? await db.select().from(resultTable).where(inArray(resultTable.schedule_id, scheduleIds))
+        : [];
+
+    const resultsByScheduleAssessor = new Map<string, any[]>();
+    for (const r of allResults) {
+        const key = `${r.schedule_id}_${r.assessor_id}`;
+        const list = resultsByScheduleAssessor.get(key) || [];
+        list.push(r);
+        resultsByScheduleAssessor.set(key, list);
+    }
+
+    // 8. Assemble response in memory
+    return schedules.map(schedule => {
+        const assessment = assessmentMap.get(schedule.assessment_id);
+        const occupation = assessment ? occupationMap.get(assessment.occupation_id) : null;
+        const scheme = occupation ? schemeMap.get(occupation.scheme_id) : null;
+        const details = detailsBySchedule.get(schedule.id) || [];
+
+        const detailed = details.map(detail => {
+            const assessor = assessorMap.get(detail.assessor_id);
+            const assessorUser = assessor ? userMap.get(assessor.user_id) : null;
+            const results = resultsByScheduleAssessor.get(`${schedule.id}_${detail.assessor_id}`) || [];
+            const onGoing = user ? results.find(r => user.find(a => a.id === r.assessee_id)) : null;
+
+            return {
+                id: detail.id,
+                assessor: assessor && assessorUser ? {
+                    id: assessor.id,
+                    full_name: assessorUser.full_name,
+                    phone_no: assessor.phone_no,
+                } : null,
+                location: detail.location,
+                on_going: onGoing ? { result_id: onGoing.id, assessee_id: onGoing.assessee_id } : null,
+            };
+        });
+
+        return {
+            id: schedule.id,
+            assessment: {
+                id: assessment?.id,
+                code: assessment?.code,
+                occupation: {
+                    id: occupation?.id,
+                    name: occupation?.name,
+                    scheme: {
+                        id: scheme?.id,
+                        code: scheme?.code,
+                        name: scheme?.name,
+                    },
                 },
             },
-        },
-        start_date: schedule.start_date,
-        end_date: schedule.end_date,
-        schedule_details: detailed,
-    } as any;
+            start_date: schedule.start_date,
+            end_date: schedule.end_date,
+            schedule_details: detailed,
+        } as any;
+    });
+}
+
+async function buildScheduleResponse(schedule: any, user: Assessee[] | null = null): Promise<ScheduleResponse> {
+    const [res] = await buildBatchScheduleResponses([schedule], user);
+    return res;
 }
 
 async function buildActiveScheduleResponse(result: any, assessee_id: number): Promise<DetailResponse> {
