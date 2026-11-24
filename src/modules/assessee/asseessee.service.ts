@@ -94,6 +94,8 @@ export class AssesseeService {
             query.where(and(...conditions));
         }
 
+        query.orderBy(sql`${assesseeTable.id} ASC`);
+
         const assessees = await query.limit(limit).offset(offset);
 
         // Count query
@@ -285,6 +287,8 @@ export class AssesseeService {
             query.where(and(...conditions));
         }
 
+        query.orderBy(sql`${assesseeTable.id} ASC`);
+
         const assessees = await query;
 
         if (!assessees.length) {
@@ -411,4 +415,3 @@ export class AssesseeService {
         return await workbook.xlsx.writeBuffer();
     }
 }
-

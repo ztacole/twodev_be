@@ -83,6 +83,7 @@ class AssesseeService {
             if (conditions.length > 0) {
                 query.where((0, drizzle_orm_1.and)(...conditions));
             }
+            query.orderBy((0, drizzle_orm_1.sql) `${schema_1.assessee.id} ASC`);
             const assessees = yield query.limit(limit).offset(offset);
             // Count query
             const countQuery = drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(DISTINCT ${schema_1.assessee.id})` })
@@ -261,6 +262,7 @@ class AssesseeService {
             if (conditions.length > 0) {
                 query.where((0, drizzle_orm_1.and)(...conditions));
             }
+            query.orderBy((0, drizzle_orm_1.sql) `${schema_1.assessee.id} ASC`);
             const assessees = yield query;
             if (!assessees.length) {
                 throw new error_1.NotFoundError('Data asesi tidak ditemukan untuk kriteria ini');
