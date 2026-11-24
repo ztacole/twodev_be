@@ -1,0 +1,79 @@
+name: Deploy twodev_be
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & Deploy Node.js Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: ⬇️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js (v22)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies & Build TypeScript
+        run: |
+          npm ci
+          npm run build
+
+      - name: 🔑 Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: 📦 Package Bundle (TAR)
+        run: |
+          tar -czf /tmp/deploy.tar.gz \
+            --exclude='./.git*' \
+            --exclude='./.github' \
+            --exclude='./.env*' \
+            --exclude='./node_modules' \
+            --exclude='./src' \
+            --exclude='./skills' \
+            --exclude='./public/uploads/*' \
+            dist/ \
+            package.json \
+            package-lock.json \
+            drizzle.config.ts \
+            drizzle/ \
+            public/
+
+      - name: 🚀 Upload Package via SCP
+        run: |
+          scp -P ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            /tmp/deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.REMOTE_PATH }}/deploy.tar.gz
+
+      - name: 🔄 Extract, Activate Nodevenv & Restart Passenger
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
+            cd ${{ secrets.REMOTE_PATH }}
+
+            # 1. Ekstrak bundle dan hapus file tar
+            tar -xzf deploy.tar.gz
+            rm -f deploy.tar.gz
+
+            # 2. Pastikan direktori uploads tetap aman
+            mkdir -p public/uploads
+
+            # 3. Aktifkan virtualenv Node.js 22 cPanel & install dependency prod
+            source /home/lspsmkn5/nodevenv/repositories/TwoDev/be/22/bin/activate
+            npm install --omit=dev
+
+            # 4. Trigger restart Node.js Passenger
+            mkdir -p tmp
+            touch tmp/restart.txt
+
+            echo "✅ Deployment twodev_be selesai dan aplikasi berhasil di-restart!"
+          EOF
