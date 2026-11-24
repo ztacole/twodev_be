@@ -40,7 +40,8 @@ AssesseeController.createAssessee = (0, async_handler_1.asyncHandler)((req, res)
     if (files && files.signature && files.signature[0]) {
         signatureUrl = `uploads/signatures/${files.signature[0].filename}`;
     }
-    const assessee = yield asseessee_service_1.AssesseeService.createAssessee(Object.assign(Object.assign({}, req.body), { signature: signatureUrl }));
+    const assesseeData = Object.assign(Object.assign({}, req.body), { signature: signatureUrl });
+    const assessee = yield asseessee_service_1.AssesseeService.createAssessee(assesseeData);
     res.status(201).json({
         success: true,
         message: 'Data assessee berhasil dibuat',
@@ -53,7 +54,7 @@ AssesseeController.getAssessees = (0, async_handler_1.asyncHandler)((req, res) =
     const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
     const occupation_id = req.query.occupation_id ? Number(req.query.occupation_id) : undefined;
     const year = req.query.year ? Number(req.query.year) : undefined;
-    const result = yield asseessee_service_1.AssesseeService.getAssessees(page, limit, keyword, occupation_id);
+    const result = yield asseessee_service_1.AssesseeService.getAssessees(page, limit, keyword, occupation_id, year);
     return res.json({
         success: true,
         message: 'Data assessee berhasil diambil',
@@ -81,16 +82,17 @@ AssesseeController.updateAssessee = (0, async_handler_1.asyncHandler)((req, res)
                     fs_1.default.unlinkSync(oldFilePath);
                 }
             }
-            catch (error) {
-                // Ignore error if file doesn't exist
+            catch (err) {
+                console.error('Gagal menghapus signature lama:', err);
             }
         }
         signatureUrl = `uploads/signatures/${files.signature[0].filename}`;
     }
-    const assessee = yield asseessee_service_1.AssesseeService.updateAssessee(Number(req.params.id), Object.assign(Object.assign({}, req.body), { signature: signatureUrl }));
+    const assesseeData = Object.assign(Object.assign({}, req.body), { signature: signatureUrl || (existingAssessee === null || existingAssessee === void 0 ? void 0 : existingAssessee.signature) });
+    const assessee = yield asseessee_service_1.AssesseeService.updateAssessee(Number(req.params.id), assesseeData);
     res.json({
         success: true,
-        message: 'Data assessee berhasil diubah',
+        message: 'Data assessee berhasil diperbarui',
         data: assessee,
     });
 }));
