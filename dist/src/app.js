@@ -48,6 +48,15 @@ const authLimitter = (0, express_rate_limit_1.default)({
     },
 });
 app.use(generalLimiter);
+// Disable caching for all API responses
+app.use((req, res, next) => {
+    res.set({
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    });
+    next();
+});
 app.use(express_1.default.json({ limit: "100mb" }));
 app.use(express_1.default.urlencoded({ limit: "100mb", extended: true }));
 // ROUTES
