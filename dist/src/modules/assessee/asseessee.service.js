@@ -8,10 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssesseeService = void 0;
 const drizzle_1 = require("../../config/drizzle");
 const error_1 = require("../../common/error");
+const exceljs_1 = __importDefault(require("exceljs"));
 const schema_1 = require("../../../drizzle/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const translateGenderToEn = (gender) => {
@@ -183,6 +187,168 @@ class AssesseeService {
             signature: assessee.signature,
             job: assessee.job
         };
+    }
+    static exportAssesseesToExcel(filters) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const conditions = [];
+            if (filters.occupation_id) {
+                conditions.push((0, drizzle_orm_1.eq)(schema_1.occupation.id, filters.occupation_id));
+            }
+            if (filters.scheme_id) {
+                conditions.push((0, drizzle_orm_1.eq)(schema_1.scheme.id, filters.scheme_id));
+            }
+            if (filters.schedule_id) {
+                conditions.push((0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.id, filters.schedule_id));
+            }
+            if (filters.is_competent !== undefined) {
+                conditions.push((0, drizzle_orm_1.eq)(schema_1.result.is_competent, filters.is_competent));
+            }
+            const query = drizzle_1.db.select({
+                id: schema_1.assessee.id,
+                name: schema_1.user.full_name,
+                email: schema_1.user.email,
+                identity_number: schema_1.assessee.identity_number,
+                birth_date: schema_1.assessee.birth_date,
+                birth_location: schema_1.assessee.birth_location,
+                gender: schema_1.assessee.gender,
+                phone_no: schema_1.assessee.phone_no,
+                address: schema_1.assessee.address,
+                postal_code: schema_1.assessee.postal_code,
+                educational_qualifications: schema_1.assessee.educational_qualifications,
+                institution_name: schema_1.assesseeJob.institution_name,
+                occupation_name: schema_1.occupation.name,
+                scheme_name: schema_1.scheme.name,
+                is_competent: schema_1.result.is_competent,
+            })
+                .from(schema_1.assessee)
+                .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
+                .leftJoin(schema_1.assesseeJob, (0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, schema_1.assessee.id))
+                .leftJoin(schema_1.result, (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, schema_1.assessee.id))
+                .leftJoin(schema_1.assessmentSchedule, (0, drizzle_orm_1.eq)(schema_1.result.schedule_id, schema_1.assessmentSchedule.id))
+                .leftJoin(schema_1.assessment, (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, schema_1.assessment.id))
+                .leftJoin(schema_1.occupation, (0, drizzle_orm_1.eq)(schema_1.assessment.occupation_id, schema_1.occupation.id))
+                .leftJoin(schema_1.scheme, (0, drizzle_orm_1.eq)(schema_1.occupation.scheme_id, schema_1.scheme.id));
+            if (conditions.length > 0) {
+                query.where((0, drizzle_orm_1.and)(...conditions));
+            }
+            const assessees = yield query;
+            if (!assessees.length) {
+                throw new error_1.NotFoundError('Data asesi tidak ditemukan untuk kriteria ini');
+            }
+            // Excel
+            const workbook = new exceljs_1.default.Workbook();
+            const worksheet = workbook.addWorksheet('Rekap Data Asesi');
+            // Header
+            const headers = [
+                'No',
+                'Nama Lengkap',
+                'No. Identitas (NIK/NISN)',
+                'Tempat Lahir',
+                'Tanggal Lahir',
+                'Jenis Kelamin',
+                'No. HP / WhatsApp',
+                'Email',
+                'Pendidikan',
+                'Asal Sekolah / Instansi',
+                'Alamat',
+                'Skema',
+                'Okupasi',
+                'Status Kompetensi'
+            ];
+            const headerRow = worksheet.addRow(headers);
+            // Styling Header (Warna tema oranye konsisten dengan project)
+            headerRow.eachCell((cell) => {
+                cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFE77D35' }
+                };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+            headerRow.height = 28;
+            assessees.forEach((row, index) => {
+                var _a, _b;
+                // Format tanggal lahir
+                let formattedBirthDate = '-';
+                if (row.birth_date) {
+                    const d = new Date(row.birth_date);
+                    if (!isNaN(d.getTime())) {
+                        formattedBirthDate = d.toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                    }
+                }
+                // Format gender
+                const genderDisplay = ((_a = row.gender) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === 'male' || ((_b = row.gender) === null || _b === void 0 ? void 0 : _b.toLowerCase()) === 'laki-laki'
+                    ? 'Laki-Laki'
+                    : 'Perempuan';
+                // Format status kompetensi
+                let statusKompetensi = 'Belum Ujian';
+                if (row.is_competent === true)
+                    statusKompetensi = 'Kompeten';
+                else if (row.is_competent === false)
+                    statusKompetensi = 'Belum Kompeten';
+                const dataRow = worksheet.addRow([
+                    index + 1,
+                    row.name || '-',
+                    row.identity_number || '-',
+                    row.birth_location || '-',
+                    formattedBirthDate,
+                    genderDisplay,
+                    row.phone_no || '-',
+                    row.email || '-',
+                    row.educational_qualifications || '-',
+                    row.institution_name || '-',
+                    row.address || '-',
+                    row.scheme_name || '-',
+                    row.occupation_name || '-',
+                    statusKompetensi
+                ]);
+                // Border & Alignment baris data
+                dataRow.eachCell((cell, colNumber) => {
+                    cell.border = {
+                        top: { style: 'thin' },
+                        left: { style: 'thin' },
+                        bottom: { style: 'thin' },
+                        right: { style: 'thin' }
+                    };
+                    if (colNumber === 1 || colNumber === 5 || colNumber === 6 || colNumber === 14) {
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    }
+                    else {
+                        cell.alignment = { vertical: 'middle' };
+                    }
+                });
+                dataRow.height = 22;
+            });
+            // Lebar tiap kolom
+            worksheet.columns = [
+                { width: 6 }, // No
+                { width: 28 }, // Nama
+                { width: 24 }, // NIK
+                { width: 18 }, // Tempat Lahir
+                { width: 20 }, // Tgl Lahir
+                { width: 15 }, // Gender
+                { width: 20 }, // No HP
+                { width: 28 }, // Email
+                { width: 20 }, // Pendidikan
+                { width: 26 }, // Asal Instansi
+                { width: 35 }, // Alamat
+                { width: 25 }, // Skema
+                { width: 28 }, // Okupasi
+                { width: 20 }, // Status Kompetensi
+            ];
+            return yield workbook.xlsx.writeBuffer();
+        });
     }
 }
 exports.AssesseeService = AssesseeService;

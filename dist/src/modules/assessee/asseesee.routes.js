@@ -7,6 +7,7 @@ const approval_middleware_1 = require("../../middleware/approval.middleware");
 const upload_config_1 = require("./upload-config");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticateToken, auth_middleware_1.adminMiddleware);
+router.get('/export/excel', asseesee_controller_1.AssesseeController.exportAssesseesToExcel);
 router.post('/', upload_config_1.uploadAssesseeSignature, asseesee_controller_1.AssesseeController.createAssessee);
 router.get('/', asseesee_controller_1.AssesseeController.getAssessees);
 router.get('/:id', asseesee_controller_1.AssesseeController.getAssesseeById);
