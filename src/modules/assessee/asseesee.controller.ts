@@ -25,10 +25,12 @@ export class AssesseeController {
             signatureUrl = `uploads/signatures/${files.signature[0].filename}`;
         }
 
-        const assessee = await AssesseeService.createAssessee({
+        const assesseeData = {
             ...req.body,
-            signature: signatureUrl
-        });
+            signature: signatureUrl,
+        };
+
+        const assessee = await AssesseeService.createAssessee(assesseeData);
         res.status(201).json({
             success: true,
             message: 'Data assessee berhasil dibuat',
@@ -43,7 +45,7 @@ export class AssesseeController {
         const occupation_id = req.query.occupation_id ? Number(req.query.occupation_id) : undefined;
         const year = req.query.year ? Number(req.query.year) : undefined;
       
-        const result = await AssesseeService.getAssessees(page, limit, keyword, occupation_id);
+        const result = await AssesseeService.getAssessees(page, limit, keyword, occupation_id, year);
         return res.json({
             success: true,
             message: 'Data assessee berhasil diambil',
@@ -74,20 +76,22 @@ export class AssesseeController {
                     if (fs.existsSync(oldFilePath)) {
                         fs.unlinkSync(oldFilePath);
                     }
-                } catch (error) {
-                    // Ignore error if file doesn't exist
+                } catch (err) {
+                    console.error('Gagal menghapus signature lama:', err);
                 }
             }
             signatureUrl = `uploads/signatures/${files.signature[0].filename}`;
         }
 
-        const assessee = await AssesseeService.updateAssessee(Number(req.params.id), {
+        const assesseeData = {
             ...req.body,
-            signature: signatureUrl
-        });
+            signature: signatureUrl || existingAssessee?.signature,
+        };
+
+        const assessee = await AssesseeService.updateAssessee(Number(req.params.id), assesseeData);
         res.json({
             success: true,
-            message: 'Data assessee berhasil diubah',
+            message: 'Data assessee berhasil diperbarui',
             data: assessee,
         });
     });
@@ -122,4 +126,3 @@ export class AssesseeController {
         res.send(buffer);
     });
 }
-
