@@ -52,6 +52,7 @@ AssesseeController.getAssessees = (0, async_handler_1.asyncHandler)((req, res) =
     const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
     const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
     const occupation_id = req.query.occupation_id ? Number(req.query.occupation_id) : undefined;
+    const year = req.query.year ? Number(req.query.year) : undefined;
     const result = yield asseessee_service_1.AssesseeService.getAssessees(page, limit, keyword, occupation_id);
     return res.json({
         success: true,
@@ -101,15 +102,17 @@ AssesseeController.deleteAssessee = (0, async_handler_1.asyncHandler)((req, res)
     });
 }));
 AssesseeController.exportAssesseesToExcel = (0, async_handler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { occupation_id, scheme_id, schedule_id, is_competent } = req.query;
+    const { occupation_id, scheme_id, schedule_id, is_competent, year } = req.query; // <- Tambahkan year
     const filters = {
         occupation_id: occupation_id ? Number(occupation_id) : undefined,
         scheme_id: scheme_id ? Number(scheme_id) : undefined,
         schedule_id: schedule_id ? Number(schedule_id) : undefined,
         is_competent: is_competent !== undefined ? is_competent === 'true' || is_competent === '1' : undefined,
+        year: year ? Number(year) : undefined, // <- Tambahkan ini
     };
     const buffer = yield asseessee_service_1.AssesseeService.exportAssesseesToExcel(filters);
-    const filename = `data-asesi-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const yearLabel = filters.year ? `-${filters.year}` : '';
+    const filename = `data-asesi${yearLabel}-${new Date().toISOString().slice(0, 10)}.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
     res.send(buffer);

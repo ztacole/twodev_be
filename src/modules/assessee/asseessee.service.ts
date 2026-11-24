@@ -41,7 +41,7 @@ const translateGenderToId = (gender: string): 'LAKI-LAKI' | 'PEREMPUAN' => {
 };
 
 export class AssesseeService {
-    static async getAssessees(page: number = 1, limit: number = 10, keyword?: string, occupation_id?: number): Promise<{ data: AssesseeResponse[]; meta: PagingMeta }> {
+    static async getAssessees(page: number = 1, limit: number = 10, keyword?: string, occupation_id?: number, year?: number): Promise<{ data: AssesseeResponse[]; meta: PagingMeta }> {
         const offset = (page - 1) * limit;
         const conditions = [];
         
@@ -58,6 +58,10 @@ export class AssesseeService {
 
         if (occupation_id) {
             conditions.push(eq(occupationTable.id, occupation_id));
+        }
+
+        if (year) {
+            conditions.push(sql`YEAR(${assesseeTable.created_at}) = ${year}`);
         }
 
         const query = db.selectDistinct({
@@ -229,6 +233,7 @@ export class AssesseeService {
         scheme_id?: number;
         schedule_id?: number;
         is_competent?: boolean;
+        year?: number;
     }) {
       
         const conditions = [];
@@ -244,6 +249,10 @@ export class AssesseeService {
         }
         if (filters.is_competent !== undefined) {
             conditions.push(eq(resultTable.is_competent, filters.is_competent));
+        }
+
+        if (filters.year) {
+            conditions.push(sql`YEAR(${assesseeTable.created_at}) = ${filters.year}`);
         }
 
         const query = db.select({
