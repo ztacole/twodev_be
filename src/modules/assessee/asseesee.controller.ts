@@ -96,5 +96,25 @@ export class AssesseeController {
             message: 'Data assessee berhasil dihapus',
         });
     });
+
+    static exportAssesseesToExcel = asyncHandler(async (req: Request, res: Response) => {
+        const { occupation_id, scheme_id, schedule_id, is_competent } = req.query;
+
+        const filters = {
+            occupation_id: occupation_id ? Number(occupation_id) : undefined,
+            scheme_id: scheme_id ? Number(scheme_id) : undefined,
+            schedule_id: schedule_id ? Number(schedule_id) : undefined,
+            is_competent: is_competent !== undefined ? is_competent === 'true' || is_competent === '1' : undefined,
+        };
+
+        const buffer = await AssesseeService.exportAssesseesToExcel(filters);
+
+        const filename = `data-asesi-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+        res.send(buffer);
+    });
 }
 

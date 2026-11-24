@@ -8,6 +8,8 @@ const router = Router();
 
 router.use(authenticateToken, adminMiddleware);
 
+router.get('/export/excel', AssesseeController.exportAssesseesToExcel);
+
 router.post('/', uploadAssesseeSignature, AssesseeController.createAssessee);
 router.get('/', AssesseeController.getAssessees);
 router.get('/:id', AssesseeController.getAssesseeById);
