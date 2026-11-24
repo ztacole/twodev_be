@@ -42,7 +42,7 @@ const translateGenderToId = (gender) => {
 };
 class AssesseeService {
     static getAssessees() {
-        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10, keyword, occupation_id) {
+        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10, keyword, occupation_id, year) {
             var _a, _b;
             const offset = (page - 1) * limit;
             const conditions = [];
@@ -51,6 +51,9 @@ class AssesseeService {
             }
             if (occupation_id) {
                 conditions.push((0, drizzle_orm_1.eq)(schema_1.occupation.id, occupation_id));
+            }
+            if (year) {
+                conditions.push((0, drizzle_orm_1.sql) `YEAR(${schema_1.assessee.created_at}) = ${year}`);
             }
             const query = drizzle_1.db.selectDistinct({
                 id: schema_1.assessee.id,
@@ -226,6 +229,9 @@ class AssesseeService {
             }
             if (filters.is_competent !== undefined) {
                 conditions.push((0, drizzle_orm_1.eq)(schema_1.result.is_competent, filters.is_competent));
+            }
+            if (filters.year) {
+                conditions.push((0, drizzle_orm_1.sql) `YEAR(${schema_1.assessee.created_at}) = ${filters.year}`);
             }
             const query = drizzle_1.db.select({
                 id: schema_1.assessee.id,
