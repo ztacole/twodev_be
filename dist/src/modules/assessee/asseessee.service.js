@@ -42,10 +42,17 @@ const translateGenderToId = (gender) => {
 };
 class AssesseeService {
     static getAssessees() {
-        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10, keyword) {
+        return __awaiter(this, arguments, void 0, function* (page = 1, limit = 10, keyword, occupation_id) {
             var _a, _b;
             const offset = (page - 1) * limit;
-            const assessees = yield drizzle_1.db.select({
+            const conditions = [];
+            if (keyword) {
+                conditions.push((0, drizzle_orm_1.or)((0, drizzle_orm_1.like)(schema_1.user.full_name, `%${keyword}%`), (0, drizzle_orm_1.like)(schema_1.user.email, `%${keyword}%`), (0, drizzle_orm_1.like)(schema_1.assessee.identity_number, `%${keyword}%`), (0, drizzle_orm_1.like)(schema_1.assessee.phone_no, `%${keyword}%`)));
+            }
+            if (occupation_id) {
+                conditions.push((0, drizzle_orm_1.eq)(schema_1.occupation.id, occupation_id));
+            }
+            const query = drizzle_1.db.selectDistinct({
                 id: schema_1.assessee.id,
                 user_id: schema_1.assessee.user_id,
                 name: schema_1.user.full_name,
@@ -66,9 +73,26 @@ class AssesseeService {
             }).from(schema_1.assessee)
                 .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
                 .leftJoin(schema_1.assesseeJob, (0, drizzle_orm_1.eq)(schema_1.assesseeJob.assessee_id, schema_1.assessee.id))
-                .where((0, drizzle_orm_1.or)(keyword ? (0, drizzle_orm_1.like)(schema_1.user.full_name, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.user.email, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.assessee.identity_number, `%${keyword}%`) : undefined, keyword ? (0, drizzle_orm_1.like)(schema_1.assessee.phone_no, `%${keyword}%`) : undefined))
-                .limit(limit).offset(offset);
-            const countRows = yield drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(*)` }).from(schema_1.assessee);
+                .leftJoin(schema_1.result, (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, schema_1.assessee.id))
+                .leftJoin(schema_1.assessmentSchedule, (0, drizzle_orm_1.eq)(schema_1.result.schedule_id, schema_1.assessmentSchedule.id))
+                .leftJoin(schema_1.assessment, (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, schema_1.assessment.id))
+                .leftJoin(schema_1.occupation, (0, drizzle_orm_1.eq)(schema_1.assessment.occupation_id, schema_1.occupation.id));
+            if (conditions.length > 0) {
+                query.where((0, drizzle_orm_1.and)(...conditions));
+            }
+            const assessees = yield query.limit(limit).offset(offset);
+            // Count query
+            const countQuery = drizzle_1.db.select({ count: (0, drizzle_orm_1.sql) `COUNT(DISTINCT ${schema_1.assessee.id})` })
+                .from(schema_1.assessee)
+                .leftJoin(schema_1.user, (0, drizzle_orm_1.eq)(schema_1.assessee.user_id, schema_1.user.id))
+                .leftJoin(schema_1.result, (0, drizzle_orm_1.eq)(schema_1.result.assessee_id, schema_1.assessee.id))
+                .leftJoin(schema_1.assessmentSchedule, (0, drizzle_orm_1.eq)(schema_1.result.schedule_id, schema_1.assessmentSchedule.id))
+                .leftJoin(schema_1.assessment, (0, drizzle_orm_1.eq)(schema_1.assessmentSchedule.assessment_id, schema_1.assessment.id))
+                .leftJoin(schema_1.occupation, (0, drizzle_orm_1.eq)(schema_1.assessment.occupation_id, schema_1.occupation.id));
+            if (conditions.length > 0) {
+                countQuery.where((0, drizzle_orm_1.and)(...conditions));
+            }
+            const countRows = yield countQuery;
             const total = Number((_b = (_a = countRows === null || countRows === void 0 ? void 0 : countRows[0]) === null || _a === void 0 ? void 0 : _a.count) !== null && _b !== void 0 ? _b : 0);
             const totalPages = Math.max(1, Math.ceil(total / limit));
             return { data: assessees.map(this.formatAssesseeResponse), meta: { current_page: page, limit, total, total_pages: totalPages } };
@@ -256,7 +280,7 @@ class AssesseeService {
                 'Status Kompetensi'
             ];
             const headerRow = worksheet.addRow(headers);
-            // Styling Header (Warna tema oranye konsisten dengan project)
+            // Styling Header
             headerRow.eachCell((cell) => {
                 cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
                 cell.fill = {

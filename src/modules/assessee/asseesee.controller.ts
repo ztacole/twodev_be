@@ -40,7 +40,9 @@ export class AssesseeController {
         const page = Math.max(1, Number(req.query.page) || 1);
         const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
         const keyword = req.query.keyword ? String(req.query.keyword) : undefined;
-        const result = await AssesseeService.getAssessees(page, limit, keyword);
+        const occupation_id = req.query.occupation_id ? Number(req.query.occupation_id) : undefined;
+      
+        const result = await AssesseeService.getAssessees(page, limit, keyword, occupation_id);
         return res.json({
             success: true,
             message: 'Data assessee berhasil diambil',
