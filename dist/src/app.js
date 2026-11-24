@@ -86,6 +86,7 @@ app.use("/twodev/api/schedules", schedule_routes_1.default);
 // 📁 Serve uploads (tanpa cache)
 app.use("/twodev/api/roles", role_routes_1.default);
 app.use("/twodev/api/users", user_routes_1.default);
+app.use("/twodev/api/user", user_routes_1.default);
 app.use("/twodev/api/auth", auth_routes_1.default);
 app.use("/twodev/api/dashboard", dashboard_routes_1.default);
 app.use("/twodev/api/approval", approval_routes_1.default);

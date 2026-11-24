@@ -103,6 +103,7 @@ app.use("/twodev/api/schedules", scheduleRoutes);
 
 app.use("/twodev/api/roles", roleRoutes);
 app.use("/twodev/api/users", userRoutes);
+app.use("/twodev/api/user", userRoutes);
 app.use("/twodev/api/auth", authRoutes);
 app.use("/twodev/api/dashboard", dashboardRoutes);
 app.use("/twodev/api/approval", approvalRoutes);
