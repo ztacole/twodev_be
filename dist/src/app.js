@@ -48,6 +48,15 @@ const authLimitter = (0, express_rate_limit_1.default)({
     },
 });
 app.use(generalLimiter);
+// Disable caching for all API responses
+app.use((req, res, next) => {
+    res.set({
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    });
+    next();
+});
 app.use(express_1.default.json({ limit: "100mb" }));
 app.use(express_1.default.urlencoded({ limit: "100mb", extended: true }));
 // ROUTES
@@ -77,6 +86,7 @@ app.use("/twodev/api/schedules", schedule_routes_1.default);
 // 📁 Serve uploads (tanpa cache)
 app.use("/twodev/api/roles", role_routes_1.default);
 app.use("/twodev/api/users", user_routes_1.default);
+app.use("/twodev/api/user", user_routes_1.default);
 app.use("/twodev/api/auth", auth_routes_1.default);
 app.use("/twodev/api/dashboard", dashboard_routes_1.default);
 app.use("/twodev/api/approval", approval_routes_1.default);

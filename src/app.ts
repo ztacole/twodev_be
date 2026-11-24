@@ -55,6 +55,16 @@ const authLimitter = rateLimit({
 
 app.use(generalLimiter);
 
+// Disable caching for all API responses
+app.use((req, res, next) => {
+  res.set({
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0",
+  });
+  next();
+});
+
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ limit: "100mb", extended: true }));
 
@@ -93,6 +103,7 @@ app.use("/twodev/api/schedules", scheduleRoutes);
 
 app.use("/twodev/api/roles", roleRoutes);
 app.use("/twodev/api/users", userRoutes);
+app.use("/twodev/api/user", userRoutes);
 app.use("/twodev/api/auth", authRoutes);
 app.use("/twodev/api/dashboard", dashboardRoutes);
 app.use("/twodev/api/approval", approvalRoutes);
